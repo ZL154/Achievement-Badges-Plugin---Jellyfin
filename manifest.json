@@ -98,6 +98,13 @@
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.2.1/Jellyfin.Plugin.AchievementBadgesv1.2.1.zip",
         "checksum": "5ca1ff2e55c3eb6b4f38e9c9800ee6ed"
+      },
+      {
+        "version": "1.2.2",
+        "changelog": "Navigation and user-loading improvements. Refined standalone access flow, improved current-user auto-loading, added better empty states and polished movement between the sidebar, profile showcase and achievements interface.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.2.2/Jellyfin.Plugin.AchievementBadgesv1.2.2.zip",
+        "checksum": "99740a6be8fcd7ff6a43097a46cf234e"
       }
     ]
   }
