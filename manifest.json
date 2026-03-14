@@ -84,6 +84,13 @@
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.1.2/Jellyfin.Plugin.AchievementBadgesv1.1.2.zip",
         "checksum": "d56edcb3de5180630c04184b996ca571"
+      },
+      {
+        "version": "1.2.0",
+        "changelog": "Integration release. Added automatic File Transformation integration, sidebar and profile injection support, reusable showcase strip, dashboard alias route and first-pass live playback activity tracking.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.2.0/Jellyfin.Plugin.AchievementBadgesv1.2.0.zip",
+        "checksum": "44e20ba972df3011cca0a39456713abb"
       }
     ]
   }
