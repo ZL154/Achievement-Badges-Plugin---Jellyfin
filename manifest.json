@@ -107,25 +107,11 @@
         "checksum": "99740a6be8fcd7ff6a43097a46cf234e"
       },
       {
-        "version": "1.3.0",
-        "changelog": "Major progression update. Added achievement score system, streak tracking, recent unlocks, next-up progress panel, featured badge showcase, expanded leaderboard depth, filtering and sorting improvements and a large expansion to the achievement catalogue.",
+        "version": "1.3.3",
+        "changelog": "Major stability fix. Restored sidebar injection, profile showcase injection and leaderboard usernames. Fixed user lookup logic and improved compatibility with Jellyfin UI injection.",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.0/Jellyfin.Plugin.AchievementBadgesv1.3.0.zip",
-        "checksum": "2690731e81f1d7b5d35086c540f5fd33"
-      },
-      {
-        "version": "1.3.1",
-        "changelog": "Stability and regression fix release. Fixed authenticated API loading across the shell, admin page and showcase, improved sidebar reliability, improved profile and home widget injection and added cache-busting for File Transformation shell injection.",
-        "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.1/Jellyfin.Plugin.AchievementBadgesv1.3.1.zip",
-        "checksum": "156dfe98938f4d855ccaed918691f2df"
-      },
-      {
-        "version": "1.3.2",
-        "changelog": "Global injection fix release. Switched File Transformation shell injection to inline mode to restore the achievements sidebar entry, profile showcase and other global UI integrations more reliably.",
-        "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.2/Jellyfin.Plugin.AchievementBadgesv1.3.2.zip",
-        "checksum": "5feb91092b89e9643309ecf7b3235540"
+        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.3/Jellyfin.Plugin.AchievementBadgesv1.3.3.zip",
+        "checksum": "65DA3A7BAC82D5FF01D8E421A067224D"
       }
     ]
   }
