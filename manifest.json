@@ -107,18 +107,46 @@
         "checksum": "99740a6be8fcd7ff6a43097a46cf234e"
       },
       {
+        "version": "1.3.0",
+        "changelog": "Major achievement overhaul. Added a much larger badge definition set, richer dashboard sections, recent unlocks, next-up tracking, featured showcase loadout, score and streak statistics, improved filtering and sorting and expanded shell-driven achievements UI.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.0/Jellyfin.Plugin.AchievementBadgesv1.3.0.zip",
+        "checksum": "2690731e81f1d7b5d35086c540f5fd33"
+      },
+      {
+        "version": "1.3.1",
+        "changelog": "Stability hotfix for the 1.3 dashboard transition. Restored the embedded achievements configuration page, corrected shell loading behaviour and addressed regressions that broke achievements access after the 1.3.0 update.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.1/Jellyfin.Plugin.AchievementBadgesv1.3.1.zip",
+        "checksum": "156dfe98938f4d855ccaed918691f2df"
+      },
+      {
+        "version": "1.3.2",
+        "changelog": "File Transformation integration revision. Switched shell injection strategy, embedded the shell script directly for transformation output and improved startup registration in an attempt to restore automatic sidebar and route injection.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.2/Jellyfin.Plugin.AchievementBadgesv1.3.2.zip",
+        "checksum": "5feb91092b89e9643309ecf7b3235540"
+      },
+      {
         "version": "1.3.3",
-        "changelog": "Major stability fix. Restored sidebar injection, profile showcase injection and leaderboard usernames. Fixed user lookup logic and improved compatibility with Jellyfin UI injection.",
+        "changelog": "Leaderboard and shell reliability update. Added user name resolution for leaderboard entries, refined shell API client behaviour and continued work on automatic web integration reliability.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.3/Jellyfin.Plugin.AchievementBadgesv1.3.3.zip",
-        "checksum": "65DA3A7BAC82D5FF01D8E421A067224D"
+        "checksum": "65da3a7bac82d5ff01d8e421a067224d"
       },
       {
         "version": "1.3.4",
-        "changelog": "Injection compatibility fix release. Fixed File Transformation assembly detection, improved automatic shell registration and restored username resolution for leaderboard entries.",
+        "changelog": "Additional web injection debugging release. Refined File Transformation registration attempts and continued troubleshooting for automatic sidebar and shell loading within the Jellyfin web client.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.4/Jellyfin.Plugin.AchievementBadgesv1.3.4.zip",
-        "checksum": "DFF80DBDEE2B37278935C67F92C2AA0A"
+        "checksum": "dff80dbdee2b37278935c67f92c2aa0a"
+      },
+      {
+        "version": "1.3.5",
+        "changelog": "Fixed File Transformation registration payload type for automatic shell injection. Resolved the startup registration failure by switching to a JObject payload and added the required Newtonsoft.Json dependency.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/Achievement-Badges-Plugin---Jellyfin/releases/download/v1.3.5/Jellyfin.Plugin.AchievementBadgesv1.3.5.zip",
+        "checksum": "0106c508422402973ed4a1790a96bcaa"
       }
     ]
   }
