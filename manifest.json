@@ -13,7 +13,7 @@
         "changelog": "Major bug fix release. Removed duplicate achievement definitions causing ambiguity. Fixed false playback recording on every session start inflating counters. Fixed GUID format inconsistency creating duplicate user profiles. Fixed leaderboard showing raw IDs instead of usernames. Fixed duplicate sidebar entries. Fixed unauthenticated API calls in profile inject. Replaced Console.WriteLine with proper ILogger. Removed unused Newtonsoft.Json dependency.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.4.0/Jellyfin.Plugin.AchievementBadgesv1.4.0.zip",
-        "checksum": ""
+        "checksum": "6F4ECF9ADB79FC0E942FDB558D9DD5BB"
       },
       {
         "version": "1.3.11",
