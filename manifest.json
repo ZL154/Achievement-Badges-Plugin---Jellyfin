@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.4.2",
+        "changelog": "Added automatic sidebar injection middleware so Achievements appears in the navigation menu for all users on every page load. No manual configuration needed - works like StarTrack's script injection.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.4.2/Jellyfin.Plugin.AchievementBadgesv1.4.2.zip",
+        "checksum": "B77B98E69DF85CD76BD8408915C5F1D7"
+      },
+      {
         "version": "1.4.1",
         "changelog": "Major rewrite. Removed admin-only restriction so all users can access achievements. Rewrote all API calls to use native fetch with proper auth token headers instead of broken apiClient.fetch(). Fixed simulate playback showing 'undefined' error. Fixed sidebar injection to use correct Jellyfin nav classes. Removed dependency on standalone.js hash routing.",
         "targetAbi": "10.11.0.0",
