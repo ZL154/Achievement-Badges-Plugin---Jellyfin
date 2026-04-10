@@ -1,0 +1,1054 @@
+<div id="AchievementBadgesPage"
+     data-role="page"
+     class="page type-interior pluginConfigurationPage"
+     data-require="emby-button,emby-input">
+
+<style>
+#AchievementBadgesPage{
+padding:2em;
+}
+
+.abHero{
+display:flex;
+justify-content:space-between;
+align-items:flex-start;
+flex-wrap:wrap;
+gap:1em;
+padding:1.4em;
+border-radius:18px;
+background:rgba(255,255,255,0.05);
+border:1px solid rgba(255,255,255,0.12);
+box-shadow:0 10px 30px rgba(0,0,0,0.16);
+}
+
+.abHeroLeft{
+display:flex;
+align-items:center;
+gap:1em;
+min-width:260px;
+}
+
+.abHeroIcon{
+width:60px;
+height:60px;
+border-radius:999px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:rgba(255,255,255,0.1);
+font-size:1.6em;
+flex-shrink:0;
+}
+
+.abHeroTitle{
+font-size:1.25em;
+font-weight:700;
+line-height:1.2;
+}
+
+.abHeroSubtitle{
+font-size:0.92em;
+opacity:0.82;
+margin-top:0.2em;
+}
+
+.abHeroActions{
+display:flex;
+gap:0.6em;
+flex-wrap:wrap;
+align-items:center;
+}
+
+.abShowcaseWrap{
+margin-top:1.1em;
+}
+
+.abSectionEyebrow{
+font-size:0.88em;
+font-weight:700;
+letter-spacing:0.06em;
+text-transform:uppercase;
+color:#9fb3c8;
+margin-bottom:0.7em;
+}
+
+.abShowcase{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+gap:0.8em;
+}
+
+.abShowcaseCard{
+display:flex;
+align-items:center;
+gap:0.6em;
+padding:0.7em;
+border-radius:12px;
+border:1px solid rgba(255,255,255,0.12);
+background:rgba(255,255,255,0.04);
+}
+
+.abShowcaseIcon{
+width:36px;
+height:36px;
+border-radius:999px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:rgba(255,255,255,0.08);
+font-size:1.05em;
+flex-shrink:0;
+}
+
+.abStats{
+margin-top:1.5em;
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:1em;
+}
+
+.abStatCard{
+padding:1.05em;
+border-radius:14px;
+border:1px solid rgba(255,255,255,0.12);
+background:rgba(255,255,255,0.04);
+}
+
+.abStatTitle{
+font-size:0.9em;
+opacity:0.8;
+}
+
+.abStatValue{
+font-size:2em;
+font-weight:700;
+line-height:1.1;
+margin-top:0.2em;
+}
+
+.abTabs{
+margin-top:1.5em;
+display:flex;
+gap:0.65em;
+flex-wrap:wrap;
+}
+
+.abTab{
+padding:0.55em 0.95em;
+border-radius:10px;
+border:1px solid rgba(255,255,255,0.12);
+background:rgba(255,255,255,0.04);
+cursor:pointer;
+font-weight:700;
+color:#fff;
+}
+
+.abTab.active{
+background:rgba(255,255,255,0.12);
+}
+
+.abPanel{
+margin-top:1.5em;
+}
+
+.abCardPanel{
+padding:1.1em;
+border-radius:14px;
+border:1px solid rgba(255,255,255,0.12);
+background:rgba(255,255,255,0.03);
+}
+
+.abBadgeGrid{
+margin-top:1.2em;
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+gap:1em;
+}
+
+.abBadgeCard{
+padding:1em;
+border-radius:12px;
+border:1px solid rgba(255,255,255,0.12);
+background:rgba(255,255,255,0.03);
+}
+
+.abBadgeHeader{
+display:flex;
+gap:0.8em;
+align-items:center;
+margin-bottom:0.7em;
+}
+
+.abBadgeIcon{
+width:42px;
+height:42px;
+border-radius:999px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:rgba(255,255,255,0.1);
+font-size:1.2em;
+flex-shrink:0;
+}
+
+.abBadgeTitle{
+font-size:1.05em;
+font-weight:700;
+line-height:1.2;
+}
+
+.abBadgeMeta{
+font-size:0.92em;
+opacity:0.9;
+}
+
+.abProgressWrap{
+margin-top:0.7em;
+}
+
+.abProgressText{
+display:flex;
+justify-content:space-between;
+font-size:0.92em;
+margin-bottom:0.35em;
+opacity:0.82;
+}
+
+.abProgressBar{
+height:10px;
+border-radius:999px;
+overflow:hidden;
+background:#0f1318;
+border:1px solid rgba(255,255,255,0.1);
+}
+
+.abProgressFill{
+height:100%;
+background:#60a5fa;
+}
+
+.abBadgeDescription{
+margin-top:0.55em;
+line-height:1.45;
+}
+
+.abBadgeFooter{
+margin-top:0.8em;
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:0.6em;
+flex-wrap:wrap;
+}
+
+.abUnlocked{
+color:#4ade80;
+font-weight:700;
+}
+
+.abLocked{
+color:#f87171;
+font-weight:700;
+}
+
+.rarity-common{color:#9fb3c8}
+.rarity-uncommon{color:#34d399}
+.rarity-rare{color:#60a5fa}
+.rarity-epic{color:#a78bfa}
+.rarity-legendary{color:#fbbf24}
+.rarity-mythic{color:#f43f5e}
+
+#abStatus{
+margin-top:1em;
+min-height:1.4em;
+}
+
+#abError{
+display:none;
+margin-top:1em;
+padding:1em;
+border:1px solid rgba(248,113,113,0.45);
+border-radius:12px;
+background:rgba(248,113,113,0.08);
+color:#fca5a5;
+}
+
+#abAdvanced{
+margin-top:1em;
+}
+
+#abEquippedEmpty,
+#abEmpty{
+padding:1em;
+border:1px dashed rgba(255,255,255,0.16);
+border-radius:12px;
+color:#cbd5e1;
+}
+
+.abLeaderboardRow{
+display:flex;
+justify-content:space-between;
+gap:1em;
+padding:0.75em 0;
+border-bottom:1px solid rgba(255,255,255,0.08);
+}
+
+.abLeaderboardRow:last-child{
+border-bottom:none;
+}
+
+.abMuted{
+opacity:0.8;
+}
+
+@media (max-width: 900px){
+#AchievementBadgesPage{
+padding:1em;
+}
+}
+</style>
+
+<div data-role="content">
+    <div class="content-primary">
+        <div class="verticalSection">
+            <div style="max-width:1500px;margin:0 auto;">
+
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:1em;flex-wrap:wrap;">
+                    <h2 class="sectionTitle" style="margin:0;">Achievements</h2>
+                </div>
+
+                <div id="abProfileHero" class="abHero">
+                    <div style="flex:1;min-width:280px;">
+                        <div class="abHeroLeft">
+                            <div class="abHeroIcon">🏅</div>
+                            <div>
+                                <div id="abProfileTitle" class="abHeroTitle">Achievement Profile</div>
+                                <div id="abProfileSubtitle" class="abHeroSubtitle">Loading profile...</div>
+                            </div>
+                        </div>
+
+                        <div id="abShowcaseWrap" class="abShowcaseWrap">
+                            <div class="abSectionEyebrow">Showcase</div>
+                            <div id="abShowcaseRow" class="abShowcase"></div>
+                        </div>
+                    </div>
+
+                    <div class="abHeroActions">
+                        <button is="emby-button" type="button" class="raised button-submit" id="abMeBtn">
+                            Use my account
+                        </button>
+
+                        <button is="emby-button" type="button" class="raised button-submit" id="abRefreshBtn">
+                            Refresh
+                        </button>
+
+                        <button is="emby-button" type="button" class="raised" id="abSimulateBtn">
+                            Simulate playback
+                        </button>
+                    </div>
+                </div>
+
+                <details id="abAdvanced">
+                    <summary style="cursor:pointer;">Advanced options</summary>
+
+                    <div style="display:flex;gap:0.75em;flex-wrap:wrap;margin-top:1em;align-items:center;">
+                        <input is="emby-input"
+                               id="abUserId"
+                               label="Manual User ID"
+                               type="text"
+                               style="min-width:320px;" />
+
+                        <button is="emby-button" type="button" class="raised" id="abLoadBtn">
+                            Load this user
+                        </button>
+
+                        <button is="emby-button" type="button" class="raised" id="abResetBtn">
+                            Reset badges
+                        </button>
+                    </div>
+                </details>
+
+                <div id="abStatus" class="secondaryText"></div>
+
+                <div id="abError"></div>
+
+                <div class="abStats">
+                    <div class="abStatCard">
+                        <div class="abStatTitle">Unlocked</div>
+                        <div id="abUnlocked" class="abStatValue">0</div>
+                    </div>
+
+                    <div class="abStatCard">
+                        <div class="abStatTitle">Total</div>
+                        <div id="abTotal" class="abStatValue">0</div>
+                    </div>
+
+                    <div class="abStatCard">
+                        <div class="abStatTitle">Completion</div>
+                        <div id="abPercentage" class="abStatValue">0%</div>
+                    </div>
+
+                    <div class="abStatCard">
+                        <div class="abStatTitle">Equipped</div>
+                        <div id="abEquippedCount" class="abStatValue">0</div>
+                    </div>
+                </div>
+
+                <div class="abTabs">
+                    <button type="button" class="abTab active" id="abTabBadgesBtn">My Badges</button>
+                    <button type="button" class="abTab" id="abTabLeaderboardBtn">Leaderboard</button>
+                    <button type="button" class="abTab" id="abTabStatsBtn">Stats</button>
+                </div>
+
+                <div id="abPanelBadges" class="abPanel">
+                    <h3 style="margin:0 0 0.75em 0;">Equipped badges</h3>
+
+                    <div id="abEquippedEmpty">No equipped badges yet. Equip up to 5 unlocked badges.</div>
+
+                    <div id="abEquippedRow" class="abBadgeGrid"></div>
+
+                    <div id="abEmpty" style="margin-top:1.5em;">Load badges to view your achievement collection.</div>
+
+                    <div id="abGrid" class="abBadgeGrid"></div>
+                </div>
+
+                <div id="abPanelLeaderboard" class="abPanel" style="display:none;">
+                    <div class="abCardPanel">
+                        <h3 style="margin:0 0 0.75em 0;">Global leaderboard</h3>
+                        <div id="abLeaderboard">Loading leaderboard...</div>
+                    </div>
+                </div>
+
+                <div id="abPanelStats" class="abPanel" style="display:none;">
+                    <div class="abCardPanel">
+                        <h3 style="margin:0 0 0.75em 0;">Server stats</h3>
+                        <div id="abServerStats">Loading server stats...</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const userIdInput = document.getElementById('abUserId');
+    const meBtn = document.getElementById('abMeBtn');
+    const loadBtn = document.getElementById('abLoadBtn');
+    const refreshBtn = document.getElementById('abRefreshBtn');
+    const simulateBtn = document.getElementById('abSimulateBtn');
+    const resetBtn = document.getElementById('abResetBtn');
+
+    const tabBadgesBtn = document.getElementById('abTabBadgesBtn');
+    const tabLeaderboardBtn = document.getElementById('abTabLeaderboardBtn');
+    const tabStatsBtn = document.getElementById('abTabStatsBtn');
+
+    const panelBadges = document.getElementById('abPanelBadges');
+    const panelLeaderboard = document.getElementById('abPanelLeaderboard');
+    const panelStats = document.getElementById('abPanelStats');
+
+    const statusText = document.getElementById('abStatus');
+    const errorBox = document.getElementById('abError');
+    const emptyState = document.getElementById('abEmpty');
+    const grid = document.getElementById('abGrid');
+    const equippedRow = document.getElementById('abEquippedRow');
+    const equippedEmpty = document.getElementById('abEquippedEmpty');
+    const leaderboardBox = document.getElementById('abLeaderboard');
+    const serverStatsBox = document.getElementById('abServerStats');
+    const showcaseRow = document.getElementById('abShowcaseRow');
+    const profileTitle = document.getElementById('abProfileTitle');
+    const profileSubtitle = document.getElementById('abProfileSubtitle');
+    const unlockedValue = document.getElementById('abUnlocked');
+    const totalValue = document.getElementById('abTotal');
+    const percentageValue = document.getElementById('abPercentage');
+    const equippedCountValue = document.getElementById('abEquippedCount');
+
+    function getApiClient() {
+        return window.ApiClient || window.apiClient || null;
+    }
+
+    function normaliseApiPath(path) {
+        return String(path || '').replace(/^\/+/, '');
+    }
+
+    async function fetchJson(path, options) {
+        const apiClient = getApiClient();
+        const cleanPath = normaliseApiPath(path);
+
+        if (apiClient && typeof apiClient.getJSON === 'function' && !options) {
+            return await apiClient.getJSON(apiClient.getUrl(cleanPath));
+        }
+
+        if (apiClient && typeof apiClient.fetch === 'function') {
+            const response = await apiClient.fetch(
+                Object.assign({}, options || {}, {
+                    url: apiClient.getUrl(cleanPath)
+                })
+            );
+
+            if (!response.ok) {
+                let message = 'Request failed: ' + response.status;
+                try {
+                    const body = await response.json();
+                    if (body && body.Message) {
+                        message = body.Message;
+                    }
+                } catch (_) {
+                }
+                throw new Error(message);
+            }
+
+            if (response.status === 204) {
+                return null;
+            }
+
+            const text = await response.text();
+            return text ? JSON.parse(text) : null;
+        }
+
+        const response = await fetch('/' + cleanPath, Object.assign({ credentials: 'include' }, options || {}));
+
+        if (!response.ok) {
+            let message = 'Request failed: ' + response.status;
+
+            try {
+                const body = await response.json();
+                if (body && body.Message) {
+                    message = body.Message;
+                }
+            } catch (_) {
+            }
+
+            throw new Error(message);
+        }
+
+        if (response.status === 204) {
+            return null;
+        }
+
+        return await response.json();
+    }
+
+    async function detectCurrentUserId() {
+        try {
+            const apiClient = getApiClient();
+
+            if (apiClient) {
+                if (typeof apiClient.getCurrentUserId === 'function') {
+                    const id = apiClient.getCurrentUserId();
+                    if (id) {
+                        return id;
+                    }
+                }
+
+                if (apiClient._serverInfo && apiClient._serverInfo.UserId) {
+                    return apiClient._serverInfo.UserId;
+                }
+            }
+
+            const me = await fetchJson('Users/Me');
+            return me && me.Id ? me.Id : '';
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function getUserIdFromUrl() {
+        const fromSearch = new URLSearchParams(window.location.search).get('userId');
+        if (fromSearch) {
+            return fromSearch.trim();
+        }
+
+        const hash = window.location.hash || '';
+        const queryIndex = hash.indexOf('?');
+
+        if (queryIndex !== -1) {
+            const hashQuery = hash.substring(queryIndex + 1);
+            const fromHash = new URLSearchParams(hashQuery).get('userId');
+            if (fromHash) {
+                return fromHash.trim();
+            }
+        }
+
+        return '';
+    }
+
+    function getUserId() {
+        return (userIdInput.value || '').trim();
+    }
+
+    function setStatus(message) {
+        statusText.textContent = message || '';
+    }
+
+    function clearError() {
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
+    }
+
+    function setError(message) {
+        errorBox.textContent = message || 'Unknown error.';
+        errorBox.style.display = 'block';
+    }
+
+    function setSummary(summary) {
+        unlockedValue.textContent = summary && summary.Unlocked != null ? summary.Unlocked : 0;
+        totalValue.textContent = summary && summary.Total != null ? summary.Total : 0;
+
+        const percentage = summary && typeof summary.Percentage === 'number'
+            ? summary.Percentage.toFixed(1)
+            : '0.0';
+
+        percentageValue.textContent = percentage + '%';
+        equippedCountValue.textContent = summary && summary.EquippedCount != null ? summary.EquippedCount : 0;
+    }
+
+    function setActiveTab(name) {
+        panelBadges.style.display = name === 'badges' ? 'block' : 'none';
+        panelLeaderboard.style.display = name === 'leaderboard' ? 'block' : 'none';
+        panelStats.style.display = name === 'stats' ? 'block' : 'none';
+
+        tabBadgesBtn.classList.toggle('active', name === 'badges');
+        tabLeaderboardBtn.classList.toggle('active', name === 'leaderboard');
+        tabStatsBtn.classList.toggle('active', name === 'stats');
+    }
+
+    function rarityClass(rarity) {
+        const value = (rarity || '').toLowerCase();
+        if (value === 'uncommon') return 'rarity-uncommon';
+        if (value === 'rare') return 'rarity-rare';
+        if (value === 'epic') return 'rarity-epic';
+        if (value === 'legendary') return 'rarity-legendary';
+        if (value === 'mythic') return 'rarity-mythic';
+        return 'rarity-common';
+    }
+
+    function iconGlyph(iconName) {
+        const key = (iconName || '').toLowerCase();
+
+        const map = {
+            play_circle: '▶',
+            travel_explore: '🧭',
+            weekend: '🛋',
+            chair: '🪑',
+            home: '🏠',
+            movie_filter: '🎞',
+            live_tv: '📺',
+            theaters: '🎭',
+            local_fire_department: '🔥',
+            bolt: '⚡',
+            military_tech: '🏆',
+            auto_awesome: '✨',
+            movie: '🎬',
+            tv: '📺',
+            dark_mode: '🌙',
+            nights_stay: '🌃',
+            bedtime: '😴',
+            wb_sunny: '🌅',
+            light_mode: '☀',
+            sunny: '🌞',
+            event: '📅',
+            event_available: '🗓',
+            celebration: '🎉',
+            stars: '🌟',
+            collections_bookmark: '📚',
+            inventory_2: '🗃',
+            today: '📆',
+            calendar_month: '🗓',
+            favorite: '❤',
+            timeline: '📈',
+            insights: '📊',
+            all_inclusive: '♾',
+            speed: '💨',
+            hourglass_bottom: '⏳',
+            directions_run: '🏃',
+            sports_score: '🏁',
+            local_movies: '🍿'
+        };
+
+        return map[key] || '🏅';
+    }
+
+    async function loadSummary(userId) {
+        const summary = await fetchJson('Plugins/AchievementBadges/users/' + userId + '/summary');
+        setSummary(summary);
+        profileSubtitle.textContent = 'Completion: ' + ((summary && summary.Percentage != null) ? summary.Percentage : 0) + '%';
+    }
+
+    async function loadEquipped(userId) {
+        const badges = await fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped');
+        renderEquippedBadges(badges);
+        renderShowcase(badges);
+    }
+
+    async function loadLeaderboard() {
+        const entries = await fetchJson('Plugins/AchievementBadges/leaderboard?limit=10');
+
+        if (!entries || !entries.length) {
+            leaderboardBox.innerHTML = '<div class="abMuted">No leaderboard data yet.</div>';
+            return;
+        }
+
+        leaderboardBox.innerHTML = entries.map(function (entry, index) {
+            const displayName = entry.UserName || entry.UserId || 'Unknown';
+
+            return '<div class="abLeaderboardRow">' +
+                '<div><strong>#' + (index + 1) + '</strong> • ' + displayName + '</div>' +
+                '<div>' + entry.Unlocked + ' unlocked • ' + entry.Percentage + '%</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    async function loadServerStats() {
+        const stats = await fetchJson('Plugins/AchievementBadges/server/stats');
+
+        serverStatsBox.innerHTML =
+            '<div>Total users: ' + (stats.TotalUsers ?? 0) + '</div>' +
+            '<div style="margin-top:0.45em;">Total badges unlocked: ' + (stats.TotalBadgesUnlocked ?? 0) + '</div>' +
+            '<div style="margin-top:0.45em;">Total items watched: ' + (stats.TotalItemsWatched ?? 0) + '</div>' +
+            '<div style="margin-top:0.45em;">Total movies watched: ' + (stats.TotalMoviesWatched ?? 0) + '</div>' +
+            '<div style="margin-top:0.45em;">Total series completed: ' + (stats.TotalSeriesCompleted ?? 0) + '</div>' +
+            '<div style="margin-top:0.45em;">Most common badge: ' + (stats.MostCommonBadge || 'None') + '</div>';
+    }
+
+    function renderShowcase(badges) {
+        showcaseRow.innerHTML = '';
+
+        if (!badges || badges.length === 0) {
+            showcaseRow.innerHTML = '<div class="abMuted">Equip badges to build your showcase.</div>';
+            return;
+        }
+
+        badges.forEach(function (badge) {
+            const card = document.createElement('div');
+            card.className = 'abShowcaseCard';
+
+            card.innerHTML =
+                '<div class="abShowcaseIcon">' + iconGlyph(badge.Icon) + '</div>' +
+                '<div>' +
+                    '<div style="font-weight:700;">' + badge.Title + '</div>' +
+                    '<div class="' + rarityClass(badge.Rarity) + '" style="font-size:0.88em;">' + badge.Rarity + '</div>' +
+                '</div>';
+
+            showcaseRow.appendChild(card);
+        });
+    }
+
+    function renderEquippedBadges(badges) {
+        equippedRow.innerHTML = '';
+
+        if (!badges || badges.length === 0) {
+            equippedEmpty.style.display = 'block';
+            return;
+        }
+
+        equippedEmpty.style.display = 'none';
+
+        badges.forEach(function (badge) {
+            const card = document.createElement('div');
+            card.className = 'abBadgeCard';
+            card.setAttribute('data-badge-id', badge.Id);
+
+            card.innerHTML =
+                '<div class="abBadgeHeader">' +
+                    '<div class="abBadgeIcon">' + iconGlyph(badge.Icon) + '</div>' +
+                    '<div style="flex:1;">' +
+                        '<div class="abBadgeTitle">' + badge.Title + '</div>' +
+                        '<div class="abBadgeMeta ' + rarityClass(badge.Rarity) + '">' + badge.Rarity + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="abBadgeFooter">' +
+                    '<div class="abUnlocked">Equipped</div>' +
+                    '<button type="button" style="padding:0.45em 0.7em;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;">Unequip</button>' +
+                '</div>';
+
+            const button = card.querySelector('button');
+            button.addEventListener('click', function () {
+                unequipBadge(badge.Id);
+            });
+
+            equippedRow.appendChild(card);
+        });
+    }
+
+    function renderBadges(badges) {
+        grid.innerHTML = '';
+
+        if (!badges || badges.length === 0) {
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        emptyState.style.display = 'none';
+
+        const equippedIds = new Set(
+            Array.from(equippedRow.children)
+                .map(function (card) {
+                    return card.getAttribute('data-badge-id');
+                })
+                .filter(Boolean)
+        );
+
+        badges.forEach(function (badge) {
+            const current = badge.CurrentValue || 0;
+            const target = badge.TargetValue || 0;
+            const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+            const isEquipped = equippedIds.has(badge.Id);
+
+            const card = document.createElement('div');
+            card.className = 'abBadgeCard';
+
+            const buttonLabel = isEquipped ? 'Unequip' : 'Equip';
+            const buttonDisabled = !badge.Unlocked ? 'disabled' : '';
+            const buttonOpacity = !badge.Unlocked ? '0.5' : '1';
+
+            card.innerHTML =
+                '<div class="abBadgeHeader">' +
+                    '<div class="abBadgeIcon">' + iconGlyph(badge.Icon) + '</div>' +
+                    '<div style="flex:1;">' +
+                        '<div class="abBadgeTitle">' + badge.Title + '</div>' +
+                        '<div class="abBadgeMeta ' + rarityClass(badge.Rarity) + '">' + badge.Rarity + ' • ' + badge.Category + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="abBadgeDescription">' + badge.Description + '</div>' +
+                '<div class="abProgressWrap">' +
+                    '<div class="abProgressText">' +
+                        '<span>Progress</span><span>' + current + '/' + target + '</span>' +
+                    '</div>' +
+                    '<div class="abProgressBar">' +
+                        '<div class="abProgressFill" style="width:' + progress + '%;"></div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="abBadgeFooter">' +
+                    '<div class="' + (badge.Unlocked ? 'abUnlocked' : 'abLocked') + '">' + (badge.Unlocked ? 'Unlocked' : 'Locked') + '</div>' +
+                    '<button type="button" ' + buttonDisabled + ' style="padding:0.55em 0.85em;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;opacity:' + buttonOpacity + ';">' + buttonLabel + '</button>' +
+                '</div>';
+
+            const button = card.querySelector('button');
+
+            if (badge.Unlocked) {
+                button.addEventListener('click', function () {
+                    if (isEquipped) {
+                        unequipBadge(badge.Id);
+                    } else {
+                        equipBadge(badge.Id);
+                    }
+                });
+            }
+
+            grid.appendChild(card);
+        });
+    }
+
+    async function reloadAll() {
+        const userId = getUserId();
+
+        if (!userId) {
+            throw new Error('No user ID was found for this page.');
+        }
+
+        profileTitle.textContent = 'Achievement Profile • ' + userId;
+
+        const badges = await fetchJson('Plugins/AchievementBadges/users/' + userId);
+        await loadSummary(userId);
+        await loadEquipped(userId);
+        await loadLeaderboard();
+        await loadServerStats();
+        renderBadges(badges);
+    }
+
+    async function loadBadges() {
+        const userId = getUserId();
+
+        if (!userId) {
+            setStatus('');
+            setError('No user ID was found for this page.');
+            return;
+        }
+
+        clearError();
+        setStatus('Loading badges...');
+
+        try {
+            await reloadAll();
+            setStatus('Badges loaded.');
+        } catch (error) {
+            grid.innerHTML = '';
+            equippedRow.innerHTML = '';
+            showcaseRow.innerHTML = '';
+            equippedEmpty.style.display = 'block';
+            emptyState.style.display = 'block';
+            leaderboardBox.innerHTML = 'Failed to load leaderboard.';
+            serverStatsBox.innerHTML = 'Failed to load server stats.';
+            profileSubtitle.textContent = 'Could not load profile showcase.';
+            setSummary({ Unlocked: 0, Total: 0, Percentage: 0, EquippedCount: 0 });
+            setStatus('');
+            setError('Failed to load badges. ' + error.message);
+        }
+    }
+
+    async function simulatePlayback() {
+        const userId = getUserId();
+
+        if (!userId) {
+            setStatus('');
+            setError('No user ID was found for this page.');
+            return;
+        }
+
+        clearError();
+        setStatus('Simulating playback...');
+
+        try {
+            await fetchJson('Plugins/AchievementBadges/users/' + userId + '/simulate-playback', {
+                method: 'POST'
+            });
+            await reloadAll();
+            setStatus('Playback simulated successfully.');
+        } catch (error) {
+            setStatus('');
+            setError('Failed to simulate playback. ' + error.message);
+        }
+    }
+
+    async function resetBadges() {
+        const userId = getUserId();
+
+        if (!userId) {
+            setStatus('');
+            setError('No user ID was found for this page.');
+            return;
+        }
+
+        clearError();
+        setStatus('Resetting badges...');
+
+        try {
+            await fetchJson('Plugins/AchievementBadges/users/' + userId + '/reset', {
+                method: 'POST'
+            });
+            await reloadAll();
+            setStatus('Badges reset successfully.');
+        } catch (error) {
+            setStatus('');
+            setError('Failed to reset badges. ' + error.message);
+        }
+    }
+
+    async function equipBadge(badgeId) {
+        const userId = getUserId();
+
+        clearError();
+        setStatus('Equipping badge...');
+
+        try {
+            await fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, {
+                method: 'POST'
+            });
+            await reloadAll();
+            setStatus('Badge equipped.');
+        } catch (error) {
+            setStatus('');
+            setError('Failed to equip badge. ' + error.message);
+        }
+    }
+
+    async function unequipBadge(badgeId) {
+        const userId = getUserId();
+
+        clearError();
+        setStatus('Unequipping badge...');
+
+        try {
+            await fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, {
+                method: 'DELETE'
+            });
+            await reloadAll();
+            setStatus('Badge unequipped.');
+        } catch (error) {
+            setStatus('');
+            setError('Failed to unequip badge. ' + error.message);
+        }
+    }
+
+    async function useMyAccount() {
+        clearError();
+        setStatus('Detecting current user...');
+
+        try {
+            const currentUserId = await detectCurrentUserId();
+
+            if (!currentUserId) {
+                throw new Error('Could not determine current user.');
+            }
+
+            userIdInput.value = currentUserId;
+            await loadBadges();
+        } catch (error) {
+            setStatus('');
+            setError('Failed to detect current user. ' + error.message);
+        }
+    }
+
+    async function initialisePage() {
+        setActiveTab('badges');
+        clearError();
+        setStatus('Loading profile...');
+
+        try {
+            const initialUserId = getUserIdFromUrl();
+
+            if (initialUserId) {
+                userIdInput.value = initialUserId;
+                await loadBadges();
+                return;
+            }
+
+            const currentUserId = await detectCurrentUserId();
+
+            if (currentUserId) {
+                userIdInput.value = currentUserId;
+                await loadBadges();
+                return;
+            }
+
+            userIdInput.value = '';
+            setStatus('');
+            setError('Could not detect a user automatically. Use "Use my account" or enter a user ID manually.');
+        } catch (error) {
+            setStatus('');
+            setError('Failed to initialise achievements page. ' + error.message);
+        }
+    }
+
+    tabBadgesBtn.addEventListener('click', function () { setActiveTab('badges'); });
+    tabLeaderboardBtn.addEventListener('click', function () { setActiveTab('leaderboard'); });
+    tabStatsBtn.addEventListener('click', function () { setActiveTab('stats'); });
+
+    meBtn.addEventListener('click', useMyAccount);
+    loadBtn.addEventListener('click', loadBadges);
+    refreshBtn.addEventListener('click', loadBadges);
+    simulateBtn.addEventListener('click', simulatePlayback);
+    resetBtn.addEventListener('click', resetBadges);
+
+    initialisePage();
+
+    // Inject sidebar and routing scripts into document.head once.
+    // Because they're in <head>, they persist across Jellyfin route changes.
+    (function () {
+        function addScript(id, src) {
+            if (!document.getElementById(id)) {
+                var s = document.createElement('script');
+                s.id = id;
+                s.src = src;
+                document.head.appendChild(s);
+            }
+        }
+        addScript('ab-sidebar-injected', '/Plugins/AchievementBadges/client-script/sidebar');
+        addScript('ab-standalone-injected', '/Plugins/AchievementBadges/client-script/standalone');
+    })();
+})();
+</script>
+
+</div>

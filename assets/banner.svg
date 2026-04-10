@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0f1a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#34d399;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="red" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f43f5e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e11d48;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.03">
+    <line x1="0" y1="0" x2="0" y2="640" stroke="white" stroke-width="1" />
+    <line x1="80" y1="0" x2="80" y2="640" stroke="white" stroke-width="1" />
+    <line x1="160" y1="0" x2="160" y2="640" stroke="white" stroke-width="1" />
+    <line x1="240" y1="0" x2="240" y2="640" stroke="white" stroke-width="1" />
+    <line x1="320" y1="0" x2="320" y2="640" stroke="white" stroke-width="1" />
+    <line x1="400" y1="0" x2="400" y2="640" stroke="white" stroke-width="1" />
+    <line x1="480" y1="0" x2="480" y2="640" stroke="white" stroke-width="1" />
+    <line x1="560" y1="0" x2="560" y2="640" stroke="white" stroke-width="1" />
+    <line x1="640" y1="0" x2="640" y2="640" stroke="white" stroke-width="1" />
+    <line x1="720" y1="0" x2="720" y2="640" stroke="white" stroke-width="1" />
+    <line x1="800" y1="0" x2="800" y2="640" stroke="white" stroke-width="1" />
+    <line x1="880" y1="0" x2="880" y2="640" stroke="white" stroke-width="1" />
+    <line x1="960" y1="0" x2="960" y2="640" stroke="white" stroke-width="1" />
+    <line x1="1040" y1="0" x2="1040" y2="640" stroke="white" stroke-width="1" />
+    <line x1="1120" y1="0" x2="1120" y2="640" stroke="white" stroke-width="1" />
+    <line x1="1200" y1="0" x2="1200" y2="640" stroke="white" stroke-width="1" />
+    <line x1="1280" y1="0" x2="1280" y2="640" stroke="white" stroke-width="1" />
+    <line x1="0" y1="80" x2="1280" y2="80" stroke="white" stroke-width="1" />
+    <line x1="0" y1="160" x2="1280" y2="160" stroke="white" stroke-width="1" />
+    <line x1="0" y1="240" x2="1280" y2="240" stroke="white" stroke-width="1" />
+    <line x1="0" y1="320" x2="1280" y2="320" stroke="white" stroke-width="1" />
+    <line x1="0" y1="400" x2="1280" y2="400" stroke="white" stroke-width="1" />
+    <line x1="0" y1="480" x2="1280" y2="480" stroke="white" stroke-width="1" />
+    <line x1="0" y1="560" x2="1280" y2="560" stroke="white" stroke-width="1" />
+  </g>
+
+  <!-- Ambient glow orbs -->
+  <circle cx="200" cy="300" r="200" fill="#a78bfa" opacity="0.04" filter="url(#softGlow)"/>
+  <circle cx="1080" cy="350" r="250" fill="#60a5fa" opacity="0.04" filter="url(#softGlow)"/>
+  <circle cx="640" cy="500" r="180" fill="#fbbf24" opacity="0.03" filter="url(#softGlow)"/>
+
+  <!-- Trophy icon (center-left) -->
+  <g transform="translate(280, 200)" filter="url(#glow)">
+    <!-- Trophy cup -->
+    <path d="M60,30 L60,10 L140,10 L140,30 C140,70 120,100 100,110 C80,100 60,70 60,30 Z" fill="url(#gold)" opacity="0.95"/>
+    <!-- Trophy handles -->
+    <path d="M60,25 C40,25 30,45 40,65 C45,70 55,65 60,55" fill="none" stroke="url(#gold)" stroke-width="6" opacity="0.7"/>
+    <path d="M140,25 C160,25 170,45 160,65 C155,70 145,65 140,55" fill="none" stroke="url(#gold)" stroke-width="6" opacity="0.7"/>
+    <!-- Trophy stem -->
+    <rect x="90" y="110" width="20" height="30" rx="3" fill="url(#gold)" opacity="0.8"/>
+    <!-- Trophy base -->
+    <rect x="70" y="140" width="60" height="12" rx="4" fill="url(#gold)" opacity="0.7"/>
+    <!-- Star on trophy -->
+    <polygon points="100,35 106,52 124,52 110,63 115,80 100,70 85,80 90,63 76,52 94,52" fill="#0f0f1a" opacity="0.5"/>
+  </g>
+
+  <!-- Main title -->
+  <text x="640" y="260" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="62" font-weight="800" fill="white" letter-spacing="-1">Achievement Badges</text>
+
+  <!-- Subtitle -->
+  <text x="640" y="310" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="24" font-weight="400" fill="#9fb3c8" letter-spacing="1">for Jellyfin</text>
+
+  <!-- Tagline -->
+  <text x="640" y="370" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="18" font-weight="500" fill="#6b7b8d" letter-spacing="2">TRACK PROGRESS  ·  UNLOCK ACHIEVEMENTS  ·  COMPETE ON LEADERBOARDS</text>
+
+  <!-- Rarity badge chips -->
+  <g transform="translate(640, 430)" text-anchor="middle">
+    <!-- Common -->
+    <rect x="-310" y="-16" width="90" height="32" rx="16" fill="#9fb3c8" opacity="0.15"/>
+    <text x="-265" y="5" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700" fill="#9fb3c8">COMMON</text>
+
+    <!-- Uncommon -->
+    <rect x="-205" y="-16" width="110" height="32" rx="16" fill="#34d399" opacity="0.15"/>
+    <text x="-150" y="5" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700" fill="#34d399">UNCOMMON</text>
+
+    <!-- Rare -->
+    <rect x="-80" y="-16" width="70" height="32" rx="16" fill="#60a5fa" opacity="0.15"/>
+    <text x="-45" y="5" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700" fill="#60a5fa">RARE</text>
+
+    <!-- Epic -->
+    <rect x="5" y="-16" width="65" height="32" rx="16" fill="#a78bfa" opacity="0.15"/>
+    <text x="37" y="5" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">EPIC</text>
+
+    <!-- Legendary -->
+    <rect x="85" y="-16" width="115" height="32" rx="16" fill="#fbbf24" opacity="0.15"/>
+    <text x="142" y="5" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700" fill="#fbbf24">LEGENDARY</text>
+
+    <!-- Mythic -->
+    <rect x="215" y="-16" width="85" height="32" rx="16" fill="#f43f5e" opacity="0.15"/>
+    <text x="257" y="5" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" font-weight="700" fill="#f43f5e">MYTHIC</text>
+  </g>
+
+  <!-- Feature icons row -->
+  <g transform="translate(640, 510)" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#6b7b8d">
+    <!-- Streaks -->
+    <g transform="translate(-240, 0)">
+      <rect x="-50" y="-32" width="100" height="70" rx="12" fill="white" opacity="0.03" stroke="white" stroke-opacity="0.06"/>
+      <text y="-8" font-size="24">🔥</text>
+      <text y="20" font-weight="600">Streaks</text>
+    </g>
+    <!-- Profile -->
+    <g transform="translate(-80, 0)">
+      <rect x="-50" y="-32" width="100" height="70" rx="12" fill="white" opacity="0.03" stroke="white" stroke-opacity="0.06"/>
+      <text y="-8" font-size="24">👤</text>
+      <text y="20" font-weight="600">Showcase</text>
+    </g>
+    <!-- Leaderboard -->
+    <g transform="translate(80, 0)">
+      <rect x="-50" y="-32" width="100" height="70" rx="12" fill="white" opacity="0.03" stroke="white" stroke-opacity="0.06"/>
+      <text y="-8" font-size="24">📊</text>
+      <text y="20" font-weight="600">Leaderboard</text>
+    </g>
+    <!-- 49 Badges -->
+    <g transform="translate(240, 0)">
+      <rect x="-50" y="-32" width="100" height="70" rx="12" fill="white" opacity="0.03" stroke="white" stroke-opacity="0.06"/>
+      <text y="-8" font-size="24">🏆</text>
+      <text y="20" font-weight="600">49 Badges</text>
+    </g>
+  </g>
+
+  <!-- Jellyfin version badge -->
+  <rect x="540" y="595" width="200" height="28" rx="14" fill="white" opacity="0.05" stroke="white" stroke-opacity="0.08"/>
+  <text x="640" y="614" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="600" fill="#6b7b8d">Jellyfin 10.11+ Plugin</text>
+
+  <!-- Decorative corner accents -->
+  <line x1="30" y1="30" x2="30" y2="80" stroke="url(#gold)" stroke-width="2" opacity="0.3"/>
+  <line x1="30" y1="30" x2="80" y2="30" stroke="url(#gold)" stroke-width="2" opacity="0.3"/>
+  <line x1="1250" y1="30" x2="1250" y2="80" stroke="url(#purple)" stroke-width="2" opacity="0.3"/>
+  <line x1="1250" y1="30" x2="1200" y2="30" stroke="url(#purple)" stroke-width="2" opacity="0.3"/>
+  <line x1="30" y1="610" x2="30" y2="560" stroke="url(#blue)" stroke-width="2" opacity="0.3"/>
+  <line x1="30" y1="610" x2="80" y2="610" stroke="url(#blue)" stroke-width="2" opacity="0.3"/>
+  <line x1="1250" y1="610" x2="1250" y2="560" stroke="url(#red)" stroke-width="2" opacity="0.3"/>
+  <line x1="1250" y1="610" x2="1200" y2="610" stroke="url(#red)" stroke-width="2" opacity="0.3"/>
+</svg>

@@ -1,0 +1,189 @@
+<div id="AchievementBadgesShowcasePage"
+     data-role="page"
+     class="page type-interior"
+     style="padding: 1em; background: transparent;">
+
+    <div id="abShowcaseRoot"
+         style="display:flex;flex-wrap:wrap;gap:0.75em;align-items:center;">
+    </div>
+
+    <script>
+        (function () {
+            const root = document.getElementById('abShowcaseRoot');
+
+            function getApiClient() {
+                return window.ApiClient || window.parent?.ApiClient || window.apiClient || window.parent?.apiClient || null;
+            }
+
+            function normaliseApiPath(path) {
+                return String(path || '').replace(/^\/+/, '');
+            }
+
+            async function fetchJson(path) {
+                const apiClient = getApiClient();
+                const cleanPath = normaliseApiPath(path);
+
+                if (apiClient && typeof apiClient.getJSON === 'function') {
+                    return await apiClient.getJSON(apiClient.getUrl(cleanPath));
+                }
+
+                if (apiClient && typeof apiClient.fetch === 'function') {
+                    const response = await apiClient.fetch({ url: apiClient.getUrl(cleanPath) });
+
+                    if (!response.ok) {
+                        throw new Error('Request failed: ' + response.status);
+                    }
+
+                    const text = await response.text();
+                    return text ? JSON.parse(text) : null;
+                }
+
+                const response = await fetch('/' + cleanPath, { credentials: 'include' });
+
+                if (!response.ok) {
+                    throw new Error('Request failed: ' + response.status);
+                }
+
+                return await response.json();
+            }
+
+            async function detectCurrentUserId() {
+                try {
+                    const apiClient = getApiClient();
+
+                    if (apiClient) {
+                        if (typeof apiClient.getCurrentUserId === 'function') {
+                            const id = apiClient.getCurrentUserId();
+                            if (id) {
+                                return id;
+                            }
+                        }
+
+                        if (apiClient._serverInfo && apiClient._serverInfo.UserId) {
+                            return apiClient._serverInfo.UserId;
+                        }
+                    }
+
+                    const me = await fetchJson('Users/Me');
+                    return me && me.Id ? me.Id : '';
+                } catch (_) {
+                    return '';
+                }
+            }
+
+            async function getUserId() {
+                const params = new URLSearchParams(window.location.search);
+                const fromQuery = params.get('userId');
+
+                if (fromQuery) {
+                    return fromQuery;
+                }
+
+                return await detectCurrentUserId();
+            }
+
+            function rarityColour(rarity) {
+                const value = (rarity || '').toLowerCase();
+
+                if (value === 'uncommon') return '#34d399';
+                if (value === 'rare') return '#60a5fa';
+                if (value === 'epic') return '#a78bfa';
+                if (value === 'legendary') return '#fbbf24';
+                if (value === 'mythic') return '#f43f5e';
+
+                return '#9fb3c8';
+            }
+
+            function iconGlyph(iconName) {
+                const key = (iconName || '').toLowerCase();
+
+                const map = {
+                    play_circle: '▶',
+                    travel_explore: '🧭',
+                    weekend: '🛋',
+                    chair: '🪑',
+                    home: '🏠',
+                    movie_filter: '🎞',
+                    live_tv: '📺',
+                    theaters: '🎭',
+                    local_fire_department: '🔥',
+                    bolt: '⚡',
+                    military_tech: '🏆',
+                    auto_awesome: '✨',
+                    movie: '🎬',
+                    tv: '📺',
+                    dark_mode: '🌙',
+                    nights_stay: '🌃',
+                    bedtime: '😴',
+                    wb_sunny: '🌅',
+                    light_mode: '☀',
+                    sunny: '🌞',
+                    event: '📅',
+                    event_available: '🗓',
+                    celebration: '🎉',
+                    stars: '🌟',
+                    collections_bookmark: '📚',
+                    inventory_2: '🗃',
+                    today: '📆',
+                    calendar_month: '🗓',
+                    favorite: '❤',
+                    timeline: '📈',
+                    insights: '📊',
+                    all_inclusive: '♾',
+                    speed: '💨',
+                    hourglass_bottom: '⏳',
+                    directions_run: '🏃',
+                    sports_score: '🏁',
+                    local_movies: '🍿'
+                };
+
+                return map[key] || '🏅';
+            }
+
+            async function loadShowcase() {
+                const userId = await getUserId();
+                root.innerHTML = '';
+
+                if (!userId) {
+                    root.innerHTML = '<div style="padding:0.8em 1em;border:1px dashed rgba(255,255,255,0.16);border-radius:999px;color:#9fb3c8;">No user detected</div>';
+                    return;
+                }
+
+                try {
+                    const badges = await fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped');
+
+                    if (!badges || badges.length === 0) {
+                        root.innerHTML = '<div style="padding:0.8em 1em;border:1px dashed rgba(255,255,255,0.16);border-radius:999px;color:#9fb3c8;">No equipped badges</div>';
+                        return;
+                    }
+
+                    badges.forEach(function (badge) {
+                        const item = document.createElement('div');
+                        item.style.display = 'flex';
+                        item.style.alignItems = 'center';
+                        item.style.gap = '0.6em';
+                        item.style.padding = '0.55em 0.85em';
+                        item.style.border = '1px solid rgba(255,255,255,0.12)';
+                        item.style.borderRadius = '999px';
+                        item.style.background = 'rgba(255,255,255,0.05)';
+
+                        item.innerHTML =
+                            '<div style="width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:1em;">' +
+                            iconGlyph(badge.Icon) +
+                            '</div>' +
+                            '<div style="display:flex;flex-direction:column;line-height:1.1;">' +
+                            '<span style="font-weight:700;">' + badge.Title + '</span>' +
+                            '<span style="font-size:0.8em;color:' + rarityColour(badge.Rarity) + ';">' + badge.Rarity + '</span>' +
+                            '</div>';
+
+                        root.appendChild(item);
+                    });
+                } catch (_) {
+                    root.innerHTML = '<div style="padding:0.8em 1em;border:1px solid rgba(248,113,113,0.35);border-radius:999px;color:#fca5a5;">Failed to load showcase</div>';
+                }
+            }
+
+            loadShowcase();
+        })();
+    </script>
+</div>
