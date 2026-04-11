@@ -510,9 +510,23 @@ public class AchievementBadgesController : ControllerBase
 
     [HttpGet("activity-feed")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult GetActivityFeed([FromQuery] int limit = 50)
+    public ActionResult GetActivityFeed([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? userId = null)
     {
-        return Ok(_badgeService.GetActivityFeed(limit));
+        return Ok(_badgeService.GetActivityFeed(page, pageSize, userId));
+    }
+
+    [HttpGet("users/{userId}/check-milestones")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult CheckMilestones([FromRoute] string userId)
+    {
+        return Ok(_badgeService.CheckMilestones(userId));
+    }
+
+    [HttpGet("users/{userId}/streak-calendar")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetStreakCalendar([FromRoute] string userId, [FromQuery] int weeks = 53)
+    {
+        return Ok(_badgeService.GetStreakCalendar(userId, weeks));
     }
 
     [HttpGet("users/{userId}/records")]
@@ -846,7 +860,9 @@ public class AchievementBadgesController : ControllerBase
             PrestigeLevel = profile?.PrestigeLevel ?? 0,
             BoughtBadgeIds = profile?.BoughtBadgeIds ?? new List<string>(),
             ComboCount = profile?.ComboCount ?? 0,
-            BestComboCount = profile?.BestComboCount ?? 0
+            BestComboCount = profile?.BestComboCount ?? 0,
+            PinnedBadgeIds = profile?.PinnedBadgeIds ?? new List<string>(),
+            EquippedTitleBadgeId = profile?.EquippedTitleBadgeId
         });
     }
 

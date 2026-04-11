@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.7",
+        "changelog": "Big polish + skipped-features pass. Compare row layout fixed: values on outer edges, bars meeting at center label, winner highlighted green. Activity feed now paginated (20 per page) with user filter dropdown (All / specific user). Recent unlocks panel removed from Stats tab (duplicated by Activity). Streak calendar - full year SVG grid showing every day you watched. Material Icons font replaces emoji iconMap for ALL badge icons - real movie/tv/dark_mode/etc icons rendered cleanly. Achievement milestones: 25/50/75/100% catalog completion fires a special gold milestone toast with triple confetti burst. Title system: pin any unlocked badge as your Title shown under your name in the hero. Pinned badges: pin button on every card, pinned float to top of grid, pinned cards have gold accent. Category filter dropdown on My Badges (auto-populated from your loaded badges). Toast queue (max 3 visible at once, rest queued). Reduced motion mode: respects prefers-reduced-motion AND has a manual toggle on the achievements page that disables confetti.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.7/Jellyfin.Plugin.AchievementBadgesv1.5.7.zip",
+        "checksum": "6C9582B28F6B4EADCA78674C68B9B95B"
+      },
+      {
         "version": "1.5.6",
         "changelog": "Big feature drop: side-by-side profile compare with VS bars + winner highlights + summary pills, server-wide activity feed of recent unlocks across every user, click any locked badge to open a modal showing actual library items that would help you finish it (uses chase backend), per-category progress rings on Stats tab, 24-hour watch clock radial chart, personal records grid (16 stats), prestige leaderboard tab on Stats, recent unlocks panel, watch heatmap fills the panel width properly. Backend additions: /compare/{a}/{b}, /activity-feed, /users/{id}/records, /users/{id}/category-progress, /leaderboard-prestige, /users/{id}/recent-unlocks-v2, /users/{id}/watch-clock, /users/{id}/pin/{badgeId}, /users/{id}/title.",
         "targetAbi": "10.11.0.0",

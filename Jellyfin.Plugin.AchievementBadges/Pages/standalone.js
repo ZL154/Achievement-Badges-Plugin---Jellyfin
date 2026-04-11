@@ -14,7 +14,10 @@
         emoji_events:'\ud83c\udfc6'
     };
 
-    function icon(name) { return iconMap[(name || '').toLowerCase()] || '\ud83c\udfc5'; }
+    function icon(name) {
+        var safe = (name || 'emoji_events').toLowerCase().replace(/[^a-z0-9_]/g, '');
+        return '<span class="material-icons" aria-hidden="true" style="font-family:\'Material Icons\';font-size:1.4em;line-height:1;vertical-align:middle;">' + safe + '</span>';
+    }
 
     function rarityClass(r) {
         var v = (r || '').toLowerCase();
@@ -50,12 +53,16 @@
         return h;
     }
 
-    function fetchJson(path, method) {
-        return fetch(buildUrl(path), {
+    function fetchJson(path, method, body) {
+        var init = {
             method: method || 'GET',
             headers: getAuthHeaders(),
             credentials: 'include'
-        }).then(function (r) {
+        };
+        if (body !== undefined && body !== null) {
+            init.body = JSON.stringify(body);
+        }
+        return fetch(buildUrl(path), init).then(function (r) {
             if (!r.ok) {
                 return r.text().then(function (t) {
                     var msg = 'Error ' + r.status;
@@ -143,21 +150,25 @@
             '#' + ROOT_ID + ' .ab-cmp-user{flex:1;text-align:center;}' +
             '#' + ROOT_ID + ' .ab-cmp-name{font-size:1.3em;font-weight:800;}' +
             '#' + ROOT_ID + ' .ab-cmp-vs{font-size:1.5em;font-weight:900;opacity:0.5;letter-spacing:0.1em;}' +
-            '#' + ROOT_ID + ' .ab-cmp-rows{display:flex;flex-direction:column;gap:0.5em;margin-bottom:1.25em;}' +
-            '#' + ROOT_ID + ' .ab-cmp-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:0.75em;}' +
-            '#' + ROOT_ID + ' .ab-cmp-side{display:flex;align-items:center;gap:0.5em;}' +
-            '#' + ROOT_ID + ' .ab-cmp-side-left{flex-direction:row-reverse;}' +
-            '#' + ROOT_ID + ' .ab-cmp-val{font-weight:700;font-size:0.95em;min-width:3em;}' +
-            '#' + ROOT_ID + ' .ab-cmp-side-left .ab-cmp-val{text-align:right;}' +
-            '#' + ROOT_ID + ' .ab-cmp-bar{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;}' +
-            '#' + ROOT_ID + ' .ab-cmp-fill{height:100%;border-radius:4px;}' +
-            '#' + ROOT_ID + ' .ab-cmp-fill-left{background:linear-gradient(270deg,#667eea,#764ba2);margin-left:auto;}' +
-            '#' + ROOT_ID + ' .ab-cmp-fill-right{background:linear-gradient(90deg,#e91e63,#ff6b35);}' +
-            '#' + ROOT_ID + ' .ab-cmp-label{text-align:center;font-size:0.78em;text-transform:uppercase;letter-spacing:1px;opacity:0.55;font-weight:600;min-width:8em;}' +
-            '#' + ROOT_ID + ' .ab-cmp-winner .ab-cmp-val{color:#4ade80;}' +
+            '#' + ROOT_ID + ' .ab-cmp-rows{display:flex;flex-direction:column;gap:0.6em;margin-bottom:1.25em;}' +
+            '#' + ROOT_ID + ' .ab-cmp-row{display:grid;grid-template-columns:3.5em 1fr 8em 1fr 3.5em;align-items:center;gap:0.6em;}' +
+            '#' + ROOT_ID + ' .ab-cmp-val{font-weight:700;font-size:0.95em;}' +
+            '#' + ROOT_ID + ' .ab-cmp-val-l{text-align:right;}' +
+            '#' + ROOT_ID + ' .ab-cmp-val-r{text-align:left;}' +
+            '#' + ROOT_ID + ' .ab-cmp-bar{position:relative;height:10px;border-radius:5px;background:rgba(255,255,255,0.06);overflow:hidden;}' +
+            '#' + ROOT_ID + ' .ab-cmp-fill{position:absolute;top:0;height:100%;border-radius:5px;transition:width 0.4s;}' +
+            '#' + ROOT_ID + ' .ab-cmp-fill-left{right:0;background:linear-gradient(270deg,#667eea,#764ba2);}' +
+            '#' + ROOT_ID + ' .ab-cmp-fill-right{left:0;background:linear-gradient(90deg,#e91e63,#ff6b35);}' +
+            '#' + ROOT_ID + ' .ab-cmp-label{text-align:center;font-size:0.74em;text-transform:uppercase;letter-spacing:1px;opacity:0.55;font-weight:600;}' +
+            '#' + ROOT_ID + ' .ab-cmp-winner{color:#4ade80;}' +
             '#' + ROOT_ID + ' .ab-cmp-summary{display:flex;flex-wrap:wrap;gap:0.5em;justify-content:center;}' +
             '#' + ROOT_ID + ' .ab-cmp-pill{padding:0.5em 0.85em;border-radius:999px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);font-size:0.85em;}' +
             // Activity feed
+            '#' + ROOT_ID + ' .ab-pager{display:flex;align-items:center;gap:0.5em;}' +
+            '#' + ROOT_ID + ' .ab-pager-btn{width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;font-size:1.1em;font-weight:700;}' +
+            '#' + ROOT_ID + ' .ab-pager-btn:hover:not(:disabled){background:rgba(255,255,255,0.12);}' +
+            '#' + ROOT_ID + ' .ab-pager-btn:disabled{opacity:0.35;cursor:not-allowed;}' +
+            '#' + ROOT_ID + ' .ab-pager-info{font-size:0.85em;opacity:0.7;font-weight:600;}' +
             '#' + ROOT_ID + ' .ab-feed-row{display:flex;align-items:center;gap:0.85em;padding:0.65em 0.85em;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);margin-bottom:0.4em;}' +
             '#' + ROOT_ID + ' .ab-feed-icon{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:1.3em;flex-shrink:0;}' +
             '#' + ROOT_ID + ' .ab-feed-body{flex:1;min-width:0;}' +
@@ -181,6 +192,17 @@
             '#' + ROOT_ID + ' .ab-modal-item{padding:0.6em 0.85em;border-radius:8px;background:rgba(255,255,255,0.05);margin-bottom:0.4em;border:1px solid rgba(255,255,255,0.05);}' +
             '#' + ROOT_ID + ' .ab-modal-item-name{font-weight:600;}' +
             '#' + ROOT_ID + ' .ab-modal-item-meta{font-size:0.78em;opacity:0.65;margin-top:0.15em;}' +
+            // Pin button + pinned card
+            '#' + ROOT_ID + ' .ab-card{position:relative;}' +
+            '#' + ROOT_ID + ' .ab-pin-btn{position:absolute;top:0.5em;right:0.5em;width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#9fb3c8;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;transition:all 0.15s;}' +
+            '#' + ROOT_ID + ' .ab-pin-btn:hover{background:rgba(255,255,255,0.12);color:#fff;}' +
+            '#' + ROOT_ID + ' .ab-pin-btn .material-icons{font-size:18px !important;}' +
+            '#' + ROOT_ID + ' .ab-pin-active{background:linear-gradient(135deg,#ffd700,#ff6b35);border-color:#ffd700;color:#1a0a0a;}' +
+            '#' + ROOT_ID + ' .ab-pin-active:hover{color:#000;}' +
+            '#' + ROOT_ID + ' .ab-card-pinned{border-color:rgba(255,215,0,0.4);background:linear-gradient(135deg,rgba(255,215,0,0.05),rgba(255,255,255,0.03));}' +
+            // Title display
+            '#' + ROOT_ID + ' .ab-title-display{display:inline-block;padding:0.25em 0.7em;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);font-size:0.85em;font-weight:600;}' +
+            '#' + ROOT_ID + ' .ab-title-btn{background:rgba(102,126,234,0.15);border-color:rgba(102,126,234,0.3);}' +
             '#' + ROOT_ID + ' .ab-prestige-btn{position:relative;padding:1.1em 3em;border-radius:14px;border:none;background:linear-gradient(135deg,#ffd700 0%,#ff6b35 50%,#e91e63 100%);color:#1a0a1f;font-weight:900;font-size:1.1em;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;box-shadow:0 10px 40px rgba(255,107,53,0.35),inset 0 1px 0 rgba(255,255,255,0.4),inset 0 -2px 0 rgba(0,0,0,0.25);transition:transform 0.2s,box-shadow 0.3s;overflow:hidden;font-family:inherit;}' +
             '#' + ROOT_ID + ' .ab-prestige-btn::before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,0.55) 50%,transparent 70%);transform:translateX(-120%);transition:transform 0.8s cubic-bezier(.22,.61,.36,1);}' +
             '#' + ROOT_ID + ' .ab-prestige-btn:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 16px 50px rgba(255,107,53,0.55),inset 0 1px 0 rgba(255,255,255,0.5),inset 0 -2px 0 rgba(0,0,0,0.3);}' +
@@ -265,7 +287,8 @@
                             '<div id="abSaRankIcon" class="ab-hero-icon">\ud83c\udfc5</div>' +
                             '<div>' +
                                 '<div id="abSaTitle" class="ab-hero-title">Achievement Profile</div>' +
-                                '<div id="abSaRankLabel" class="ab-hero-sub" style="font-size:1em; font-weight:600;">Rookie</div>' +
+                                '<div id="abSaTitleDisplay" class="ab-title-display" style="display:none; font-size:0.85em; font-weight:600; margin-top:0.2em;"></div>' +
+                                '<div id="abSaRankLabel" class="ab-hero-sub" style="font-size:1em; font-weight:600; margin-top:0.2em;">Rookie</div>' +
                                 '<div id="abSaSub" class="ab-hero-sub" style="font-size:0.85em; opacity:0.8;">Loading...</div>' +
                             '</div>' +
                         '</div>' +
@@ -298,6 +321,9 @@
                 '<div id="abSaPanelBadges" class="ab-panel">' +
                     '<div class="ab-filter-row" style="display:flex; gap:0.75em; flex-wrap:wrap; margin-bottom:1em; align-items:center;">' +
                         '<input type="search" id="abSaSearch" placeholder="Search badges by title, category, rarity..." class="ab-input" style="flex:1; min-width:240px;">' +
+                        '<select id="abSaCategoryFilter" class="ab-select" title="Filter by category">' +
+                            '<option value="">All categories</option>' +
+                        '</select>' +
                         '<select id="abSaFilter" class="ab-select">' +
                             '<option value="all">All badges</option>' +
                             '<option value="unlocked">Unlocked only</option>' +
@@ -372,7 +398,11 @@
                 '<div id="abSaPanelActivity" class="ab-panel" style="display:none;">' +
                     '<div class="ab-panel-card">' +
                         '<h3 style="margin:0 0 0.75em;">Server activity feed</h3>' +
-                        '<div class="ab-muted" style="font-size:0.85em; margin-bottom:0.75em;">Latest unlocks across every user on the server.</div>' +
+                        '<div style="display:flex; gap:0.6em; flex-wrap:wrap; margin-bottom:1em; align-items:center;">' +
+                            '<select id="abSaActivityUserFilter" class="ab-select" style="min-width:200px;"></select>' +
+                            '<div style="flex:1;"></div>' +
+                            '<div id="abSaActivityPager" class="ab-pager"></div>' +
+                        '</div>' +
                         '<div id="abSaActivity">Loading...</div>' +
                     '</div>' +
                 '</div>' +
@@ -387,8 +417,6 @@
                         '<div id="abSaBank">Loading...</div>' +
                         '<h3 style="margin:1.5em 0 0.75em;">Prestige leaderboard</h3>' +
                         '<div id="abSaPrestigeLb">Loading...</div>' +
-                        '<h3 style="margin:1.5em 0 0.75em;">Recent unlocks</h3>' +
-                        '<div id="abSaRecentUnlocks">Loading...</div>' +
                         '<h3 style="margin:1.5em 0 0.75em;">Server stats</h3>' +
                         '<div id="abSaServerStats">Loading...</div>' +
                     '</div>' +
@@ -459,8 +487,11 @@
 
     var allBadges = [];
     var equippedIdsGlobal = {};
+    var pinnedIdsGlobal = {};
+    var equippedTitleId = null;
     var currentSearch = '';
     var currentFilter = 'all';
+    var currentCategory = '';
     var currentSort = 'default';
     var currentPrestige = 0;
 
@@ -479,6 +510,7 @@
             var hay = [(b.Title || ''), (b.Category || ''), (b.Rarity || ''), (b.Description || '')].join(' ').toLowerCase();
             if (hay.indexOf(q) === -1) return false;
         }
+        if (currentCategory && (b.Category || '') !== currentCategory) return false;
         if (currentFilter === 'unlocked') return !!b.Unlocked;
         if (currentFilter === 'locked') return !b.Unlocked;
         if (currentFilter === 'close') {
@@ -520,6 +552,12 @@
                 copy.sort(function (a, b) { return (a.Title || '').localeCompare(b.Title || ''); });
                 break;
         }
+        // Stable secondary sort: pinned badges always float to the top
+        copy.sort(function (a, b) {
+            var pa = pinnedIdsGlobal[a.Id] ? 0 : 1;
+            var pb = pinnedIdsGlobal[b.Id] ? 0 : 1;
+            return pa - pb;
+        });
         return copy;
     }
 
@@ -649,15 +687,11 @@
                         var winnerA = aVal > bVal;
                         var winnerB = bVal > aVal;
                         return '<div class="ab-cmp-row">' +
-                            '<div class="ab-cmp-side ab-cmp-side-left ' + (winnerA ? 'ab-cmp-winner' : '') + '">' +
-                                '<div class="ab-cmp-val">' + r[2] + '</div>' +
-                                '<div class="ab-cmp-bar"><div class="ab-cmp-fill ab-cmp-fill-left" style="width:' + aPct + '%;"></div></div>' +
-                            '</div>' +
+                            '<div class="ab-cmp-val ab-cmp-val-l ' + (winnerA ? 'ab-cmp-winner' : '') + '">' + r[2] + '</div>' +
+                            '<div class="ab-cmp-bar"><div class="ab-cmp-fill ab-cmp-fill-left" style="width:' + aPct + '%;"></div></div>' +
                             '<div class="ab-cmp-label">' + r[1] + '</div>' +
-                            '<div class="ab-cmp-side ab-cmp-side-right ' + (winnerB ? 'ab-cmp-winner' : '') + '">' +
-                                '<div class="ab-cmp-bar"><div class="ab-cmp-fill ab-cmp-fill-right" style="width:' + bPct + '%;"></div></div>' +
-                                '<div class="ab-cmp-val">' + r[3] + '</div>' +
-                            '</div>' +
+                            '<div class="ab-cmp-bar"><div class="ab-cmp-fill ab-cmp-fill-right" style="width:' + bPct + '%;"></div></div>' +
+                            '<div class="ab-cmp-val ab-cmp-val-r ' + (winnerB ? 'ab-cmp-winner' : '') + '">' + r[3] + '</div>' +
                         '</div>';
                     }).join('') +
                 '</div>' +
@@ -671,13 +705,34 @@
         });
     }
 
+    var activityPage = 1;
+    var activityFilter = '';
+
+    function ensureActivityFilterPopulated() {
+        var sel = el('abSaActivityUserFilter');
+        if (!sel || sel.options.length > 0) return Promise.resolve();
+        return fetchServerUsers().then(function (users) {
+            sel.innerHTML = '<option value="">All users</option>' +
+                users.map(function (u) { return '<option value="' + u.Id + '">' + escapeHtml(u.Name) + '</option>'; }).join('');
+            sel.addEventListener('change', function () {
+                activityFilter = sel.value || '';
+                activityPage = 1;
+                loadActivity();
+            });
+        });
+    }
+
     function loadActivity() {
         var box = el('abSaActivity');
         if (!box) return;
         box.innerHTML = 'Loading...';
-        fetchJson('Plugins/AchievementBadges/activity-feed?limit=50').then(function (entries) {
-            if (!entries || !entries.length) { box.innerHTML = '<div class="ab-muted">No activity yet.</div>'; return; }
-            box.innerHTML = entries.map(function (e) {
+        ensureActivityFilterPopulated().then(function () {
+            var qs = '?page=' + activityPage + '&pageSize=20';
+            if (activityFilter) qs += '&userId=' + encodeURIComponent(activityFilter);
+            return fetchJson('Plugins/AchievementBadges/activity-feed' + qs);
+        }).then(function (res) {
+            if (!res || !res.Entries || !res.Entries.length) { box.innerHTML = '<div class="ab-muted">No activity yet.</div>'; renderActivityPager(0, 0); return; }
+            box.innerHTML = res.Entries.map(function (e) {
                 var when = e.At ? new Date(e.At).toLocaleString() : '';
                 var rarityCls = rarityClass(e.Rarity);
                 return '<div class="ab-feed-row">' +
@@ -688,8 +743,29 @@
                     '</div>' +
                 '</div>';
             }).join('');
+            renderActivityPager(res.Page || 1, res.TotalPages || 1);
         }).catch(function () {
             box.innerHTML = '<div class="ab-muted">Failed to load activity.</div>';
+        });
+    }
+
+    function renderActivityPager(page, totalPages) {
+        var p = el('abSaActivityPager');
+        if (!p) return;
+        if (totalPages <= 1) { p.innerHTML = ''; return; }
+        var btn = function (label, target, disabled) {
+            return '<button type="button" class="ab-pager-btn" data-page="' + target + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>';
+        };
+        p.innerHTML = btn('\u2039', Math.max(1, page - 1), page <= 1) +
+            '<span class="ab-pager-info">Page ' + page + ' / ' + totalPages + '</span>' +
+            btn('\u203a', Math.min(totalPages, page + 1), page >= totalPages);
+        var btns = p.querySelectorAll('.ab-pager-btn');
+        btns.forEach(function (b) {
+            b.addEventListener('click', function () {
+                if (b.disabled) return;
+                activityPage = parseInt(b.getAttribute('data-page'), 10);
+                loadActivity();
+            });
         });
     }
 
@@ -705,16 +781,15 @@
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/records'),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/category-progress'),
             fetchJson('Plugins/AchievementBadges/leaderboard-prestige?limit=10'),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/recent-unlocks-v2?limit=15'),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/watch-clock')
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/watch-clock'),
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/streak-calendar?weeks=53')
         ]).then(function (r) {
             var bank = r[0], summary = r[1], recap = r[2], calendar = r[3];
-            var records = r[4], categoryProgress = r[5], prestigeLb = r[6], recentUnlocks = r[7], clock = r[8];
+            var records = r[4], categoryProgress = r[5], prestigeLb = r[6], clock = r[7], streakCal = r[8];
 
             renderCategoryRings(categoryProgress);
             renderRecords(records);
             renderPrestigeLeaderboard(prestigeLb);
-            renderRecentUnlocks(recentUnlocks);
             var bankBox = el('abSaBank');
             if (bankBox) {
                 var prestigeStars = '';
@@ -749,7 +824,7 @@
                 });
             }
 
-            renderCharts(recap, summary, calendar, clock);
+            renderCharts(recap, summary, calendar, clock, streakCal);
         }).catch(function () { });
     }
 
@@ -835,6 +910,26 @@
         }).join('');
     }
 
+    function renderStreakCalendar(data) {
+        if (!data || !data.Days || !data.Days.length) return '<div class="ab-muted">No data.</div>';
+        var days = data.Days;
+        var weeks = Math.ceil(days.length / 7);
+        var cellSize = 100;
+        var gap = 14;
+        var step = cellSize + gap;
+        var cells = days.map(function (d, i) {
+            var col = Math.floor(i / 7);
+            var row = i % 7;
+            var fill = d.W ? '#4caf50' : 'rgba(255,255,255,0.05)';
+            return '<rect x="' + (col * step) + '" y="' + (row * step) + '" width="' + cellSize + '" height="' + cellSize + '" rx="14" fill="' + fill + '"><title>' + d.D + (d.W ? ' · watched' : '') + '</title></rect>';
+        }).join('');
+        var width = weeks * step;
+        var height = 7 * step;
+        var watchedCount = days.filter(function (d) { return d.W; }).length;
+        return '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="200" preserveAspectRatio="none" style="display:block;">' + cells + '</svg>' +
+            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.3em;">Each cell is one day · ' + watchedCount + ' / ' + days.length + ' active days</div>';
+    }
+
     function renderWatchClock(clock) {
         if (!clock) return '<div class="ab-muted">No data.</div>';
         var max = 0;
@@ -868,7 +963,7 @@
         return '<svg viewBox="0 0 200 200" width="100%" height="200">' + slices + labels + '</svg>';
     }
 
-    function renderCharts(recap, summary, calendar, clock) {
+    function renderCharts(recap, summary, calendar, clock, streakCal) {
         var box = el('abSaCharts'); if (!box) return;
 
         // Genre radar (SVG)
@@ -918,11 +1013,13 @@
             '</div>';
 
         var clockSvg = renderWatchClock(clock);
+        var streakSvg = renderStreakCalendar(streakCal);
 
         box.innerHTML =
             '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Genre radar</h4>' + radarSvg + '</div>' +
             '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Watch clock (24h)</h4>' + clockSvg + '</div>' +
             '<div class="ab-panel-card" style="grid-column:1 / -1; min-width:0;">' + heatHeader + heatSvg + '</div>' +
+            '<div class="ab-panel-card" style="grid-column:1 / -1; min-width:0;"><h4 style="margin:0 0 0.5em;">Streak calendar (1 year)</h4>' + streakSvg + '</div>' +
             '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Stats snapshot</h4>' + histSvg + '</div>';
 
         var rangeEl = document.getElementById('abSaHeatmapRange');
@@ -1084,14 +1181,38 @@
             var eq = equippedIds && equippedIds[b.Id];
             var c = document.createElement('div'); c.className = 'ab-card';
             var pts = scoreForBadge(b);
-            c.innerHTML = '<div class="ab-card-h"><div class="ab-card-icon">' + icon(b.Icon) + '</div><div style="flex:1;"><div class="ab-card-title">' + b.Title + '</div><div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + b.Rarity + ' \u2022 ' + b.Category + '</div></div><div class="ab-badge-pts" title="Points awarded on unlock' + (currentPrestige > 0 ? ' (prestige bonus applied)' : '') + '">+' + pts + ' pts</div></div>' +
+            var isPinned = !!pinnedIdsGlobal[b.Id];
+            var isTitleEquipped = equippedTitleId && equippedTitleId === b.Id;
+            if (isPinned) c.classList.add('ab-card-pinned');
+            c.innerHTML = '<button type="button" class="ab-pin-btn ' + (isPinned ? 'ab-pin-active' : '') + '" title="' + (isPinned ? 'Unpin' : 'Pin to top') + '"><span class="material-icons">' + (isPinned ? 'push_pin' : 'outlined_flag') + '</span></button>' +
+                '<div class="ab-card-h"><div class="ab-card-icon">' + icon(b.Icon) + '</div><div style="flex:1;"><div class="ab-card-title">' + b.Title + '</div><div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + b.Rarity + ' \u2022 ' + b.Category + '</div></div><div class="ab-badge-pts" title="Points awarded on unlock' + (currentPrestige > 0 ? ' (prestige bonus applied)' : '') + '">+' + pts + ' pts</div></div>' +
                 '<div class="ab-desc">' + b.Description + '</div>' +
                 '<div class="ab-prog-text"><span>Progress</span><span>' + cur + '/' + tar + '</span></div>' +
                 '<div class="ab-prog-bar"><div class="ab-prog-fill" style="width:' + pct + '%;"></div></div>' +
-                '<div class="ab-footer"><div class="' + (b.Unlocked ? 'ab-unlocked' : 'ab-locked') + '">' + (b.Unlocked ? 'Unlocked' : 'Locked') + '</div>' +
-                '<button type="button" class="ab-btn"' + (!b.Unlocked ? ' disabled style="opacity:0.5;"' : '') + '>' + (eq ? 'Unequip' : 'Equip') + '</button></div>';
-            if (b.Unlocked) {
-                c.querySelector('.ab-footer button').addEventListener('click', function (ev) {
+                '<div class="ab-footer">' +
+                    '<div class="' + (b.Unlocked ? 'ab-unlocked' : 'ab-locked') + '">' + (b.Unlocked ? 'Unlocked' : 'Locked') + '</div>' +
+                    '<div style="display:flex; gap:0.4em;">' +
+                        (b.Unlocked ? '<button type="button" class="ab-btn ab-title-btn" title="Equip as title">' + (isTitleEquipped ? 'Title \u2713' : 'As title') + '</button>' : '') +
+                        '<button type="button" class="ab-btn"' + (!b.Unlocked ? ' disabled style="opacity:0.5;"' : '') + '>' + (eq ? 'Unequip' : 'Equip') + '</button>' +
+                    '</div>' +
+                '</div>';
+            // Pin button
+            var pinBtn = c.querySelector('.ab-pin-btn');
+            if (pinBtn) pinBtn.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                doPin(b.Id, !pinnedIdsGlobal[b.Id]);
+            });
+            // Title button (unlocked only)
+            var titleBtn = c.querySelector('.ab-title-btn');
+            if (titleBtn) titleBtn.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                doEquipTitle(equippedTitleId === b.Id ? null : b.Id);
+            });
+            // Equip button is the LAST button in footer
+            var footerBtns = c.querySelectorAll('.ab-footer button');
+            var equipBtn = footerBtns[footerBtns.length - 1];
+            if (equipBtn && b.Unlocked) {
+                equipBtn.addEventListener('click', function (ev) {
                     ev.stopPropagation();
                     if (eq) doUnequip(b.Id); else doEquip(b.Id);
                 });
@@ -1099,10 +1220,32 @@
             // Click anywhere else on the card to open the chase modal (only for locked badges)
             if (!b.Unlocked) {
                 c.style.cursor = 'pointer';
-                c.addEventListener('click', function () { openChaseModal(b); });
+                c.addEventListener('click', function (ev) {
+                    if (ev.target.closest('.ab-pin-btn') || ev.target.closest('.ab-footer button')) return;
+                    openChaseModal(b);
+                });
             }
             grid.appendChild(c);
         });
+    }
+
+    function doPin(badgeId, pinned) {
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/pin/' + badgeId, 'POST', { Pinned: pinned })
+            .then(function (res) {
+                pinnedIdsGlobal = {};
+                (res && res.Pinned || []).forEach(function (id) { pinnedIdsGlobal[id] = true; });
+                applyFilter();
+            })
+            .catch(function () { });
+    }
+
+    function doEquipTitle(badgeId) {
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/title', 'POST', { BadgeId: badgeId })
+            .then(function (res) {
+                equippedTitleId = (res && res.EquippedTitleBadgeId) || null;
+                loadAll();
+            })
+            .catch(function () { });
     }
 
     function openChaseModal(badge) {
@@ -1155,9 +1298,34 @@
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped'),
             fetchJson('Plugins/AchievementBadges/leaderboard?limit=10'),
             fetchJson('Plugins/AchievementBadges/server/stats'),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/rank')
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/rank'),
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/title').catch(function () { return null; }),
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/bank').catch(function () { return null; })
         ]).then(function (results) {
             var badges = results[0], summary = results[1], equipped = results[2], lb = results[3], stats = results[4], rank = results[5];
+            var titleData = results[6], bankData = results[7];
+
+            // Title display under hero name
+            equippedTitleId = null;
+            if (titleData && titleData.Title) {
+                equippedTitleId = badges.find(function (b) { return b.Title === titleData.Title; })
+                    ? badges.find(function (b) { return b.Title === titleData.Title; }).Id : null;
+                var titleEl = el('abSaTitleDisplay');
+                if (titleEl) {
+                    titleEl.style.display = 'block';
+                    titleEl.innerHTML = '<span class="material-icons" style="font-size:0.9em;vertical-align:middle;">military_tech</span> ' + escapeHtml(titleData.Title);
+                    titleEl.className = 'ab-title-display ' + rarityClass(titleData.Rarity);
+                }
+            } else {
+                var titleEl2 = el('abSaTitleDisplay');
+                if (titleEl2) titleEl2.style.display = 'none';
+            }
+
+            // Pinned badges
+            pinnedIdsGlobal = {};
+            if (bankData && bankData.PinnedBadgeIds) {
+                bankData.PinnedBadgeIds.forEach(function (id) { pinnedIdsGlobal[id] = true; });
+            }
 
             var sub = el('abSaSub');
             if (sub) sub.textContent = 'Completion: ' + ((summary && summary.Percentage != null) ? summary.Percentage : 0) + '% \u2022 Score: ' + (summary ? (summary.Score || 0) : 0);
@@ -1189,6 +1357,19 @@
             if (cardLink) cardLink.href = buildUrl('Plugins/AchievementBadges/users/' + userId + '/profile-card');
 
             allBadges = badges || [];
+
+            // Populate category dropdown (only once)
+            var catSel = el('abSaCategoryFilter');
+            if (catSel && catSel.options.length <= 1) {
+                var cats = {};
+                allBadges.forEach(function (b) { if (b.Category) cats[b.Category] = true; });
+                Object.keys(cats).sort().forEach(function (c) {
+                    var opt = document.createElement('option');
+                    opt.value = c; opt.textContent = c;
+                    catSel.appendChild(opt);
+                });
+            }
+
             renderShowcase(equipped);
             renderEquipped(equipped);
             if (equipped) equipped.forEach(function (b) { eqIds[b.Id] = true; });
@@ -1265,6 +1446,23 @@
             currentSort = sortEl.value || 'default';
             applyFilter();
         });
+        var catEl = el('abSaCategoryFilter');
+        if (catEl) catEl.addEventListener('change', function () {
+            currentCategory = catEl.value || '';
+            applyFilter();
+        });
+
+        // Reduced motion toggle (persists in localStorage, read by enhance.js)
+        try {
+            var rmKey = 'ab-reduced-motion';
+            var rmEl = document.createElement('label');
+            rmEl.style.cssText = 'display:flex; align-items:center; gap:0.5em; padding:0.5em 0.85em; border-radius:8px; background:rgba(255,255,255,0.04); font-size:0.85em; cursor:pointer; margin-left:auto;';
+            rmEl.innerHTML = '<input type="checkbox"' + (localStorage.getItem(rmKey) === 'true' ? ' checked' : '') + '> Reduced motion';
+            var cb = rmEl.querySelector('input');
+            cb.addEventListener('change', function () { localStorage.setItem(rmKey, cb.checked ? 'true' : 'false'); });
+            var filterRow = root.querySelector('.ab-filter-row');
+            if (filterRow) filterRow.appendChild(rmEl);
+        } catch (e) { }
 
         var recapBtns = root.querySelectorAll('#abSaPanelRecap button[data-period]');
         recapBtns.forEach(function (btn) {

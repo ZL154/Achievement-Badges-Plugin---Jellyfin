@@ -7,7 +7,18 @@
     var DETAIL_ID = 'ab-detail-ribbon';
     var LAST_SEEN_KEY = 'ab-last-unlock-seen';
     var SHOWN_IDS_KEY = 'ab-shown-unlock-ids';
-    var features = { EnableUnlockToasts: true, EnableHomeWidget: true, EnableItemDetailRibbon: true };
+    var REDUCED_MOTION_KEY = 'ab-reduced-motion';
+    var MAX_VISIBLE_TOASTS = 3;
+    var toastQueue = [];
+    var visibleToastCount = 0;
+    var features = { EnableUnlockToasts: true, EnableHomeWidget: false, EnableItemDetailRibbon: false };
+
+    function isReducedMotion() {
+        try {
+            if (localStorage.getItem(REDUCED_MOTION_KEY) === 'true') return true;
+            return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        } catch (e) { return false; }
+    }
 
     function getShownIds() {
         try {
@@ -70,6 +81,11 @@
     };
 
     function showToast(badge) {
+        if (visibleToastCount >= MAX_VISIBLE_TOASTS) {
+            toastQueue.push(badge);
+            return;
+        }
+        visibleToastCount++;
         var c = ensureToastContainer();
         var color = rarityColor[(badge.Rarity || '').toLowerCase()] || '#9aa5b1';
         var toast = document.createElement('div');
@@ -88,16 +104,58 @@
                 '</div>' +
             '</div>';
         c.appendChild(toast);
-        fireConfetti(color);
+        if (!isReducedMotion()) {
+            fireConfetti(color);
+        }
         setTimeout(function () {
             toast.style.transition = 'opacity 0.4s, transform 0.4s';
             toast.style.opacity = '0';
             toast.style.transform = 'translateX(30px)';
-            setTimeout(function () { toast.remove(); }, 450);
+            setTimeout(function () {
+                toast.remove();
+                visibleToastCount--;
+                if (toastQueue.length > 0 && visibleToastCount < MAX_VISIBLE_TOASTS) {
+                    var next = toastQueue.shift();
+                    showToast(next);
+                }
+            }, 450);
         }, 6500);
     }
 
+    function showMilestoneToast(milestone) {
+        var c = ensureToastContainer();
+        var color = '#ffd700';
+        var toast = document.createElement('div');
+        toast.style.cssText =
+            'pointer-events:auto;min-width:340px;max-width:420px;padding:18px 20px;border-radius:14px;' +
+            'background:linear-gradient(135deg,rgba(255,215,0,0.18),rgba(15,18,28,0.97));' +
+            'border:2px solid ' + color + ';color:#fff;box-shadow:0 12px 40px rgba(0,0,0,0.7),0 0 60px rgba(255,215,0,0.4);' +
+            'font-family:system-ui,sans-serif;animation:abSlideIn 0.4s cubic-bezier(.22,.61,.36,1);';
+        toast.innerHTML =
+            '<div style="display:flex;align-items:center;gap:14px;">' +
+                '<div style="width:50px;height:50px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 0 30px ' + color + 'aa;">🎉</div>' +
+                '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.8;font-weight:700;color:' + color + ';">MILESTONE REACHED</div>' +
+                    '<div style="font-size:18px;font-weight:900;margin-top:2px;">' + milestone + '% complete!</div>' +
+                    '<div style="font-size:11px;opacity:0.7;font-weight:600;">You\'ve unlocked ' + milestone + '% of all achievements</div>' +
+                '</div>' +
+            '</div>';
+        c.appendChild(toast);
+        if (!isReducedMotion()) {
+            fireConfetti(color);
+            setTimeout(function () { fireConfetti('#ff6b35'); }, 200);
+            setTimeout(function () { fireConfetti('#e91e63'); }, 400);
+        }
+        setTimeout(function () {
+            toast.style.transition = 'opacity 0.5s, transform 0.5s';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(30px)';
+            setTimeout(function () { toast.remove(); }, 550);
+        }, 8000);
+    }
+
     function fireConfetti(accentColor) {
+        if (isReducedMotion()) return;
         try {
             var container = document.createElement('div');
             container.style.cssText = 'position:fixed;pointer-events:none;top:20px;right:20px;z-index:100000;width:400px;height:200px;overflow:visible;';
@@ -158,6 +216,15 @@
                     });
                 }
                 if (res && res.Now) { localStorage.setItem(LAST_SEEN_KEY, res.Now); }
+                // After badge toasts, check for catalog milestones (25/50/75/100%)
+                return fetchJson('Plugins/AchievementBadges/users/' + uid + '/check-milestones');
+            })
+            .then(function (m) {
+                if (m && m.NewlyReached && m.NewlyReached.length) {
+                    m.NewlyReached.forEach(function (pct, i) {
+                        setTimeout(function () { showMilestoneToast(pct); }, i * 1500);
+                    });
+                }
             })
             .catch(function () { });
     }

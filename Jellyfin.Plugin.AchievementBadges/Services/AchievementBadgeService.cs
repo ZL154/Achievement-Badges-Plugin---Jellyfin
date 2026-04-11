@@ -111,13 +111,19 @@ public class AchievementBadgeService
         }
     }
 
-    public List<object> GetActivityFeed(int limit = 50)
+    public object GetActivityFeed(int page = 1, int pageSize = 20, string? filterUserId = null)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+        var canon = string.IsNullOrWhiteSpace(filterUserId) ? null : NormalizeUserId(filterUserId);
+
         lock (_lock)
         {
             var entries = new List<(DateTimeOffset At, string UserId, string UserName, AchievementBadge Badge)>();
             foreach (var profile in _userProfiles.Values)
             {
+                if (canon != null && !string.Equals(profile.UserId, canon, StringComparison.OrdinalIgnoreCase)) continue;
                 foreach (var b in profile.Badges)
                 {
                     if (b.Unlocked && b.UnlockedAt.HasValue && IsBadgeEnabled(b.Id))
@@ -126,8 +132,12 @@ public class AchievementBadgeService
                     }
                 }
             }
-            return entries.OrderByDescending(e => e.At)
-                .Take(limit)
+            var total = entries.Count;
+            var totalPages = (int)Math.Ceiling((double)total / pageSize);
+            var skip = (page - 1) * pageSize;
+            var pageEntries = entries.OrderByDescending(e => e.At)
+                .Skip(skip)
+                .Take(pageSize)
                 .Select(e => (object)new
                 {
                     At = e.At,
@@ -140,6 +150,30 @@ public class AchievementBadgeService
                     Category = e.Badge.Category
                 })
                 .ToList();
+            return new { Page = page, PageSize = pageSize, TotalPages = totalPages, TotalEntries = total, Entries = pageEntries };
+        }
+    }
+
+    public object CheckMilestones(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userId, out var profile)) return new { NewlyReached = Array.Empty<int>() };
+            var enabled = profile.Badges.Where(b => IsBadgeEnabled(b.Id)).ToList();
+            if (enabled.Count == 0) return new { NewlyReached = Array.Empty<int>() };
+            var pct = (int)Math.Floor(100.0 * enabled.Count(b => b.Unlocked) / enabled.Count);
+            var newlyReached = new List<int>();
+            foreach (var milestone in new[] { 25, 50, 75, 100 })
+            {
+                if (pct >= milestone && !profile.CompletionMilestonesReached.Contains(milestone))
+                {
+                    profile.CompletionMilestonesReached.Add(milestone);
+                    newlyReached.Add(milestone);
+                }
+            }
+            if (newlyReached.Count > 0) Save();
+            return new { NewlyReached = newlyReached, CurrentPercent = pct };
         }
     }
 
@@ -246,6 +280,32 @@ public class AchievementBadgeService
                     UnlockedAt = b.UnlockedAt
                 })
                 .ToList();
+        }
+    }
+
+    public object GetStreakCalendar(string userId, int weeks = 53)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userId, out var profile)) return new { Weeks = weeks, Days = Array.Empty<object>() };
+            var watched = new HashSet<DateOnly>();
+            foreach (var d in profile.Counters.WatchDates)
+            {
+                if (DateOnly.TryParse(d, out var parsed)) watched.Add(parsed);
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var totalDays = weeks * 7;
+            var start = today.AddDays(-(totalDays - 1));
+
+            var days = new List<object>();
+            for (var i = 0; i < totalDays; i++)
+            {
+                var date = start.AddDays(i);
+                days.Add(new { D = date.ToString("yyyy-MM-dd"), W = watched.Contains(date) });
+            }
+            return new { Weeks = weeks, Days = days };
         }
     }
 
