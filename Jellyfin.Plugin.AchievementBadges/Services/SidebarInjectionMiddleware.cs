@@ -43,26 +43,58 @@ public class SidebarInjectionMiddleware
     function injectSidebar(){
         try {
             if(document.getElementById(SIDEBAR_ID)){ return; }
-            // Try multiple selectors — different Jellyfin themes/plugins rebuild the nav menu differently.
-            var nav = document.querySelector('.mainDrawer-scrollContainer .navMenuOptions')
-                   || document.querySelector('.mainDrawer-scrollContainer')
-                   || document.querySelector('.navDrawer-scrollContainer')
-                   || document.querySelector('.drawer-navigationPlugins')
-                   || document.querySelector('.navMenuOptions')
-                   || document.querySelector('[is=""emby-scroller""] .navMenuOptions');
-            if(!nav){
-                return;
+            // Strategy: anchor on the parent of any existing .navMenuSection elements.
+            // This is theme/plugin agnostic — every Jellyfin layout we've seen still
+            // uses navMenuSection as the section wrapper, even when other classes change.
+            var container = null;
+            var existingSections = document.querySelectorAll('.navMenuSection');
+            if(existingSections.length){ container = existingSections[0].parentElement; }
+            if(!container){
+                container = document.querySelector('.mainDrawer-scrollContainer')
+                         || document.querySelector('.scrollContainer')
+                         || document.querySelector('[class*=""scrollContainer""]')
+                         || document.querySelector('.mainDrawer')
+                         || document.querySelector('#mainDrawer')
+                         || document.querySelector('.navDrawer-scrollContainer')
+                         || document.querySelector('.navMenuOptions');
             }
+            if(!container){ return; }
             console.log('[AchievementBadges] injectSidebar: found nav container, adding entry');
-            var wrap=document.createElement('div');wrap.id=SIDEBAR_ID;
-            var a=document.createElement('a');a.className='navMenuOption';a.style.cursor='pointer';
-            a.innerHTML='<span class=""material-icons navMenuOptionIcon"">emoji_events</span><span class=""navMenuOptionText"">Achievements</span>';
-            a.addEventListener('click',function(e){e.preventDefault();window.location.hash='/achievements';});
-            wrap.appendChild(a);
+
+            var section=document.createElement('div');section.id=SIDEBAR_ID;section.className='navMenuSection';
+            section.innerHTML='<div class=""sectionTitle"" style=""padding:16px 20px 4px;font-size:.72em;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);font-weight:600"">Achievements</div>';
+
+            var a=document.createElement('a');a.href='javascript:void(0)';a.className='navMenuOption emby-button';a.setAttribute('role','menuitem');a.style.cursor='pointer';
+            a.innerHTML='<span class=""material-icons navMenuOptionIcon"" style=""font-family:Material Icons;"">emoji_events</span><span class=""navMenuOptionText"">Achievements</span>';
+            a.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.location.hash='/achievements';});
+            section.appendChild(a);
+
             var showcase=document.createElement('div');showcase.id=SHOWCASE_ID;
             showcase.style.cssText='display:flex;gap:4px;padding:2px 12px 8px 42px;flex-wrap:wrap;';
-            wrap.appendChild(showcase);
-            nav.appendChild(wrap);
+            section.appendChild(showcase);
+
+            // Insert before the User/Account section so we sit above Settings + Sign Out
+            var inserted=false;
+            var allSections=container.querySelectorAll('.navMenuSection');
+            for(var si=0;si<allSections.length;si++){
+                var header=allSections[si].querySelector('.sectionTitle, [class*=""header""], [class*=""Header""]');
+                var htext=(header?header.textContent:(allSections[si].childNodes[0]&&allSections[si].childNodes[0].textContent||'')).trim().toLowerCase();
+                if(htext==='user'||htext==='account'){
+                    container.insertBefore(section,allSections[si]); inserted=true; break;
+                }
+            }
+            if(!inserted){
+                for(var sj=0;sj<allSections.length;sj++){
+                    var links=allSections[sj].querySelectorAll('a, button');
+                    for(var lk=0;lk<links.length;lk++){
+                        if(/sign\s*out|log\s*out/i.test(links[lk].textContent)){
+                            container.insertBefore(section,allSections[sj]); inserted=true; break;
+                        }
+                    }
+                    if(inserted) break;
+                }
+            }
+            if(!inserted) container.appendChild(section);
             refreshShowcases();
         } catch(e) { console.error('[AchievementBadges] injectSidebar error:', e); }
     }

@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.19",
+        "changelog": "Two bug fixes. (1) Sidebar entry restored: the 'Achievements' link was failing to inject on themes/setups that don't expose '.mainDrawer-scrollContainer .navMenuOptions'. The injector now anchors on the parent of any '.navMenuSection' (theme-agnostic, matches every Jellyfin layout) and inserts itself as a proper navMenuSection just above the User/Sign Out section, with broader fallback selectors. (2) Toasts during playback: removed the CSS rule that hid '#ab-toast-container' whenever a video player was on screen, so unlocks earned mid-watch now actually appear, and the container is force-promoted to the top z-index layer. Polling cadence dropped from 30s to 8s, and the enhance script now binds Jellyfin's playbackstart/playbackstop/playbackprogress events to fire a poll burst within ~1s of an unlock so toasts surface near-instantly while watching.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.19/Jellyfin.Plugin.AchievementBadgesv1.5.19.zip",
+        "checksum": "6221E4EBE63FFD18284B0A735A883C11"
+      },
+      {
         "version": "1.5.18",
         "changelog": "Toast polish. Glow halos dialed way down across all tiers (was neon/blinding, now a subtle colored ring around the drop shadow). Radial sphere highlight on the circle softened. Banner sheen softened. Confetti now originates from the toast's actual position (bottom-center) instead of the top-right corner - the anchor uses the toast container's getBoundingClientRect. Banner.svg polished: one clean gold color instead of cycling through 6 rarities, slower trophy rotation (6s instead of 3s so it feels elegant not frantic), smoother spline easing on banner expand/collapse, single softer pulse ring instead of two, inner cup shadow on the trophy for depth, tighter text letter-spacing.",
         "targetAbi": "10.11.0.0",

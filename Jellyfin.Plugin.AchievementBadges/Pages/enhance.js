@@ -369,8 +369,9 @@
             'body:has(.videoPlayer) #ab-header-badges,' +
             'body:has(#videoOsdPage) #ab-header-badges,' +
             'body:has(.mainAnimatedPage.videoOsdPage) #ab-header-badges { display: none !important; }' +
-            '.videoPlayerContainer #ab-toast-container,' +
-            'body:has(.videoPlayerContainer) #ab-toast-container { display: none !important; }' +
+            // Toast container stays visible during playback so unlocks fire mid-watch.
+            // Force it above the video OSD layers.
+            '#ab-toast-container{z-index:2147483647 !important;}' +
 
             // ===== Xbox-style achievement toast =====
             '.ab-xb{position:relative;width:355px;height:90px;font-family:"Segoe UI",system-ui,sans-serif;pointer-events:none;}' +
@@ -499,10 +500,37 @@
             if (f) { features = { EnableUnlockToasts: !!f.EnableUnlockToasts, EnableHomeWidget: !!f.EnableHomeWidget, EnableItemDetailRibbon: !!f.EnableItemDetailRibbon }; }
         }).finally(function () {
             pollUnlocks();
-            setInterval(pollUnlocks, 30000);
+            setInterval(pollUnlocks, 8000);
             onRouteChange();
             window.addEventListener('hashchange', onRouteChange);
             new MutationObserver(onRouteChange).observe(document.body, { childList: true, subtree: true });
+
+            // Hook Jellyfin's playback events so unlocks earned mid-watch
+            // surface within a second instead of waiting for the next poll tick.
+            function bindPlaybackEvents() {
+                try {
+                    if (window.Events && window.Events.on && !window._abPlaybackBound) {
+                        window._abPlaybackBound = true;
+                        var burst = function () {
+                            pollUnlocks();
+                            setTimeout(pollUnlocks, 1500);
+                            setTimeout(pollUnlocks, 4000);
+                        };
+                        window.Events.on(window, 'playbackstart', burst);
+                        window.Events.on(window, 'playbackstop', burst);
+                        window.Events.on(window, 'playbackprogress', function () {
+                            var now = Date.now();
+                            if (!window._abLastProgressPoll || now - window._abLastProgressPoll > 7000) {
+                                window._abLastProgressPoll = now;
+                                pollUnlocks();
+                            }
+                        });
+                    }
+                } catch (e) { }
+            }
+            bindPlaybackEvents();
+            setTimeout(bindPlaybackEvents, 2000);
+            setTimeout(bindPlaybackEvents, 6000);
         });
     }
 
