@@ -16,6 +16,7 @@
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
   <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Version-1.5.18-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/License-MIT-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
 </p>
 
 # 🏆 Achievement Badges for Jellyfin
@@ -207,6 +208,36 @@ POST      /Plugins/AchievementBadges/admin/users/{userId}/inject-counters
 ---
 
 See the [Releases page](https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases) for full notes.
+
+---
+
+## 📜 License
+
+This project is released under the [MIT License](LICENSE) — one of the most permissive open-source licenses in common use.
+
+**In plain English:**
+
+| You can | You must | You cannot |
+|---|---|---|
+| Use it on any Jellyfin server, personal or commercial | Keep the copyright + license notice in any redistribution | Hold the authors liable if something breaks |
+| Fork and modify however you want | | Claim the authors endorse your fork |
+| Redistribute modified or unmodified copies | | |
+| Bundle it with proprietary software | | |
+| Include it in a paid product | | |
+
+If you just want to *run* the plugin, none of this affects you — install it and enjoy.
+
+### Contributions
+
+Pull requests are welcome. By submitting a contribution you agree that your changes will be licensed under the same MIT terms. Keep contributions focused (one feature or fix per PR) and include a short description of what changed and why in the PR body.
+
+### Third-party attributions
+
+- **Jellyfin** (GPL-2.0) — this plugin is a third-party extension for [Jellyfin](https://jellyfin.org/) and is not affiliated with or endorsed by the Jellyfin project. At build time it references `Jellyfin.Controller` and `Jellyfin.Model` NuGet packages, which remain under their own GPL-2.0 license.
+- **Xbox-style unlock toast** — the animation style is inspired by [Adam Cosman's Xbox One Achievement codepen](https://codepen.io/AdamCosman/pen/eYpNYgy) and was reimplemented from scratch. No original assets from that codepen ship with this plugin.
+- **Material Icons** (Apache 2.0) — icon glyphs referenced in the UI are provided by Jellyfin's own web client and are licensed by Google.
+
+See [LICENSE](LICENSE) for the full license text and third-party notices.
 
 ---
 
