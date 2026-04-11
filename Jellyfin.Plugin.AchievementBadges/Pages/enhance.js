@@ -192,8 +192,21 @@
         if (isReducedMotion()) return;
         if (userPrefs && userPrefs.EnableConfetti === false) return;
         try {
+            // Anchor the burst to the toast container so particles radiate from
+            // the actual toast position (bottom-center), not a screen corner.
+            var anchor = document.getElementById(TOAST_ID);
+            var originTop, originLeft;
+            if (anchor && anchor.getBoundingClientRect) {
+                var r = anchor.getBoundingClientRect();
+                originTop = r.top + r.height / 2;
+                originLeft = r.left + r.width / 2;
+            } else {
+                originTop = window.innerHeight - 70;
+                originLeft = window.innerWidth / 2;
+            }
+
             var container = document.createElement('div');
-            container.style.cssText = 'position:fixed;pointer-events:none;top:20px;right:20px;z-index:100000;width:400px;height:200px;overflow:visible;';
+            container.style.cssText = 'position:fixed;pointer-events:none;top:' + originTop + 'px;left:' + originLeft + 'px;z-index:100000;width:0;height:0;overflow:visible;';
             document.body.appendChild(container);
 
             var colors = ['#ffd700', '#ff6b35', '#e91e63', '#9c27b0', '#2196f3', '#4caf50', accentColor];
@@ -206,7 +219,7 @@
                 var size = 6 + Math.random() * 6;
                 var color = colors[i % colors.length];
                 var rot = Math.random() * 360;
-                p.style.cssText = 'position:absolute;top:20px;right:20px;width:' + size + 'px;height:' + size + 'px;' +
+                p.style.cssText = 'position:absolute;top:0;left:0;margin-left:' + (-size/2) + 'px;margin-top:' + (-size/2) + 'px;width:' + size + 'px;height:' + size + 'px;' +
                     'background:' + color + ';border-radius:' + (Math.random() > 0.5 ? '50%' : '2px') + ';' +
                     'transform:translate(0,0) rotate(0deg);opacity:1;' +
                     'transition:transform 0.9s cubic-bezier(.22,.61,.36,1),opacity 0.9s;';
@@ -364,10 +377,10 @@
             // Circle: solid base color + radial highlight so it looks spherical (3D), not flat
             '.ab-xb-circle{position:absolute;left:50%;top:7px;margin-left:-37px;width:75px;height:75px;border-radius:50%;' +
                 'background-color:var(--ab-color,#39960C);' +
-                'background-image:radial-gradient(circle at 32% 28%,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0.15) 25%,rgba(255,255,255,0) 55%),' +
-                                 'radial-gradient(circle at 70% 85%,rgba(0,0,0,0.35) 0%,rgba(0,0,0,0) 60%);' +
+                'background-image:radial-gradient(circle at 34% 30%,rgba(255,255,255,0.35) 0%,rgba(255,255,255,0.08) 30%,rgba(255,255,255,0) 60%),' +
+                                 'radial-gradient(circle at 70% 88%,rgba(0,0,0,0.22) 0%,rgba(0,0,0,0) 65%);' +
                 'display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0.1);z-index:2;' +
-                'box-shadow:0 4px 18px rgba(0,0,0,0.45),inset 0 0 12px rgba(255,255,255,0.12);' +
+                'box-shadow:0 4px 14px rgba(0,0,0,0.4);' +
                 'overflow:hidden;}' +
             '.ab-xb-circle::before{content:"";position:absolute;inset:0;border-radius:50%;background:var(--ab-color-lighter,#40a90e);opacity:0;z-index:0;}' +
             '.ab-xb-circle::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--ab-color-darker,#32830a);opacity:0;z-index:0;}' +
@@ -375,9 +388,9 @@
             // Banner: solid base + vertical sheen gradient on top for depth
             '.ab-xb-banner{position:absolute;left:50%;top:7px;margin-left:-37px;width:75px;height:75px;border-radius:100px;' +
                 'background-color:var(--ab-color,#39960C);' +
-                'background-image:linear-gradient(180deg,rgba(255,255,255,0.30) 0%,rgba(255,255,255,0.08) 35%,rgba(0,0,0,0) 60%,rgba(0,0,0,0.28) 100%);' +
+                'background-image:linear-gradient(180deg,rgba(255,255,255,0.18) 0%,rgba(255,255,255,0.04) 35%,rgba(0,0,0,0) 60%,rgba(0,0,0,0.18) 100%);' +
                 'opacity:0;overflow:hidden;z-index:1;' +
-                'box-shadow:0 6px 24px rgba(0,0,0,0.5),inset 0 0 0 1px rgba(255,255,255,0.10),inset 0 -2px 8px rgba(0,0,0,0.18);}' +
+                'box-shadow:0 6px 20px rgba(0,0,0,0.45);}' +
             // Shimmer sweep (diagonal white gleam) - lives on both circle + banner, tiers animate it
             '.ab-xb-shimmer{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;overflow:hidden;z-index:2;}' +
             '.ab-xb-shimmer::after{content:"";position:absolute;top:-50%;left:-60%;width:40%;height:200%;' +
@@ -400,20 +413,17 @@
             // Shimmer: sweeps across the banner + circle while banner is expanded
             '.ab-xb-play .ab-xb-shimmer{animation:abXbShimmerOpacity 10.5s forwards;}' +
             '.ab-xb-play .ab-xb-shimmer::after{animation:abXbShimmerSweep 10.5s forwards;}' +
-            // Baseline glow (rare+ tiers add much stronger glow)
-            '.ab-xb-banner{box-shadow:0 6px 24px rgba(0,0,0,0.5);}' +
-            '.ab-xb-rare .ab-xb-banner{box-shadow:0 6px 28px rgba(0,0,0,0.5),0 0 36px var(--ab-color,#39960C),0 0 70px var(--ab-color-lighter,#40a90e);}' +
-            '.ab-xb-rare .ab-xb-circle{box-shadow:0 4px 18px rgba(0,0,0,0.45),0 0 28px var(--ab-color,#39960C),inset 0 0 14px rgba(255,255,255,0.2);}' +
-            // Per-rarity intensifiers (more glow / faster shimmer for higher tiers)
-            '.ab-xb-epic      .ab-xb-banner{box-shadow:0 6px 28px rgba(0,0,0,0.5),0 0 42px var(--ab-color,#a78bfa),0 0 80px var(--ab-color-lighter,#c9b4ff);}' +
-            '.ab-xb-legendary .ab-xb-banner{box-shadow:0 6px 30px rgba(0,0,0,0.55),0 0 48px var(--ab-color,#f5b820),0 0 90px var(--ab-color-lighter,#ffd358),0 0 140px rgba(255,211,88,0.45);}' +
-            '.ab-xb-legendary .ab-xb-circle{box-shadow:0 4px 18px rgba(0,0,0,0.45),0 0 34px var(--ab-color,#f5b820),0 0 70px var(--ab-color-lighter,#ffd358),inset 0 0 16px rgba(255,255,255,0.28);}' +
-            '.ab-xb-mythic    .ab-xb-banner{box-shadow:0 6px 32px rgba(0,0,0,0.6),0 0 52px var(--ab-color,#dc3d56),0 0 100px var(--ab-color-lighter,#ff6b82),0 0 150px rgba(255,107,130,0.5);}' +
-            '.ab-xb-mythic    .ab-xb-circle{box-shadow:0 4px 20px rgba(0,0,0,0.5),0 0 38px var(--ab-color,#dc3d56),0 0 75px var(--ab-color-lighter,#ff6b82),inset 0 0 18px rgba(255,255,255,0.3);}' +
-            // Legendary + mythic shimmer sweeps twice + trophy glows
+            // Subtle colored halo for rare+ (NOT a neon blast). Layers drop shadow + small colored ring.
+            '.ab-xb-rare .ab-xb-banner{box-shadow:0 6px 20px rgba(0,0,0,0.45),0 0 16px rgba(96,165,250,0.30);}' +
+            '.ab-xb-rare .ab-xb-circle{box-shadow:0 4px 14px rgba(0,0,0,0.4),0 0 12px rgba(96,165,250,0.25),inset 0 0 12px rgba(255,255,255,0.12);}' +
+            '.ab-xb-epic .ab-xb-banner{box-shadow:0 6px 20px rgba(0,0,0,0.45),0 0 18px rgba(167,139,250,0.34);}' +
+            '.ab-xb-epic .ab-xb-circle{box-shadow:0 4px 14px rgba(0,0,0,0.4),0 0 14px rgba(167,139,250,0.30),inset 0 0 12px rgba(255,255,255,0.12);}' +
+            '.ab-xb-legendary .ab-xb-banner{box-shadow:0 6px 20px rgba(0,0,0,0.45),0 0 22px rgba(245,184,32,0.36);}' +
+            '.ab-xb-legendary .ab-xb-circle{box-shadow:0 4px 14px rgba(0,0,0,0.4),0 0 16px rgba(245,184,32,0.34),inset 0 0 12px rgba(255,255,255,0.14);}' +
+            '.ab-xb-mythic .ab-xb-banner{box-shadow:0 6px 20px rgba(0,0,0,0.45),0 0 24px rgba(220,61,86,0.40);}' +
+            '.ab-xb-mythic .ab-xb-circle{box-shadow:0 4px 14px rgba(0,0,0,0.4),0 0 18px rgba(220,61,86,0.36),inset 0 0 12px rgba(255,255,255,0.14);}' +
+            // Legendary + mythic shimmer sweeps twice
             '.ab-xb-legendary.ab-xb-play .ab-xb-shimmer::after,.ab-xb-mythic.ab-xb-play .ab-xb-shimmer::after{animation:abXbShimmerSweep 10.5s forwards,abXbShimmerSweep2 10.5s forwards;}' +
-            '.ab-xb-legendary .ab-xb-trophy{filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45)) drop-shadow(0 0 8px rgba(255,211,88,0.9));}' +
-            '.ab-xb-mythic    .ab-xb-trophy{filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)) drop-shadow(0 0 10px rgba(255,107,130,0.9));}' +
             '@keyframes abXbCircle{' +
                 '0%{opacity:0;transform:scale(0.1) translateX(0);background-color:var(--ab-color,#39960C);}' +
                 '4%{opacity:1;transform:scale(1.1) translateX(0);}' +

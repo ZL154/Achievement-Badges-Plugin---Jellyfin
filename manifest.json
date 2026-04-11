@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.18",
+        "changelog": "Toast polish. Glow halos dialed way down across all tiers (was neon/blinding, now a subtle colored ring around the drop shadow). Radial sphere highlight on the circle softened. Banner sheen softened. Confetti now originates from the toast's actual position (bottom-center) instead of the top-right corner - the anchor uses the toast container's getBoundingClientRect. Banner.svg polished: one clean gold color instead of cycling through 6 rarities, slower trophy rotation (6s instead of 3s so it feels elegant not frantic), smoother spline easing on banner expand/collapse, single softer pulse ring instead of two, inner cup shadow on the trophy for depth, tighter text letter-spacing.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.18/Jellyfin.Plugin.AchievementBadgesv1.5.18.zip",
+        "checksum": "C7CF84CBB0C57C3DEEC92D8E8D09274C"
+      },
+      {
         "version": "1.5.17",
         "changelog": "Big Xbox toast refinement. Circle now has a radial highlight/shadow gradient so it looks like a sphere instead of a flat disc. Banner has a vertical top-highlight to bottom-shadow sheen and an inset rim-light. Each unlock plays a diagonal shimmer sweep across the expanded banner (legendary + mythic get a second sweep). Per-rarity glow intensifies up the ladder: epic gets a stronger halo, legendary and mythic get huge multi-layer colored glows plus a drop-shadow on the trophy icon. Rarity is now applied via a class (ab-xb-{rarity}) so CSS can target each tier directly. Banner.svg stripped further - pure transparent background, no decoration, just the looping achievement animation itself (also replaces the literal '\\u2013' escape bug that was rendering as text).",
         "targetAbi": "10.11.0.0",
