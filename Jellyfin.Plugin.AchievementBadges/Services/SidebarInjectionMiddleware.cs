@@ -43,27 +43,50 @@ public class SidebarInjectionMiddleware
     function injectSidebar(){
         try {
             if(document.getElementById(SIDEBAR_ID)){ return; }
-            // Strategy: find any existing .navMenuOption anchor (Home, Movies, TV, etc.)
-            // and insert ours as a sibling in the same parent. This is the only
-            // approach that's guaranteed to land in the right place across every
-            // Jellyfin theme/version, because we're cloning the layout we found
-            // instead of guessing the wrapper structure.
-            var anchorItem = document.querySelector('.mainDrawer .navMenuOption')
-                          || document.querySelector('.mainDrawer-scrollContainer .navMenuOption')
-                          || document.querySelector('.navDrawer .navMenuOption')
-                          || document.querySelector('.navMenuOptions .navMenuOption')
-                          || document.querySelector('.navMenuOption')
-                          || document.querySelector('a[is=""emby-linkbutton""][href*=""home.html""]')
-                          || document.querySelector('a[href*=""home.html""]');
+
+            // Strategy: find the 'Plugin Settings' / 'Plugin Pages' item by text
+            // and insert right next to IT, in its parent. This guarantees we land
+            // in Jellyfin's own plugin section instead of whichever random
+            // '.navMenuOption' happens to be first on the page (e.g. Kevin Tweaks).
+            // We walk all .navMenuOption elements and match against the visible text.
+            var allItems = document.querySelectorAll('.navMenuOption');
+            var anchorItem = null;
+            var anchorPlacement = 'after'; // insert after matched item by default
+            for(var i=0;i<allItems.length;i++){
+                var itxt = (allItems[i].textContent||'').trim().toLowerCase();
+                if(/^plugin\s*(settings|pages)$/.test(itxt)){
+                    anchorItem = allItems[i];
+                    anchorPlacement = 'after';
+                    break;
+                }
+            }
+            // Secondary: a 'My Media' / 'Home' / 'Media' type anchor — at least
+            // land inside the main Jellyfin nav block, not a 3rd-party section.
+            if(!anchorItem){
+                for(var j=0;j<allItems.length;j++){
+                    var jhref = (allItems[j].getAttribute('href')||'').toLowerCase();
+                    if(jhref.indexOf('home.html')>=0 || jhref.indexOf('#/home')>=0){
+                        anchorItem = allItems[j];
+                        anchorPlacement = 'after';
+                        break;
+                    }
+                }
+            }
+            // Last resort: first .navMenuOption we can find (previous behaviour).
+            if(!anchorItem && allItems.length){
+                anchorItem = allItems[0];
+                anchorPlacement = 'before';
+            }
             if(!anchorItem){ return; }
+
             var parent = anchorItem.parentElement;
             if(!parent){ return; }
-            console.log('[AchievementBadges] injectSidebar: anchoring on existing nav item, parent=', parent.className);
+            console.log('[AchievementBadges] injectSidebar: anchor=', (anchorItem.textContent||'').trim(), 'placement=', anchorPlacement);
 
             var a = document.createElement('a');
             a.id = SIDEBAR_ID;
             a.href = 'javascript:void(0)';
-            // Mirror the existing item's class list so we inherit Jellyfin's styling exactly.
+            // Mirror the anchor item's class list so we inherit Jellyfin's styling exactly.
             a.className = anchorItem.className || 'navMenuOption emby-button';
             a.setAttribute('role','menuitem');
             a.style.cursor = 'pointer';
@@ -75,19 +98,12 @@ public class SidebarInjectionMiddleware
                 window.location.hash = '/achievements';
             });
 
-            // Insert right before the User/Account section if we can find it.
-            // Detection: walk siblings looking for a Sign Out / Settings link.
-            var insertBefore = null;
-            var sib = parent.firstElementChild;
-            while(sib){
-                var txt = (sib.textContent||'').trim().toLowerCase();
-                if(/sign\s*out|log\s*out|^settings$|^dashboard$|^manage server$/.test(txt)){
-                    insertBefore = sib; break;
-                }
-                sib = sib.nextElementSibling;
+            if(anchorPlacement === 'after'){
+                if(anchorItem.nextSibling){ parent.insertBefore(a, anchorItem.nextSibling); }
+                else { parent.appendChild(a); }
+            } else {
+                parent.insertBefore(a, anchorItem);
             }
-            if(insertBefore){ parent.insertBefore(a, insertBefore); }
-            else { parent.appendChild(a); }
 
             // Showcase row sits directly under our nav item
             var showcase = document.createElement('div');
