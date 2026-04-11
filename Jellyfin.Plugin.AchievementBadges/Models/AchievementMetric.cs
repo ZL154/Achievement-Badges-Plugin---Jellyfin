@@ -35,5 +35,6 @@ public enum AchievementMetric
     BestLoginStreak,
     TopDirectorCount,
     TopActorCount,
-    PersonItemsWatched
+    PersonItemsWatched,
+    PrestigeLevel
 }

@@ -146,6 +146,45 @@ public static class AchievementDefinitions
         new() { Id = "hidden-speedrunner", Key = "hidden_speedrunner", Title = "Speedrunner", Description = "Watch 15 episodes in a single day.", Icon = "speed", Category = "Hidden", Rarity = "Rare", Metric = AchievementMetric.MaxEpisodesInSingleDay, TargetValue = 15, IsSecret = true },
         new() { Id = "hidden-polyglot", Key = "hidden_polyglot", Title = "True Polyglot", Description = "Watch items in 8 different languages.", Icon = "translate", Category = "Hidden", Rarity = "Legendary", Metric = AchievementMetric.UniqueLanguagesWatched, TargetValue = 8, IsSecret = true },
         new() { Id = "hidden-completionist", Key = "hidden_completionist", Title = "Completionist Supreme", Description = "Hit 100% in a library.", Icon = "verified", Category = "Hidden", Rarity = "Mythic", Metric = AchievementMetric.LibraryCompletionPercent, TargetValue = 100, IsSecret = true },
-        new() { Id = "hidden-loyal", Key = "hidden_loyal", Title = "Never Misses", Description = "Log in 14 days in a row.", Icon = "favorite", Category = "Hidden", Rarity = "Rare", Metric = AchievementMetric.CurrentLoginStreak, TargetValue = 14, IsSecret = true }
+        new() { Id = "hidden-loyal", Key = "hidden_loyal", Title = "Never Misses", Description = "Log in 14 days in a row.", Icon = "favorite", Category = "Hidden", Rarity = "Rare", Metric = AchievementMetric.CurrentLoginStreak, TargetValue = 14, IsSecret = true },
+
+        // Genre specialists (use existing GenreItemsWatched metric with a parameter)
+        new() { Id = "genre-horror", Key = "genre_horror", Title = "Horror Aficionado", Description = "Watch 30 horror items.", Icon = "whatshot", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Horror", TargetValue = 30 },
+        new() { Id = "genre-comedy", Key = "genre_comedy", Title = "Comedy King", Description = "Watch 30 comedy items.", Icon = "mood", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Comedy", TargetValue = 30 },
+        new() { Id = "genre-drama", Key = "genre_drama", Title = "Drama Devotee", Description = "Watch 30 drama items.", Icon = "theater_comedy", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Drama", TargetValue = 30 },
+        new() { Id = "genre-action", Key = "genre_action", Title = "Action Hero", Description = "Watch 30 action items.", Icon = "sports_martial_arts", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Action", TargetValue = 30 },
+        new() { Id = "genre-scifi", Key = "genre_scifi", Title = "Sci-Fi Scholar", Description = "Watch 30 sci-fi items.", Icon = "rocket", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Science Fiction", TargetValue = 30 },
+        new() { Id = "genre-animation", Key = "genre_animation", Title = "Animation Enthusiast", Description = "Watch 30 animated items.", Icon = "draw", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Animation", TargetValue = 30 },
+        new() { Id = "genre-documentary", Key = "genre_documentary", Title = "Documentary Deep Dive", Description = "Watch 20 documentaries.", Icon = "science", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Documentary", TargetValue = 20 },
+        new() { Id = "genre-crime", Key = "genre_crime", Title = "Crime Casefile", Description = "Watch 30 crime items.", Icon = "gavel", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Crime", TargetValue = 30 },
+        new() { Id = "genre-romance", Key = "genre_romance", Title = "Romance Rewind", Description = "Watch 20 romance items.", Icon = "favorite", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Romance", TargetValue = 20 },
+        new() { Id = "genre-thriller", Key = "genre_thriller", Title = "Thriller Thrills", Description = "Watch 30 thrillers.", Icon = "bolt", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Thriller", TargetValue = 30 },
+        new() { Id = "genre-fantasy", Key = "genre_fantasy", Title = "Fantasy Forever", Description = "Watch 30 fantasy items.", Icon = "auto_fix_high", Category = "Genre Specialist", Rarity = "Rare", Metric = AchievementMetric.GenreItemsWatched, MetricParameter = "Fantasy", TargetValue = 30 },
+
+        // Streak extremes
+        new() { Id = "streak-200", Key = "streak_200", Title = "Unstoppable", Description = "Reach a best watch streak of 200 days.", Icon = "trending_up", Category = "Best Streaks", Rarity = "Mythic", Metric = AchievementMetric.BestWatchStreak, TargetValue = 200 },
+        new() { Id = "streak-365", Key = "streak_365", Title = "Year-Long", Description = "Reach a best watch streak of 365 days.", Icon = "event", Category = "Best Streaks", Rarity = "Mythic", Metric = AchievementMetric.BestWatchStreak, TargetValue = 365 },
+        new() { Id = "streak-500", Key = "streak_500", Title = "Impossible", Description = "Reach a best watch streak of 500 days.", Icon = "auto_awesome", Category = "Best Streaks", Rarity = "Mythic", Metric = AchievementMetric.BestWatchStreak, TargetValue = 500 },
+
+        // Late night extremes
+        new() { Id = "late-graveyard", Key = "late_graveyard", Title = "Graveyard Shift", Description = "Have 500 late-night sessions.", Icon = "nightlife", Category = "Night Watching", Rarity = "Mythic", Metric = AchievementMetric.LateNightSessions, TargetValue = 500 },
+        new() { Id = "late-vampire", Key = "late_vampire", Title = "Vampire", Description = "Have 1000 late-night sessions.", Icon = "dark_mode", Category = "Night Watching", Rarity = "Mythic", Metric = AchievementMetric.LateNightSessions, TargetValue = 1000 },
+
+        // Rewatch extremes
+        new() { Id = "rewatch-serial", Key = "rewatch_serial", Title = "Serial Offender", Description = "Rewatch 100 items.", Icon = "repeat_on", Category = "Rewatch", Rarity = "Legendary", Metric = AchievementMetric.RewatchCount, TargetValue = 100 },
+        new() { Id = "rewatch-comfort", Key = "rewatch_comfort", Title = "Comfort Zone", Description = "Rewatch 500 items.", Icon = "replay_circle_filled", Category = "Rewatch", Rarity = "Mythic", Metric = AchievementMetric.RewatchCount, TargetValue = 500 },
+
+        // Total time extremes
+        new() { Id = "time-2k", Key = "time_2k", Title = "Two Thousand Hours", Description = "Watch 2000 hours of content.", Icon = "update", Category = "Total Time", Rarity = "Mythic", Metric = AchievementMetric.TotalMinutesWatched, TargetValue = 120000 },
+        new() { Id = "time-5k", Key = "time_5k", Title = "Five Thousand Hours", Description = "Watch 5000 hours of content.", Icon = "av_timer", Category = "Total Time", Rarity = "Mythic", Metric = AchievementMetric.TotalMinutesWatched, TargetValue = 300000 },
+
+        // Days watched extreme
+        new() { Id = "days-year-rounder", Key = "days_year_rounder", Title = "Year Rounder", Description = "Watch on 365 separate days.", Icon = "calendar_today", Category = "Streaks", Rarity = "Mythic", Metric = AchievementMetric.DaysWatched, TargetValue = 365 },
+
+        // Prestige tier badges (new PrestigeLevel metric)
+        new() { Id = "prestige-1", Key = "prestige_1", Title = "First Prestige", Description = "Reach prestige level 1.", Icon = "auto_awesome", Category = "Prestige", Rarity = "Legendary", Metric = AchievementMetric.PrestigeLevel, TargetValue = 1 },
+        new() { Id = "prestige-3", Key = "prestige_3", Title = "Triple Crown", Description = "Reach prestige level 3.", Icon = "workspace_premium", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 3 },
+        new() { Id = "prestige-5", Key = "prestige_5", Title = "Pentaprestige", Description = "Reach prestige level 5.", Icon = "military_tech", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 5 },
+        new() { Id = "prestige-10", Key = "prestige_10", Title = "Legend of Legends", Description = "Reach prestige level 10.", Icon = "stars", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 10 }
     };
 }

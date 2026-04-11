@@ -1849,7 +1849,7 @@ public class AchievementBadgeService
                 profile.Badges.Add(badge);
             }
 
-            var current = Math.Clamp(GetMetricValue(profile.Counters, def.Metric, def.MetricParameter), 0, def.TargetValue);
+            var current = Math.Clamp(GetMetricValue(profile.Counters, def.Metric, def.MetricParameter, profile), 0, def.TargetValue);
 
             var wasUnlocked = badge.Unlocked;
             badge.CurrentValue = current;
@@ -1882,8 +1882,13 @@ public class AchievementBadgeService
         }
     }
 
-    private static int GetMetricValue(UserAchievementCounters counters, AchievementMetric metric, string? parameter = null)
+    private static int GetMetricValue(UserAchievementCounters counters, AchievementMetric metric, string? parameter = null, UserAchievementProfile? profile = null)
     {
+        if (metric == AchievementMetric.PrestigeLevel)
+        {
+            return profile?.PrestigeLevel ?? 0;
+        }
+
         if (metric == AchievementMetric.GenreItemsWatched && !string.IsNullOrWhiteSpace(parameter))
         {
             return counters.GenreItemCounts.TryGetValue(parameter, out var g) ? g : 0;

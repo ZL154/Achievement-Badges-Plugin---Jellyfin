@@ -316,6 +316,20 @@
             '#' + ROOT_ID + ' .ab-r-epic{color:#a78bfa;}' +
             '#' + ROOT_ID + ' .ab-r-legendary{color:#fbbf24;}' +
             '#' + ROOT_ID + ' .ab-r-mythic{color:#f43f5e;}' +
+            // Rarity-colored borders on badge cards
+            '#' + ROOT_ID + ' .ab-card.ab-r-common-border{border-color:rgba(159,179,200,0.3);}' +
+            '#' + ROOT_ID + ' .ab-card.ab-r-uncommon-border{border-color:rgba(52,211,153,0.4);box-shadow:0 0 0 1px rgba(52,211,153,0.1);}' +
+            '#' + ROOT_ID + ' .ab-card.ab-r-rare-border{border-color:rgba(96,165,250,0.45);box-shadow:0 0 0 1px rgba(96,165,250,0.15);}' +
+            '#' + ROOT_ID + ' .ab-card.ab-r-epic-border{border-color:rgba(167,139,250,0.5);box-shadow:0 0 0 1px rgba(167,139,250,0.2),0 0 20px rgba(167,139,250,0.08);}' +
+            '#' + ROOT_ID + ' .ab-card.ab-r-legendary-border{border-color:rgba(251,191,36,0.55);box-shadow:0 0 0 1px rgba(251,191,36,0.25),0 0 24px rgba(251,191,36,0.12);}' +
+            '#' + ROOT_ID + ' .ab-card.ab-r-mythic-border{border-color:rgba(244,63,94,0.6);box-shadow:0 0 0 1px rgba(244,63,94,0.3),0 0 28px rgba(244,63,94,0.15);}' +
+            // Same borders for goal cards
+            '#' + ROOT_ID + ' .ab-goal-card.ab-r-common-border{border-color:rgba(159,179,200,0.35);}' +
+            '#' + ROOT_ID + ' .ab-goal-card.ab-r-uncommon-border{border-color:rgba(52,211,153,0.45);}' +
+            '#' + ROOT_ID + ' .ab-goal-card.ab-r-rare-border{border-color:rgba(96,165,250,0.5);}' +
+            '#' + ROOT_ID + ' .ab-goal-card.ab-r-epic-border{border-color:rgba(167,139,250,0.55);}' +
+            '#' + ROOT_ID + ' .ab-goal-card.ab-r-legendary-border{border-color:rgba(251,191,36,0.6);}' +
+            '#' + ROOT_ID + ' .ab-goal-card.ab-r-mythic-border{border-color:rgba(244,63,94,0.65);}' +
             '#' + ROOT_ID + ' .ab-lb-row{display:flex;justify-content:space-between;gap:1em;padding:0.75em 0;border-bottom:1px solid rgba(255,255,255,0.08);}' +
             '#' + ROOT_ID + ' .ab-lb-row:last-child{border-bottom:none;}' +
             '#' + ROOT_ID + ' .ab-panel-card{padding:1.1em;border-radius:14px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);}' +
@@ -388,9 +402,9 @@
                     '<button type="button" class="ab-tab" id="abSaTabStats">Stats</button>' +
                 '</div>' +
                 '<div id="abSaPanelBadges" class="ab-panel">' +
-                    '<div id="abSaGoalsWrap" style="display:none;">' +
-                        '<div class="ab-eyebrow">Today\'s goals</div>' +
-                        '<div id="abSaGoals" class="ab-goals-row"></div>' +
+                    '<div id="abSaPinnedWrap" style="display:none;">' +
+                        '<div class="ab-eyebrow" style="display:flex; align-items:center; gap:0.4em;"><span class="material-icons" style="font-size:1em;">push_pin</span> Working on</div>' +
+                        '<div id="abSaPinnedRow" class="ab-goals-row"></div>' +
                     '</div>' +
                     '<div class="ab-filter-row" style="display:flex; gap:0.75em; flex-wrap:wrap; margin-bottom:1em; align-items:center;">' +
                         '<input type="search" id="abSaSearch" placeholder="Search badges by title, category, rarity..." class="ab-input" style="flex:1; min-width:240px;">' +
@@ -533,6 +547,7 @@
         if (name === 'compare') { loadCompareUserList(); }
         if (name === 'activity') { loadActivity(); }
         if (name === 'wrapped') { loadWrapped(); }
+        if (name === 'lb') { loadCategoryLb('score'); }
     }
 
     function loadWrapped() {
@@ -1388,6 +1403,7 @@
             var isTitleEquipped = equippedTitleId && equippedTitleId === b.Id;
             var eta = badgeEtaMap[b.Id];
             if (isPinned) c.classList.add('ab-card-pinned');
+            c.classList.add(rarityClass(b.Rarity) + '-border');
             var etaHtml = '';
             if (eta && !b.Unlocked && eta.DaysRemaining != null) {
                 etaHtml = '<div class="ab-eta"><span class="material-icons">schedule</span> ETA ~' + eta.DaysRemaining + ' day' + (eta.DaysRemaining === 1 ? '' : 's') + '</div>';
@@ -1480,21 +1496,29 @@
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload).catch(function () { });
     }
 
-    function renderSmartGoals(data) {
-        var wrap = el('abSaGoalsWrap');
-        var row = el('abSaGoals');
+    function renderPinnedRow(badges) {
+        var wrap = el('abSaPinnedWrap');
+        var row = el('abSaPinnedRow');
         if (!wrap || !row) return;
-        if (!data || !data.Goals || !data.Goals.length) { wrap.style.display = 'none'; return; }
+
+        var pinned = (badges || []).filter(function (b) { return pinnedIdsGlobal[b.Id] && !b.Unlocked; });
+        if (!pinned.length) { wrap.style.display = 'none'; return; }
+
         wrap.style.display = 'block';
-        row.innerHTML = data.Goals.map(function (g) {
-            var pct = g.Target > 0 ? Math.round(100 * g.Current / g.Target) : 0;
-            return '<div class="ab-goal-card" data-badge="' + (g.BadgeId || '') + '">' +
-                '<div class="ab-goal-label ' + rarityClass(g.Rarity) + '">' + (g.BadgeId ? (g.Rarity || '') : 'STREAK') + '</div>' +
-                '<div class="ab-goal-text">' + escapeHtml(g.Action || '') + '</div>' +
-                '<div class="ab-goal-meta">' + escapeHtml(g.Title || '') + (g.Target ? ' · ' + g.Current + '/' + g.Target : '') + '</div>' +
+        row.innerHTML = pinned.map(function (b) {
+            var cur = b.CurrentValue || 0, tar = b.TargetValue || 0;
+            var pct = tar > 0 ? Math.round(100 * cur / tar) : 0;
+            var eta = badgeEtaMap[b.Id];
+            var etaText = eta && eta.DaysRemaining != null ? '\u00b7 ETA ~' + eta.DaysRemaining + 'd' : '';
+            return '<div class="ab-goal-card ' + rarityClass(b.Rarity) + '-border" data-badge="' + b.Id + '">' +
+                '<div class="ab-goal-label ' + rarityClass(b.Rarity) + '">' + (b.Rarity || '') + '</div>' +
+                '<div class="ab-goal-text">' + escapeHtml(b.Title || '') + '</div>' +
+                '<div class="ab-goal-meta">' + cur + ' / ' + tar + ' (' + pct + '%) ' + etaText + '</div>' +
+                '<div style="height:4px; border-radius:2px; background:rgba(255,255,255,0.08); margin-top:0.5em; overflow:hidden;">' +
+                    '<div style="height:100%; width:' + pct + '%; background:linear-gradient(90deg,#667eea,#764ba2);"></div>' +
+                '</div>' +
             '</div>';
         }).join('');
-        // Click goal card to chase the badge
         row.querySelectorAll('.ab-goal-card').forEach(function (card) {
             var badgeId = card.getAttribute('data-badge');
             if (badgeId) {
@@ -1579,13 +1603,10 @@
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/title').catch(function () { return null; }),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/bank').catch(function () { return null; }),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/badge-eta').catch(function () { return null; }),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/streak-calendar?weeks=53').catch(function () { return null; }),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/smart-goals?limit=5').catch(function () { return null; })
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/streak-calendar?weeks=53').catch(function () { return null; })
         ]).then(function (results) {
             var badges = results[0], summary = results[1], equipped = results[2], lb = results[3], stats = results[4], rank = results[5];
-            var titleData = results[6], bankData = results[7], etaData = results[8], streakData = results[9], goalsData = results[10];
-
-            renderSmartGoals(goalsData);
+            var titleData = results[6], bankData = results[7], etaData = results[8], streakData = results[9];
 
             badgeEtaMap = {};
             if (etaData && etaData.Etas) {
@@ -1622,6 +1643,7 @@
             if (bankData && bankData.PinnedBadgeIds) {
                 bankData.PinnedBadgeIds.forEach(function (id) { pinnedIdsGlobal[id] = true; });
             }
+            renderPinnedRow(badges);
 
             var sub = el('abSaSub');
             if (sub) sub.textContent = 'Completion: ' + ((summary && summary.Percentage != null) ? summary.Percentage : 0) + '% \u2022 Score: ' + (summary ? (summary.Score || 0) : 0);
