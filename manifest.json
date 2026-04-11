@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.16",
+        "changelog": "Xbox toast rebuilt closer to the original Adam Cosman codepen. Circle is now a solid base color with two separate pulse rings (lighter ::before + darker ::after) instead of a smooth gradient, and the circle/banner color-shifts to a brighter shade during the 24-85% expanded keyframes (mirrors the codepen's #39960C -> #42ae0e transition). Each rarity gets 4 coordinated shades (base/lighter/darker/bright). Banner has a subtle top-highlight / bottom-shadow sheen so it reads with depth without looking neon. GitHub README banner stripped of all decoration (stars, corners, rarity bar, header text) and is now just the looping Xbox achievement animation itself, cycling through all 6 rarity tiers.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.16/Jellyfin.Plugin.AchievementBadgesv1.5.16.zip",
+        "checksum": "20354847D0F7F306BB7B7EF5D5994C70"
+      },
+      {
         "version": "1.5.15",
         "changelog": "Xbox-style unlock toast now uses 3-stop vertical gradients (lighter -> base -> darker) per rarity instead of flat fills, so Mythic/Legendary/Epic read with proper depth and no longer look neon and flat. Rarity color palette also realigned to the canonical rainbow used elsewhere in the plugin (#9fb3c8 / #34d399 / #60a5fa / #a78bfa / #fbbf24 / #f43f5e). GitHub README banner replaced with a looping animated SVG that literally reproduces the Xbox achievement popup: circle expands into a banner, trophy rotates inside, rarity cycles through all six tiers on a 30s master loop so visitors see every gradient.",
         "targetAbi": "10.11.0.0",
