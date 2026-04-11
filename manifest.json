@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.22",
+        "changelog": "Sidebar entry is now anchored next to Jellyfin's own 'Plugin Settings' / 'Plugin Pages' item instead of wherever the first '.navMenuOption' happens to be — which, depending on which other plugins are installed, could land us inside a 3rd-party section like Kevin Tweaks. The injector walks every '.navMenuOption', text-matches 'Plugin Settings' / 'Plugin Pages', and inserts ours directly after it. Fallbacks: Home item, then first nav item (previous behaviour) as last resort.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.22/Jellyfin.Plugin.AchievementBadgesv1.5.22.zip",
+        "checksum": "EF689B4ADA8A5ECB8C2A29ABD73190B7"
+      },
+      {
         "version": "1.5.21",
         "changelog": "Root-cause fix for the missing sidebar. The previous versions were injecting correctly — the problem was the script never reached the browser in the first place. SidebarInjectionMiddleware's path check only matched requests whose URL contained the literal string 'index.html', but Jellyfin web is typically served at '/web/' with no filename, so every shell-page load bypassed the middleware and no script ever got injected. The middleware now intercepts any plausible HTML GET (anything that isn't an obvious static asset, /api/, /Plugins/, /emby/, etc.) and gates on Content-Type 'text/html' before rewriting. Also fixed two adjacent bugs: (1) compressed responses (gzip/br) are now passed through untouched instead of mangled by a UTF-8 text read, and (2) Content-Length is cleared instead of being pre-set to avoid a Kestrel write race on some configurations.",
         "targetAbi": "10.11.0.0",
