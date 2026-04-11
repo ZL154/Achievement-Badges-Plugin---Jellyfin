@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.21",
+        "changelog": "Root-cause fix for the missing sidebar. The previous versions were injecting correctly — the problem was the script never reached the browser in the first place. SidebarInjectionMiddleware's path check only matched requests whose URL contained the literal string 'index.html', but Jellyfin web is typically served at '/web/' with no filename, so every shell-page load bypassed the middleware and no script ever got injected. The middleware now intercepts any plausible HTML GET (anything that isn't an obvious static asset, /api/, /Plugins/, /emby/, etc.) and gates on Content-Type 'text/html' before rewriting. Also fixed two adjacent bugs: (1) compressed responses (gzip/br) are now passed through untouched instead of mangled by a UTF-8 text read, and (2) Content-Length is cleared instead of being pre-set to avoid a Kestrel write race on some configurations.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.21/Jellyfin.Plugin.AchievementBadgesv1.5.21.zip",
+        "checksum": "40418451E9518784D4A40996E16DA772"
+      },
+      {
         "version": "1.5.20",
         "changelog": "Sidebar entry actually shows up now. v1.5.19's anchor strategy assumed every Jellyfin layout wraps nav items in '.navMenuSection' divs, but modern 10.11.x web flat-renders '<a class=navMenuOption>' children directly inside '.navMenuOptions' with no section wrappers, so the previous query returned nothing. The injector now finds any existing '.navMenuOption' (Home, Movies, etc.) and inserts ours as a sibling in the same parent — cloning the layout we found instead of guessing the wrapper structure. Also clones the existing item's class list so we inherit Jellyfin's exact styling. Insert position: right before the first sibling matching Sign Out / Settings / Dashboard / Manage Server, falling back to append. Retry loop extended from 15s to 60s for slow / cold-cache loads, and the MutationObserver is now throttled to 250ms so nav rebuilds don't thrash.",
         "targetAbi": "10.11.0.0",

@@ -201,13 +201,11 @@ public class SidebarInjectionMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (!IsIndexHtmlRequest(context))
+        if (!CouldBeHtmlRequest(context))
         {
             await _next(context);
             return;
         }
-
-        _logger.LogInformation("[AchievementBadges] middleware handling index.html request: {Path}", context.Request.Path.Value);
 
         var originalBody = context.Response.Body;
 
@@ -220,8 +218,16 @@ public class SidebarInjectionMiddleware
 
             buffer.Seek(0, SeekOrigin.Begin);
 
-            if (context.Response.ContentType != null &&
-                context.Response.ContentType.Contains("text/html", StringComparison.OrdinalIgnoreCase))
+            var contentType = context.Response.ContentType;
+            var contentEncoding = context.Response.Headers["Content-Encoding"].ToString();
+
+            // Only rewrite uncompressed text/html. If the response is gzip/br,
+            // streaming through our buffer as plain UTF-8 would mangle bytes,
+            // so pass it through untouched.
+            var isHtml = contentType != null && contentType.Contains("text/html", StringComparison.OrdinalIgnoreCase);
+            var isCompressed = !string.IsNullOrEmpty(contentEncoding);
+
+            if (isHtml && !isCompressed)
             {
                 var html = await new StreamReader(buffer, Encoding.UTF8).ReadToEndAsync();
 
@@ -231,21 +237,15 @@ public class SidebarInjectionMiddleware
                         StringComparison.OrdinalIgnoreCase);
 
                     var bytes = Encoding.UTF8.GetBytes(html);
-                    context.Response.ContentLength = bytes.Length;
+                    // Clear Content-Length so the framework re-derives it from the new body.
+                    // Setting it to bytes.Length first caused a race on some Kestrel paths.
+                    context.Response.ContentLength = null;
                     context.Response.Body = originalBody;
                     await context.Response.Body.WriteAsync(bytes);
 
                     _logger.LogInformation("[AchievementBadges] Injected scripts into {Path} ({Bytes} bytes).", context.Request.Path.Value, bytes.Length);
                     return;
                 }
-                else
-                {
-                    _logger.LogWarning("[AchievementBadges] middleware: response HTML did not contain </body> tag, skipping injection. Content-Type={ContentType}", context.Response.ContentType);
-                }
-            }
-            else
-            {
-                _logger.LogWarning("[AchievementBadges] middleware: response content type not HTML, skipping injection. Content-Type={ContentType}", context.Response.ContentType);
             }
 
             buffer.Seek(0, SeekOrigin.Begin);
@@ -259,11 +259,65 @@ public class SidebarInjectionMiddleware
         }
     }
 
-    private static bool IsIndexHtmlRequest(HttpContext context)
+    // Broad prefilter: buffer anything that MIGHT be Jellyfin's SPA shell HTML.
+    // Jellyfin serves index.html at /web/, /web, /web/index.html, and sometimes /.
+    // We can't rely on the literal "index.html" substring — /web/ has no filename.
+    // Content-Type gating inside InvokeAsync stops us actually rewriting non-HTML.
+    private static bool CouldBeHtmlRequest(HttpContext context)
     {
-        return context.Request.Method.Equals("GET", StringComparison.OrdinalIgnoreCase)
-            && context.Request.Path.Value != null
-            && context.Request.Path.Value.Contains("index.html", StringComparison.OrdinalIgnoreCase)
-            && !context.Request.Path.Value.Contains("/api/", StringComparison.OrdinalIgnoreCase);
+        if (!context.Request.Method.Equals("GET", StringComparison.OrdinalIgnoreCase))
+            return false;
+        var path = context.Request.Path.Value;
+        if (path == null) return false;
+
+        // Skip obviously non-HTML paths to avoid buffering every asset in memory.
+        if (path.Contains("/api/", StringComparison.OrdinalIgnoreCase)) return false;
+        if (path.Contains("/Plugins/", StringComparison.OrdinalIgnoreCase)) return false;
+        if (path.Contains("/emby/", StringComparison.OrdinalIgnoreCase)) return false;
+        if (path.Contains("/Items/", StringComparison.OrdinalIgnoreCase)) return false;
+        if (path.Contains("/Users/", StringComparison.OrdinalIgnoreCase)
+            && !path.EndsWith("/Users", StringComparison.OrdinalIgnoreCase)) return false;
+        if (path.Contains("/socket", StringComparison.OrdinalIgnoreCase)) return false;
+        if (path.Contains("/System/", StringComparison.OrdinalIgnoreCase)) return false;
+        if (path.Contains("/Videos/", StringComparison.OrdinalIgnoreCase)) return false;
+        if (path.Contains("/Audio/", StringComparison.OrdinalIgnoreCase)) return false;
+        if (path.Contains("/Images/", StringComparison.OrdinalIgnoreCase)) return false;
+
+        // Obvious static asset extensions — let them pass untouched.
+        var lastSlash = path.LastIndexOf('/');
+        var fileName = lastSlash >= 0 ? path.Substring(lastSlash + 1) : path;
+        var dot = fileName.LastIndexOf('.');
+        if (dot >= 0)
+        {
+            var ext = fileName.Substring(dot + 1).ToLowerInvariant();
+            switch (ext)
+            {
+                case "js":
+                case "mjs":
+                case "css":
+                case "map":
+                case "png":
+                case "jpg":
+                case "jpeg":
+                case "gif":
+                case "svg":
+                case "webp":
+                case "ico":
+                case "woff":
+                case "woff2":
+                case "ttf":
+                case "eot":
+                case "mp4":
+                case "webm":
+                case "m4s":
+                case "ts":
+                case "json":
+                case "xml":
+                case "txt":
+                case "wasm":
+                    return false;
+            }
+        }
+        return true;
     }
 }
