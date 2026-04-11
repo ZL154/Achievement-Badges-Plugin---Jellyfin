@@ -185,6 +185,68 @@ public static class AchievementDefinitions
         new() { Id = "prestige-1", Key = "prestige_1", Title = "First Prestige", Description = "Reach prestige level 1.", Icon = "auto_awesome", Category = "Prestige", Rarity = "Legendary", Metric = AchievementMetric.PrestigeLevel, TargetValue = 1 },
         new() { Id = "prestige-3", Key = "prestige_3", Title = "Triple Crown", Description = "Reach prestige level 3.", Icon = "workspace_premium", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 3 },
         new() { Id = "prestige-5", Key = "prestige_5", Title = "Pentaprestige", Description = "Reach prestige level 5.", Icon = "military_tech", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 5 },
-        new() { Id = "prestige-10", Key = "prestige_10", Title = "Legend of Legends", Description = "Reach prestige level 10.", Icon = "stars", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 10 }
+        new() { Id = "prestige-10", Key = "prestige_10", Title = "Legend of Legends", Description = "Reach prestige level 10.", Icon = "stars", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 10 },
+        new() { Id = "prestige-15", Key = "prestige_15", Title = "Prestige Elite", Description = "Reach prestige level 15.", Icon = "workspace_premium", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 15 },
+        new() { Id = "prestige-25", Key = "prestige_25", Title = "Prestige Icon", Description = "Reach prestige level 25.", Icon = "military_tech", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 25 },
+        new() { Id = "prestige-50", Key = "prestige_50", Title = "Prestige God", Description = "Reach prestige level 50.", Icon = "auto_awesome", Category = "Prestige", Rarity = "Mythic", Metric = AchievementMetric.PrestigeLevel, TargetValue = 50 },
+
+        // Score Millionaire (lifetime score)
+        new() { Id = "score-500k", Key = "score_500k", Title = "Half Millionaire", Description = "Earn 500,000 lifetime score.", Icon = "paid", Category = "Score Economy", Rarity = "Legendary", Metric = AchievementMetric.LifetimeScore, TargetValue = 500000 },
+        new() { Id = "score-1m", Key = "score_1m", Title = "Score Millionaire", Description = "Earn 1,000,000 lifetime score.", Icon = "diamond", Category = "Score Economy", Rarity = "Mythic", Metric = AchievementMetric.LifetimeScore, TargetValue = 1000000 },
+
+        // Morning Ritual extremes
+        new() { Id = "morning-ritual-100", Key = "morning_ritual_100", Title = "Morning Ritual", Description = "Have 100 early-morning sessions.", Icon = "wb_twilight", Category = "Morning Watching", Rarity = "Legendary", Metric = AchievementMetric.EarlyMorningSessions, TargetValue = 100 },
+        new() { Id = "morning-ritual-500", Key = "morning_ritual_500", Title = "Dawn Watcher", Description = "Have 500 early-morning sessions.", Icon = "wb_sunny", Category = "Morning Watching", Rarity = "Mythic", Metric = AchievementMetric.EarlyMorningSessions, TargetValue = 500 },
+
+        // Combo Master
+        new() { Id = "combo-master-15", Key = "combo_master_15", Title = "Combo Master", Description = "Reach a 15x playback combo.", Icon = "flash_on", Category = "Combos", Rarity = "Epic", Metric = AchievementMetric.BestComboCount, TargetValue = 15 },
+        new() { Id = "combo-master-30", Key = "combo_master_30", Title = "Combo God", Description = "Reach a 30x playback combo.", Icon = "bolt", Category = "Combos", Rarity = "Mythic", Metric = AchievementMetric.BestComboCount, TargetValue = 30 },
+
+        // Library Completionist
+        new() { Id = "lib-complete-1", Key = "lib_complete_1", Title = "One Library Down", Description = "Reach 100% completion in 1 library.", Icon = "check_circle", Category = "Library Completion", Rarity = "Epic", Metric = AchievementMetric.LibrariesAt100Percent, TargetValue = 1 },
+        new() { Id = "lib-complete-3", Key = "lib_complete_3", Title = "Triple Completionist", Description = "Reach 100% completion in 3 libraries.", Icon = "verified", Category = "Library Completion", Rarity = "Mythic", Metric = AchievementMetric.LibrariesAt100Percent, TargetValue = 3 },
+
+        // Badge Hoarder
+        new() { Id = "badges-50pct", Key = "badges_50pct", Title = "Badge Collector", Description = "Unlock 50% of all badges.", Icon = "emoji_events", Category = "Meta", Rarity = "Legendary", Metric = AchievementMetric.BadgesUnlockedPercent, TargetValue = 50 },
+        new() { Id = "badges-75pct", Key = "badges_75pct", Title = "Badge Hoarder", Description = "Unlock 75% of all badges.", Icon = "emoji_events", Category = "Meta", Rarity = "Mythic", Metric = AchievementMetric.BadgesUnlockedPercent, TargetValue = 75 },
+
+        // Director Devotee extremes
+        new() { Id = "director-devotee-50", Key = "director_devotee_50", Title = "Director Devotee", Description = "Watch 50 items from the same director.", Icon = "theaters", Category = "People", Rarity = "Legendary", Metric = AchievementMetric.TopDirectorCount, TargetValue = 50 },
+        new() { Id = "director-devotee-100", Key = "director_devotee_100", Title = "Filmmaker Scholar", Description = "Watch 100 items from the same director.", Icon = "movie_creation", Category = "People", Rarity = "Mythic", Metric = AchievementMetric.TopDirectorCount, TargetValue = 100 },
+
+        // Per-decade specialists
+        new() { Id = "decade-60s", Key = "decade_60s", Title = "60s Kid", Description = "Watch 15 items from the 1960s.", Icon = "radio", Category = "Decades", Rarity = "Uncommon", Metric = AchievementMetric.DecadeItemsWatched, MetricParameter = "1960", TargetValue = 15 },
+        new() { Id = "decade-70s", Key = "decade_70s", Title = "70s Fan", Description = "Watch 15 items from the 1970s.", Icon = "vinyl", Category = "Decades", Rarity = "Uncommon", Metric = AchievementMetric.DecadeItemsWatched, MetricParameter = "1970", TargetValue = 15 },
+        new() { Id = "decade-80s", Key = "decade_80s", Title = "80s Child", Description = "Watch 15 items from the 1980s.", Icon = "sports", Category = "Decades", Rarity = "Uncommon", Metric = AchievementMetric.DecadeItemsWatched, MetricParameter = "1980", TargetValue = 15 },
+        new() { Id = "decade-90s", Key = "decade_90s", Title = "90s Nostalgic", Description = "Watch 15 items from the 1990s.", Icon = "cassette", Category = "Decades", Rarity = "Uncommon", Metric = AchievementMetric.DecadeItemsWatched, MetricParameter = "1990", TargetValue = 15 },
+        new() { Id = "decade-00s", Key = "decade_00s", Title = "Y2K Survivor", Description = "Watch 15 items from the 2000s.", Icon = "phone_iphone", Category = "Decades", Rarity = "Uncommon", Metric = AchievementMetric.DecadeItemsWatched, MetricParameter = "2000", TargetValue = 15 },
+        new() { Id = "decade-10s", Key = "decade_10s", Title = "Streaming Era", Description = "Watch 15 items from the 2010s.", Icon = "connected_tv", Category = "Decades", Rarity = "Uncommon", Metric = AchievementMetric.DecadeItemsWatched, MetricParameter = "2010", TargetValue = 15 },
+        new() { Id = "decade-20s", Key = "decade_20s", Title = "Modern Times", Description = "Watch 15 items from the 2020s.", Icon = "devices", Category = "Decades", Rarity = "Uncommon", Metric = AchievementMetric.DecadeItemsWatched, MetricParameter = "2020", TargetValue = 15 },
+
+        // Day of week specialists
+        new() { Id = "dow-monday", Key = "dow_monday", Title = "Monday Motivator", Description = "Watch 20 items on Mondays.", Icon = "calendar_today", Category = "Weekdays", Rarity = "Uncommon", Metric = AchievementMetric.DayOfWeekItemsWatched, MetricParameter = "Monday", TargetValue = 20 },
+        new() { Id = "dow-tuesday", Key = "dow_tuesday", Title = "Tuesday Tradition", Description = "Watch 20 items on Tuesdays.", Icon = "calendar_today", Category = "Weekdays", Rarity = "Uncommon", Metric = AchievementMetric.DayOfWeekItemsWatched, MetricParameter = "Tuesday", TargetValue = 20 },
+        new() { Id = "dow-wednesday", Key = "dow_wednesday", Title = "Wednesday Warrior", Description = "Watch 20 items on Wednesdays.", Icon = "calendar_today", Category = "Weekdays", Rarity = "Uncommon", Metric = AchievementMetric.DayOfWeekItemsWatched, MetricParameter = "Wednesday", TargetValue = 20 },
+        new() { Id = "dow-thursday", Key = "dow_thursday", Title = "Thursday Thrills", Description = "Watch 20 items on Thursdays.", Icon = "calendar_today", Category = "Weekdays", Rarity = "Uncommon", Metric = AchievementMetric.DayOfWeekItemsWatched, MetricParameter = "Thursday", TargetValue = 20 },
+        new() { Id = "dow-friday", Key = "dow_friday", Title = "Friday Feast", Description = "Watch 20 items on Fridays.", Icon = "weekend", Category = "Weekdays", Rarity = "Uncommon", Metric = AchievementMetric.DayOfWeekItemsWatched, MetricParameter = "Friday", TargetValue = 20 },
+        new() { Id = "dow-saturday", Key = "dow_saturday", Title = "Saturday Sessioner", Description = "Watch 20 items on Saturdays.", Icon = "weekend", Category = "Weekdays", Rarity = "Uncommon", Metric = AchievementMetric.DayOfWeekItemsWatched, MetricParameter = "Saturday", TargetValue = 20 },
+        new() { Id = "dow-sunday", Key = "dow_sunday", Title = "Lazy Sunday", Description = "Watch 20 items on Sundays.", Icon = "bed", Category = "Weekdays", Rarity = "Uncommon", Metric = AchievementMetric.DayOfWeekItemsWatched, MetricParameter = "Sunday", TargetValue = 20 },
+
+        // Binge Marathon (total minutes in one day)
+        new() { Id = "binge-marathon-300", Key = "binge_marathon_300", Title = "Binge Marathon", Description = "Watch 300 minutes (5 hours) in a single day.", Icon = "timer", Category = "Endurance", Rarity = "Epic", Metric = AchievementMetric.MaxMinutesInSingleDay, TargetValue = 300 },
+        new() { Id = "binge-marathon-600", Key = "binge_marathon_600", Title = "Ultra Marathon", Description = "Watch 600 minutes (10 hours) in a single day.", Icon = "hourglass_full", Category = "Endurance", Rarity = "Legendary", Metric = AchievementMetric.MaxMinutesInSingleDay, TargetValue = 600 },
+        new() { Id = "binge-marathon-900", Key = "binge_marathon_900", Title = "Day-Long Binge", Description = "Watch 900 minutes (15 hours) in a single day.", Icon = "av_timer", Category = "Endurance", Rarity = "Mythic", Metric = AchievementMetric.MaxMinutesInSingleDay, TargetValue = 900 },
+
+        // Max items in single library
+        new() { Id = "lib-specialist-100", Key = "lib_specialist_100", Title = "Library Specialist", Description = "Watch 100 items from a single library.", Icon = "library_books", Category = "Library Completion", Rarity = "Epic", Metric = AchievementMetric.MaxLibraryItemCount, TargetValue = 100 },
+        new() { Id = "lib-specialist-500", Key = "lib_specialist_500", Title = "Library Master", Description = "Watch 500 items from a single library.", Icon = "menu_book", Category = "Library Completion", Rarity = "Legendary", Metric = AchievementMetric.MaxLibraryItemCount, TargetValue = 500 },
+
+        // Actor Superfan extremes
+        new() { Id = "actor-devotee-75", Key = "actor_devotee_75", Title = "Actor Devotee", Description = "Watch 75 items featuring the same actor.", Icon = "face", Category = "People", Rarity = "Legendary", Metric = AchievementMetric.TopActorCount, TargetValue = 75 },
+        new() { Id = "actor-devotee-150", Key = "actor_devotee_150", Title = "Actor Obsession", Description = "Watch 150 items featuring the same actor.", Icon = "theater_comedy", Category = "People", Rarity = "Mythic", Metric = AchievementMetric.TopActorCount, TargetValue = 150 },
+
+        // Ultra episode/movie marathons
+        new() { Id = "movies-10-day", Key = "movies_10_day", Title = "Ultra Movie Marathon", Description = "Watch 10 movies in a single day.", Icon = "theaters", Category = "Film Marathons", Rarity = "Mythic", Metric = AchievementMetric.MaxMoviesInSingleDay, TargetValue = 10 },
+        new() { Id = "episodes-50-day", Key = "episodes_50_day", Title = "Binge Everest", Description = "Watch 50 episodes in a single day.", Icon = "tv", Category = "Episode Marathons", Rarity = "Mythic", Metric = AchievementMetric.MaxEpisodesInSingleDay, TargetValue = 50 }
     };
 }

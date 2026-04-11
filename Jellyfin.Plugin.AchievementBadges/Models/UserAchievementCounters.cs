@@ -50,6 +50,13 @@ public class UserAchievementCounters
     public Dictionary<string, int> LibraryItemCounts { get; set; } = new();
     public Dictionary<string, int> LibraryCompletionPercents { get; set; } = new();
 
+    // Per-decade item counts (key = decade as string, e.g. "1970", "1980")
+    public Dictionary<string, int> DecadeItemCounts { get; set; } = new();
+    // Per-day-of-week item counts (key = day name, e.g. "Monday")
+    public Dictionary<string, int> DayOfWeekItemCounts { get; set; } = new();
+    // Per-day total minutes watched (key = date yyyy-MM-dd)
+    public Dictionary<string, int> MinutesByDate { get; set; } = new();
+
     public HashSet<string> LoginDates { get; set; } = new();
     public DateOnly? LastLoginDate { get; set; }
     public int BestLoginStreak { get; set; }
@@ -120,4 +127,7 @@ public class UserAchievementCounters
     public int TopDirectorCount => DirectorItemCounts.Count == 0 ? 0 : DirectorItemCounts.Values.Max();
     public int TopActorCount => ActorItemCounts.Count == 0 ? 0 : ActorItemCounts.Values.Max();
     public int BestLibraryCompletionPercent => LibraryCompletionPercents.Count == 0 ? 0 : LibraryCompletionPercents.Values.Max();
+    public int LibrariesAt100PercentCount => LibraryCompletionPercents.Count(kv => kv.Value >= 100);
+    public int MaxLibraryItemCountValue => LibraryItemCounts.Count == 0 ? 0 : LibraryItemCounts.Values.Max();
+    public int MaxMinutesInSingleDay => MinutesByDate.Count == 0 ? 0 : MinutesByDate.Values.Max();
 }

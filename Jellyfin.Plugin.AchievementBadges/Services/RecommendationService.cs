@@ -5,7 +5,9 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.AchievementBadges.Models;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging;
+using SortOrder = Jellyfin.Database.Implementations.Enums.SortOrder;
 
 namespace Jellyfin.Plugin.AchievementBadges.Services;
 
@@ -50,7 +52,8 @@ public class RecommendationService
                 IsPlayed = false,
                 Recursive = true,
                 EnableTotalRecordCount = false,
-                Limit = limit * 3
+                Limit = limit * 4,
+                OrderBy = new[] { (ItemSortBy.Random, SortOrder.Ascending) }
             };
 
             long minTicks = 0, maxTicks = 0;
@@ -59,6 +62,11 @@ public class RecommendationService
                 case AchievementMetric.MoviesWatched:
                 case AchievementMetric.MaxMoviesInSingleDay:
                     query.IncludeItemTypes = new[] { BaseItemKind.Movie };
+                    break;
+                case AchievementMetric.SeriesCompleted:
+                case AchievementMetric.LongSeriesCompleted:
+                case AchievementMetric.VeryLongSeriesCompleted:
+                    query.IncludeItemTypes = new[] { BaseItemKind.Series };
                     break;
                 case AchievementMetric.MaxEpisodesInSingleDay:
                     query.IncludeItemTypes = new[] { BaseItemKind.Episode };
@@ -70,6 +78,18 @@ public class RecommendationService
                 case AchievementMetric.ShortItemsWatched:
                     query.IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Episode };
                     maxTicks = TimeSpan.FromMinutes(30).Ticks - 1;
+                    break;
+                case AchievementMetric.GenreItemsWatched:
+                    query.IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Episode };
+                    if (!string.IsNullOrWhiteSpace(def.MetricParameter))
+                    {
+                        query.Genres = new[] { def.MetricParameter! };
+                    }
+                    break;
+                case AchievementMetric.LateNightSessions:
+                case AchievementMetric.EarlyMorningSessions:
+                case AchievementMetric.WeekendSessions:
+                    query.IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Episode };
                     break;
                 default:
                     query.IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Episode };

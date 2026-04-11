@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.11",
+        "changelog": "Chase modal now randomizes suggested items (different list every click) and filters properly by badge metric - movie badges get movies, series badges get series, episode badges get episodes, genre badges use Jellyfin's genre filter. 35 new badges across Prestige (15/25/50), Score Economy (500k/1M lifetime), Morning Ritual, Combo Master, Library Completionist, Badge Hoarder, Director Devotee, 7 Decade specialists (60s-20s), 7 Day-of-Week specialists (Mon-Sun), Binge Marathon (5/10/15h in one day), Library Specialist (100/500 items in one library), Actor devotee extremes, Ultra Movie Marathon, Binge Everest. New metrics: LifetimeScore, BestComboCount, LibrariesAt100Percent, BadgesUnlockedPercent, DecadeItemsWatched, DayOfWeekItemsWatched, MaxLibraryItemCount, MaxMinutesInSingleDay. New counters tracked on every playback: decade dict, day-of-week dict, minutes-by-date dict.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.11/Jellyfin.Plugin.AchievementBadgesv1.5.11.zip",
+        "checksum": "E78B24BB6369B2AACA47184B95FF99E2"
+      },
+      {
         "version": "1.5.10",
         "changelog": "Pinned badges replace Smart Goals as the 'Working on' row (show only what you pick, no unrealistic auto-suggestions). Rarity-colored borders on every badge card - the whole grid now color-codes visually. Leaderboard Score sub-tab auto-loads when you open the Leaderboard tab (no more clicking between tabs to trigger it). 25 new badge definitions: 11 genre specialists (Horror, Comedy, Drama, Action, Sci-Fi, Animation, Documentary, Crime, Romance, Thriller, Fantasy), 3 streak extremes (200/365/500 days), 2 late-night extremes (500/1000 sessions), 2 rewatch extremes (100/500), 2 total-time extremes (2000/5000 hours), Year Rounder (365 days), and 4 Prestige tier badges (reach prestige 1/3/5/10) using a new PrestigeLevel metric.",
         "targetAbi": "10.11.0.0",

@@ -1357,7 +1357,24 @@ public class AchievementBadgeService
 
             if (context.ProductionYear is int year && year > 0)
             {
-                counters.DecadesWatched.Add(year / 10 * 10);
+                var decade = year / 10 * 10;
+                counters.DecadesWatched.Add(decade);
+                var decadeKey = decade.ToString();
+                counters.DecadeItemCounts.TryGetValue(decadeKey, out var decCount);
+                counters.DecadeItemCounts[decadeKey] = decCount + 1;
+            }
+
+            // Day-of-week count
+            var dowKey = timestamp.DayOfWeek.ToString();
+            counters.DayOfWeekItemCounts.TryGetValue(dowKey, out var dowCount);
+            counters.DayOfWeekItemCounts[dowKey] = dowCount + 1;
+
+            // Per-day total minutes
+            if (context.RunTimeTicks is long rtTicks && rtTicks > 0)
+            {
+                var minutes = (int)(rtTicks / TimeSpan.TicksPerMinute);
+                counters.MinutesByDate.TryGetValue(dayKey, out var dayMins);
+                counters.MinutesByDate[dayKey] = dayMins + minutes;
             }
 
             if (context.ProductionLocations is { Count: > 0 })
@@ -1887,6 +1904,49 @@ public class AchievementBadgeService
         if (metric == AchievementMetric.PrestigeLevel)
         {
             return profile?.PrestigeLevel ?? 0;
+        }
+
+        if (metric == AchievementMetric.LifetimeScore)
+        {
+            return profile?.LifetimeScore ?? 0;
+        }
+
+        if (metric == AchievementMetric.BestComboCount)
+        {
+            return profile?.BestComboCount ?? 0;
+        }
+
+        if (metric == AchievementMetric.LibrariesAt100Percent)
+        {
+            return counters.LibrariesAt100PercentCount;
+        }
+
+        if (metric == AchievementMetric.BadgesUnlockedPercent && profile != null)
+        {
+            var enabled = profile.Badges.Count;
+            if (enabled == 0) return 0;
+            var unlocked = profile.Badges.Count(b => b.Unlocked);
+            return (int)Math.Floor(100.0 * unlocked / enabled);
+        }
+
+        if (metric == AchievementMetric.MaxLibraryItemCount)
+        {
+            return counters.MaxLibraryItemCountValue;
+        }
+
+        if (metric == AchievementMetric.MaxMinutesInSingleDay)
+        {
+            return counters.MaxMinutesInSingleDay;
+        }
+
+        if (metric == AchievementMetric.DecadeItemsWatched && !string.IsNullOrWhiteSpace(parameter))
+        {
+            return counters.DecadeItemCounts.TryGetValue(parameter, out var dec) ? dec : 0;
+        }
+
+        if (metric == AchievementMetric.DayOfWeekItemsWatched && !string.IsNullOrWhiteSpace(parameter))
+        {
+            return counters.DayOfWeekItemCounts.TryGetValue(parameter, out var dow) ? dow : 0;
         }
 
         if (metric == AchievementMetric.GenreItemsWatched && !string.IsNullOrWhiteSpace(parameter))

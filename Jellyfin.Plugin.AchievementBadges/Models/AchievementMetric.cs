@@ -36,5 +36,13 @@ public enum AchievementMetric
     TopDirectorCount,
     TopActorCount,
     PersonItemsWatched,
-    PrestigeLevel
+    PrestigeLevel,
+    LifetimeScore,
+    BestComboCount,
+    LibrariesAt100Percent,
+    BadgesUnlockedPercent,
+    DecadeItemsWatched,
+    DayOfWeekItemsWatched,
+    MaxLibraryItemCount,
+    MaxMinutesInSingleDay
 }
