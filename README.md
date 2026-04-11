@@ -14,13 +14,15 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Jellyfin-10.11%2B-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
-  <img src="https://img.shields.io/badge/System-Achievements-darkred?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Version-1.5.11-gold?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/Version-1.5.11-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
 </p>
 
 # 🏆 Achievement Badges for Jellyfin
 
-A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity.
+A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd, built natively into your media server.
+
+> **Status:** Feature-complete as of v1.5.11. Bug fixes and Jellyfin version compatibility will continue; new features will be considered via [pull request](https://github.com/ZL154/AchievementBadges_for_Jellyfin/pulls).
 
 ---
 
