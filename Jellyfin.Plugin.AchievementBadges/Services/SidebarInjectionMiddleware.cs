@@ -43,58 +43,59 @@ public class SidebarInjectionMiddleware
     function injectSidebar(){
         try {
             if(document.getElementById(SIDEBAR_ID)){ return; }
-            // Strategy: anchor on the parent of any existing .navMenuSection elements.
-            // This is theme/plugin agnostic — every Jellyfin layout we've seen still
-            // uses navMenuSection as the section wrapper, even when other classes change.
-            var container = null;
-            var existingSections = document.querySelectorAll('.navMenuSection');
-            if(existingSections.length){ container = existingSections[0].parentElement; }
-            if(!container){
-                container = document.querySelector('.mainDrawer-scrollContainer')
-                         || document.querySelector('.scrollContainer')
-                         || document.querySelector('[class*=""scrollContainer""]')
-                         || document.querySelector('.mainDrawer')
-                         || document.querySelector('#mainDrawer')
-                         || document.querySelector('.navDrawer-scrollContainer')
-                         || document.querySelector('.navMenuOptions');
-            }
-            if(!container){ return; }
-            console.log('[AchievementBadges] injectSidebar: found nav container, adding entry');
+            // Strategy: find any existing .navMenuOption anchor (Home, Movies, TV, etc.)
+            // and insert ours as a sibling in the same parent. This is the only
+            // approach that's guaranteed to land in the right place across every
+            // Jellyfin theme/version, because we're cloning the layout we found
+            // instead of guessing the wrapper structure.
+            var anchorItem = document.querySelector('.mainDrawer .navMenuOption')
+                          || document.querySelector('.mainDrawer-scrollContainer .navMenuOption')
+                          || document.querySelector('.navDrawer .navMenuOption')
+                          || document.querySelector('.navMenuOptions .navMenuOption')
+                          || document.querySelector('.navMenuOption')
+                          || document.querySelector('a[is=""emby-linkbutton""][href*=""home.html""]')
+                          || document.querySelector('a[href*=""home.html""]');
+            if(!anchorItem){ return; }
+            var parent = anchorItem.parentElement;
+            if(!parent){ return; }
+            console.log('[AchievementBadges] injectSidebar: anchoring on existing nav item, parent=', parent.className);
 
-            var section=document.createElement('div');section.id=SIDEBAR_ID;section.className='navMenuSection';
-            section.innerHTML='<div class=""sectionTitle"" style=""padding:16px 20px 4px;font-size:.72em;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);font-weight:600"">Achievements</div>';
+            var a = document.createElement('a');
+            a.id = SIDEBAR_ID;
+            a.href = 'javascript:void(0)';
+            // Mirror the existing item's class list so we inherit Jellyfin's styling exactly.
+            a.className = anchorItem.className || 'navMenuOption emby-button';
+            a.setAttribute('role','menuitem');
+            a.style.cursor = 'pointer';
+            a.innerHTML =
+                '<span class=""material-icons navMenuOptionIcon"" style=""font-family:Material Icons;"">emoji_events</span>' +
+                '<span class=""navMenuOptionText"">Achievements</span>';
+            a.addEventListener('click', function(e){
+                e.preventDefault(); e.stopPropagation();
+                window.location.hash = '/achievements';
+            });
 
-            var a=document.createElement('a');a.href='javascript:void(0)';a.className='navMenuOption emby-button';a.setAttribute('role','menuitem');a.style.cursor='pointer';
-            a.innerHTML='<span class=""material-icons navMenuOptionIcon"" style=""font-family:Material Icons;"">emoji_events</span><span class=""navMenuOptionText"">Achievements</span>';
-            a.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();window.location.hash='/achievements';});
-            section.appendChild(a);
-
-            var showcase=document.createElement('div');showcase.id=SHOWCASE_ID;
-            showcase.style.cssText='display:flex;gap:4px;padding:2px 12px 8px 42px;flex-wrap:wrap;';
-            section.appendChild(showcase);
-
-            // Insert before the User/Account section so we sit above Settings + Sign Out
-            var inserted=false;
-            var allSections=container.querySelectorAll('.navMenuSection');
-            for(var si=0;si<allSections.length;si++){
-                var header=allSections[si].querySelector('.sectionTitle, [class*=""header""], [class*=""Header""]');
-                var htext=(header?header.textContent:(allSections[si].childNodes[0]&&allSections[si].childNodes[0].textContent||'')).trim().toLowerCase();
-                if(htext==='user'||htext==='account'){
-                    container.insertBefore(section,allSections[si]); inserted=true; break;
+            // Insert right before the User/Account section if we can find it.
+            // Detection: walk siblings looking for a Sign Out / Settings link.
+            var insertBefore = null;
+            var sib = parent.firstElementChild;
+            while(sib){
+                var txt = (sib.textContent||'').trim().toLowerCase();
+                if(/sign\s*out|log\s*out|^settings$|^dashboard$|^manage server$/.test(txt)){
+                    insertBefore = sib; break;
                 }
+                sib = sib.nextElementSibling;
             }
-            if(!inserted){
-                for(var sj=0;sj<allSections.length;sj++){
-                    var links=allSections[sj].querySelectorAll('a, button');
-                    for(var lk=0;lk<links.length;lk++){
-                        if(/sign\s*out|log\s*out/i.test(links[lk].textContent)){
-                            container.insertBefore(section,allSections[sj]); inserted=true; break;
-                        }
-                    }
-                    if(inserted) break;
-                }
-            }
-            if(!inserted) container.appendChild(section);
+            if(insertBefore){ parent.insertBefore(a, insertBefore); }
+            else { parent.appendChild(a); }
+
+            // Showcase row sits directly under our nav item
+            var showcase = document.createElement('div');
+            showcase.id = SHOWCASE_ID;
+            showcase.style.cssText = 'display:flex;gap:4px;padding:2px 12px 8px 42px;flex-wrap:wrap;';
+            if(a.nextSibling){ parent.insertBefore(showcase, a.nextSibling); }
+            else { parent.appendChild(showcase); }
+
             refreshShowcases();
         } catch(e) { console.error('[AchievementBadges] injectSidebar error:', e); }
     }
@@ -157,17 +158,23 @@ public class SidebarInjectionMiddleware
     function start(){
         try { console.log('[AchievementBadges] start() running, readyState=', document.readyState); } catch(e){}
         tryInject();
-        // Retry on a loop for the first 15 seconds in case nav hasn't mounted yet
-        // or another plugin rebuilt it after we injected
+        // Keep retrying for a full minute. On slow loads (cold cache, mobile,
+        // many plugins) the nav drawer can take 20-30s to mount.
         var attempts = 0;
         var retryInterval = setInterval(function(){
             attempts++;
             tryInject();
-            if(attempts >= 15){ clearInterval(retryInterval); }
+            if(attempts >= 60){ clearInterval(retryInterval); }
         }, 1000);
-        // MutationObserver catches any later nav rebuilds (e.g. SPA route changes)
+        // MutationObserver catches any later nav rebuilds (e.g. SPA route changes
+        // or other plugins re-rendering the drawer). Throttled so we don't thrash.
+        var moPending = false;
         if(document.body){
-            new MutationObserver(function(){tryInject();}).observe(document.body,{childList:true,subtree:true});
+            new MutationObserver(function(){
+                if(moPending) return;
+                moPending = true;
+                setTimeout(function(){ moPending = false; tryInject(); }, 250);
+            }).observe(document.body,{childList:true,subtree:true});
         }
         // Refresh equipped badge content periodically
         setInterval(refreshShowcases,30000);

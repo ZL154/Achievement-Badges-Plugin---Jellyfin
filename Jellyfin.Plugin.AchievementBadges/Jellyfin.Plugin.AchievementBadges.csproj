@@ -8,7 +8,7 @@
     <RootNamespace>Jellyfin.Plugin.AchievementBadges</RootNamespace>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
-    <Version>1.5.19</Version>
+    <Version>1.5.20</Version>
   </PropertyGroup>
 
   <ItemGroup>

@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.20",
+        "changelog": "Sidebar entry actually shows up now. v1.5.19's anchor strategy assumed every Jellyfin layout wraps nav items in '.navMenuSection' divs, but modern 10.11.x web flat-renders '<a class=navMenuOption>' children directly inside '.navMenuOptions' with no section wrappers, so the previous query returned nothing. The injector now finds any existing '.navMenuOption' (Home, Movies, etc.) and inserts ours as a sibling in the same parent — cloning the layout we found instead of guessing the wrapper structure. Also clones the existing item's class list so we inherit Jellyfin's exact styling. Insert position: right before the first sibling matching Sign Out / Settings / Dashboard / Manage Server, falling back to append. Retry loop extended from 15s to 60s for slow / cold-cache loads, and the MutationObserver is now throttled to 250ms so nav rebuilds don't thrash.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.20/Jellyfin.Plugin.AchievementBadgesv1.5.20.zip",
+        "checksum": "0EE44F55A9AEF1815FB570DA561CC085"
+      },
+      {
         "version": "1.5.19",
         "changelog": "Two bug fixes. (1) Sidebar entry restored: the 'Achievements' link was failing to inject on themes/setups that don't expose '.mainDrawer-scrollContainer .navMenuOptions'. The injector now anchors on the parent of any '.navMenuSection' (theme-agnostic, matches every Jellyfin layout) and inserts itself as a proper navMenuSection just above the User/Sign Out section, with broader fallback selectors. (2) Toasts during playback: removed the CSS rule that hid '#ab-toast-container' whenever a video player was on screen, so unlocks earned mid-watch now actually appear, and the container is force-promoted to the top z-index layer. Polling cadence dropped from 30s to 8s, and the enhance script now binds Jellyfin's playbackstart/playbackstop/playbackprogress events to fire a poll burst within ~1s of an unlock so toasts surface near-instantly while watching.",
         "targetAbi": "10.11.0.0",
