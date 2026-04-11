@@ -70,10 +70,12 @@
         if (c) return c;
         c = document.createElement('div');
         c.id = TOAST_ID;
-        c.style.cssText = 'position:fixed;top:16px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+        c.style.cssText = 'position:fixed;bottom:24px;left:0;right:0;z-index:99999;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none;';
         document.body.appendChild(c);
         return c;
     }
+
+    var rarityScorePts = { common: 10, uncommon: 20, rare: 35, epic: 60, legendary: 100, mythic: 150 };
 
     var rarityColor = {
         common: '#9aa5b1', uncommon: '#4caf50', rare: '#2196f3',
@@ -87,39 +89,50 @@
         }
         visibleToastCount++;
         var c = ensureToastContainer();
-        var color = rarityColor[(badge.Rarity || '').toLowerCase()] || '#9aa5b1';
-        var toast = document.createElement('div');
-        toast.style.cssText =
-            'pointer-events:auto;min-width:320px;max-width:400px;padding:16px 18px;border-radius:12px;' +
-            'background:linear-gradient(135deg,rgba(30,35,50,0.97),rgba(15,18,28,0.97));' +
-            'border:1px solid ' + color + ';color:#fff;box-shadow:0 12px 32px rgba(0,0,0,0.6),0 0 40px ' + color + '33;' +
-            'font-family:system-ui,sans-serif;animation:abSlideIn 0.4s cubic-bezier(.22,.61,.36,1);';
-        toast.innerHTML =
-            '<div style="display:flex;align-items:center;gap:12px;">' +
-                '<div style="width:42px;height:42px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 20px ' + color + '66;">🏆</div>' +
-                '<div style="flex:1;min-width:0;">' +
-                    '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.7;font-weight:700;">Achievement unlocked</div>' +
-                    '<div style="font-size:16px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;">' + escape(badge.Title || '') + '</div>' +
-                    '<div style="font-size:11px;color:' + color + ';font-weight:700;letter-spacing:1px;text-transform:uppercase;">' + (badge.Rarity || '') + '</div>' +
+        var rarity = (badge.Rarity || 'common').toLowerCase();
+        var color = rarityColor[rarity] || '#9aa5b1';
+        var isRare = rarity !== 'common' && rarity !== 'uncommon';
+        var scorePts = rarityScorePts[rarity] || 10;
+        var label = isRare ? ((badge.Rarity || 'Rare') + ' achievement unlocked') : 'Achievement unlocked';
+
+        var item = document.createElement('div');
+        item.className = 'ab-xb';
+        if (isRare) item.classList.add('ab-xb-rare');
+        item.innerHTML =
+            '<div class="ab-xb-circle" style="--ab-color:' + color + ';">' +
+                '<span class="material-icons ab-xb-trophy">emoji_events</span>' +
+            '</div>' +
+            '<div class="ab-xb-banner" style="--ab-color:' + color + ';">' +
+                '<div class="ab-xb-text">' +
+                    '<div class="ab-xb-label">' + label + '</div>' +
+                    '<div class="ab-xb-row">' +
+                        '<span class="ab-xb-score">G ' + scorePts + '</span>' +
+                        '<span class="ab-xb-sep"> \u2013 </span>' +
+                        '<span class="ab-xb-name">' + escape(badge.Title || '') + '</span>' +
+                    '</div>' +
                 '</div>' +
             '</div>';
-        c.appendChild(toast);
-        if (!isReducedMotion()) {
-            fireConfetti(color);
+        c.appendChild(item);
+
+        // Kick off the animation on the next frame so CSS transitions start cleanly
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                item.classList.add('ab-xb-play');
+            });
+        });
+
+        if (isRare && !isReducedMotion() && (!userPrefs || userPrefs.EnableConfetti !== false)) {
+            setTimeout(function () { fireConfetti(color); }, 400);
         }
+
         setTimeout(function () {
-            toast.style.transition = 'opacity 0.4s, transform 0.4s';
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(30px)';
-            setTimeout(function () {
-                toast.remove();
-                visibleToastCount--;
-                if (toastQueue.length > 0 && visibleToastCount < MAX_VISIBLE_TOASTS) {
-                    var next = toastQueue.shift();
-                    showToast(next);
-                }
-            }, 450);
-        }, 6500);
+            item.remove();
+            visibleToastCount--;
+            if (toastQueue.length > 0 && visibleToastCount < MAX_VISIBLE_TOASTS) {
+                var next = toastQueue.shift();
+                showToast(next);
+            }
+        }, 11000);
     }
 
     function showMilestoneToast(milestone) {
@@ -291,8 +304,7 @@
     function start() {
         var style = document.createElement('style');
         style.textContent =
-            '@keyframes abSlideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }' +
-            // Hide our injected header/sidebar badges when the video player is active
+            // Hide our injected header/sidebar badges + toasts when the video player is active
             '.videoOsdBottom ~ * #ab-header-badges,' +
             '.videoPlayer #ab-header-badges,' +
             'body.videoPlayerContainerPresent #ab-header-badges,' +
@@ -304,7 +316,73 @@
             'body:has(#videoOsdPage) #ab-header-badges,' +
             'body:has(.mainAnimatedPage.videoOsdPage) #ab-header-badges { display: none !important; }' +
             '.videoPlayerContainer #ab-toast-container,' +
-            'body:has(.videoPlayerContainer) #ab-toast-container { display: none !important; }';
+            'body:has(.videoPlayerContainer) #ab-toast-container { display: none !important; }' +
+
+            // ===== Xbox-style achievement toast =====
+            '.ab-xb{position:relative;width:355px;height:90px;font-family:"Segoe UI",system-ui,sans-serif;pointer-events:none;}' +
+            '.ab-xb-circle{position:absolute;left:50%;top:7px;margin-left:-37px;width:75px;height:75px;border-radius:50%;background:var(--ab-color,#39960C);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0.1);z-index:2;box-shadow:0 4px 18px rgba(0,0,0,0.4);}' +
+            '.ab-xb-circle::before,.ab-xb-circle::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--ab-color,#39960C);opacity:0;filter:brightness(1.25);}' +
+            '.ab-xb-trophy{color:#fff;font-size:40px !important;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));}' +
+            '.ab-xb-banner{position:absolute;left:50%;top:7px;margin-left:-37px;width:75px;height:75px;border-radius:100px;background:var(--ab-color,#39960C);opacity:0;overflow:hidden;z-index:1;box-shadow:0 6px 24px rgba(0,0,0,0.45);}' +
+            '.ab-xb-text{position:absolute;left:95px;top:0;right:20px;height:100%;display:flex;flex-direction:column;justify-content:center;opacity:0;transform:translateY(85px);color:#fff;white-space:nowrap;}' +
+            '.ab-xb-label{font-size:13px;font-weight:500;opacity:0.95;line-height:1.3;}' +
+            '.ab-xb-row{font-size:15px;font-weight:700;display:flex;align-items:center;gap:4px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+            '.ab-xb-score{font-weight:800;}' +
+            '.ab-xb-sep{opacity:0.8;}' +
+            '.ab-xb-name{overflow:hidden;text-overflow:ellipsis;}' +
+            // Animations
+            '.ab-xb-play .ab-xb-circle{animation:abXbCircle 10.5s forwards;}' +
+            '.ab-xb-play .ab-xb-circle::before{animation:abXbPulse 10.5s forwards;animation-delay:0s;}' +
+            '.ab-xb-play .ab-xb-circle::after{animation:abXbPulse 10.5s forwards;animation-delay:0.1s;}' +
+            '.ab-xb-play .ab-xb-trophy{animation:abXbTrophyRotate 6s linear infinite;}' +
+            '.ab-xb-play .ab-xb-banner{animation:abXbBanner 10.5s forwards;}' +
+            '.ab-xb-play .ab-xb-text{animation:abXbText 10.5s forwards;}' +
+            '.ab-xb-rare .ab-xb-banner{box-shadow:0 6px 28px rgba(0,0,0,0.45),0 0 40px var(--ab-color,#39960C);}' +
+            '.ab-xb-rare .ab-xb-circle{box-shadow:0 4px 18px rgba(0,0,0,0.4),0 0 30px var(--ab-color,#39960C);}' +
+            '@keyframes abXbCircle{' +
+                '0%{opacity:0;transform:scale(0.1) translateX(0);}' +
+                '4%{opacity:1;transform:scale(1.1) translateX(0);}' +
+                '5%{transform:scale(1) translateX(0);}' +
+                '11%{transform:scale(1) translateX(0);background-color:var(--ab-color,#39960C);}' +
+                '24%{transform:scale(1) translateX(-140px);}' +
+                '85%{transform:scale(1) translateX(-140px);opacity:1;}' +
+                '89%{transform:scale(1) translateX(0);opacity:1;}' +
+                '96%{transform:scale(1.1) translateX(0);}' +
+                '98%{transform:scale(0.1) translateX(0);opacity:1;}' +
+                '99%{opacity:0;}' +
+                '100%{transform:scale(0.1) translateX(0);opacity:0;}' +
+            '}' +
+            '@keyframes abXbPulse{' +
+                '0%{transform:scale(0);opacity:0;}' +
+                '2%{opacity:1;}' +
+                '5%{transform:scale(1);opacity:0.8;}' +
+                '6%{opacity:0;}' +
+                '100%{transform:scale(1);opacity:0;}' +
+            '}' +
+            '@keyframes abXbBanner{' +
+                '0%{width:75px;margin-left:-37px;opacity:0;}' +
+                '2%{opacity:0;}' +
+                '4%{opacity:1;}' +
+                '11%{width:75px;margin-left:-37px;}' +
+                '24%{width:355px;margin-left:-177px;}' +
+                '85%{width:355px;margin-left:-177px;opacity:1;}' +
+                '89%{width:75px;margin-left:-37px;opacity:1;}' +
+                '90%{opacity:0;}' +
+                '100%{opacity:0;}' +
+            '}' +
+            '@keyframes abXbText{' +
+                '0%{transform:translateY(85px);opacity:0;}' +
+                '20%{transform:translateY(85px);opacity:0;}' +
+                '25%{transform:translateY(0);opacity:1;}' +
+                '79%{transform:translateY(0);opacity:1;}' +
+                '84%{transform:translateY(-115px);opacity:0;}' +
+                '100%{opacity:0;}' +
+            '}' +
+            '@keyframes abXbTrophyRotate{' +
+                '0%{transform:rotateY(0deg);}' +
+                '50%{transform:rotateY(360deg);}' +
+                '100%{transform:rotateY(0deg);}' +
+            '}';
         document.head.appendChild(style);
 
         fetchJson('Plugins/AchievementBadges/admin/ui-features').then(function (f) {
