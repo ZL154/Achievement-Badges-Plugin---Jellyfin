@@ -215,16 +215,58 @@
             '#' + ROOT_ID + ' .ab-streak-label{font-size:0.7em;text-transform:uppercase;letter-spacing:1.5px;opacity:0.65;font-weight:700;margin-top:0.2em;}' +
             // Hero streak chip
             '#' + ROOT_ID + ' .ab-hero-streak{display:inline-flex;align-items:center;gap:0.4em;padding:0.3em 0.75em;border-radius:999px;background:rgba(255,87,34,0.15);border:1px solid rgba(255,87,34,0.4);font-size:0.85em;font-weight:700;color:#ffab91;margin-top:0.4em;}' +
-            // Wrapped tab
-            '#' + ROOT_ID + ' .ab-wrapped-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1em;}' +
-            '#' + ROOT_ID + ' .ab-wrapped-card{padding:1.5em;border-radius:16px;background:linear-gradient(135deg,rgba(102,126,234,0.15),rgba(118,75,162,0.1));border:1px solid rgba(102,126,234,0.25);text-align:center;}' +
-            '#' + ROOT_ID + ' .ab-wrapped-big{font-size:3.5em;font-weight:900;background:linear-gradient(135deg,#fff,#a3b5f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:0.3em;}' +
-            '#' + ROOT_ID + ' .ab-wrapped-label{font-size:0.78em;text-transform:uppercase;letter-spacing:1.5px;opacity:0.7;font-weight:700;}' +
-            '#' + ROOT_ID + ' .ab-wrapped-card-warm{background:linear-gradient(135deg,rgba(255,107,53,0.18),rgba(233,30,99,0.12));border-color:rgba(255,107,53,0.3);}' +
-            '#' + ROOT_ID + ' .ab-wrapped-card-warm .ab-wrapped-big{background:linear-gradient(135deg,#fff,#ffab91);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}' +
-            '#' + ROOT_ID + ' .ab-wrapped-card-cool{background:linear-gradient(135deg,rgba(33,150,243,0.18),rgba(76,175,80,0.12));border-color:rgba(33,150,243,0.3);}' +
-            '#' + ROOT_ID + ' .ab-wrapped-card-gold{background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,107,53,0.12));border-color:rgba(255,215,0,0.4);}' +
-            '#' + ROOT_ID + ' .ab-wrapped-card-gold .ab-wrapped-big{background:linear-gradient(135deg,#fff,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}' +
+            // Grid-based heatmap (proper square cells)
+            '#' + ROOT_ID + ' .ab-heat{display:grid;grid-auto-rows:1fr;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;gap:3px;width:100%;}' +
+            '#' + ROOT_ID + ' .ab-heat-cell{aspect-ratio:1;border-radius:3px;transition:transform 0.1s;}' +
+            '#' + ROOT_ID + ' .ab-heat-cell:hover{transform:scale(1.3);z-index:2;position:relative;}' +
+            // Grid-based streak calendar
+            '#' + ROOT_ID + ' .ab-streak-grid{display:grid;grid-auto-rows:1fr;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;gap:3px;width:100%;}' +
+            '#' + ROOT_ID + ' .ab-streak-cell{aspect-ratio:1;border-radius:3px;background:rgba(255,255,255,0.04);transition:transform 0.1s;}' +
+            '#' + ROOT_ID + ' .ab-streak-cell-on{background:linear-gradient(135deg,#4caf50,#66bb6a);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);}' +
+            '#' + ROOT_ID + ' .ab-streak-cell:hover{transform:scale(1.5);z-index:2;position:relative;}' +
+            // Wrapped tab - modern redesign
+            '#' + ROOT_ID + ' .ab-wrapped-hero{position:relative;padding:3em 2em;border-radius:24px;background:linear-gradient(135deg,#6b00ff 0%,#9c27b0 40%,#e91e63 80%,#ff6b35 100%);text-align:center;margin-bottom:1.5em;overflow:hidden;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,0.15),transparent 50%),radial-gradient(circle at 80% 70%,rgba(255,255,255,0.1),transparent 50%);}' +
+            '#' + ROOT_ID + ' .ab-wrapped-hero > *{position:relative;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-hero-label{font-size:0.85em;font-weight:700;letter-spacing:3px;text-transform:uppercase;opacity:0.85;margin-bottom:0.4em;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-hero-year{font-size:1.4em;font-weight:900;letter-spacing:-1px;margin-bottom:0.5em;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-hero-big{font-size:6em;font-weight:900;line-height:0.95;letter-spacing:-4px;text-shadow:0 4px 30px rgba(0,0,0,0.4);}' +
+            '#' + ROOT_ID + ' .ab-wrapped-hero-sub{font-size:1em;font-weight:600;opacity:0.9;margin-top:0.5em;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-section{margin-top:1.5em;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-section-title{font-size:0.75em;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.6;margin-bottom:0.75em;padding-left:0.25em;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75em;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-card{position:relative;padding:1.5em 1.3em;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);overflow:hidden;transition:all 0.2s;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,0.2);}' +
+            '#' + ROOT_ID + ' .ab-wrapped-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#667eea,#764ba2);}' +
+            '#' + ROOT_ID + ' .ab-wrapped-card.warm::before{background:linear-gradient(90deg,#ff6b35,#e91e63);}' +
+            '#' + ROOT_ID + ' .ab-wrapped-card.cool::before{background:linear-gradient(90deg,#2196f3,#00bcd4);}' +
+            '#' + ROOT_ID + ' .ab-wrapped-card.gold::before{background:linear-gradient(90deg,#ffd700,#ff6b35);}' +
+            '#' + ROOT_ID + ' .ab-wrapped-card.green::before{background:linear-gradient(90deg,#4caf50,#8bc34a);}' +
+            '#' + ROOT_ID + ' .ab-wrapped-icon{font-size:1.6em;opacity:0.55;margin-bottom:0.4em;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-big{font-size:2.8em;font-weight:900;line-height:1;letter-spacing:-1px;margin-bottom:0.2em;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-label{font-size:0.72em;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.6;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-list{list-style:none;padding:0;margin:0.5em 0 0;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-list li{display:flex;justify-content:space-between;padding:0.4em 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.92em;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-list li:last-child{border-bottom:none;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-list li strong{font-weight:700;}' +
+            '#' + ROOT_ID + ' .ab-wrapped-list li span{opacity:0.65;font-weight:600;}' +
+            // Smart goals row
+            '#' + ROOT_ID + ' .ab-goals-row{display:flex;gap:0.65em;overflow-x:auto;padding:0.25em 0 0.75em;margin-bottom:1em;}' +
+            '#' + ROOT_ID + ' .ab-goal-card{flex:0 0 auto;min-width:240px;max-width:340px;padding:0.85em 1em;border-radius:12px;background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(118,75,162,0.08));border:1px solid rgba(102,126,234,0.25);cursor:pointer;transition:transform 0.15s;}' +
+            '#' + ROOT_ID + ' .ab-goal-card:hover{transform:translateY(-2px);border-color:rgba(102,126,234,0.5);}' +
+            '#' + ROOT_ID + ' .ab-goal-label{font-size:0.68em;text-transform:uppercase;letter-spacing:1.5px;opacity:0.6;font-weight:700;margin-bottom:0.25em;}' +
+            '#' + ROOT_ID + ' .ab-goal-text{font-size:0.92em;font-weight:600;line-height:1.3;}' +
+            '#' + ROOT_ID + ' .ab-goal-meta{font-size:0.72em;opacity:0.6;margin-top:0.4em;font-weight:600;}' +
+            // Compare history pills
+            '#' + ROOT_ID + ' .ab-cmp-history-pill{padding:0.55em 0.9em;border-radius:999px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;font-family:inherit;cursor:pointer;font-size:0.85em;transition:all 0.15s;}' +
+            '#' + ROOT_ID + ' .ab-cmp-history-pill:hover{background:rgba(102,126,234,0.15);border-color:rgba(102,126,234,0.4);}' +
+            // Preferences panel
+            '#' + ROOT_ID + ' .ab-prefs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0.75em;margin-top:0.75em;}' +
+            '#' + ROOT_ID + ' .ab-pref{display:flex;align-items:center;gap:0.6em;padding:0.75em 0.9em;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);cursor:pointer;}' +
+            '#' + ROOT_ID + ' .ab-pref:hover{background:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + ' .ab-pref input[type="checkbox"]{width:18px;height:18px;flex-shrink:0;cursor:pointer;}' +
+            '#' + ROOT_ID + ' .ab-pref-label{flex:1;font-size:0.9em;font-weight:600;}' +
+            '#' + ROOT_ID + ' .ab-pref-desc{font-size:0.75em;opacity:0.65;font-weight:500;margin-top:0.15em;}' +
             // Title display
             '#' + ROOT_ID + ' .ab-title-display{display:inline-block;padding:0.25em 0.7em;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);font-size:0.85em;font-weight:600;}' +
             '#' + ROOT_ID + ' .ab-title-btn{background:rgba(102,126,234,0.15);border-color:rgba(102,126,234,0.3);}' +
@@ -346,6 +388,10 @@
                     '<button type="button" class="ab-tab" id="abSaTabStats">Stats</button>' +
                 '</div>' +
                 '<div id="abSaPanelBadges" class="ab-panel">' +
+                    '<div id="abSaGoalsWrap" style="display:none;">' +
+                        '<div class="ab-eyebrow">Today\'s goals</div>' +
+                        '<div id="abSaGoals" class="ab-goals-row"></div>' +
+                    '</div>' +
                     '<div class="ab-filter-row" style="display:flex; gap:0.75em; flex-wrap:wrap; margin-bottom:1em; align-items:center;">' +
                         '<input type="search" id="abSaSearch" placeholder="Search badges by title, category, rarity..." class="ab-input" style="flex:1; min-width:240px;">' +
                         '<select id="abSaCategoryFilter" class="ab-select" title="Filter by category">' +
@@ -414,6 +460,10 @@
                 '<div id="abSaPanelCompare" class="ab-panel" style="display:none;">' +
                     '<div class="ab-panel-card">' +
                         '<h3 style="margin:0 0 0.75em;">Compare profiles</h3>' +
+                        '<div id="abSaCompareHistoryWrap" style="display:none;">' +
+                            '<div class="ab-eyebrow" style="margin-bottom:0.5em;">Recent comparisons</div>' +
+                            '<div id="abSaCompareHistory" style="display:flex; gap:0.5em; flex-wrap:wrap; margin-bottom:1em;"></div>' +
+                        '</div>' +
                         '<div style="display:flex; gap:0.75em; flex-wrap:wrap; margin-bottom:1em;">' +
                             '<select id="abSaCompareUserA" class="ab-select" style="flex:1; min-width:200px;"></select>' +
                             '<div style="font-weight:800; align-self:center; opacity:0.6;">VS</div>' +
@@ -456,6 +506,9 @@
                         '<div id="abSaPrestigeLb">Loading...</div>' +
                         '<h3 style="margin:1.5em 0 0.75em;">Server stats</h3>' +
                         '<div id="abSaServerStats">Loading...</div>' +
+                        '<h3 style="margin:1.5em 0 0.75em;">Notification preferences</h3>' +
+                        '<div class="ab-muted" style="font-size:0.85em; margin-bottom:0.5em;">Control what the plugin shows you and whether you appear in server features.</div>' +
+                        '<div id="abSaPrefs" class="ab-prefs">Loading...</div>' +
                     '</div>' +
                 '</div>' +
             '</div>';
@@ -500,30 +553,62 @@
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/wrapped?year=' + year).then(function (w) {
             if (!w || w.Empty) { box.innerHTML = '<div class="ab-muted" style="padding:2em; text-align:center;">No watching activity found for ' + year + '.</div>'; return; }
 
-            var card = function (cls, big, label) {
-                return '<div class="ab-wrapped-card ' + cls + '"><div class="ab-wrapped-big">' + big + '</div><div class="ab-wrapped-label">' + label + '</div></div>';
+            var card = function (accent, icon, big, label) {
+                return '<div class="ab-wrapped-card ' + accent + '">' +
+                    (icon ? '<div class="ab-wrapped-icon">' + icon + '</div>' : '') +
+                    '<div class="ab-wrapped-big">' + big + '</div>' +
+                    '<div class="ab-wrapped-label">' + label + '</div>' +
+                '</div>';
             };
 
-            var topGenresHtml = (w.TopGenres || []).slice(0, 3).map(function (g, i) {
-                return '<div style="font-size:' + (1.6 - i * 0.3) + 'em; font-weight:' + (900 - i * 100) + ';">' + escapeHtml(g.Name) + '</div>';
-            }).join('');
-            var topDirectorHtml = (w.TopDirectors && w.TopDirectors[0]) ? escapeHtml(w.TopDirectors[0].Name) : '—';
-            var topActorHtml = (w.TopActors && w.TopActors[0]) ? escapeHtml(w.TopActors[0].Name) : '—';
+            var listCard = function (accent, icon, title, items, suffix) {
+                var listHtml = items && items.length
+                    ? '<ul class="ab-wrapped-list">' + items.slice(0, 5).map(function (x) {
+                        return '<li><strong>' + escapeHtml(x.Name) + '</strong><span>' + x.Count + (suffix || '') + '</span></li>';
+                    }).join('') + '</ul>'
+                    : '<div class="ab-muted" style="font-size:0.85em; margin-top:0.5em;">No data</div>';
+                return '<div class="ab-wrapped-card ' + accent + '">' +
+                    (icon ? '<div class="ab-wrapped-icon">' + icon + '</div>' : '') +
+                    '<div class="ab-wrapped-label" style="margin-bottom:0.3em;">' + title + '</div>' +
+                    listHtml +
+                '</div>';
+            };
 
             box.innerHTML =
-                '<div class="ab-wrapped-grid">' +
-                    card('ab-wrapped-card-gold', w.TotalItemsWatched, 'items watched in ' + year) +
-                    card('', w.MoviesWatched, 'movies') +
-                    card('', w.EpisodesWatched, 'episodes') +
-                    card('ab-wrapped-card-cool', w.ActiveDays, 'active days') +
-                    card('ab-wrapped-card-warm', w.BestStreak, 'best streak (lifetime)') +
-                    card('ab-wrapped-card-warm', w.TotalHoursWatched, 'hours (lifetime)') +
-                    '<div class="ab-wrapped-card ab-wrapped-card-cool"><div class="ab-wrapped-label" style="margin-bottom:0.5em;">TOP GENRES</div>' + (topGenresHtml || '<div class="ab-muted">—</div>') + '</div>' +
-                    '<div class="ab-wrapped-card"><div class="ab-wrapped-label" style="margin-bottom:0.5em;">TOP DIRECTOR</div><div class="ab-wrapped-big" style="font-size:1.6em;">' + topDirectorHtml + '</div></div>' +
-                    '<div class="ab-wrapped-card"><div class="ab-wrapped-label" style="margin-bottom:0.5em;">TOP ACTOR</div><div class="ab-wrapped-big" style="font-size:1.6em;">' + topActorHtml + '</div></div>' +
-                    (w.BiggestDay ? card('ab-wrapped-card-warm', w.BiggestDayCount, 'items on your biggest day (' + w.BiggestDay + ')') : '') +
-                    (w.TopMonth ? card('', w.TopMonthCount, 'items in ' + w.TopMonth) : '') +
-                    (w.TopDayOfWeek ? card('', w.TopDayOfWeekCount, 'items on a ' + w.TopDayOfWeek) : '') +
+                '<div class="ab-wrapped-hero">' +
+                    '<div class="ab-wrapped-hero-label">Your year in Jellyfin</div>' +
+                    '<div class="ab-wrapped-hero-year">\u2014 ' + year + ' \u2014</div>' +
+                    '<div class="ab-wrapped-hero-big">' + w.TotalItemsWatched + '</div>' +
+                    '<div class="ab-wrapped-hero-sub">items watched</div>' +
+                '</div>' +
+
+                '<div class="ab-wrapped-section">' +
+                    '<div class="ab-wrapped-section-title">Your numbers</div>' +
+                    '<div class="ab-wrapped-grid">' +
+                        card('', '🎬', w.MoviesWatched, 'movies watched') +
+                        card('', '📺', w.EpisodesWatched, 'episodes') +
+                        card('cool', '📅', w.ActiveDays, 'active days') +
+                        card('warm', '🔥', w.BestStreak, 'best streak ever') +
+                        card('gold', '⏱️', w.TotalHoursWatched, 'total hours') +
+                    '</div>' +
+                '</div>' +
+
+                '<div class="ab-wrapped-section">' +
+                    '<div class="ab-wrapped-section-title">Your highlights</div>' +
+                    '<div class="ab-wrapped-grid">' +
+                        (w.BiggestDay ? card('warm', '🏆', w.BiggestDayCount, 'items on ' + w.BiggestDay) : '') +
+                        (w.TopMonth ? card('cool', '🗓️', w.TopMonthCount, 'items in ' + w.TopMonth) : '') +
+                        (w.TopDayOfWeek ? card('green', '⭐', w.TopDayOfWeekCount, 'on a ' + w.TopDayOfWeek) : '') +
+                    '</div>' +
+                '</div>' +
+
+                '<div class="ab-wrapped-section">' +
+                    '<div class="ab-wrapped-section-title">Your favorites</div>' +
+                    '<div class="ab-wrapped-grid">' +
+                        listCard('cool', '🎭', 'Top genres', w.TopGenres) +
+                        listCard('warm', '🎬', 'Top directors', w.TopDirectors) +
+                        listCard('gold', '⭐', 'Top actors', w.TopActors) +
+                    '</div>' +
                 '</div>';
         }).catch(function () {
             box.innerHTML = '<div class="ab-muted">Failed to load wrapped.</div>';
@@ -721,16 +806,42 @@
             var a = el('abSaCompareUserA');
             var b = el('abSaCompareUserB');
             if (!a || !b) return;
-            if (a.options.length > 0) return; // already populated
-            users.forEach(function (u) {
-                var oA = document.createElement('option'); oA.value = u.Id; oA.textContent = u.Name; a.appendChild(oA);
-                var oB = document.createElement('option'); oB.value = u.Id; oB.textContent = u.Name; b.appendChild(oB);
-            });
-            if (users.length >= 2) { a.value = userId; b.value = users.find(function (u) { return u.Id !== userId; }).Id; }
-            a.addEventListener('change', loadCompareData);
-            b.addEventListener('change', loadCompareData);
-            loadCompareData();
+            if (a.options.length === 0) {
+                users.forEach(function (u) {
+                    var oA = document.createElement('option'); oA.value = u.Id; oA.textContent = u.Name; a.appendChild(oA);
+                    var oB = document.createElement('option'); oB.value = u.Id; oB.textContent = u.Name; b.appendChild(oB);
+                });
+                if (users.length >= 2) { a.value = userId; b.value = users.find(function (u) { return u.Id !== userId; }).Id; }
+                a.addEventListener('change', loadCompareData);
+                b.addEventListener('change', loadCompareData);
+                loadCompareData();
+            }
+            // Always refresh history
+            loadCompareHistory();
         });
+    }
+
+    function loadCompareHistory() {
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/compare-history').then(function (history) {
+            var wrap = el('abSaCompareHistoryWrap');
+            var box = el('abSaCompareHistory');
+            if (!wrap || !box) return;
+            if (!history || !history.length) { wrap.style.display = 'none'; return; }
+            wrap.style.display = 'block';
+            box.innerHTML = history.map(function (h) {
+                var when = h.At ? new Date(h.At).toLocaleDateString() : '';
+                return '<button type="button" class="ab-cmp-history-pill" data-other="' + h.OtherUserId + '">' +
+                    '<strong>' + escapeHtml(h.OtherUserName) + '</strong>' +
+                    '<span class="ab-muted" style="font-size:0.75em; margin-left:0.4em;">' + when + '</span>' +
+                '</button>';
+            }).join('');
+            box.querySelectorAll('.ab-cmp-history-pill').forEach(function (pill) {
+                pill.addEventListener('click', function () {
+                    var b = el('abSaCompareUserB');
+                    if (b) { b.value = pill.getAttribute('data-other'); loadCompareData(); }
+                });
+            });
+        }).catch(function () { });
     }
 
     function loadCompareData() {
@@ -869,10 +980,12 @@
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/category-progress'),
             fetchJson('Plugins/AchievementBadges/leaderboard-prestige?limit=10'),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/watch-clock'),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/streak-calendar?weeks=53')
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/streak-calendar?weeks=53'),
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').catch(function () { return null; })
         ]).then(function (r) {
             var bank = r[0], summary = r[1], recap = r[2], calendar = r[3];
-            var records = r[4], categoryProgress = r[5], prestigeLb = r[6], clock = r[7], streakCal = r[8];
+            var records = r[4], categoryProgress = r[5], prestigeLb = r[6], clock = r[7], streakCal = r[8], prefs = r[9];
+            renderPreferences(prefs);
 
             renderCategoryRings(categoryProgress);
             renderRecords(records);
@@ -1001,20 +1114,14 @@
         if (!data || !data.Days || !data.Days.length) return '<div class="ab-muted">No data.</div>';
         var days = data.Days;
         var weeks = Math.ceil(days.length / 7);
-        var cellSize = 100;
-        var gap = 14;
-        var step = cellSize + gap;
-        var cells = days.map(function (d, i) {
-            var col = Math.floor(i / 7);
-            var row = i % 7;
-            var fill = d.W ? '#4caf50' : 'rgba(255,255,255,0.05)';
-            return '<rect x="' + (col * step) + '" y="' + (row * step) + '" width="' + cellSize + '" height="' + cellSize + '" rx="14" fill="' + fill + '"><title>' + d.D + (d.W ? ' · watched' : '') + '</title></rect>';
-        }).join('');
-        var width = weeks * step;
-        var height = 7 * step;
         var watchedCount = data.ActiveDays || days.filter(function (d) { return d.W; }).length;
         var current = data.CurrentStreak || 0;
         var best = data.BestStreak || 0;
+
+        var cellsHtml = days.map(function (d) {
+            var cls = d.W ? 'ab-streak-cell ab-streak-cell-on' : 'ab-streak-cell';
+            return '<div class="' + cls + '" title="' + d.D + (d.W ? ' · watched' : '') + '"></div>';
+        }).join('');
 
         var streakHeader =
             '<div class="ab-streak-header">' +
@@ -1036,8 +1143,8 @@
             '</div>';
 
         return streakHeader +
-            '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="200" preserveAspectRatio="none" style="display:block;">' + cells + '</svg>' +
-            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.3em;">Each cell is one day in the past year</div>';
+            '<div class="ab-streak-grid" style="grid-template-columns:repeat(' + weeks + ',1fr);">' + cellsHtml + '</div>' +
+            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.5em;">Each cell is one day in the past year</div>';
     }
 
     function renderWatchClock(clock) {
@@ -1156,33 +1263,19 @@
 
         function colorFor(count) {
             if (count === 0) return 'rgba(255,255,255,0.05)';
-            var intensity = Math.min(1, 0.15 + (count / max) * 0.85);
+            var intensity = Math.min(1, 0.2 + (count / max) * 0.8);
             return 'rgba(102, 126, 234, ' + intensity.toFixed(2) + ')';
         }
 
-        // Use a fixed coordinate space and let the SVG stretch to fill the container
-        // (preserveAspectRatio=none). The cells fill their grid cell space so as the
-        // container grows horizontally the heatmap grows with it.
+        // CSS grid approach: 7 rows, auto-flow by column. Each cell is aspect-ratio:1
+        // so they stay perfectly square regardless of container width.
         var cols = Math.ceil(days / 7);
-        var cellW = 100;
-        var cellH = 100;
-        var gap = 12;
-        var step = cellW + gap;
-        var stepH = cellH + gap;
-
-        var svgCells = cells.map(function (c, i) {
-            var col = Math.floor(i / 7);
-            var row = i % 7;
+        var cellsHtml = cells.map(function (c) {
             var tooltip = c.key + ' · ' + c.count + ' item' + (c.count === 1 ? '' : 's');
-            return '<rect x="' + (col * step) + '" y="' + (row * stepH) + '" width="' + cellW + '" height="' + cellH + '" rx="14" fill="' + colorFor(c.count) + '"><title>' + tooltip + '</title></rect>';
+            return '<div class="ab-heat-cell" style="background:' + colorFor(c.count) + ';" title="' + tooltip + '"></div>';
         }).join('');
-
-        var width = cols * step;
-        var height = 7 * stepH;
-        // Let the SVG scale non-uniformly to fill its container width + a reasonable height
-        var heightPx = days <= 30 ? 180 : days <= 90 ? 220 : days <= 180 ? 260 : 300;
-        return '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + heightPx + 'px" preserveAspectRatio="none" style="display:block;">' + svgCells + '</svg>' +
-            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.3em;">Last ' + days + ' days · hover for details · max ' + max + ' items/day</div>';
+        return '<div class="ab-heat" style="grid-template-columns:repeat(' + cols + ',1fr);">' + cellsHtml + '</div>' +
+            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.5em;">Last ' + days + ' days · hover for details · max ' + max + ' items/day</div>';
     }
 
     function renderHistogram(summary) {
@@ -1353,6 +1446,66 @@
         });
     }
 
+    function renderPreferences(prefs) {
+        var box = el('abSaPrefs');
+        if (!box) return;
+        prefs = prefs || { EnableUnlockToasts: true, EnableMilestoneToasts: true, EnableConfetti: true, AppearInActivityFeed: true, EnableCoWatchBonus: true };
+        var defs = [
+            { key: 'EnableUnlockToasts', label: 'Unlock toasts', desc: 'Pop up a notification when you unlock a badge' },
+            { key: 'EnableMilestoneToasts', label: 'Milestone toasts', desc: '25/50/75/100% completion celebrations' },
+            { key: 'EnableConfetti', label: 'Confetti effects', desc: 'Particle bursts on unlock (disable for reduced motion)' },
+            { key: 'AppearInActivityFeed', label: 'Appear in activity feed', desc: 'Let other users see your unlocks in the feed' },
+            { key: 'EnableCoWatchBonus', label: 'Co-watch bonus', desc: 'Earn bonus score when another user watches the same item within an hour' }
+        ];
+        box.innerHTML = defs.map(function (d) {
+            var checked = prefs[d.key] !== false;
+            return '<label class="ab-pref">' +
+                '<input type="checkbox"' + (checked ? ' checked' : '') + ' data-pref="' + d.key + '">' +
+                '<div>' +
+                    '<div class="ab-pref-label">' + d.label + '</div>' +
+                    '<div class="ab-pref-desc">' + d.desc + '</div>' +
+                '</div>' +
+            '</label>';
+        }).join('');
+        box.querySelectorAll('input[data-pref]').forEach(function (cb) {
+            cb.addEventListener('change', function () { savePreferences(box); });
+        });
+    }
+
+    function savePreferences(box) {
+        var payload = {};
+        box.querySelectorAll('input[data-pref]').forEach(function (cb) {
+            payload[cb.getAttribute('data-pref')] = cb.checked;
+        });
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload).catch(function () { });
+    }
+
+    function renderSmartGoals(data) {
+        var wrap = el('abSaGoalsWrap');
+        var row = el('abSaGoals');
+        if (!wrap || !row) return;
+        if (!data || !data.Goals || !data.Goals.length) { wrap.style.display = 'none'; return; }
+        wrap.style.display = 'block';
+        row.innerHTML = data.Goals.map(function (g) {
+            var pct = g.Target > 0 ? Math.round(100 * g.Current / g.Target) : 0;
+            return '<div class="ab-goal-card" data-badge="' + (g.BadgeId || '') + '">' +
+                '<div class="ab-goal-label ' + rarityClass(g.Rarity) + '">' + (g.BadgeId ? (g.Rarity || '') : 'STREAK') + '</div>' +
+                '<div class="ab-goal-text">' + escapeHtml(g.Action || '') + '</div>' +
+                '<div class="ab-goal-meta">' + escapeHtml(g.Title || '') + (g.Target ? ' · ' + g.Current + '/' + g.Target : '') + '</div>' +
+            '</div>';
+        }).join('');
+        // Click goal card to chase the badge
+        row.querySelectorAll('.ab-goal-card').forEach(function (card) {
+            var badgeId = card.getAttribute('data-badge');
+            if (badgeId) {
+                card.addEventListener('click', function () {
+                    var badge = allBadges.find(function (b) { return b.Id === badgeId; });
+                    if (badge) openChaseModal(badge);
+                });
+            }
+        });
+    }
+
     function doPin(badgeId, pinned) {
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/pin/' + badgeId, 'POST', { Pinned: pinned })
             .then(function (res) {
@@ -1426,10 +1579,13 @@
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/title').catch(function () { return null; }),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/bank').catch(function () { return null; }),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/badge-eta').catch(function () { return null; }),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/streak-calendar?weeks=53').catch(function () { return null; })
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/streak-calendar?weeks=53').catch(function () { return null; }),
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/smart-goals?limit=5').catch(function () { return null; })
         ]).then(function (results) {
             var badges = results[0], summary = results[1], equipped = results[2], lb = results[3], stats = results[4], rank = results[5];
-            var titleData = results[6], bankData = results[7], etaData = results[8], streakData = results[9];
+            var titleData = results[6], bankData = results[7], etaData = results[8], streakData = results[9], goalsData = results[10];
+
+            renderSmartGoals(goalsData);
 
             badgeEtaMap = {};
             if (etaData && etaData.Etas) {

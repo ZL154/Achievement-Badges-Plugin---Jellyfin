@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using Jellyfin.Plugin.AchievementBadges.Models;
 using MediaBrowser.Common.Configuration;
@@ -16,6 +17,9 @@ public class PlaybackCompletionService
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
     private Dictionary<string, UserPlaybackState> _playbackStates = new();
+    // itemId -> list of (userId, completedAt) for co-watch detection (last hour)
+    private readonly Dictionary<string, List<(string UserId, DateTimeOffset At)>> _recentCoWatchCandidates = new();
+    private readonly object _coWatchLock = new();
 
     public PlaybackCompletionService(
         AchievementBadgeService achievementBadgeService,
@@ -114,6 +118,47 @@ public class PlaybackCompletionService
 
         context.IsRewatch = isRewatch;
         _achievementBadgeService.RecordPlayback(context);
+
+        // Co-watch detection: if another user completed the same item within the last hour,
+        // award a bonus to both.
+        if (!string.IsNullOrWhiteSpace(itemId) && !string.IsNullOrWhiteSpace(context.UserId))
+        {
+            lock (_coWatchLock)
+            {
+                var now = DateTimeOffset.UtcNow;
+                if (!_recentCoWatchCandidates.TryGetValue(itemId, out var list))
+                {
+                    list = new List<(string, DateTimeOffset)>();
+                    _recentCoWatchCandidates[itemId] = list;
+                }
+
+                // Clean entries older than 1 hour
+                list.RemoveAll(e => (now - e.At) > TimeSpan.FromHours(1));
+
+                // Check if any OTHER user completed this recently
+                var otherUsers = list
+                    .Where(e => !string.Equals(e.UserId, context.UserId, StringComparison.OrdinalIgnoreCase))
+                    .Select(e => e.UserId)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                // Add current user's completion to the list
+                list.Add((context.UserId, now));
+
+                // Award co-watch bonus to each unique other user + the current user
+                foreach (var other in otherUsers)
+                {
+                    _achievementBadgeService.RecordCoWatch(itemId, context.UserId, other);
+                }
+
+                // Garbage collect items with no entries
+                if (_recentCoWatchCandidates.Count > 500)
+                {
+                    var stale = _recentCoWatchCandidates.Where(kvp => kvp.Value.Count == 0 || (now - kvp.Value.Max(e => e.At)) > TimeSpan.FromHours(1)).Select(kvp => kvp.Key).ToList();
+                    foreach (var s in stale) _recentCoWatchCandidates.Remove(s);
+                }
+            }
+        }
 
         message = "Playback completion recorded.";
         return true;

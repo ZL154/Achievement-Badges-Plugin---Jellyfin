@@ -38,6 +38,26 @@ public class UserAchievementProfile
     public string? EquippedTitleBadgeId { get; set; }
 
     public List<int> CompletionMilestonesReached { get; set; } = new();
+
+    public List<CompareHistoryEntry> CompareHistory { get; set; } = new();
+
+    public UserNotificationPreferences Preferences { get; set; } = new();
+}
+
+public class CompareHistoryEntry
+{
+    public string OtherUserId { get; set; } = string.Empty;
+    public string OtherUserName { get; set; } = string.Empty;
+    public DateTimeOffset At { get; set; }
+}
+
+public class UserNotificationPreferences
+{
+    public bool EnableUnlockToasts { get; set; } = true;
+    public bool EnableMilestoneToasts { get; set; } = true;
+    public bool EnableConfetti { get; set; } = true;
+    public bool AppearInActivityFeed { get; set; } = true;
+    public bool EnableCoWatchBonus { get; set; } = true;
 }
 
 public class QuestState

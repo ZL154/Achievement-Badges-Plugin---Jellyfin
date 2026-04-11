@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.9",
+        "changelog": "Heatmap + streak calendar reworked as CSS grid with aspect-ratio:1 so cells stay perfectly square at every range. Wrapped tab redesigned with a huge gradient hero banner showing the year total, then 3 labelled sections (Your numbers / Your highlights / Your favorites) with accent-bordered cards, emoji icons, hover-lift and list cards for top genres/directors/actors. Smart Goals row on My Badges tab showing 3-5 daily suggestions tied to your closest badges, click to open the chase modal. Co-watch detection: when two users watch the same item within an hour, both get +20 score bank bonus. Compare history: last 10 comparisons saved per user with quick-access pills. Per-user notification preferences (toasts, milestone toasts, confetti, activity feed visibility, co-watch bonus opt-in) controlled from the Stats tab and honored by enhance.js.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.9/Jellyfin.Plugin.AchievementBadgesv1.5.9.zip",
+        "checksum": "9F94698F24931C29DCA1559045E27135"
+      },
+      {
         "version": "1.5.8",
         "changelog": "Pin button moved to footer (no longer overlaps points chip), restyled with subtle blue accent when active and a 'PINNED' label corner badge on pinned cards. Streak calendar now has a fire-themed header showing current streak, best streak, and active days with an animated flame and gradient typography. Hero banner shows a current-streak chip when you have a streak going. Profile card adds a current streak stat. Achievement ETA: backend computes per-badge days-remaining-to-unlock from your viewing velocity (current/days_active * remaining), displayed as an orange chip on locked badge cards. Yearly Wrapped tab: Spotify-style stat cards for any past year showing items / movies / episodes / active days / best streak / hours plus top genres / director / actor / biggest day / top month / top day-of-week, with a year selector.",
         "targetAbi": "10.11.0.0",

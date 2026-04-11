@@ -156,6 +156,7 @@
 
     function fireConfetti(accentColor) {
         if (isReducedMotion()) return;
+        if (userPrefs && userPrefs.EnableConfetti === false) return;
         try {
             var container = document.createElement('div');
             container.style.cssText = 'position:fixed;pointer-events:none;top:20px;right:20px;z-index:100000;width:400px;height:200px;overflow:visible;';
@@ -191,6 +192,24 @@
 
     function escape(s) { var d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML; }
 
+    var userPrefs = null;
+    var userPrefsFetchedAt = 0;
+
+    function ensureUserPrefs(uid) {
+        var now = Date.now();
+        if (userPrefs && (now - userPrefsFetchedAt) < 5 * 60 * 1000) return Promise.resolve(userPrefs);
+        return fetchJson('Plugins/AchievementBadges/users/' + uid + '/preferences')
+            .then(function (p) {
+                userPrefs = p || { EnableUnlockToasts: true, EnableMilestoneToasts: true, EnableConfetti: true };
+                userPrefsFetchedAt = now;
+                return userPrefs;
+            })
+            .catch(function () {
+                userPrefs = { EnableUnlockToasts: true, EnableMilestoneToasts: true, EnableConfetti: true };
+                return userPrefs;
+            });
+    }
+
     function pollUnlocks() {
         if (!features.EnableUnlockToasts) return;
         var uid = getUserId(); if (!uid) return;
@@ -204,29 +223,31 @@
         }
         var since = stored;
         var shown = getShownIds();
-        fetchJson('Plugins/AchievementBadges/users/' + uid + '/unlocks-since?since=' + encodeURIComponent(since))
-            .then(function (res) {
-                if (res && res.Badges) {
-                    res.Badges.forEach(function (b) {
-                        var key = b.Id + '|' + (b.UnlockedAt || '');
-                        if (!shown[key]) {
-                            showToast(b);
-                            markShown(key);
-                        }
-                    });
-                }
-                if (res && res.Now) { localStorage.setItem(LAST_SEEN_KEY, res.Now); }
-                // After badge toasts, check for catalog milestones (25/50/75/100%)
-                return fetchJson('Plugins/AchievementBadges/users/' + uid + '/check-milestones');
-            })
-            .then(function (m) {
-                if (m && m.NewlyReached && m.NewlyReached.length) {
-                    m.NewlyReached.forEach(function (pct, i) {
-                        setTimeout(function () { showMilestoneToast(pct); }, i * 1500);
-                    });
-                }
-            })
-            .catch(function () { });
+
+        ensureUserPrefs(uid).then(function (prefs) {
+            if (prefs.EnableUnlockToasts === false) return null;
+            return fetchJson('Plugins/AchievementBadges/users/' + uid + '/unlocks-since?since=' + encodeURIComponent(since));
+        }).then(function (res) {
+            if (!res) return null;
+            if (res.Badges) {
+                res.Badges.forEach(function (b) {
+                    var key = b.Id + '|' + (b.UnlockedAt || '');
+                    if (!shown[key]) {
+                        showToast(b);
+                        markShown(key);
+                    }
+                });
+            }
+            if (res.Now) { localStorage.setItem(LAST_SEEN_KEY, res.Now); }
+            if (userPrefs && userPrefs.EnableMilestoneToasts === false) return null;
+            return fetchJson('Plugins/AchievementBadges/users/' + uid + '/check-milestones');
+        }).then(function (m) {
+            if (m && m.NewlyReached && m.NewlyReached.length) {
+                m.NewlyReached.forEach(function (pct, i) {
+                    setTimeout(function () { showMilestoneToast(pct); }, i * 1500);
+                });
+            }
+        }).catch(function () { });
     }
 
     // Home widget removed in v1.5.5 - it was unreliable (flashed then got

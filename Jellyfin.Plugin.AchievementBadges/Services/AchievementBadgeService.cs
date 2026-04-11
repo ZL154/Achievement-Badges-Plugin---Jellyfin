@@ -124,6 +124,8 @@ public class AchievementBadgeService
             foreach (var profile in _userProfiles.Values)
             {
                 if (canon != null && !string.Equals(profile.UserId, canon, StringComparison.OrdinalIgnoreCase)) continue;
+                // Users who opted out appear only when a specific user filter requests them
+                if (canon == null && profile.Preferences != null && !profile.Preferences.AppearInActivityFeed) continue;
                 foreach (var b in profile.Badges)
                 {
                     if (b.Unlocked && b.UnlockedAt.HasValue && IsBadgeEnabled(b.Id))
@@ -330,6 +332,170 @@ public class AchievementBadgeService
                 BestStreak = profile.Counters.BestWatchStreak,
                 ActiveDays = activeInWindow
             };
+        }
+    }
+
+    public object GetSmartGoals(string userId, int limit = 5)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userId, out var profile)) return new { Goals = Array.Empty<object>() };
+            EvaluateBadges(profile, userId, silent: true);
+
+            var defs = GetActiveDefinitions().ToDictionary(d => d.Id, d => d, StringComparer.OrdinalIgnoreCase);
+            var goals = new List<object>();
+
+            // Priority 1: badges with ETA <= 3 days (hot goals)
+            var daysActive = Math.Max(1, profile.Counters.DaysWatched);
+            var close = profile.Badges
+                .Where(b => !b.Unlocked && IsBadgeEnabled(b.Id))
+                .Select(b => new { Badge = b, Def = defs.TryGetValue(b.Id, out var d) ? d : null })
+                .Where(x => x.Def != null && x.Def.TargetValue > 0)
+                .Select(x => new
+                {
+                    x.Badge,
+                    x.Def,
+                    Remaining = x.Def!.TargetValue - x.Badge.CurrentValue,
+                    Pct = (double)x.Badge.CurrentValue / x.Def!.TargetValue
+                })
+                .Where(x => x.Remaining > 0 && x.Pct >= 0.4)
+                .OrderByDescending(x => x.Pct)
+                .Take(limit)
+                .ToList();
+
+            foreach (var item in close)
+            {
+                var action = GenerateGoalAction(item.Def!.Metric, item.Remaining);
+                goals.Add(new
+                {
+                    BadgeId = item.Badge.Id,
+                    Title = item.Badge.Title,
+                    Action = action,
+                    Remaining = item.Remaining,
+                    Target = item.Def!.TargetValue,
+                    Current = item.Badge.CurrentValue,
+                    Rarity = item.Badge.Rarity
+                });
+            }
+
+            // Add a streak preservation goal if the user has a streak going
+            var watchedToday = profile.Counters.WatchDates.Contains(DateTime.Today.ToString("yyyy-MM-dd"));
+            if (!watchedToday && profile.Counters.LastWatchDate.HasValue)
+            {
+                var yesterday = DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
+                if (profile.Counters.LastWatchDate.Value >= yesterday)
+                {
+                    var streak = profile.Counters.BestWatchStreak;
+                    goals.Insert(0, new
+                    {
+                        BadgeId = (string?)null,
+                        Title = "Keep your streak alive",
+                        Action = "Watch any item today to keep the streak going",
+                        Remaining = 1,
+                        Target = 1,
+                        Current = 0,
+                        Rarity = "Legendary"
+                    });
+                }
+            }
+
+            return new { Goals = goals };
+        }
+    }
+
+    private static string GenerateGoalAction(AchievementMetric metric, int remaining)
+    {
+        return metric switch
+        {
+            AchievementMetric.MoviesWatched => "Watch " + remaining + " more movie" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.TotalItemsWatched => "Watch " + remaining + " more item" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.SeriesCompleted => "Finish " + remaining + " more series",
+            AchievementMetric.LateNightSessions => "Have " + remaining + " more late-night session" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.EarlyMorningSessions => "Catch " + remaining + " more early-morning session" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.WeekendSessions => "Have " + remaining + " more weekend session" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.UniqueDecadesWatched => "Watch from " + remaining + " new decade" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.UniqueCountriesWatched => "Watch from " + remaining + " new countr" + (remaining == 1 ? "y" : "ies"),
+            AchievementMetric.UniqueLanguagesWatched => "Watch in " + remaining + " new language" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.UniqueGenresWatched => "Explore " + remaining + " new genre" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.UniqueLibrariesVisited => "Watch from " + remaining + " new librar" + (remaining == 1 ? "y" : "ies"),
+            AchievementMetric.TotalMinutesWatched => "Watch " + Math.Round(remaining / 60.0) + " more hour" + (remaining < 120 ? "" : "s"),
+            AchievementMetric.DaysWatched => "Watch on " + remaining + " more day" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.RewatchCount => "Rewatch " + remaining + " more item" + (remaining == 1 ? "" : "s"),
+            _ => remaining + " more needed"
+        };
+    }
+
+    public void RecordCompareHistory(string userIdA, string userIdB)
+    {
+        userIdA = NormalizeUserId(userIdA);
+        userIdB = NormalizeUserId(userIdB);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userIdA, out var profileA)) return;
+            if (!_userProfiles.TryGetValue(userIdB, out var profileB)) return;
+
+            profileA.CompareHistory.RemoveAll(e => e.OtherUserId.Equals(userIdB, StringComparison.OrdinalIgnoreCase));
+            profileA.CompareHistory.Insert(0, new CompareHistoryEntry
+            {
+                OtherUserId = userIdB,
+                OtherUserName = ResolveUserName(userIdB),
+                At = DateTimeOffset.UtcNow
+            });
+            if (profileA.CompareHistory.Count > 10) profileA.CompareHistory = profileA.CompareHistory.Take(10).ToList();
+            Save();
+        }
+    }
+
+    public List<CompareHistoryEntry> GetCompareHistory(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            return _userProfiles.TryGetValue(userId, out var profile)
+                ? profile.CompareHistory.ToList()
+                : new List<CompareHistoryEntry>();
+        }
+    }
+
+    public UserNotificationPreferences GetUserPreferences(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userId, out var profile)) return new UserNotificationPreferences();
+            return profile.Preferences;
+        }
+    }
+
+    public void SaveUserPreferences(string userId, UserNotificationPreferences prefs)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            profile.Preferences = prefs ?? new UserNotificationPreferences();
+            Save();
+        }
+    }
+
+    public object RecordCoWatch(string itemId, string userIdA, string userIdB)
+    {
+        userIdA = NormalizeUserId(userIdA);
+        userIdB = NormalizeUserId(userIdB);
+        lock (_lock)
+        {
+            var a = GetOrCreateProfile(userIdA);
+            var b = GetOrCreateProfile(userIdB);
+            if (!a.Preferences.EnableCoWatchBonus || !b.Preferences.EnableCoWatchBonus)
+                return new { Success = false };
+            var bonus = 20;
+            a.ScoreBank += bonus;
+            b.ScoreBank += bonus;
+            Save();
+            _auditLog?.Log(userIdA, ResolveUserName(userIdA), "co-watch", "with " + ResolveUserName(userIdB) + " (+" + bonus + " bank)");
+            _auditLog?.Log(userIdB, ResolveUserName(userIdB), "co-watch", "with " + ResolveUserName(userIdA) + " (+" + bonus + " bank)");
+            return new { Success = true, Bonus = bonus };
         }
     }
 

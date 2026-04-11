@@ -505,7 +505,37 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult CompareUsers([FromRoute] string userIdA, [FromRoute] string userIdB)
     {
+        _badgeService.RecordCompareHistory(userIdA, userIdB);
         return Ok(_badgeService.CompareUsers(userIdA, userIdB));
+    }
+
+    [HttpGet("users/{userId}/compare-history")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetCompareHistory([FromRoute] string userId)
+    {
+        return Ok(_badgeService.GetCompareHistory(userId));
+    }
+
+    [HttpGet("users/{userId}/smart-goals")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetSmartGoals([FromRoute] string userId, [FromQuery] int limit = 5)
+    {
+        return Ok(_badgeService.GetSmartGoals(userId, limit));
+    }
+
+    [HttpGet("users/{userId}/preferences")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetUserPreferences([FromRoute] string userId)
+    {
+        return Ok(_badgeService.GetUserPreferences(userId));
+    }
+
+    [HttpPost("users/{userId}/preferences")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult SaveUserPreferences([FromRoute] string userId, [FromBody] UserNotificationPreferences prefs)
+    {
+        _badgeService.SaveUserPreferences(userId, prefs);
+        return Ok(new { Success = true });
     }
 
     [HttpGet("activity-feed")]
