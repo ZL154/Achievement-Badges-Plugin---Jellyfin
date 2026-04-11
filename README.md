@@ -23,7 +23,7 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd, built natively into your media server.
 
-> **Status:** Feature-complete as of v1.5.11 — the 1.5.12–1.5.18 releases have focused on polish (Xbox-style toasts, gradient tones, banner refinement). Bug fixes and Jellyfin version compatibility will continue; new features will be considered via [pull request](https://github.com/ZL154/AchievementBadges_for_Jellyfin/pulls).
+> **Status:** Feature-complete as of v1.5.11 — the 1.5.12–1.5.18 releases have focused on polish (Xbox-style toasts, gradient tones, banner refinement). Bug fixes and Jellyfin version compatibility will continue; new features will be considered via [pull request](https://github.com/ZL154/AchievementBadges_for_Jellyfin/pulls) or by Issues.
 
 ---
 
