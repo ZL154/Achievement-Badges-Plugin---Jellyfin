@@ -288,7 +288,9 @@ public class AchievementBadgeService
         userId = NormalizeUserId(userId);
         lock (_lock)
         {
-            if (!_userProfiles.TryGetValue(userId, out var profile)) return new { Weeks = weeks, Days = Array.Empty<object>() };
+            if (!_userProfiles.TryGetValue(userId, out var profile))
+                return new { Weeks = weeks, Days = Array.Empty<object>(), CurrentStreak = 0, BestStreak = 0, ActiveDays = 0 };
+
             var watched = new HashSet<DateOnly>();
             foreach (var d in profile.Counters.WatchDates)
             {
@@ -300,12 +302,170 @@ public class AchievementBadgeService
             var start = today.AddDays(-(totalDays - 1));
 
             var days = new List<object>();
+            var activeInWindow = 0;
             for (var i = 0; i < totalDays; i++)
             {
                 var date = start.AddDays(i);
-                days.Add(new { D = date.ToString("yyyy-MM-dd"), W = watched.Contains(date) });
+                var isWatched = watched.Contains(date);
+                if (isWatched) activeInWindow++;
+                days.Add(new { D = date.ToString("yyyy-MM-dd"), W = isWatched });
             }
-            return new { Weeks = weeks, Days = days };
+
+            // Current streak: count back from today (or yesterday) until we hit a non-watch day
+            var currentStreak = 0;
+            var anchor = today;
+            // Allow a 1-day gap if today wasn't watched yet
+            if (!watched.Contains(anchor)) anchor = anchor.AddDays(-1);
+            while (watched.Contains(anchor))
+            {
+                currentStreak++;
+                anchor = anchor.AddDays(-1);
+            }
+
+            return new
+            {
+                Weeks = weeks,
+                Days = days,
+                CurrentStreak = currentStreak,
+                BestStreak = profile.Counters.BestWatchStreak,
+                ActiveDays = activeInWindow
+            };
+        }
+    }
+
+    public object GetBadgeEtas(string userId, int limit = 20)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userId, out var profile))
+                return new { Etas = Array.Empty<object>() };
+
+            EvaluateBadges(profile, userId, silent: true);
+            var c = profile.Counters;
+            var daysActive = Math.Max(1, c.DaysWatched);
+
+            var perDay = new Dictionary<AchievementMetric, double>
+            {
+                [AchievementMetric.TotalItemsWatched] = (double)c.TotalItemsWatched / daysActive,
+                [AchievementMetric.MoviesWatched] = (double)c.MoviesWatched / daysActive,
+                [AchievementMetric.SeriesCompleted] = (double)c.SeriesCompleted / daysActive,
+                [AchievementMetric.LateNightSessions] = (double)c.LateNightSessions / daysActive,
+                [AchievementMetric.EarlyMorningSessions] = (double)c.EarlyMorningSessions / daysActive,
+                [AchievementMetric.WeekendSessions] = (double)c.WeekendSessions / daysActive,
+                [AchievementMetric.DaysWatched] = 1.0,
+                [AchievementMetric.DaysLoggedIn] = (double)c.DaysLoggedIn / Math.Max(1, daysActive),
+                [AchievementMetric.TotalMinutesWatched] = (double)c.TotalMinutesWatched / daysActive,
+                [AchievementMetric.RewatchCount] = (double)c.RewatchCount / daysActive
+            };
+
+            var unlockedDefs = GetActiveDefinitions().ToDictionary(d => d.Id, d => d, StringComparer.OrdinalIgnoreCase);
+            var etas = new List<object>();
+
+            foreach (var badge in profile.Badges.Where(b => !b.Unlocked && IsBadgeEnabled(b.Id)))
+            {
+                if (!unlockedDefs.TryGetValue(badge.Id, out var def)) continue;
+                var remaining = def.TargetValue - badge.CurrentValue;
+                if (remaining <= 0) continue;
+
+                int? daysRemaining = null;
+                if (perDay.TryGetValue(def.Metric, out var rate) && rate > 0)
+                {
+                    daysRemaining = (int)Math.Ceiling(remaining / rate);
+                    if (daysRemaining > 9999) daysRemaining = 9999;
+                }
+
+                etas.Add(new
+                {
+                    BadgeId = badge.Id,
+                    Title = badge.Title,
+                    Current = badge.CurrentValue,
+                    Target = def.TargetValue,
+                    DaysRemaining = daysRemaining,
+                    Velocity = perDay.TryGetValue(def.Metric, out var v) ? v : (double?)null
+                });
+            }
+
+            return new { Etas = etas };
+        }
+    }
+
+    public object GetYearlyWrapped(string userId, int year)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userId, out var profile))
+                return new { Year = year, Empty = true };
+
+            var c = profile.Counters;
+            var prefix = year + "-";
+
+            int moviesInYear = 0, episodesInYear = 0, daysActiveInYear = 0, latestMaxInDay = 0;
+            string? topDay = null;
+            var dayTotals = new Dictionary<string, int>();
+            var monthTotals = new Dictionary<int, int>();
+            var dowTotals = new Dictionary<int, int>();
+
+            foreach (var kvp in c.MoviesByDate)
+            {
+                if (!kvp.Key.StartsWith(prefix)) continue;
+                moviesInYear += kvp.Value;
+                dayTotals.TryGetValue(kvp.Key, out var dt);
+                dayTotals[kvp.Key] = dt + kvp.Value;
+            }
+            foreach (var kvp in c.EpisodesByDate)
+            {
+                if (!kvp.Key.StartsWith(prefix)) continue;
+                episodesInYear += kvp.Value;
+                dayTotals.TryGetValue(kvp.Key, out var dt);
+                dayTotals[kvp.Key] = dt + kvp.Value;
+            }
+
+            foreach (var kvp in dayTotals)
+            {
+                if (kvp.Value > latestMaxInDay) { latestMaxInDay = kvp.Value; topDay = kvp.Key; }
+                if (DateOnly.TryParse(kvp.Key, out var d))
+                {
+                    monthTotals.TryGetValue(d.Month, out var m);
+                    monthTotals[d.Month] = m + kvp.Value;
+                    dowTotals.TryGetValue((int)d.DayOfWeek, out var dw);
+                    dowTotals[(int)d.DayOfWeek] = dw + kvp.Value;
+                }
+            }
+
+            daysActiveInYear = c.WatchDates.Count(d => d.StartsWith(prefix));
+
+            var topMonth = monthTotals.OrderByDescending(kvp => kvp.Value).FirstOrDefault();
+            var topDow = dowTotals.OrderByDescending(kvp => kvp.Value).FirstOrDefault();
+            var monthNames = new[] { "", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+            var dowNames = new[] { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+
+            // We don't have time-of-day stored, so use lifetime totals as fallback for genres etc.
+            var topGenres = c.GenreItemCounts.OrderByDescending(kv => kv.Value).Take(5).Select(kv => new { Name = kv.Key, Count = kv.Value }).ToList();
+            var topDirectors = c.DirectorItemCounts.OrderByDescending(kv => kv.Value).Take(5).Select(kv => new { Name = kv.Key, Count = kv.Value }).ToList();
+            var topActors = c.ActorItemCounts.OrderByDescending(kv => kv.Value).Take(5).Select(kv => new { Name = kv.Key, Count = kv.Value }).ToList();
+
+            return new
+            {
+                Year = year,
+                Empty = (moviesInYear + episodesInYear) == 0,
+                MoviesWatched = moviesInYear,
+                EpisodesWatched = episodesInYear,
+                TotalItemsWatched = moviesInYear + episodesInYear,
+                ActiveDays = daysActiveInYear,
+                BiggestDay = topDay,
+                BiggestDayCount = latestMaxInDay,
+                TopMonth = topMonth.Key > 0 ? monthNames[topMonth.Key] : null,
+                TopMonthCount = topMonth.Value,
+                TopDayOfWeek = topDow.Key >= 0 && topDow.Key < dowNames.Length ? dowNames[topDow.Key] : null,
+                TopDayOfWeekCount = topDow.Value,
+                TopGenres = topGenres,
+                TopDirectors = topDirectors,
+                TopActors = topActors,
+                BestStreak = c.BestWatchStreak,
+                TotalHoursWatched = c.TotalMinutesWatched / 60
+            };
         }
     }
 

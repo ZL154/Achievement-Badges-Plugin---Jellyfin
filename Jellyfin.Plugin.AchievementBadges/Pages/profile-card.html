@@ -156,11 +156,14 @@
   .next-tier { text-align: right; font-size: 0.8em; opacity: 0.65; margin-bottom: 1.5em; }
   .stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75em;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.6em;
     margin-bottom: 1.5em;
   }
-  @media (max-width: 640px) {
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 480px) {
     .stats { grid-template-columns: repeat(2, 1fr); }
   }
   .stat {
@@ -252,6 +255,10 @@
     <div class="next-tier">{{nextTierLabel}}</div>
 
     <div class="stats">
+      <div class="stat">
+        <div class="stat-value">🔥 {{currentStreak}}</div>
+        <div class="stat-label">Current Streak</div>
+      </div>
       <div class="stat">
         <div class="stat-value">{{bestStreak}}</div>
         <div class="stat-label">Best Streak</div>

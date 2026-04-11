@@ -529,6 +529,20 @@ public class AchievementBadgesController : ControllerBase
         return Ok(_badgeService.GetStreakCalendar(userId, weeks));
     }
 
+    [HttpGet("users/{userId}/badge-eta")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetBadgeEtas([FromRoute] string userId, [FromQuery] int limit = 50)
+    {
+        return Ok(_badgeService.GetBadgeEtas(userId, limit));
+    }
+
+    [HttpGet("users/{userId}/wrapped")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetYearlyWrapped([FromRoute] string userId, [FromQuery] int? year = null)
+    {
+        return Ok(_badgeService.GetYearlyWrapped(userId, year ?? DateTime.Today.Year));
+    }
+
     [HttpGet("users/{userId}/records")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetPersonalRecords([FromRoute] string userId)
@@ -678,6 +692,9 @@ public class AchievementBadgesController : ControllerBase
             int recapEpisodes = (int)(recapType.GetProperty("EpisodesWatched")?.GetValue(recap) ?? 0);
             int recapUnlocks = (int)(recapType.GetProperty("BadgesUnlocked")?.GetValue(recap) ?? 0);
 
+            var streakData = _badgeService.GetStreakCalendar(userId, 53);
+            int currentStreak = (int)(streakData.GetType().GetProperty("CurrentStreak")?.GetValue(streakData) ?? 0);
+
             content = content
                 .Replace("{{userId}}", userId)
                 .Replace("{{score}}", score.ToString())
@@ -685,6 +702,7 @@ public class AchievementBadgesController : ControllerBase
                 .Replace("{{total}}", total.ToString())
                 .Replace("{{percentage}}", percentage.ToString("0.#"))
                 .Replace("{{bestStreak}}", bestStreak.ToString())
+                .Replace("{{currentStreak}}", currentStreak.ToString())
                 .Replace("{{tierName}}", tier.Name)
                 .Replace("{{tierColor}}", tier.Color)
                 .Replace("{{progressToNext}}", progress.ToString())
