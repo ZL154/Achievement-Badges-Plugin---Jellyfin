@@ -26,7 +26,7 @@ A full progression, gamification and achievement system for Jellyfin that reward
 
 ## ✨ Overview
 
-Over **150 built-in achievements** across dozens of categories, a 10-tier rank ladder from Rookie to Immortal, a score economy with combos, prestige, and daily/weekly quests, plus admin power features like custom badges, seasonal challenges, webhook notifications and a full audit log.
+Over **100 built-in achievements** across dozens of categories, a 10-tier rank ladder from Rookie to Immortal, a score economy with combos, prestige, and daily/weekly quests, plus admin power features like custom badges, seasonal challenges, webhook notifications and a full audit log.
 
 Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin, ElegantFin, or StarTrack.
 
@@ -35,7 +35,7 @@ Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin
 ## 🧩 Core features
 
 ### 🏅 Badge system
-- **150+ built-in achievements** across Films, Series, Binge, Night Watching, Morning, Weekend, Exploration, Streaks, Episode/Film Marathons, Eras, World, Languages, Genres, Runtime, Total Time, Holidays (Christmas, New Year, Halloween, Eid), Library Completion, Loyalty, People, Rewatch, and Hidden categories
+- **100+ built-in achievements** across Films, Series, Binge, Night Watching, Morning, Weekend, Exploration, Streaks, Episode/Film Marathons, Eras, World, Languages, Genres, Runtime, Total Time, Holidays (Christmas, New Year, Halloween, Eid), Library Completion, Loyalty, People, Rewatch, and Hidden categories
 - **6 rarity tiers** — Common, Uncommon, Rare, Epic, Legendary, Mythic
 - **Hidden/secret badges** displayed as `???` until unlocked
 - **Library completion milestones** that auto-scale to any library structure
@@ -133,8 +133,6 @@ https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/mani
 
 ### Optional but helpful
 
-- **JavaScript Injector plugin** — alternative injection path if File Transformation isn't available
-- **A theme plugin** (NetFin, ElegantFin, StarTrack) — the rank-based theme unlocks look best on dark themes
 - **Proper metadata provider** (TMDb, OMDb) — required for Director/Actor badges to populate. Badges based on `item.People` will stay empty if your library doesn't have people scraped
 - **Home Screen Sections plugin** — lets the achievement home widget inject more reliably
 
@@ -212,19 +210,6 @@ POST      /Plugins/AchievementBadges/admin/users/{userId}/inject-counters
 _Screenshots coming with v1.5.x once UI is stable_
 
 ---
-
-## 🧪 Changelog highlights
-
-- **1.5.4** — silent scan (no toast spam), server-side rendered profile card, multi-quest system (3 daily + 3 weekly), points display on badges with prestige scaling, fancy prestige button with animated gradient, heatmap range dropdown (30/90/180/365), item detail ribbon defaults off
-- **1.5.3** — profile card fix, toast dedup, header badges hidden during playback, heatmap wired to real data, People extraction fix, Quests tab, rarity sort, admin UI polish, auto-eval on startup
-- **1.5.2** — diagnostic + resilience hotfix with verbose injection logging and retry loop
-- **1.5.1** — prestige system, score bank, combos, quests, recommendations, visual badge editor, charts, audit log, themes, admin auth lockdown (security fix)
-- **1.5.0** — rank system, toasts, hidden badges, recap, custom badges, challenges, webhooks, profile cards, search, leaderboard categories
-- **1.4.10** — Eid Mubarak badge
-- **1.4.9** — 40+ new badges + admin enable/disable panel
-- **1.4.8** — fix live playback drops + Explorer library detection
-- **1.4.7** — fix backfill user ID normalization + live playback tracker registration
-
 See the [Releases page](https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases) for full notes.
 
 ---
