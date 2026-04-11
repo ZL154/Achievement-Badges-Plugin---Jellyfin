@@ -494,6 +494,26 @@ font-size:0.88em;
 
                 <details class="abAdminSection" style="margin-top:1em;">
                     <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                        Test unlock toast
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;">
+                            Preview the Xbox-style unlock animation for each rarity. Click any button below and watch the bottom-center of the page.
+                        </p>
+                        <div id="abTestToastButtons" style="display:flex; flex-wrap:wrap; gap:0.5em; margin-top:0.75em;">
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="common" style="background:rgba(159,179,200,0.2); border:1px solid #9fb3c8; color:#9fb3c8;">Common</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="uncommon" style="background:rgba(52,211,153,0.2); border:1px solid #34d399; color:#34d399;">Uncommon</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="rare" style="background:rgba(96,165,250,0.2); border:1px solid #60a5fa; color:#60a5fa;">Rare</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="epic" style="background:rgba(167,139,250,0.2); border:1px solid #a78bfa; color:#a78bfa;">Epic</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="legendary" style="background:rgba(251,191,36,0.2); border:1px solid #fbbf24; color:#fbbf24;">Legendary</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="mythic" style="background:rgba(244,63,94,0.2); border:1px solid #f43f5e; color:#f43f5e;">Mythic</button>
+                        </div>
+                        <div id="abTestToastStatus" class="secondaryText" style="margin-top:0.5em;"></div>
+                    </div>
+                </details>
+
+                <details class="abAdminSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
                         UI features (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
@@ -1484,6 +1504,20 @@ font-size:0.88em;
         }
     });
     loadChallenges();
+
+    // --- Test unlock toast ---
+    var testToastStatus = document.getElementById('abTestToastStatus');
+    document.querySelectorAll('.ab-test-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var rarity = btn.getAttribute('data-rarity');
+            if (typeof window.abAchievementTestToast === 'function') {
+                window.abAchievementTestToast(rarity);
+                if (testToastStatus) testToastStatus.textContent = 'Firing ' + rarity + ' toast at bottom-center...';
+            } else {
+                if (testToastStatus) testToastStatus.textContent = 'Toast system not loaded. Try refreshing the page (enhance.js needs to be active).';
+            }
+        });
+    });
 
     // --- Visual badge editor ---
     var vbAddBtn = document.getElementById('abVbAddBtn');

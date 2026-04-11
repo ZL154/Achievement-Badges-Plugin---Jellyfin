@@ -1,20 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
   <defs>
     <!-- Background gradient -->
-    <radialGradient id="bgGlow" cx="50%" cy="50%" r="75%">
-      <stop offset="0%" stop-color="#1a0f2e" stop-opacity="1"/>
-      <stop offset="60%" stop-color="#0d0a1a" stop-opacity="1"/>
-      <stop offset="100%" stop-color="#050409" stop-opacity="1"/>
+    <radialGradient id="bgGlow" cx="30%" cy="50%" r="80%">
+      <stop offset="0%" stop-color="#1a0f3e" stop-opacity="1"/>
+      <stop offset="55%" stop-color="#0a0818" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#040309" stop-opacity="1"/>
     </radialGradient>
 
-    <!-- Rarity rainbow gradient for accent line -->
+    <!-- Diamond face gradients -->
+    <linearGradient id="gemTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#a3b5f7"/>
+      <stop offset="100%" stop-color="#667eea"/>
+    </linearGradient>
+    <linearGradient id="gemLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#3a4080"/>
+    </linearGradient>
+    <linearGradient id="gemRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#764ba2"/>
+      <stop offset="100%" stop-color="#2a1540"/>
+    </linearGradient>
+    <linearGradient id="gemBottom" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a3b5f7"/>
+      <stop offset="100%" stop-color="#1a1a40"/>
+    </linearGradient>
+
+    <!-- Rarity rainbow for accent line -->
     <linearGradient id="rarityBar" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#6b7280"/>
+      <stop offset="0%" stop-color="#9fb3c8"/>
       <stop offset="20%" stop-color="#34d399"/>
       <stop offset="40%" stop-color="#60a5fa"/>
       <stop offset="60%" stop-color="#a78bfa"/>
       <stop offset="80%" stop-color="#fbbf24"/>
-      <stop offset="100%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
     </linearGradient>
 
     <!-- Title gradient -->
@@ -23,86 +42,110 @@
       <stop offset="100%" stop-color="#a3b5f7"/>
     </linearGradient>
 
-    <!-- Trophy gradient -->
-    <linearGradient id="trophyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffd700"/>
-      <stop offset="50%" stop-color="#ff9800"/>
-      <stop offset="100%" stop-color="#e91e63"/>
-    </linearGradient>
-
-    <!-- Trophy glow filter -->
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+    <!-- Glow filter for the gem -->
+    <filter id="gemGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
-    </filter>
-
-    <!-- Subtle grain -->
-    <filter id="noise">
-      <feTurbulence baseFrequency="0.9" numOctaves="2"/>
-      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.03 0"/>
-      <feComposite in2="SourceGraphic" operator="in"/>
     </filter>
   </defs>
 
   <!-- Background -->
   <rect width="1200" height="400" fill="url(#bgGlow)"/>
 
-  <!-- Radial highlight behind trophy -->
-  <circle cx="260" cy="200" r="180" fill="#667eea" opacity="0.08"/>
-  <circle cx="260" cy="200" r="120" fill="#764ba2" opacity="0.12"/>
+  <!-- Radial glow pulse behind the gem -->
+  <circle cx="260" cy="200" r="160" fill="#667eea" opacity="0.12">
+    <animate attributeName="r" values="140;180;140" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.08;0.2;0.08" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="260" cy="200" r="110" fill="#764ba2" opacity="0.15">
+    <animate attributeName="r" values="100;130;100" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.1;0.25;0.1" dur="4s" repeatCount="indefinite"/>
+  </circle>
 
-  <!-- Constellation dots -->
-  <g fill="#ffffff" opacity="0.25">
-    <circle cx="100" cy="60" r="1.5"/>
-    <circle cx="180" cy="100" r="1"/>
-    <circle cx="80" cy="340" r="1"/>
-    <circle cx="150" cy="300" r="1.5"/>
-    <circle cx="1100" cy="80" r="1"/>
-    <circle cx="1050" cy="120" r="1.5"/>
-    <circle cx="1150" cy="280" r="1"/>
-    <circle cx="1080" cy="340" r="1.5"/>
-    <circle cx="950" cy="60" r="1"/>
-    <circle cx="900" cy="340" r="1"/>
-    <circle cx="700" cy="50" r="1"/>
-    <circle cx="550" cy="60" r="1.5"/>
-    <circle cx="420" cy="60" r="1"/>
-    <circle cx="500" cy="340" r="1"/>
-    <circle cx="800" cy="350" r="1.5"/>
+  <!-- Star field -->
+  <g fill="#ffffff">
+    <circle cx="100" cy="60" r="1.5" opacity="0.6"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="3s" repeatCount="indefinite"/></circle>
+    <circle cx="180" cy="100" r="1" opacity="0.5"><animate attributeName="opacity" values="0.2;0.8;0.2" dur="2.5s" repeatCount="indefinite" begin="0.3s"/></circle>
+    <circle cx="80" cy="340" r="1" opacity="0.4"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="3.5s" repeatCount="indefinite" begin="1s"/></circle>
+    <circle cx="150" cy="300" r="1.5" opacity="0.5"><animate attributeName="opacity" values="0.25;0.85;0.25" dur="2.8s" repeatCount="indefinite" begin="0.7s"/></circle>
+    <circle cx="1100" cy="80" r="1" opacity="0.5"><animate attributeName="opacity" values="0.2;0.8;0.2" dur="3.2s" repeatCount="indefinite" begin="0.5s"/></circle>
+    <circle cx="1050" cy="120" r="1.5" opacity="0.6"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="2.6s" repeatCount="indefinite" begin="1.2s"/></circle>
+    <circle cx="1150" cy="280" r="1" opacity="0.4"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="3.8s" repeatCount="indefinite" begin="0.9s"/></circle>
+    <circle cx="1080" cy="340" r="1.5" opacity="0.5"><animate attributeName="opacity" values="0.25;0.85;0.25" dur="3s" repeatCount="indefinite" begin="0.4s"/></circle>
+    <circle cx="950" cy="60" r="1" opacity="0.4"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="2.7s" repeatCount="indefinite" begin="1.3s"/></circle>
+    <circle cx="900" cy="340" r="1" opacity="0.4"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="3.3s" repeatCount="indefinite" begin="0.6s"/></circle>
+    <circle cx="700" cy="50" r="1" opacity="0.4"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="3s" repeatCount="indefinite" begin="0.8s"/></circle>
+    <circle cx="550" cy="60" r="1.5" opacity="0.5"><animate attributeName="opacity" values="0.25;0.85;0.25" dur="2.9s" repeatCount="indefinite" begin="1.1s"/></circle>
+    <circle cx="500" cy="340" r="1" opacity="0.4"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="3.4s" repeatCount="indefinite" begin="0.2s"/></circle>
+    <circle cx="800" cy="350" r="1.5" opacity="0.5"><animate attributeName="opacity" values="0.25;0.85;0.25" dur="2.7s" repeatCount="indefinite" begin="1.5s"/></circle>
   </g>
-  <g fill="#a3b5f7" opacity="0.4">
-    <circle cx="120" cy="180" r="2"/>
-    <circle cx="1080" cy="200" r="2"/>
-    <circle cx="420" cy="90" r="1.5"/>
-    <circle cx="780" cy="320" r="1.5"/>
+  <g fill="#a3b5f7">
+    <circle cx="120" cy="180" r="2" opacity="0.5"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="4s" repeatCount="indefinite"/></circle>
+    <circle cx="1080" cy="200" r="2" opacity="0.5"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="4.2s" repeatCount="indefinite" begin="0.8s"/></circle>
+    <circle cx="420" cy="90" r="1.5" opacity="0.45"><animate attributeName="opacity" values="0.25;0.85;0.25" dur="3.6s" repeatCount="indefinite" begin="1s"/></circle>
+    <circle cx="780" cy="320" r="1.5" opacity="0.45"><animate attributeName="opacity" values="0.25;0.85;0.25" dur="3.8s" repeatCount="indefinite" begin="0.3s"/></circle>
   </g>
 
-  <!-- Top corner bracket accents -->
-  <path d="M 40,40 L 40,100 M 40,40 L 100,40" stroke="#667eea" stroke-width="2" fill="none" opacity="0.6"/>
-  <path d="M 1160,40 L 1160,100 M 1160,40 L 1100,40" stroke="#667eea" stroke-width="2" fill="none" opacity="0.6"/>
-  <path d="M 40,360 L 40,300 M 40,360 L 100,360" stroke="#667eea" stroke-width="2" fill="none" opacity="0.6"/>
-  <path d="M 1160,360 L 1160,300 M 1160,360 L 1100,360" stroke="#667eea" stroke-width="2" fill="none" opacity="0.6"/>
+  <!-- Corner bracket accents -->
+  <path d="M 40,40 L 40,100 M 40,40 L 100,40" stroke="#667eea" stroke-width="2.5" fill="none" opacity="0.75"/>
+  <path d="M 1160,40 L 1160,100 M 1160,40 L 1100,40" stroke="#667eea" stroke-width="2.5" fill="none" opacity="0.75"/>
+  <path d="M 40,360 L 40,300 M 40,360 L 100,360" stroke="#667eea" stroke-width="2.5" fill="none" opacity="0.75"/>
+  <path d="M 1160,360 L 1160,300 M 1160,360 L 1100,360" stroke="#667eea" stroke-width="2.5" fill="none" opacity="0.75"/>
 
-  <!-- Trophy icon - left side with glow -->
-  <g transform="translate(260, 200)" filter="url(#glow)">
-    <!-- Handles -->
-    <path d="M -55,-60 C -90,-60 -100,-30 -85,-5 C -75,10 -55,5 -48,-15" fill="none" stroke="url(#trophyGrad)" stroke-width="7" stroke-linecap="round"/>
-    <path d="M 55,-60 C 90,-60 100,-30 85,-5 C 75,10 55,5 48,-15" fill="none" stroke="url(#trophyGrad)" stroke-width="7" stroke-linecap="round"/>
-    <!-- Cup -->
-    <path d="M -55,-80 L -55,-35 C -55,10 -35,35 0,45 C 35,35 55,10 55,-35 L 55,-80 Z" fill="url(#trophyGrad)"/>
-    <!-- Rim highlight -->
-    <rect x="-58" y="-85" width="116" height="8" rx="3" fill="#ffd700"/>
-    <!-- Star on cup -->
-    <polygon points="0,-50 6,-32 25,-32 10,-20 16,-2 0,-13 -16,-2 -10,-20 -25,-32 -6,-32" fill="#ffffff" opacity="0.85"/>
-    <!-- Stem -->
-    <rect x="-8" y="45" width="16" height="22" rx="3" fill="url(#trophyGrad)"/>
-    <!-- Base -->
-    <rect x="-32" y="67" width="64" height="10" rx="4" fill="url(#trophyGrad)"/>
-    <!-- Base shadow -->
-    <ellipse cx="0" cy="82" rx="40" ry="4" fill="#000000" opacity="0.5"/>
+  <!-- Rotating diamond/gem -->
+  <g transform="translate(260, 200)" filter="url(#gemGlow)">
+    <!-- Rotation group -->
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="8s" repeatCount="indefinite"/>
+
+      <!-- Scale pulse -->
+      <g>
+        <animateTransform attributeName="transform" type="scale" values="1;1.06;1" dur="3s" repeatCount="indefinite" additive="sum"/>
+
+        <!-- Diamond: classic cut shape (triangle top + trapezoid bottom style) -->
+        <!-- Crown (top facets) -->
+        <polygon points="-85,-25 -45,-75 45,-75 85,-25 0,-25" fill="url(#gemTop)" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.4"/>
+
+        <!-- Upper left facet -->
+        <polygon points="-85,-25 -45,-75 0,-25" fill="url(#gemLeft)" opacity="0.85" stroke="#ffffff" stroke-width="1" stroke-opacity="0.3"/>
+        <!-- Upper right facet -->
+        <polygon points="0,-25 45,-75 85,-25" fill="url(#gemRight)" opacity="0.85" stroke="#ffffff" stroke-width="1" stroke-opacity="0.3"/>
+        <!-- Table (flat top center) -->
+        <polygon points="-45,-75 45,-75 30,-55 -30,-55" fill="#ffffff" opacity="0.3"/>
+
+        <!-- Pavilion (bottom point) -->
+        <polygon points="-85,-25 0,85 85,-25" fill="url(#gemBottom)" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.4"/>
+        <!-- Left bottom facet line -->
+        <line x1="-85" y1="-25" x2="-28" y2="-25" stroke="#ffffff" stroke-width="1" stroke-opacity="0.3"/>
+        <!-- Right bottom facet line -->
+        <line x1="28" y1="-25" x2="85" y2="-25" stroke="#ffffff" stroke-width="1" stroke-opacity="0.3"/>
+        <!-- Center vertical highlight -->
+        <line x1="0" y1="-25" x2="0" y2="85" stroke="#ffffff" stroke-width="1" stroke-opacity="0.25"/>
+        <!-- Diagonal bottom facets -->
+        <line x1="-85" y1="-25" x2="0" y2="85" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.2"/>
+        <line x1="85" y1="-25" x2="0" y2="85" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.2"/>
+
+        <!-- Shiny highlight -->
+        <polygon points="-55,-65 -25,-60 -40,-35" fill="#ffffff" opacity="0.5"/>
+      </g>
+    </g>
   </g>
+
+  <!-- Shimmer passing through the title -->
+  <defs>
+    <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="55%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      <animate attributeName="x1" values="-50%;100%" dur="5s" repeatCount="indefinite"/>
+      <animate attributeName="x2" values="0%;150%" dur="5s" repeatCount="indefinite"/>
+    </linearGradient>
+  </defs>
 
   <!-- Label above title -->
   <text x="430" y="125" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#667eea" letter-spacing="6" font-weight="700">PROGRESSION SYSTEM</text>
@@ -111,30 +154,24 @@
   <text x="430" y="210" font-family="'Segoe UI',system-ui,-apple-system,sans-serif" font-size="76" font-weight="900" fill="url(#titleGrad)" letter-spacing="-2">ACHIEVEMENT</text>
   <text x="430" y="275" font-family="'Segoe UI',system-ui,-apple-system,sans-serif" font-size="76" font-weight="900" fill="url(#titleGrad)" letter-spacing="-2">BADGES</text>
 
+  <!-- Shimmer overlay across the title area -->
+  <rect x="430" y="150" width="640" height="140" fill="url(#shimmer)" pointer-events="none"/>
+
   <!-- Subtitle -->
   <text x="430" y="305" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#6b7280" letter-spacing="2" font-weight="500">for Jellyfin · 170+ achievements · 10-tier rank system</text>
 
   <!-- Rarity accent bar -->
-  <rect x="430" y="325" width="500" height="3" rx="1.5" fill="url(#rarityBar)"/>
+  <rect x="430" y="325" width="500" height="3" rx="1.5" fill="url(#rarityBar)">
+    <animate attributeName="width" values="500;520;500" dur="3s" repeatCount="indefinite"/>
+  </rect>
 
   <!-- Rarity dots row -->
   <g font-family="'Segoe UI',system-ui,sans-serif" font-size="9" font-weight="700" letter-spacing="1.5">
-    <circle cx="440" cy="355" r="3" fill="#6b7280"/>
-    <text x="448" y="359" fill="#6b7280">COMMON</text>
-
-    <circle cx="530" cy="355" r="3" fill="#34d399"/>
-    <text x="538" y="359" fill="#34d399">UNCOMMON</text>
-
-    <circle cx="630" cy="355" r="3" fill="#60a5fa"/>
-    <text x="638" y="359" fill="#60a5fa">RARE</text>
-
-    <circle cx="695" cy="355" r="3" fill="#a78bfa"/>
-    <text x="703" y="359" fill="#a78bfa">EPIC</text>
-
-    <circle cx="760" cy="355" r="3" fill="#fbbf24"/>
-    <text x="768" y="359" fill="#fbbf24">LEGENDARY</text>
-
-    <circle cx="860" cy="355" r="3" fill="#ef4444"/>
-    <text x="868" y="359" fill="#ef4444">MYTHIC</text>
+    <circle cx="440" cy="355" r="3" fill="#9fb3c8"/><text x="448" y="359" fill="#9fb3c8">COMMON</text>
+    <circle cx="530" cy="355" r="3" fill="#34d399"/><text x="538" y="359" fill="#34d399">UNCOMMON</text>
+    <circle cx="630" cy="355" r="3" fill="#60a5fa"/><text x="638" y="359" fill="#60a5fa">RARE</text>
+    <circle cx="695" cy="355" r="3" fill="#a78bfa"/><text x="703" y="359" fill="#a78bfa">EPIC</text>
+    <circle cx="760" cy="355" r="3" fill="#fbbf24"/><text x="768" y="359" fill="#fbbf24">LEGENDARY</text>
+    <circle cx="860" cy="355" r="3" fill="#f43f5e"/><text x="868" y="359" fill="#f43f5e">MYTHIC</text>
   </g>
 </svg>

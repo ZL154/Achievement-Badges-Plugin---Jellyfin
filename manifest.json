@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.14",
+        "changelog": "Admin panel now has a 'Test unlock toast' section with 6 buttons (Common through Mythic) that preview the Xbox-style animation at the bottom-center without needing to play content or inject counters. Uses a new exposed window.abAchievementTestToast() helper from enhance.js. Also: new animated SVG banner for the GitHub README with a rotating gradient diamond (8s rotation, 3s pulse), pulsing radial glow, twinkling star field, and a shimmer sweep across the title.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.14/Jellyfin.Plugin.AchievementBadgesv1.5.14.zip",
+        "checksum": "D3352016EAEC2FF705198100836661BA"
+      },
+      {
         "version": "1.5.13",
         "changelog": "Xbox One style unlock toast: expanding circle with rotating trophy grows into a full banner showing 'Achievement unlocked' / 'Rare achievement unlocked' + Gamerscore + badge title, then collapses back to a circle and disappears. 10.5s total animation, positioned at bottom-center. Rarity tier colors the banner. Rare/Epic/Legendary/Mythic tiers also get a glow effect + confetti timed to the banner reveal. Fix: showcase pill + header dot icons now render in white so they actually contrast with the rarity-colored border (previously icon and border were the same color). Header dots also have a subtle rarity-tinted background now.",
         "targetAbi": "10.11.0.0",

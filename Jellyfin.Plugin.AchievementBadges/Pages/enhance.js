@@ -301,6 +301,26 @@
         injectItemRibbon();
     }
 
+    // Expose a global test helper so the admin page can preview toasts
+    window.abAchievementTestToast = function (rarity) {
+        var titles = {
+            common: 'Test Common Badge',
+            uncommon: 'Test Uncommon Badge',
+            rare: 'Test Rare Badge',
+            epic: 'Test Epic Badge',
+            legendary: 'Test Legendary Badge',
+            mythic: 'Test Mythic Badge'
+        };
+        var key = (rarity || 'common').toLowerCase();
+        showToast({
+            Id: 'test-' + key,
+            Title: titles[key] || 'Test Badge',
+            Rarity: key.charAt(0).toUpperCase() + key.slice(1),
+            Icon: 'emoji_events',
+            UnlockedAt: new Date().toISOString()
+        });
+    };
+
     function start() {
         var style = document.createElement('style');
         style.textContent =
