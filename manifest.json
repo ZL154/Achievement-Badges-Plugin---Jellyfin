@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.12",
+        "changelog": "Sidebar + header showcases now use real Material Icons matching the rest of the UI. Previously the inline injection script in SidebarInjectionMiddleware still had the old emoji iconMap fallback, so equipped badges showed up as approximated emoji (moon, alarm, etc) on the home page even though the achievements page itself had switched to material icons in v1.5.7. Also improved the visual: header dots are now 30px with a rarity-colored glow, sidebar pills use proper icon + text spacing with rarity color on both elements.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.12/Jellyfin.Plugin.AchievementBadgesv1.5.12.zip",
+        "checksum": "1F3AEF55050948A6682E33FB3C7930D8"
+      },
+      {
         "version": "1.5.11",
         "changelog": "Chase modal now randomizes suggested items (different list every click) and filters properly by badge metric - movie badges get movies, series badges get series, episode badges get episodes, genre badges use Jellyfin's genre filter. 35 new badges across Prestige (15/25/50), Score Economy (500k/1M lifetime), Morning Ritual, Combo Master, Library Completionist, Badge Hoarder, Director Devotee, 7 Decade specialists (60s-20s), 7 Day-of-Week specialists (Mon-Sun), Binge Marathon (5/10/15h in one day), Library Specialist (100/500 items in one library), Actor devotee extremes, Ultra Movie Marathon, Binge Everest. New metrics: LifetimeScore, BestComboCount, LibrariesAt100Percent, BadgesUnlockedPercent, DecadeItemsWatched, DayOfWeekItemsWatched, MaxLibraryItemCount, MaxMinutesInSingleDay. New counters tracked on every playback: decade dict, day-of-week dict, minutes-by-date dict.",
         "targetAbi": "10.11.0.0",

@@ -18,8 +18,7 @@ public class SidebarInjectionMiddleware
     var SIDEBAR_ID='ab-sidebar-entry';
     var SHOWCASE_ID='ab-sidebar-showcase';
     var HEADER_ID='ab-header-badges';
-    var iconMap={play_circle:'\u25b6',travel_explore:'\ud83e\udded',weekend:'\ud83d\udecb',chair:'\ud83e\ude91',home:'\ud83c\udfe0',movie_filter:'\ud83c\udf9e',live_tv:'\ud83d\udcfa',theaters:'\ud83c\udfad',local_fire_department:'\ud83d\udd25',bolt:'\u26a1',military_tech:'\ud83c\udfc6',auto_awesome:'\u2728',movie:'\ud83c\udfac',tv:'\ud83d\udcfa',dark_mode:'\ud83c\udf19',nights_stay:'\ud83c\udf03',bedtime:'\ud83d\ude34',wb_sunny:'\ud83c\udf05',light_mode:'\u2600',sunny:'\ud83c\udf1e',event:'\ud83d\udcc5',event_available:'\ud83d\uddd3',celebration:'\ud83c\udf89',stars:'\ud83c\udf1f',collections_bookmark:'\ud83d\udcda',inventory_2:'\ud83d\uddc3',today:'\ud83d\udcc6',calendar_month:'\ud83d\uddd3',favorite:'\u2764',timeline:'\ud83d\udcc8',insights:'\ud83d\udcca',all_inclusive:'\u267e',speed:'\ud83d\udca8',hourglass_bottom:'\u23f3',directions_run:'\ud83c\udfc3',sports_score:'\ud83c\udfc1',local_movies:'\ud83c\udf7f',emoji_events:'\ud83c\udfc6'};
-    function ic(n){return iconMap[(n||'').toLowerCase()]||'\ud83c\udfc5';}
+    function icName(n){ return (n||'emoji_events').toString().toLowerCase().replace(/[^a-z0-9_]/g,''); }
     var rarityColors={common:'#9fb3c8',uncommon:'#34d399',rare:'#60a5fa',epic:'#a78bfa',legendary:'#fbbf24',mythic:'#f43f5e'};
     function rc(r){return rarityColors[(r||'').toLowerCase()]||'#9fb3c8';}
 
@@ -94,9 +93,10 @@ public class SidebarInjectionMiddleware
                 sc.innerHTML='';
                 if(badges&&badges.length){
                     badges.forEach(function(b){
+                        var color=rc(b.Rarity);
                         var pill=document.createElement('div');pill.title=b.Title+' ('+b.Rarity+')';
-                        pill.style.cssText='display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid '+rc(b.Rarity)+';font-size:11px;cursor:default;';
-                        pill.innerHTML='<span style=""font-size:12px;"">'+ic(b.Icon)+'</span><span style=""color:'+rc(b.Rarity)+';font-weight:600;"">'+b.Title+'</span>';
+                        pill.style.cssText='display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 7px;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid '+color+';font-size:11px;cursor:default;line-height:1;';
+                        pill.innerHTML='<span class=""material-icons"" style=""font-family:Material Icons;font-size:14px;line-height:1;color:'+color+';"">'+icName(b.Icon)+'</span><span style=""color:'+color+';font-weight:600;line-height:1;"">'+b.Title+'</span>';
                         sc.appendChild(pill);
                     });
                 }
@@ -106,9 +106,10 @@ public class SidebarInjectionMiddleware
                 hdr.innerHTML='';
                 if(badges&&badges.length){
                     badges.forEach(function(b){
+                        var color=rc(b.Rarity);
                         var dot=document.createElement('div');dot.title=b.Title+' ('+b.Rarity+')';
-                        dot.style.cssText='width:26px;height:26px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:1.5px solid '+rc(b.Rarity)+';font-size:13px;';
-                        dot.textContent=ic(b.Icon);
+                        dot.style.cssText='width:30px;height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:1.5px solid '+color+';box-shadow:0 0 10px '+color+'33;';
+                        dot.innerHTML='<span class=""material-icons"" style=""font-family:Material Icons;font-size:16px;line-height:1;color:'+color+';"">'+icName(b.Icon)+'</span>';
                         hdr.appendChild(dot);
                     });
                 }
