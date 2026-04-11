@@ -20,7 +20,7 @@
 
 # 🏆 Achievement Badges for Jellyfin
 
-A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd, built natively into your media server.
+A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity.
 
 ---
 
