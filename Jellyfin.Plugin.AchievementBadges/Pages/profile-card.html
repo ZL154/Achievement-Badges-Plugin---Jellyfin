@@ -5,100 +5,57 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Achievement Profile Card</title>
 <style>
-  body { margin:0; font-family: system-ui, sans-serif; background:#111; color:#fff; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:2em; }
+  body { margin:0; font-family: system-ui, -apple-system, sans-serif; background:#0d1017; color:#fff; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:2em; }
   .card { width:720px; max-width:100%; border-radius:16px; padding:2em; background:linear-gradient(135deg, #1a1f2e 0%, #0d1017 100%); border:1px solid rgba(255,255,255,0.1); box-shadow:0 8px 32px rgba(0,0,0,0.5); }
   .header { display:flex; align-items:center; gap:1em; margin-bottom:1.5em; }
-  .avatar { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, #667eea, #764ba2); display:flex; align-items:center; justify-content:center; font-size:2em; font-weight:bold; }
+  .avatar { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.5em; }
   .name { font-size:1.5em; font-weight:600; }
   .tier { font-size:0.85em; opacity:0.7; text-transform:uppercase; letter-spacing:1px; }
-  .score-row { display:flex; justify-content:space-between; margin-bottom:1em; }
-  .score-big { font-size:3em; font-weight:700; }
+  .score-row { display:flex; justify-content:space-between; margin-bottom:1em; flex-wrap:wrap; gap:1em; }
+  .score-big { font-size:3em; font-weight:700; line-height:1; }
   .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1em; margin:1.5em 0; }
   .stat { background:rgba(255,255,255,0.05); border-radius:8px; padding:1em; text-align:center; }
   .stat-value { font-size:1.8em; font-weight:600; }
   .stat-label { font-size:0.75em; opacity:0.6; text-transform:uppercase; margin-top:0.25em; }
   .showcase { display:flex; flex-wrap:wrap; gap:0.5em; margin-top:1em; }
-  .badge-chip { padding:0.5em 0.75em; border-radius:999px; background:rgba(255,255,255,0.08); font-size:0.85em; display:inline-flex; align-items:center; gap:0.5em; border:1px solid rgba(255,255,255,0.1); }
+  .badge-chip { padding:0.5em 0.85em; border-radius:999px; background:rgba(255,255,255,0.08); font-size:0.85em; border:1px solid rgba(255,255,255,0.12); }
   .footer { margin-top:1.5em; font-size:0.75em; opacity:0.5; text-align:center; }
-  .progress-bar { height:6px; border-radius:3px; background:rgba(255,255,255,0.1); overflow:hidden; }
-  .progress-fill { height:100%; transition:width 0.3s; }
-  .loading { text-align:center; padding:3em; opacity:0.6; }
+  .progress-bar { height:8px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; margin:0.5em 0; }
+  .progress-fill { height:100%; }
 </style>
 </head>
 <body>
-  <div class="card" id="card">
-    <div class="loading">Loading profile card...</div>
+  <div class="card">
+    <div class="header">
+      <div class="avatar" style="background:linear-gradient(135deg, {{tierColor}} 0%, rgba(255,255,255,0.1) 100%);">🏆</div>
+      <div>
+        <div class="name">Achievement Profile</div>
+        <div class="tier" style="color:{{tierColor}};">{{tierName}}</div>
+      </div>
+    </div>
+    <div class="score-row">
+      <div>
+        <div class="score-big">{{score}}</div>
+        <div class="tier">Achievement score</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:1.5em; font-weight:600;">{{unlocked}} / {{total}}</div>
+        <div class="tier">{{percentage}}% complete</div>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:{{progressToNext}}%; background:{{tierColor}};"></div></div>
+    <div class="tier" style="text-align:right; margin-bottom:1em;">{{nextTierLabel}}</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-value">{{bestStreak}}</div><div class="stat-label">Best Streak</div></div>
+      <div class="stat"><div class="stat-value">{{recapMovies}}</div><div class="stat-label">Movies (30d)</div></div>
+      <div class="stat"><div class="stat-value">{{recapEpisodes}}</div><div class="stat-label">Episodes (30d)</div></div>
+      <div class="stat"><div class="stat-value">{{recapUnlocks}}</div><div class="stat-label">Unlocks (30d)</div></div>
+    </div>
+    <div>
+      <div style="font-size:0.85em; opacity:0.7; margin-bottom:0.5em;">Equipped showcase</div>
+      <div class="showcase">{{equippedHtml}}</div>
+    </div>
+    <div class="footer">Jellyfin Achievement Badges · Right-click → Save or screenshot to share</div>
   </div>
-
-<script>
-(function() {
-  var userId = "{{userId}}";
-  var base = (window.location.pathname.split('/Plugins/')[0] || '') + '/';
-
-  function fetchJson(path) {
-    return fetch(base + path, { credentials: 'include' })
-      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.statusText); });
-  }
-
-  Promise.all([
-    fetchJson('Plugins/AchievementBadges/users/' + userId + '/summary'),
-    fetchJson('Plugins/AchievementBadges/users/' + userId + '/rank'),
-    fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped'),
-    fetchJson('Plugins/AchievementBadges/users/' + userId + '/recap?period=month')
-  ]).then(function (results) {
-    var summary = results[0], rank = results[1], equipped = results[2], recap = results[3];
-    var tier = rank.Tier || {};
-    var initials = 'U';
-
-    var showcaseHtml = (equipped || []).map(function (b) {
-      return '<span class="badge-chip"><span class="material-icons" style="font-size:1em;">emoji_events</span>' + escapeHtml(b.Title) + '</span>';
-    }).join('');
-
-    document.getElementById('card').innerHTML =
-      '<div class="header">' +
-        '<div class="avatar" style="background:linear-gradient(135deg,' + (tier.Color || '#667eea') + ',' + (tier.Color || '#764ba2') + ');">' + initials + '</div>' +
-        '<div>' +
-          '<div class="name">Achievement Profile</div>' +
-          '<div class="tier" style="color:' + (tier.Color || '#fff') + ';">' + (tier.Name || 'Rookie') + '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="score-row">' +
-        '<div>' +
-          '<div class="score-big">' + (summary.Score || 0) + '</div>' +
-          '<div class="tier">Achievement score</div>' +
-        '</div>' +
-        '<div style="text-align:right;">' +
-          '<div style="font-size:1.5em; font-weight:600;">' + (summary.Unlocked || 0) + ' / ' + (summary.Total || 0) + '</div>' +
-          '<div class="tier">' + (summary.Percentage || 0) + '% complete</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="progress-bar"><div class="progress-fill" style="width:' + (rank.ProgressToNext || 0) + '%; background:' + (tier.Color || '#667eea') + ';"></div></div>' +
-      '<div class="stats">' +
-        statCard(summary.BestWatchStreak || 0, 'Best Streak') +
-        statCard(recap.MoviesWatched || 0, 'Movies (30d)') +
-        statCard(recap.EpisodesWatched || 0, 'Episodes (30d)') +
-        statCard(recap.BadgesUnlocked || 0, 'Unlocked (30d)') +
-      '</div>' +
-      '<div>' +
-        '<div style="font-size:0.85em; opacity:0.7; margin-bottom:0.5em;">Equipped showcase</div>' +
-        '<div class="showcase">' + (showcaseHtml || '<span class="tier">No badges equipped.</span>') + '</div>' +
-      '</div>' +
-      '<div class="footer">Jellyfin Achievement Badges · Right-click → Save as image to share</div>';
-  }).catch(function (err) {
-    document.getElementById('card').innerHTML = '<div class="loading">Failed to load profile card.</div>';
-    console.error(err);
-  });
-
-  function statCard(value, label) {
-    return '<div class="stat"><div class="stat-value">' + value + '</div><div class="stat-label">' + label + '</div></div>';
-  }
-
-  function escapeHtml(s) {
-    var div = document.createElement('div');
-    div.textContent = String(s || '');
-    return div.innerHTML;
-  }
-})();
-</script>
 </body>
 </html>

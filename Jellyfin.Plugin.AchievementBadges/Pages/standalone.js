@@ -93,6 +93,13 @@
             '#' + ROOT_ID + ' .ab-select{background-image:url(\'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 16 16%22><path fill=%22%23fff%22 d=%22M4 6l4 4 4-4z%22/></svg>\');background-repeat:no-repeat;background-position:right 0.7em center;padding-right:2em;}' +
             '#' + ROOT_ID + ' .ab-select option{background:#181b24;color:#fff;}' +
             '#' + ROOT_ID + ' .ab-input:focus,#' + ROOT_ID + ' .ab-select:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.25);}' +
+            '#' + ROOT_ID + ' .ab-badge-pts{font-size:0.72em;font-weight:700;padding:0.25em 0.55em;border-radius:999px;background:linear-gradient(135deg,rgba(102,126,234,0.25),rgba(118,75,162,0.25));border:1px solid rgba(102,126,234,0.35);color:#c7d2ff;white-space:nowrap;}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn{position:relative;padding:0.9em 2em;border-radius:12px;border:2px solid #ffd700;background:linear-gradient(135deg,#6b00ff 0%,#9c27b0 35%,#e91e63 70%,#ff6b35 100%);color:#fff;font-weight:800;font-size:1em;letter-spacing:0.05em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 30px rgba(255,215,0,0.3),0 0 60px rgba(233,30,99,0.2);transition:transform 0.15s,box-shadow 0.3s;overflow:hidden;}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn::before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,0.4) 50%,transparent 70%);transform:translateX(-100%);transition:transform 0.6s;}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn:hover{transform:translateY(-2px);box-shadow:0 6px 40px rgba(255,215,0,0.5),0 0 80px rgba(233,30,99,0.4);}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn:hover::before{transform:translateX(100%);}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn:disabled{opacity:0.55;cursor:not-allowed;background:linear-gradient(135deg,#333,#555);border-color:rgba(255,215,0,0.2);box-shadow:none;}' +
+            '#' + ROOT_ID + ' .ab-prestige-btn:disabled:hover{transform:none;}' +
             '#' + ROOT_ID + ' .ab-wrap{max-width:1500px;margin:0 auto;}' +
             '#' + ROOT_ID + ' .ab-topbar{display:flex;justify-content:space-between;align-items:center;gap:1em;flex-wrap:wrap;margin-bottom:1.2em;}' +
             '#' + ROOT_ID + ' .ab-back{padding:0.6em 1em;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#fff;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:0.5em;font-weight:700;}' +
@@ -292,31 +299,34 @@
         if (name === 'quests') { loadQuests(); }
     }
 
-    function renderQuestCard(q, containerId) {
+    function renderQuestCards(list, containerId) {
         var box = el(containerId);
         if (!box) return;
-        if (!q || !q.Title) { box.innerHTML = '<div class="ab-muted">No quest available.</div>'; return; }
-        var pct = q.Target ? Math.round(100 * (q.Current || 0) / q.Target) : 0;
-        var borderColor = q.Completed ? '#4caf50' : 'rgba(255,255,255,0.08)';
-        box.innerHTML =
-            '<div style="padding:0.85em 1em; border-radius:10px; background:rgba(255,255,255,0.05); border:1px solid ' + borderColor + ';">' +
-                '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+        if (!list || !list.length) { box.innerHTML = '<div class="ab-muted">No quests available.</div>'; return; }
+
+        box.innerHTML = list.map(function (q) {
+            var pct = q.Target ? Math.round(100 * (q.Current || 0) / q.Target) : 0;
+            var borderColor = q.Completed ? '#4caf50' : 'rgba(255,255,255,0.1)';
+            var glow = q.Completed ? 'box-shadow:0 0 20px rgba(76,175,80,0.15);' : '';
+            return '<div style="padding:0.95em 1.1em; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid ' + borderColor + ';' + glow + ' margin-bottom:0.75em;">' +
+                '<div style="display:flex; justify-content:space-between; align-items:center; gap:0.5em;">' +
                     '<div style="font-weight:700; font-size:1.05em;">' + escapeHtml(q.Title) + (q.Completed ? ' \u2713' : '') + '</div>' +
-                    '<div class="ab-muted" style="font-size:0.8em;">+' + (q.Reward || 0) + ' bank</div>' +
+                    '<div style="font-size:0.78em; padding:0.25em 0.6em; border-radius:999px; background:rgba(102,126,234,0.2); color:#a3b5f7; font-weight:600;">+' + (q.Reward || 0) + ' pts</div>' +
                 '</div>' +
                 '<div class="ab-muted" style="font-size:0.88em; margin-top:0.3em;">' + escapeHtml(q.Description || '') + '</div>' +
-                '<div style="height:8px; border-radius:4px; background:rgba(255,255,255,0.1); margin-top:0.75em; overflow:hidden;">' +
-                    '<div style="height:100%; width:' + pct + '%; background:' + (q.Completed ? '#4caf50' : '#667eea') + '; transition:width 0.4s;"></div>' +
+                '<div style="height:8px; border-radius:4px; background:rgba(255,255,255,0.08); margin-top:0.85em; overflow:hidden;">' +
+                    '<div style="height:100%; width:' + pct + '%; background:' + (q.Completed ? 'linear-gradient(90deg,#66bb6a,#4caf50)' : 'linear-gradient(90deg,#667eea,#764ba2)') + '; transition:width 0.4s;"></div>' +
                 '</div>' +
-                '<div class="ab-muted" style="font-size:0.78em; margin-top:0.35em;">' + (q.Current || 0) + ' / ' + (q.Target || 0) + '</div>' +
+                '<div class="ab-muted" style="font-size:0.78em; margin-top:0.35em; text-align:right;">' + (q.Current || 0) + ' / ' + (q.Target || 0) + '</div>' +
             '</div>';
+        }).join('');
     }
 
     function loadQuests() {
         if (!userId) return;
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/quests').then(function (res) {
-            renderQuestCard(res && res.Daily, 'abSaDailyQuest');
-            renderQuestCard(res && res.Weekly, 'abSaWeeklyQuest');
+            renderQuestCards(res && res.Daily, 'abSaDailyQuest');
+            renderQuestCards(res && res.Weekly, 'abSaWeeklyQuest');
         }).catch(function () {
             var d = el('abSaDailyQuest'); if (d) d.innerHTML = '<div class="ab-muted">Failed to load quests.</div>';
         });
@@ -335,8 +345,16 @@
     var currentSearch = '';
     var currentFilter = 'all';
     var currentSort = 'default';
+    var currentPrestige = 0;
 
     var rarityRank = { 'common': 1, 'uncommon': 2, 'rare': 3, 'epic': 4, 'legendary': 5, 'mythic': 6 };
+    var rarityScore = { 'common': 10, 'uncommon': 20, 'rare': 35, 'epic': 60, 'legendary': 100, 'mythic': 150 };
+
+    function scoreForBadge(b) {
+        var base = rarityScore[(b.Rarity || '').toLowerCase()] || 10;
+        var multiplier = 1 + 0.5 * (currentPrestige || 0);
+        return Math.round(base * multiplier);
+    }
 
     function passesFilter(b) {
         var q = currentSearch.toLowerCase();
@@ -422,19 +440,24 @@
         });
     }
 
+    var currentHeatmapDays = 90;
+
     function loadStats() {
         if (!userId) return;
         Promise.all([
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/bank'),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/summary'),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/recap?period=year'),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/watch-calendar?days=90')
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/watch-calendar?days=' + currentHeatmapDays)
         ]).then(function (r) {
             var bank = r[0], summary = r[1], recap = r[2], calendar = r[3];
             var bankBox = el('abSaBank');
             if (bankBox) {
                 var prestigeStars = '';
                 for (var i = 0; i < (bank.PrestigeLevel || 0); i++) { prestigeStars += '\u2b50'; }
+                currentPrestige = bank.PrestigeLevel || 0;
+                var canPrestige = (summary && summary.Score >= 12000);
+                var nextMultiplier = 1 + 0.5 * ((bank.PrestigeLevel || 0) + 1);
                 bankBox.innerHTML =
                     '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:0.75em;">' +
                         '<div class="ab-stat"><div class="ab-stat-t">Score bank</div><div class="ab-stat-v">' + (bank.ScoreBank || 0) + '</div></div>' +
@@ -442,14 +465,21 @@
                         '<div class="ab-stat"><div class="ab-stat-t">Prestige</div><div class="ab-stat-v">' + (bank.PrestigeLevel || 0) + ' ' + prestigeStars + '</div></div>' +
                         '<div class="ab-stat"><div class="ab-stat-t">Best combo</div><div class="ab-stat-v">' + (bank.BestComboCount || 0) + '</div></div>' +
                     '</div>' +
-                    '<div style="margin-top:1em;">' +
-                        '<button type="button" class="ab-btn" id="abSaPrestigeBtn">Prestige (requires 12000 score)</button>' +
+                    '<div style="margin-top:1.25em; text-align:center;">' +
+                        '<button type="button" class="ab-prestige-btn" id="abSaPrestigeBtn"' + (canPrestige ? '' : ' disabled') + '>' +
+                            '\u2b50 Prestige \u2b50' +
+                        '</button>' +
+                        '<div class="ab-muted" style="font-size:0.8em; margin-top:0.5em;">' +
+                            (canPrestige
+                                ? 'Reset to earn prestige \u2b50 ' + ((bank.PrestigeLevel || 0) + 1) + ' and unlock a ' + nextMultiplier.toFixed(1) + 'x badge score multiplier'
+                                : 'Reach 12000 score (Legend rank) to prestige. Currently ' + (summary.Score || 0) + ' / 12000') +
+                        '</div>' +
                     '</div>';
                 var pb = el('abSaPrestigeBtn');
                 if (pb) pb.addEventListener('click', function () {
-                    if (!confirm('Prestige resets your badges and counters but multiplies your flex. Continue?')) return;
+                    if (!confirm('Prestige resets your badges and counters but grants a permanent score multiplier and a prestige star. Continue?')) return;
                     fetchJson('Plugins/AchievementBadges/users/' + userId + '/prestige', 'POST').then(function (res) {
-                        alert(res.Success ? ('Prestige level ' + res.PrestigeLevel + '!') : res.Message);
+                        alert(res.Success ? ('Prestige level ' + res.PrestigeLevel + '! Badge rewards now scale ' + (1 + 0.5 * res.PrestigeLevel).toFixed(1) + 'x.') : res.Message);
                         loadAll(); loadStats();
                     });
                 });
@@ -497,22 +527,39 @@
         // Duration histogram
         var histSvg = renderHistogram(summary);
 
+        var heatHeader =
+            '<div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 0.5em;">' +
+                '<h4 style="margin:0;">Watch heatmap</h4>' +
+                '<select id="abSaHeatmapRange" class="ab-select" style="padding:0.3em 0.6em; font-size:0.8em;">' +
+                    '<option value="30"' + (currentHeatmapDays === 30 ? ' selected' : '') + '>30 days</option>' +
+                    '<option value="90"' + (currentHeatmapDays === 90 ? ' selected' : '') + '>90 days</option>' +
+                    '<option value="180"' + (currentHeatmapDays === 180 ? ' selected' : '') + '>180 days</option>' +
+                    '<option value="365"' + (currentHeatmapDays === 365 ? ' selected' : '') + '>1 year</option>' +
+                '</select>' +
+            '</div>';
+
         box.innerHTML =
             '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Genre radar</h4>' + radarSvg + '</div>' +
-            '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Watch heatmap (90d)</h4>' + heatSvg + '</div>' +
+            '<div class="ab-panel-card" style="grid-column:span 2; min-width:0;">' + heatHeader + heatSvg + '</div>' +
             '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Stats snapshot</h4>' + histSvg + '</div>';
+
+        var rangeEl = document.getElementById('abSaHeatmapRange');
+        if (rangeEl) rangeEl.addEventListener('change', function () {
+            currentHeatmapDays = parseInt(rangeEl.value, 10) || 90;
+            loadStats();
+        });
     }
 
     function renderHeatmap(calendar) {
         var counts = (calendar && calendar.Counts) || {};
+        var days = (calendar && calendar.Days) || currentHeatmapDays || 90;
         var max = 0;
         for (var k in counts) { if (counts[k] > max) max = counts[k]; }
         if (max === 0) max = 1;
 
         var today = new Date();
-        // Align the grid so that today is in the top row, 90 days back, columns are weeks
         var cells = [];
-        for (var i = 89; i >= 0; i--) {
+        for (var i = days - 1; i >= 0; i--) {
             var d = new Date(today); d.setDate(today.getDate() - i);
             var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
             cells.push({ date: d, key: key, count: counts[key] || 0 });
@@ -524,16 +571,23 @@
             return 'rgba(102, 126, 234, ' + intensity.toFixed(2) + ')';
         }
 
+        // Cell size scales with total days so that larger ranges still fit
+        var cellSize = days <= 30 ? 18 : days <= 90 ? 14 : days <= 180 ? 10 : 8;
+        var gap = 2;
+        var step = cellSize + gap;
+
         var svgCells = cells.map(function (c, i) {
             var col = Math.floor(i / 7);
             var row = i % 7;
             var tooltip = c.key + ' · ' + c.count + ' item' + (c.count === 1 ? '' : 's');
-            return '<rect x="' + (col * 14) + '" y="' + (row * 14) + '" width="12" height="12" rx="2" fill="' + colorFor(c.count) + '"><title>' + tooltip + '</title></rect>';
+            return '<rect x="' + (col * step) + '" y="' + (row * step) + '" width="' + cellSize + '" height="' + cellSize + '" rx="2" fill="' + colorFor(c.count) + '"><title>' + tooltip + '</title></rect>';
         }).join('');
 
-        var width = Math.ceil(90 / 7) * 14;
-        return '<svg viewBox="0 0 ' + width + ' 110" width="100%" height="110">' + svgCells + '</svg>' +
-            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.3em;">Last 90 days · hover for details · max ' + max + ' items/day</div>';
+        var cols = Math.ceil(days / 7);
+        var width = cols * step;
+        var height = 7 * step;
+        return '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height + '" preserveAspectRatio="xMidYMid meet">' + svgCells + '</svg>' +
+            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.3em;">Last ' + days + ' days · hover for details · max ' + max + ' items/day</div>';
     }
 
     function renderHistogram(summary) {
@@ -598,7 +652,8 @@
             var pct = tar > 0 ? Math.min(cur / tar * 100, 100) : 0;
             var eq = equippedIds && equippedIds[b.Id];
             var c = document.createElement('div'); c.className = 'ab-card';
-            c.innerHTML = '<div class="ab-card-h"><div class="ab-card-icon">' + icon(b.Icon) + '</div><div style="flex:1;"><div class="ab-card-title">' + b.Title + '</div><div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + b.Rarity + ' \u2022 ' + b.Category + '</div></div></div>' +
+            var pts = scoreForBadge(b);
+            c.innerHTML = '<div class="ab-card-h"><div class="ab-card-icon">' + icon(b.Icon) + '</div><div style="flex:1;"><div class="ab-card-title">' + b.Title + '</div><div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + b.Rarity + ' \u2022 ' + b.Category + '</div></div><div class="ab-badge-pts" title="Points awarded on unlock' + (currentPrestige > 0 ? ' (prestige bonus applied)' : '') + '">+' + pts + ' pts</div></div>' +
                 '<div class="ab-desc">' + b.Description + '</div>' +
                 '<div class="ab-prog-text"><span>Progress</span><span>' + cur + '/' + tar + '</span></div>' +
                 '<div class="ab-prog-bar"><div class="ab-prog-fill" style="width:' + pct + '%;"></div></div>' +

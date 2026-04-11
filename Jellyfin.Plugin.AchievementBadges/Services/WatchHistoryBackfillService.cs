@@ -118,7 +118,8 @@ public class WatchHistoryBackfillService
                     Genres = movie.Genres,
                     RunTimeTicks = movie.RunTimeTicks,
                     Directors = moviesDirectors,
-                    Actors = moviesActors
+                    Actors = moviesActors,
+                    Silent = true
                 });
             }
 
@@ -163,7 +164,8 @@ public class WatchHistoryBackfillService
                     Genres = episode.Genres,
                     RunTimeTicks = episode.RunTimeTicks,
                     Directors = epDirectors,
-                    Actors = epActors
+                    Actors = epActors,
+                    Silent = true
                 });
 
                 if (seriesId != Guid.Empty)
@@ -206,7 +208,8 @@ public class WatchHistoryBackfillService
                             UserId = userId,
                             SeriesCompleted = true,
                             CompletedSeriesEpisodeCount = totalEpisodes,
-                            PlayedAt = latestDate
+                            PlayedAt = latestDate,
+                            Silent = true
                         });
                     }
                 }

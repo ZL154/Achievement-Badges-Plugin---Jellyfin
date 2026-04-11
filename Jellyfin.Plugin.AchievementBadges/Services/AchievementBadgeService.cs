@@ -89,12 +89,15 @@ public class AchievementBadgeService
         lock (_lock)
         {
             var count = 0;
+            // Use a timestamp from a few minutes ago so unlocks from the startup eval
+            // don't trigger toasts on any client that happens to be polling.
+            var stamp = DateTimeOffset.UtcNow.AddMinutes(-5);
             foreach (var profile in _userProfiles.Values.ToList())
             {
                 try
                 {
                     SyncDefinitions(profile, profile.UserId);
-                    EvaluateBadges(profile, profile.UserId);
+                    EvaluateBadges(profile, profile.UserId, silent: true, unlockTimestamp: stamp);
                     count++;
                 }
                 catch (Exception ex)
@@ -829,7 +832,10 @@ public class AchievementBadgeService
             var earned = (int)Math.Round(5 * comboMultiplier);
             profile.ScoreBank += earned;
 
-            EvaluateBadges(profile, userId);
+            // For historical backfills, use the original played date as the unlock stamp so the
+            // toast poller's "UnlockedAt > LAST_SEEN" check won't match (stops scan-spam toasts).
+            var unlockStamp = context.Silent ? timestamp : (DateTimeOffset?)null;
+            EvaluateBadges(profile, userId, silent: context.Silent, unlockTimestamp: unlockStamp);
             Save();
 
             _logger.LogInformation(
@@ -858,7 +864,9 @@ public class AchievementBadgeService
             var unlocked = enabledBadges.Count(b => b.Unlocked);
             var total = enabledBadges.Count;
             var percentage = total == 0 ? 0 : Math.Round((double)unlocked / total * 100.0, 1);
-            var score = AchievementScoreHelper.GetTotalUnlockedScore(enabledBadges);
+            var baseScore = AchievementScoreHelper.GetTotalUnlockedScore(enabledBadges);
+            var multiplier = 1.0 + 0.5 * profile.PrestigeLevel;
+            var score = (int)Math.Round(baseScore * multiplier);
             var equippedCount = profile.EquippedBadgeIds.Count(IsBadgeEnabled);
 
             return new BadgeSummary
@@ -1148,9 +1156,10 @@ public class AchievementBadgeService
             .ToList();
     }
 
-    private void EvaluateBadges(UserAchievementProfile profile, string userId)
+    private void EvaluateBadges(UserAchievementProfile profile, string userId, bool silent = false, DateTimeOffset? unlockTimestamp = null)
     {
         var newlyUnlocked = new List<AchievementBadge>();
+        var stamp = unlockTimestamp ?? DateTimeOffset.UtcNow;
 
         foreach (var def in GetActiveDefinitions())
         {
@@ -1169,20 +1178,20 @@ public class AchievementBadgeService
             if (!badge.Unlocked && current >= def.TargetValue)
             {
                 badge.Unlocked = true;
-                badge.UnlockedAt = DateTimeOffset.UtcNow;
-                _logger.LogInformation("Unlocked badge {BadgeId} for user {UserId}", def.Id, userId);
+                badge.UnlockedAt = stamp;
+                _logger.LogInformation("Unlocked badge {BadgeId} for user {UserId} (silent={Silent})", def.Id, userId, silent);
                 newlyUnlocked.Add(badge);
             }
 
             if (wasUnlocked && badge.UnlockedAt is null)
             {
-                badge.UnlockedAt = DateTimeOffset.UtcNow;
+                badge.UnlockedAt = stamp;
             }
         }
 
         SanitizeEquippedBadges(profile);
 
-        if (newlyUnlocked.Count > 0)
+        if (newlyUnlocked.Count > 0 && !silent)
         {
             var userName = ResolveUserName(userId);
             foreach (var badge in newlyUnlocked)

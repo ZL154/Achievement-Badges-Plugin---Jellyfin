@@ -24,4 +24,6 @@ public class PlaybackContext
 
     public IReadOnlyList<string>? Directors { get; set; }
     public IReadOnlyList<string>? Actors { get; set; }
+
+    public bool Silent { get; set; }
 }

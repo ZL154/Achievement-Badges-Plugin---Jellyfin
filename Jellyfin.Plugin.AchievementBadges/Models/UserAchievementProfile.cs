@@ -29,4 +29,15 @@ public class UserAchievementProfile
     public string? WeeklyQuestWeek { get; set; }
     public bool WeeklyQuestCompleted { get; set; }
     public int WeeklyQuestStartValue { get; set; }
+
+    public List<QuestState> DailyQuests { get; set; } = new();
+    public List<QuestState> WeeklyQuests { get; set; } = new();
+}
+
+public class QuestState
+{
+    public string Id { get; set; } = string.Empty;
+    public string Period { get; set; } = string.Empty;
+    public bool Completed { get; set; }
+    public int StartValue { get; set; }
 }

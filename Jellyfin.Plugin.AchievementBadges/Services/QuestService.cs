@@ -12,6 +12,9 @@ public class QuestService
 
     public record QuestTemplate(string Id, string Title, string Description, AchievementMetric Metric, int Target, int Reward, string Icon);
 
+    public const int DailyQuestCount = 3;
+    public const int WeeklyQuestCount = 3;
+
     public static readonly IReadOnlyList<QuestTemplate> DailyTemplates = new List<QuestTemplate>
     {
         new("daily-watch-any",        "Daily Watch",         "Watch any item today.",                     AchievementMetric.TotalItemsWatched, 1, 20, "play_circle"),
@@ -49,102 +52,138 @@ public class QuestService
     {
         return new
         {
-            Daily = GetOrCreateDaily(userId),
-            Weekly = GetOrCreateWeekly(userId)
+            Daily = GetOrCreateDailyList(userId),
+            Weekly = GetOrCreateWeeklyList(userId)
         };
     }
 
-    public object GetOrCreateDaily(string userId)
+    public List<object> GetOrCreateDailyList(string userId)
     {
         var profile = _badgeService.PeekProfile(userId);
-        if (profile is null) return new { };
+        if (profile is null) return new List<object>();
 
         var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+        var activeForToday = profile.DailyQuests.Where(q => q.Period == today).ToList();
 
-        if (profile.DailyQuestDate != today)
+        if (activeForToday.Count < DailyQuestCount)
         {
-            var seed = today.GetHashCode();
-            var tpl = DailyTemplates[Math.Abs(seed) % DailyTemplates.Count];
-            profile.DailyQuestId = tpl.Id;
-            profile.DailyQuestDate = today;
-            profile.DailyQuestCompleted = false;
-            profile.DailyQuestStartValue = GetCounterValue(profile.Counters, tpl.Metric);
+            // Drop stale quests from other days and re-pick for today
+            profile.DailyQuests.RemoveAll(q => q.Period != today);
+
+            var picked = PickN(DailyTemplates, DailyQuestCount, today.GetHashCode());
+            foreach (var tpl in picked)
+            {
+                if (profile.DailyQuests.Any(q => q.Id == tpl.Id && q.Period == today)) continue;
+                profile.DailyQuests.Add(new QuestState
+                {
+                    Id = tpl.Id,
+                    Period = today,
+                    Completed = false,
+                    StartValue = GetCounterValue(profile.Counters, tpl.Metric)
+                });
+            }
             _badgeService.SaveProfileDirect(profile);
         }
 
-        var questTpl = DailyTemplates.FirstOrDefault(t => t.Id == profile.DailyQuestId) ?? DailyTemplates[0];
-        var current = GetCounterValue(profile.Counters, questTpl.Metric) - profile.DailyQuestStartValue;
-        if (current < 0) current = 0;
-        var complete = current >= questTpl.Target;
-
-        if (complete && !profile.DailyQuestCompleted)
-        {
-            profile.DailyQuestCompleted = true;
-            profile.ScoreBank += questTpl.Reward;
-            _badgeService.SaveProfileDirect(profile);
-        }
-
-        return new
-        {
-            Kind = "daily",
-            questTpl.Id,
-            questTpl.Title,
-            questTpl.Description,
-            questTpl.Icon,
-            questTpl.Reward,
-            Target = questTpl.Target,
-            Current = Math.Min(current, questTpl.Target),
-            Completed = profile.DailyQuestCompleted,
-            Date = today
-        };
+        return EvaluateQuestList(profile, profile.DailyQuests.Where(q => q.Period == today).ToList(), DailyTemplates, "daily");
     }
 
-    public object GetOrCreateWeekly(string userId)
+    public List<object> GetOrCreateWeeklyList(string userId)
     {
         var profile = _badgeService.PeekProfile(userId);
-        if (profile is null) return new { };
+        if (profile is null) return new List<object>();
 
         var now = DateTime.Today;
         var isoWeek = ISOWeek.GetWeekOfYear(now);
         var isoYear = ISOWeek.GetYear(now);
         var weekKey = isoYear + "-W" + isoWeek.ToString("D2");
 
-        if (profile.WeeklyQuestWeek != weekKey)
+        var activeForWeek = profile.WeeklyQuests.Where(q => q.Period == weekKey).ToList();
+
+        if (activeForWeek.Count < WeeklyQuestCount)
         {
-            var seed = weekKey.GetHashCode();
-            var tpl = WeeklyTemplates[Math.Abs(seed) % WeeklyTemplates.Count];
-            profile.WeeklyQuestId = tpl.Id;
-            profile.WeeklyQuestWeek = weekKey;
-            profile.WeeklyQuestCompleted = false;
-            profile.WeeklyQuestStartValue = GetCounterValue(profile.Counters, tpl.Metric);
+            profile.WeeklyQuests.RemoveAll(q => q.Period != weekKey);
+
+            var picked = PickN(WeeklyTemplates, WeeklyQuestCount, weekKey.GetHashCode());
+            foreach (var tpl in picked)
+            {
+                if (profile.WeeklyQuests.Any(q => q.Id == tpl.Id && q.Period == weekKey)) continue;
+                profile.WeeklyQuests.Add(new QuestState
+                {
+                    Id = tpl.Id,
+                    Period = weekKey,
+                    Completed = false,
+                    StartValue = GetCounterValue(profile.Counters, tpl.Metric)
+                });
+            }
             _badgeService.SaveProfileDirect(profile);
         }
 
-        var questTpl = WeeklyTemplates.FirstOrDefault(t => t.Id == profile.WeeklyQuestId) ?? WeeklyTemplates[0];
-        var current = GetCounterValue(profile.Counters, questTpl.Metric) - profile.WeeklyQuestStartValue;
-        if (current < 0) current = 0;
-        var complete = current >= questTpl.Target;
+        return EvaluateQuestList(profile, profile.WeeklyQuests.Where(q => q.Period == weekKey).ToList(), WeeklyTemplates, "weekly");
+    }
 
-        if (complete && !profile.WeeklyQuestCompleted)
+    // Kept for backward compat with existing controller endpoints
+    public object GetOrCreateDaily(string userId)
+    {
+        var list = GetOrCreateDailyList(userId);
+        return list.Count > 0 ? list[0] : new { };
+    }
+
+    public object GetOrCreateWeekly(string userId)
+    {
+        var list = GetOrCreateWeeklyList(userId);
+        return list.Count > 0 ? list[0] : new { };
+    }
+
+    private List<object> EvaluateQuestList(UserAchievementProfile profile, List<QuestState> states, IReadOnlyList<QuestTemplate> pool, string kind)
+    {
+        var result = new List<object>();
+        var changed = false;
+        foreach (var state in states)
         {
-            profile.WeeklyQuestCompleted = true;
-            profile.ScoreBank += questTpl.Reward;
-            _badgeService.SaveProfileDirect(profile);
+            var tpl = pool.FirstOrDefault(t => t.Id == state.Id);
+            if (tpl is null) continue;
+            var current = GetCounterValue(profile.Counters, tpl.Metric) - state.StartValue;
+            if (current < 0) current = 0;
+            var complete = current >= tpl.Target;
+
+            if (complete && !state.Completed)
+            {
+                state.Completed = true;
+                profile.ScoreBank += tpl.Reward;
+                changed = true;
+            }
+
+            result.Add(new
+            {
+                Kind = kind,
+                tpl.Id,
+                tpl.Title,
+                tpl.Description,
+                tpl.Icon,
+                tpl.Reward,
+                Target = tpl.Target,
+                Current = Math.Min(current, tpl.Target),
+                Completed = state.Completed,
+                Period = state.Period
+            });
         }
+        if (changed) { _badgeService.SaveProfileDirect(profile); }
+        return result;
+    }
 
-        return new
+    private static List<QuestTemplate> PickN(IReadOnlyList<QuestTemplate> pool, int n, int seed)
+    {
+        if (n >= pool.Count) return pool.ToList();
+        var rng = new Random(seed);
+        var indices = Enumerable.Range(0, pool.Count).ToList();
+        // Fisher-Yates shuffle
+        for (var i = indices.Count - 1; i > 0; i--)
         {
-            Kind = "weekly",
-            questTpl.Id,
-            questTpl.Title,
-            questTpl.Description,
-            questTpl.Icon,
-            questTpl.Reward,
-            Target = questTpl.Target,
-            Current = Math.Min(current, questTpl.Target),
-            Completed = profile.WeeklyQuestCompleted,
-            Week = weekKey
-        };
+            var j = rng.Next(i + 1);
+            (indices[i], indices[j]) = (indices[j], indices[i]);
+        }
+        return indices.Take(n).Select(i => pool[i]).ToList();
     }
 
     private static int GetCounterValue(UserAchievementCounters counters, AchievementMetric metric)

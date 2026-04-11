@@ -31,5 +31,5 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public bool EnableHomeWidget { get; set; } = true;
 
-    public bool EnableItemDetailRibbon { get; set; } = true;
+    public bool EnableItemDetailRibbon { get; set; } = false;
 }

@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.4",
+        "changelog": "Silent scan so Watch History backfill no longer spams unlock toasts - scanned badges use their original play date as UnlockedAt so the toast poller ignores them. Profile card now server-side rendered with all data baked into the HTML - no more Failed to load. Item detail ribbon disabled by default (opt-in via admin UI). Multiple concurrent quests - 3 daily + 3 weekly at the same time, rotated deterministically per day/week. Each badge card now shows its point value (+X pts) scaled by your prestige level (+50% per prestige). Fancy animated prestige button with gradient, shine effect and glow. Heatmap range dropdown 30/90/180/365 days. Updated README with full feature list, all API endpoints, and prerequisites table.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.4/Jellyfin.Plugin.AchievementBadgesv1.5.4.zip",
+        "checksum": "35C5820102CB61B3145ACAA78733D8E5"
+      },
+      {
         "version": "1.5.3",
         "changelog": "Feedback fixes. Profile card link now uses absolute path (was 404). Toast notifications seed LAST_SEEN to now on first load and dedupe shown unlocks via sessionStorage so they no longer replay on every refresh. Header badge pills now hidden while the video player is active. Watch heatmap is wired to real data from a new /watch-calendar endpoint and colors cells by intensity. Director/actor tracking now uses ILibraryManager.GetPeople instead of reflection - top directors/actors will populate in Recap after a rescan. Sort badges by rarity / progress / title. Filter by individual rarity tier. Dedicated Quests tab with both daily AND weekly quests (12 daily templates, 8 weekly templates). Admin page restyled with modern expanding sections, dark form controls, focus rings. Plugin now auto-evaluates every user's badges on startup so new badges unlock automatically after updates without needing Scan All Users.",
         "targetAbi": "10.11.0.0",

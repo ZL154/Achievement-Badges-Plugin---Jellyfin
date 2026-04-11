@@ -556,7 +556,60 @@ public class AchievementBadgesController : ControllerBase
     {
         var content = ResourceReader.ReadEmbeddedText("Jellyfin.Plugin.AchievementBadges.Pages.profile-card.html")
             ?? "<html><body>Profile card template missing.</body></html>";
-        content = content.Replace("{{userId}}", userId);
+
+        // Pre-fetch all the data server-side so the rendered HTML works without
+        // needing the client to make authenticated fetches (which fail because
+        // the tab has no X-Emby-Token).
+        try
+        {
+            var summary = _badgeService.GetSummary(userId);
+            var summaryType = summary.GetType();
+            int score = (int)(summaryType.GetProperty("Score")?.GetValue(summary) ?? 0);
+            int unlocked = (int)(summaryType.GetProperty("Unlocked")?.GetValue(summary) ?? 0);
+            int total = (int)(summaryType.GetProperty("Total")?.GetValue(summary) ?? 0);
+            double percentage = (double)(summaryType.GetProperty("Percentage")?.GetValue(summary) ?? 0.0);
+            int bestStreak = (int)(summaryType.GetProperty("BestWatchStreak")?.GetValue(summary) ?? 0);
+
+            var tier = RankHelper.GetTier(score);
+            var next = RankHelper.GetNextTier(score);
+            var progress = next is null ? 100 : (int)Math.Round(100.0 * (score - tier.MinScore) / Math.Max(1, next.MinScore - tier.MinScore));
+
+            var equipped = _badgeService.GetEquippedBadges(userId);
+            var equippedHtml = string.Concat(equipped.Select(b =>
+                $"<span class=\"badge-chip\">{System.Net.WebUtility.HtmlEncode(b.Title)}</span>"));
+            if (string.IsNullOrWhiteSpace(equippedHtml))
+            {
+                equippedHtml = "<span class=\"tier\">No badges equipped.</span>";
+            }
+
+            var recap = _recapService.GetRecap(userId, "month");
+            var recapType = recap.GetType();
+            int recapMovies = (int)(recapType.GetProperty("MoviesWatched")?.GetValue(recap) ?? 0);
+            int recapEpisodes = (int)(recapType.GetProperty("EpisodesWatched")?.GetValue(recap) ?? 0);
+            int recapUnlocks = (int)(recapType.GetProperty("BadgesUnlocked")?.GetValue(recap) ?? 0);
+
+            content = content
+                .Replace("{{userId}}", userId)
+                .Replace("{{score}}", score.ToString())
+                .Replace("{{unlocked}}", unlocked.ToString())
+                .Replace("{{total}}", total.ToString())
+                .Replace("{{percentage}}", percentage.ToString("0.#"))
+                .Replace("{{bestStreak}}", bestStreak.ToString())
+                .Replace("{{tierName}}", tier.Name)
+                .Replace("{{tierColor}}", tier.Color)
+                .Replace("{{progressToNext}}", progress.ToString())
+                .Replace("{{nextTierLabel}}", next is null ? "Max rank" : $"{next.MinScore - score} to {next.Name}")
+                .Replace("{{recapMovies}}", recapMovies.ToString())
+                .Replace("{{recapEpisodes}}", recapEpisodes.ToString())
+                .Replace("{{recapUnlocks}}", recapUnlocks.ToString())
+                .Replace("{{equippedHtml}}", equippedHtml);
+        }
+        catch (Exception ex)
+        {
+            content = content.Replace("{{userId}}", userId ?? string.Empty);
+            return Content($"<html><body style='background:#111;color:#fff;font-family:sans-serif;padding:2em;'><h1>Profile card error</h1><p>{System.Net.WebUtility.HtmlEncode(ex.Message)}</p></body></html>", "text/html");
+        }
+
         return Content(content, "text/html");
     }
 
@@ -664,7 +717,7 @@ public class AchievementBadgesController : ControllerBase
     {
         public bool EnableUnlockToasts { get; set; } = true;
         public bool EnableHomeWidget { get; set; } = true;
-        public bool EnableItemDetailRibbon { get; set; } = true;
+        public bool EnableItemDetailRibbon { get; set; } = false;
     }
 
     [HttpGet("admin/ui-features")]
