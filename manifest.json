@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.37",
+        "changelog": "Comprehensive fix for all remaining bugs. Admin Feature Controls section added to the EXISTING admin page (Pages/index.html) instead of a separate config page — all 10 controls now visible with load/save via feature-config API. Activity feed privacy fixed: saveSettingsPrefs now sends BOTH camelCase and PascalCase keys since C# deserializer wasn't matching camelCase fields. Theme persistence fixed: theme now re-applies every time the page renders via loadAll(), not just on first visit. Light theme: massive CSS override pass covering heatmap cells, SVG text in rings/radar/clock, quest card backgrounds, badge rarity borders, streak header numbers, stats section values, prestige button, and all remaining invisible elements.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.37/Jellyfin.Plugin.AchievementBadgesv1.5.37.zip",
+        "checksum": "00B8B9BBED4FEDEB612C4B86C84D2FEC"
+      },
+      {
         "version": "1.5.36",
         "changelog": "Three bug fixes. (1) Admin Feature Controls now visible in Dashboard: configPage.html was wrapped in a full HTML document structure which Jellyfin can't inject — stripped to bare page fragment. (2) Activity feed privacy now works: both save functions (settings panel + notification prefs) were each POSTing only their own fields, causing the other panel's fields to reset to defaults. Both now GET current prefs first, merge changes, then POST the complete object. Also sends both camelCase and PascalCase field names for activity feed toggle. (3) Light theme comprehensive fix: added overrides for streak heatmap cells, personal records, server stats, notification preferences, badge card borders, compare stats labels, category ring labels, activity feed rows, goal cards, settings sections, muted text, and input fields.",
         "targetAbi": "10.11.0.0",

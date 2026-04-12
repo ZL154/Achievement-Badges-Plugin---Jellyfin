@@ -515,7 +515,45 @@
             '#' + ROOT_ID + '.ab-theme-light .ab-muted{color:rgba(0,0,0,0.5);}' +
             // Light theme — input fields
             '#' + ROOT_ID + '.ab-theme-light .ab-input{background:rgba(255,255,255,0.95);border:1px solid rgba(0,0,0,0.15);color:rgba(0,0,0,0.85);}' +
-            '#' + ROOT_ID + '.ab-theme-light .ab-select{background:rgba(255,255,255,0.95);border:1px solid rgba(0,0,0,0.15);color:rgba(0,0,0,0.85);}';
+            '#' + ROOT_ID + '.ab-theme-light .ab-select{background:rgba(255,255,255,0.95);border:1px solid rgba(0,0,0,0.15);color:rgba(0,0,0,0.85);}' +
+            // Light theme — heatmap cells (ab-heat-cell: empty cells invisible on white without this)
+            '#' + ROOT_ID + '.ab-theme-light .ab-heat-cell{border:1px solid rgba(0,0,0,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-heat-cell.ab-heat-empty{background:rgba(0,0,0,0.06) !important;}' +
+            // Light theme — SVG text inside category rings, watch clock, genre radar
+            '#' + ROOT_ID + '.ab-theme-light .ab-cat-ring svg text{fill:rgba(0,0,0,0.85) !important;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-panel-card svg text{fill:rgba(0,0,0,0.7) !important;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-panel-card svg circle[stroke="rgba(255,255,255,0.1)"]{stroke:rgba(0,0,0,0.1);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-panel-card svg circle[stroke="rgba(255,255,255,0.08)"]{stroke:rgba(0,0,0,0.1);}' +
+            // Light theme — streak header numbers and flame
+            '#' + ROOT_ID + '.ab-theme-light .ab-streak-num{background:linear-gradient(135deg,#e65100,#bf360c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-streak-cell-on{background:linear-gradient(135deg,#388e3c,#4caf50) !important;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1);}' +
+            // Light theme — quest cards text
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelQuests .ab-muted{color:rgba(0,0,0,0.55);}' +
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelQuests [style*="font-weight:700"]{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelQuests div[style*="background:rgba(255,255,255,0.04)"]{background:rgba(0,0,0,0.03) !important;border-color:rgba(0,0,0,0.1) !important;color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelQuests div[style*="background:rgba(255,255,255,0.08)"]{background:rgba(0,0,0,0.08) !important;}' +
+            // Light theme — badge card rarity borders and equipped highlight
+            '#' + ROOT_ID + '.ab-theme-light .ab-card .ab-card-icon{background:rgba(0,0,0,0.07);}' +
+            '#' + ROOT_ID + '.ab-theme-light .rarity-common-border{border-color:rgba(159,179,200,0.5) !important;}' +
+            '#' + ROOT_ID + '.ab-theme-light .rarity-uncommon-border{border-color:rgba(52,211,153,0.5) !important;}' +
+            '#' + ROOT_ID + '.ab-theme-light .rarity-rare-border{border-color:rgba(96,165,250,0.5) !important;}' +
+            '#' + ROOT_ID + '.ab-theme-light .rarity-epic-border{border-color:rgba(167,139,250,0.5) !important;}' +
+            '#' + ROOT_ID + '.ab-theme-light .rarity-legendary-border{border-color:rgba(251,191,36,0.5) !important;}' +
+            '#' + ROOT_ID + '.ab-theme-light .rarity-mythic-border{border-color:rgba(244,63,94,0.5) !important;}' +
+            // Light theme — "Your data" section stat numbers and histogram bars
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelStats h3{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelStats h4{color:rgba(0,0,0,0.75);}' +
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelStats .ab-stat-v{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelStats .ab-stat-t{color:rgba(0,0,0,0.6);}' +
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelStats span{color:rgba(0,0,0,0.75);}' +
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelStats div[style*="background:rgba(255,255,255,0.1)"]{background:rgba(0,0,0,0.08) !important;}' +
+            '#' + ROOT_ID + '.ab-theme-light #abSaPanelStats div[style*="background:rgba(255,255,255,0.08)"]{background:rgba(0,0,0,0.06) !important;}' +
+            // Light theme — prestige button
+            '#' + ROOT_ID + '.ab-theme-light .ab-prestige-btn{color:rgba(0,0,0,0.85);border-color:rgba(0,0,0,0.2);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-prestige-btn:disabled{color:rgba(0,0,0,0.4);}' +
+            // Light theme — hero section text
+            '#' + ROOT_ID + '.ab-theme-light .ab-hero-streak{background:rgba(255,87,34,0.12);border-color:rgba(255,87,34,0.35);color:#bf360c;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-title-display{filter:brightness(0.7);}';
         document.head.appendChild(s);
     }
 
@@ -1470,7 +1508,8 @@
         var cols = Math.ceil(days / 7);
         var cellsHtml = cells.map(function (c) {
             var tooltip = c.key + ' · ' + c.count + ' item' + (c.count === 1 ? '' : 's');
-            return '<div class="ab-heat-cell" style="background:' + colorFor(c.count) + ';" title="' + tooltip + '"></div>';
+            var emptyClass = c.count === 0 ? ' ab-heat-empty' : '';
+            return '<div class="ab-heat-cell' + emptyClass + '" style="background:' + colorFor(c.count) + ';" title="' + tooltip + '"></div>';
         }).join('');
         return '<div class="ab-heat" style="grid-template-columns:repeat(' + cols + ',1fr);">' + cellsHtml + '</div>' +
             '<div class="ab-muted" style="font-size:0.75em; margin-top:0.5em;">Last ' + days + ' days · hover for details · max ' + max + ' items/day</div>';
@@ -1791,20 +1830,27 @@
         });
     }
 
+    function toPascalCase(s) {
+        return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
     function saveSettingsPrefs(box) {
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').then(function (existing) {
             var payload = existing || {};
             box.querySelectorAll('input[data-settings-key]').forEach(function (cb) {
                 var key = cb.getAttribute('data-settings-key');
                 if (key === 'hideFromActivityFeed') {
-                    payload['appearInActivityFeed'] = !cb.checked;
                     payload['AppearInActivityFeed'] = !cb.checked;
                 } else {
+                    // Send both camelCase and PascalCase to ensure C# model matches
                     payload[key] = cb.checked;
+                    payload[toPascalCase(key)] = cb.checked;
                 }
             });
             box.querySelectorAll('select[data-settings-select]').forEach(function (sel) {
-                payload[sel.getAttribute('data-settings-select')] = sel.value;
+                var key = sel.getAttribute('data-settings-select');
+                payload[key] = sel.value;
+                payload[toPascalCase(key)] = sel.value;
             });
             box.querySelectorAll('input[data-settings-number]').forEach(function (inp) {
                 var v = parseInt(inp.value, 10);
@@ -1814,7 +1860,9 @@
                     if (v < min) v = min;
                     if (v > max) v = max;
                     inp.value = v;
-                    payload[inp.getAttribute('data-settings-number')] = v;
+                    var key = inp.getAttribute('data-settings-number');
+                    payload[key] = v;
+                    payload[toPascalCase(key)] = v;
                 }
             });
             return fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload);
@@ -1928,10 +1976,11 @@
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/title').catch(function () { return null; }),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/bank').catch(function () { return null; }),
             fetchJson('Plugins/AchievementBadges/users/' + userId + '/badge-eta').catch(function () { return null; }),
-            fetchJson('Plugins/AchievementBadges/users/' + userId + '/streak-calendar?weeks=53').catch(function () { return null; })
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/streak-calendar?weeks=53').catch(function () { return null; }),
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').catch(function () { return null; })
         ]).then(function (results) {
             var badges = results[0], summary = results[1], equipped = results[2], lb = results[3], stats = results[4], rank = results[5];
-            var titleData = results[6], bankData = results[7], etaData = results[8], streakData = results[9];
+            var titleData = results[6], bankData = results[7], etaData = results[8], streakData = results[9], prefsData = results[10];
 
             badgeEtaMap = {};
             if (etaData && etaData.Etas) {
@@ -2027,6 +2076,12 @@
                         return '<div class="ab-lb-row"><div><strong>#' + (i + 1) + '</strong> \u2022 ' + (e.UserName || e.UserId) + '</div><div>' + (e.Score || 0) + ' pts \u2022 ' + e.Unlocked + ' unlocked</div></div>';
                     }).join('');
                 }
+            }
+
+            // Apply saved theme preference on every loadAll (fixes theme not persisting)
+            if (prefsData) {
+                var savedTheme = prefsData.achievementPageTheme || prefsData.AchievementPageTheme || 'default';
+                applyPageTheme(savedTheme);
             }
 
             var stBox = el('abSaServerStats');

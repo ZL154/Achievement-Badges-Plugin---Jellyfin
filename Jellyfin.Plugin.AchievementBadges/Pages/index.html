@@ -585,6 +585,49 @@ font-size:0.88em;
                     </div>
                 </details>
 
+                <details class="abAdminSection" id="abFeatureControlsSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                        Feature Controls (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;">
+                            Enable or disable major plugin features server-wide. Changes apply immediately to all users.
+                        </p>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
+                            <input type="checkbox" id="abFcLeaderboardEnabled" checked> Leaderboard enabled
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
+                            <input type="checkbox" id="abFcCompareEnabled" checked> Compare profiles enabled
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
+                            <input type="checkbox" id="abFcActivityFeedEnabled" checked> Activity feed enabled
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
+                            <input type="checkbox" id="abFcPrestigeEnabled" checked> Prestige system enabled
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
+                            <input type="checkbox" id="abFcQuestsEnabled" checked> Quests enabled
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
+                            <input type="checkbox" id="abFcForcePrivacyMode"> Force privacy mode (hide all users from each other)
+                        </label>
+                        <label style="display:block; margin-bottom:0.75em;">Max equipped badges (1-10):<br>
+                            <input type="number" id="abFcMaxEquippedBadges" value="5" min="1" max="10" style="width:80px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                        </label>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
+                            <input type="checkbox" id="abFcRestrictBadgeVisibility"> Restrict badge visibility (users only see their own)
+                        </label>
+                        <label style="display:block; margin-bottom:0.75em;">Disabled badge categories (comma-separated):<br>
+                            <input type="text" id="abFcDisabledBadgeCategories" placeholder="e.g. Challenge, Custom" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                        </label>
+                        <label style="display:block; margin-bottom:0.75em;">Welcome message (shown on achievements page):<br>
+                            <input type="text" id="abFcWelcomeMessage" placeholder="Welcome to achievements!" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                        </label>
+                        <button is="emby-button" type="button" class="raised button-submit" id="abFcSaveBtn">Save feature config</button>
+                        <div id="abFcStatus" class="secondaryText"></div>
+                    </div>
+                </details>
+
                 <details class="abAdminSection" style="margin-top:1em;">
                     <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
                         Audit log (admin)
@@ -1607,6 +1650,53 @@ font-size:0.88em;
             .then(function () { injectStatus.textContent = 'Injected. Reloading...'; reloadAll(); })
             .catch(function (e) { injectStatus.textContent = 'Failed: ' + (e.message || e); });
     });
+
+    // --- Feature Controls (admin) ---
+    var fcSaveBtn = document.getElementById('abFcSaveBtn');
+    var fcStatusEl = document.getElementById('abFcStatus');
+
+    function loadFeatureConfig() {
+        fetchJson('Plugins/AchievementBadges/admin/feature-config').then(function (c) {
+            document.getElementById('abFcLeaderboardEnabled').checked = c.LeaderboardEnabled !== false;
+            document.getElementById('abFcCompareEnabled').checked = c.CompareEnabled !== false;
+            document.getElementById('abFcActivityFeedEnabled').checked = c.ActivityFeedEnabled !== false;
+            document.getElementById('abFcPrestigeEnabled').checked = c.PrestigeEnabled !== false;
+            document.getElementById('abFcQuestsEnabled').checked = c.QuestsEnabled !== false;
+            document.getElementById('abFcForcePrivacyMode').checked = !!c.ForcePrivacyMode;
+            document.getElementById('abFcMaxEquippedBadges').value = c.MaxEquippedBadges || 5;
+            document.getElementById('abFcRestrictBadgeVisibility').checked = !!c.RestrictBadgeVisibility;
+            document.getElementById('abFcDisabledBadgeCategories').value = (c.DisabledBadgeCategories || []).join(', ');
+            document.getElementById('abFcWelcomeMessage').value = c.WelcomeMessage || '';
+        }).catch(function (e) {
+            if (fcStatusEl) fcStatusEl.textContent = 'Failed to load feature config: ' + (e.message || e);
+        });
+    }
+
+    fcSaveBtn.addEventListener('click', function () {
+        var catText = document.getElementById('abFcDisabledBadgeCategories').value || '';
+        var categories = catText.split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+        var maxBadges = parseInt(document.getElementById('abFcMaxEquippedBadges').value, 10) || 5;
+        if (maxBadges < 1) maxBadges = 1;
+        if (maxBadges > 10) maxBadges = 10;
+
+        fetchJson('Plugins/AchievementBadges/admin/feature-config', 'POST', {
+            LeaderboardEnabled: document.getElementById('abFcLeaderboardEnabled').checked,
+            CompareEnabled: document.getElementById('abFcCompareEnabled').checked,
+            ActivityFeedEnabled: document.getElementById('abFcActivityFeedEnabled').checked,
+            PrestigeEnabled: document.getElementById('abFcPrestigeEnabled').checked,
+            QuestsEnabled: document.getElementById('abFcQuestsEnabled').checked,
+            ForcePrivacyMode: document.getElementById('abFcForcePrivacyMode').checked,
+            MaxEquippedBadges: maxBadges,
+            RestrictBadgeVisibility: document.getElementById('abFcRestrictBadgeVisibility').checked,
+            DisabledBadgeCategories: categories,
+            WelcomeMessage: document.getElementById('abFcWelcomeMessage').value || ''
+        }).then(function () {
+            if (fcStatusEl) fcStatusEl.textContent = 'Feature config saved.';
+        }).catch(function (e) {
+            if (fcStatusEl) fcStatusEl.textContent = 'Save failed: ' + (e.message || e);
+        });
+    });
+    loadFeatureConfig();
 })();
 </script>
 
