@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="achievement-banner" src="https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png" />
+  <img alt="Xbox-style achievement toast animation" src="assets/achievement-animated.gif" />
 </p>
 
 ```text
@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Jellyfin-10.11%2B-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
   <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
-  <img src="https://img.shields.io/badge/Version-1.5.18-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/Version-1.5.25-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/License-MIT-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
 </p>
 
@@ -214,11 +214,13 @@ See the [Releases page](https://github.com/ZL154/AchievementBadges_for_Jellyfin/
 ## 📸 Screenshots
 
 ### Xbox-style unlock toast
-Pops up during playback when a badge unlocks. Circle expands into a banner, trophy rotates, "Rare achievement unlocked" label slides up, then everything collapses. Per-rarity color, glow, and diagonal shimmer sweep. Legendary + Mythic get confetti.
+Pops up during playback when a badge unlocks. Xbox circle pops in with pulse rings, expands into a banner, trophy rotates (or diamond spritesheet for rare unlocks), text slides up, shimmer sweeps across, then everything collapses. Per-rarity color, glow, and sound.
 
 <p align="center">
-  <img alt="Xbox-style unlock toast" src="assets/screenshots/unlock-toast.png" />
+  <img alt="Xbox-style unlock toast" src="assets/achievement-animated.gif" />
 </p>
+
+> **Live demo:** download [`achievement-combined.html`](assets/achievement-combined.html) (regular) or [`achievement-combined-rare.html`](assets/achievement-combined-rare.html) (rare with diamond) and open in a browser. Click anywhere to start the sound. Loops every 10.5s.
 
 ### The standalone Achievements page
 The full profile view, shown in the Jellyfin sidebar. Rank progress bar, day streak, score, completion percentage, and the tab bar for the seven sub-views (My Badges, Quests, Recap, Leaderboard, Compare, Activity, Wrapped, Stats).
