@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.28",
+        "changelog": "Full CodePen-style toast port. The Xbox logo now appears inside the circle at idle and swaps to the trophy icon when the banner expands — matching the original Uenify CodePen animation we spent hours perfecting in the standalone HTML demos. Xbox fades out at 22% of the cycle, trophy fades in at 23%, trophy fades back out at 92%, Xbox returns at 93%. Trophy rotates via rotateY while visible. The Xbox SVG path is inlined directly in the toast HTML (no external dependency). Trophy starts at opacity:0 and is absolutely centered inside the circle so both icons occupy the same space and the swap is seamless.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.28/Jellyfin.Plugin.AchievementBadgesv1.5.28.zip",
+        "checksum": "56FF4CBAAC5266C31BA26B7D82FD77F2"
+      },
+      {
         "version": "1.5.27",
         "changelog": "Achievement unlock sound + richer toast visuals. The Xbox 360 achievement chime now plays when a badge unlocks (inlined as 7KB base64, respects user prefs EnableSound). Banner now has a horizontal gradient (darker edges → transparent center) layered with the existing vertical sheen, giving it noticeably more depth instead of a flat single-color fill. All six rarity base colors darkened slightly so the 'bright' shift during banner expansion (24-85% of the animation) is more visible — the color change from base to bright now reads as a real transition instead of being barely noticeable.",
         "targetAbi": "10.11.0.0",

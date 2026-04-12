@@ -123,6 +123,7 @@
         item.innerHTML =
             '<div class="ab-xb-circle">' +
                 '<span class="ab-xb-shimmer"></span>' +
+                '<svg class="ab-xb-xbox" viewBox="0 0 24 24" width="34" height="34"><path fill="#fff" d="M4.102 21.033C6.211 22.881 8.977 24 12 24c3.026 0 5.789-1.119 7.902-2.967 1.877-1.912-4.316-8.709-7.902-11.417-3.582 2.708-9.779 9.505-7.898 11.417zm11.16-14.406c2.5 2.961 7.484 10.313 6.076 12.912C23.002 17.48 24 14.861 24 12.004c0-3.34-1.365-6.362-3.57-8.536 0 0-.027-.022-.082-.042-.063-.022-.152-.045-.281-.045-.592 0-1.985.434-4.805 3.246zM3.654 3.426c-.057.02-.082.041-.086.042C1.365 5.642 0 8.664 0 12.004c0 2.854.998 5.473 2.661 7.533-1.401-2.605 3.579-9.951 6.08-12.91-2.82-2.813-4.216-3.245-4.806-3.245-.131 0-.223.021-.281.046v-.002zM12 3.551S9.055 1.828 6.755 1.746c-.903-.033-1.454.295-1.521.339C7.379.646 9.659 0 11.984 0H12c2.334 0 4.605.646 6.766 2.085-.068-.046-.615-.372-1.52-.339C14.946 1.828 12 3.545 12 3.545v.006z"/></svg>' +
                 '<span class="material-icons ab-xb-trophy">emoji_events</span>' +
             '</div>' +
             '<div class="ab-xb-banner">' +
@@ -393,7 +394,8 @@
                 'overflow:hidden;}' +
             '.ab-xb-circle::before{content:"";position:absolute;inset:0;border-radius:50%;background:var(--ab-color-lighter,#40a90e);opacity:0;z-index:0;}' +
             '.ab-xb-circle::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--ab-color-darker,#32830a);opacity:0;z-index:0;}' +
-            '.ab-xb-trophy{position:relative;z-index:3;color:#fff;font-size:40px !important;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45));}' +
+            '.ab-xb-xbox{position:relative;z-index:3;opacity:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45));}' +
+            '.ab-xb-trophy{position:relative;z-index:3;color:#fff;font-size:40px !important;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45));opacity:0;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}' +
             // Banner: solid base + vertical sheen gradient on top for depth
             '.ab-xb-banner{position:absolute;left:50%;top:7px;margin-left:-37px;width:75px;height:75px;border-radius:100px;' +
                 'background-color:var(--ab-color,#39960C);' +
@@ -418,7 +420,8 @@
             '.ab-xb-play .ab-xb-circle{animation:abXbCircle 10.5s forwards;}' +
             '.ab-xb-play .ab-xb-circle::before{animation:abXbPulse 10.5s forwards;animation-delay:0s;}' +
             '.ab-xb-play .ab-xb-circle::after{animation:abXbPulse 10.5s forwards;animation-delay:0.1s;}' +
-            '.ab-xb-play .ab-xb-trophy{animation:abXbTrophyRotate 6s linear infinite;}' +
+            '.ab-xb-play .ab-xb-xbox{animation:abXbXboxFade 10.5s forwards;}' +
+            '.ab-xb-play .ab-xb-trophy{animation:abXbTrophyFade 10.5s forwards,abXbTrophyRotate 6s linear infinite;}' +
             '.ab-xb-play .ab-xb-banner{animation:abXbBanner 10.5s forwards,abXbBannerFill 10.5s forwards;}' +
             '.ab-xb-play .ab-xb-text{animation:abXbText 10.5s forwards;}' +
             // Shimmer: sweeps across the banner + circle while banner is expanded
@@ -497,6 +500,12 @@
                 '0%,28%{transform:translateX(0) skewX(-18deg);}' +
                 '46%{transform:translateX(900%) skewX(-18deg);}' +
                 '100%{transform:translateX(900%) skewX(-18deg);}' +
+            '}' +
+            '@keyframes abXbXboxFade{' +
+                '0%{opacity:1;}17%{opacity:1;}22%{opacity:0;}88%{opacity:0;}93%{opacity:1;}100%{opacity:1;}' +
+            '}' +
+            '@keyframes abXbTrophyFade{' +
+                '0%{opacity:0;}18%{opacity:0;}23%{opacity:1;}87%{opacity:1;}92%{opacity:0;}100%{opacity:0;}' +
             '}' +
             '@keyframes abXbShimmerSweep2{' +
                 '0%,58%{transform:translateX(0) skewX(-18deg);opacity:0;}' +
