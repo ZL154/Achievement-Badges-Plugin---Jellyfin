@@ -347,7 +347,7 @@ public class AchievementBadgeService
             var goals = new List<object>();
 
             // Priority 1: badges with ETA <= 3 days (hot goals)
-            var daysActive = Math.Max(1, profile.Counters.DaysWatched);
+            var daysActive = CalendarDaysSinceFirstWatch(profile.Counters);
             var close = profile.Badges
                 .Where(b => !b.Unlocked && IsBadgeEnabled(b.Id))
                 .Select(b => new { Badge = b, Def = defs.TryGetValue(b.Id, out var d) ? d : null })
@@ -509,7 +509,7 @@ public class AchievementBadgeService
 
             EvaluateBadges(profile, userId, silent: true);
             var c = profile.Counters;
-            var daysActive = Math.Max(1, c.DaysWatched);
+            var daysActive = CalendarDaysSinceFirstWatch(c);
 
             var perDay = new Dictionary<AchievementMetric, double>
             {
@@ -2217,6 +2217,19 @@ public class AchievementBadgeService
         var tmp = _dataFilePath + ".tmp";
         File.WriteAllText(tmp, json);
         File.Move(tmp, _dataFilePath, overwrite: true);
+    }
+
+    private static int CalendarDaysSinceFirstWatch(UserAchievementCounters c)
+    {
+        if (c.WatchDates.Count == 0) return 1;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        DateOnly earliest = today;
+        foreach (var d in c.WatchDates)
+        {
+            if (DateOnly.TryParse(d, out var parsed) && parsed < earliest)
+                earliest = parsed;
+        }
+        return Math.Max(1, today.DayNumber - earliest.DayNumber);
     }
 
     private static AchievementBadge CreateBadgeFromDefinition(AchievementDefinition def, string userId)

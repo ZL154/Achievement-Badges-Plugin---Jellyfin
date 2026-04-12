@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.26",
+        "changelog": "Fix skewed ETA calculations. ETAs were computed by dividing remaining progress by (counter / DaysWatched), where DaysWatched is the number of distinct days you actually watched something. This made ETAs wildly optimistic because it assumed you watch every day. A user who's been on Jellyfin for 365 days but only watched on 67 of them would get an ETA based on their watching-day rate (3.1/day) instead of their calendar-day rate (0.57/day), making a 4-year achievement look like it's 256 days away. Now uses calendar days since first recorded watch date (earliest entry in WatchDates) as the denominator, so ETAs reflect actual real-world pace including off-days.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.26/Jellyfin.Plugin.AchievementBadgesv1.5.26.zip",
+        "checksum": "45AC1BC4942639C4F9F4C406B8EE0C38"
+      },
+      {
         "version": "1.5.25",
         "changelog": "Hide the header equipped-badge row on narrow phone screens. 5 equipped badges at 30px each ate ~170px of horizontal space, which on phones pushed the hamburger menu and profile icon off the right edge of the Jellyfin header bar and made them unreachable. The sidebar entry still works, so users can still get to their achievements page through the nav drawer — the header strip is now desktop / fold / tablet only. Hidden via a CSS media query (max-width: 640px) #ab-header-badges { display: none !important; } injected into <head> alongside the sidebar script. Applied to both the middleware inline fallback and the new disk-injected sidebar.js so the fix covers every client path.",
         "targetAbi": "10.11.0.0",
