@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.25",
+        "changelog": "Hide the header equipped-badge row on narrow phone screens. 5 equipped badges at 30px each ate ~170px of horizontal space, which on phones pushed the hamburger menu and profile icon off the right edge of the Jellyfin header bar and made them unreachable. The sidebar entry still works, so users can still get to their achievements page through the nav drawer — the header strip is now desktop / fold / tablet only. Hidden via a CSS media query (max-width: 640px) #ab-header-badges { display: none !important; } injected into <head> alongside the sidebar script. Applied to both the middleware inline fallback and the new disk-injected sidebar.js so the fix covers every client path.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.25/Jellyfin.Plugin.AchievementBadgesv1.5.25.zip",
+        "checksum": "3AB0497D3847361A7892FC7FB5FF33B2"
+      },
+      {
         "version": "1.5.24",
         "changelog": "Fix sidebar entry missing on the Jellyfin Android app. Previous versions relied entirely on SidebarInjectionMiddleware to rewrite index.html at runtime, but the Android app pre-fetches / caches the HTML file in a way that bypasses the ASP.NET Core middleware pipeline — so the script tags never reached it. New WebInjectionService hosted service patches index.html directly on disk at plugin startup (same approach StarTrack uses), baking three script tags before </body>: sidebar, standalone, and enhance. The on-disk patch is atomic (write-to-tmp then rename) and idempotent (marker detection). SidebarInjectionMiddleware stays registered as a fallback for setups where the web directory isn't writable, and now skips rewriting if the marker is already present to avoid double-injection. Also refreshed Pages/sidebar.js with the modern anchor-strategy that lands next to Plugin Settings — previously sidebar.js carried the legacy broken selector chain.",
         "targetAbi": "10.11.0.0",

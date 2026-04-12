@@ -3,6 +3,24 @@
     var SIDEBAR_ID='ab-sidebar-entry';
     var SHOWCASE_ID='ab-sidebar-showcase';
     var HEADER_ID='ab-header-badges';
+
+    // Inject a style rule to hide the header badge row on narrow screens.
+    // 5 equipped badges at 30px each eat ~170px of horizontal space, which
+    // on phones pushes the hamburger menu and profile icon off the right
+    // edge of the header and makes them unreachable. The sidebar entry
+    // still works, so the user can still get to their achievements page
+    // from the nav drawer — we just hide the desktop-only header strip.
+    try {
+        if (!document.getElementById('ab-header-styles')) {
+            var s = document.createElement('style');
+            s.id = 'ab-header-styles';
+            s.textContent =
+                '@media (max-width: 640px){' +
+                    '#ab-header-badges{display:none !important;}' +
+                '}';
+            (document.head || document.documentElement).appendChild(s);
+        }
+    } catch(e) {}
     function icName(n){ return (n||'emoji_events').toString().toLowerCase().replace(/[^a-z0-9_]/g,''); }
     var rarityColors={common:'#9fb3c8',uncommon:'#34d399',rare:'#60a5fa',epic:'#a78bfa',legendary:'#fbbf24',mythic:'#f43f5e'};
     function rc(r){return rarityColors[(r||'').toLowerCase()]||'#9fb3c8';}

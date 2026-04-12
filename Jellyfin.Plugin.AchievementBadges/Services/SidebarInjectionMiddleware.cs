@@ -18,6 +18,19 @@ public class SidebarInjectionMiddleware
     var SIDEBAR_ID='ab-sidebar-entry';
     var SHOWCASE_ID='ab-sidebar-showcase';
     var HEADER_ID='ab-header-badges';
+
+    // Hide the header badge row on narrow screens — 5 dots at 30px each
+    // eat ~170px of horizontal space and push the hamburger menu and
+    // profile icon off the right edge of the header on phones. Sidebar
+    // entry still works so users can still get to the achievements page.
+    try {
+        if (!document.getElementById('ab-header-styles')) {
+            var _abs = document.createElement('style');
+            _abs.id = 'ab-header-styles';
+            _abs.textContent = '@media (max-width: 640px){#ab-header-badges{display:none !important;}}';
+            (document.head || document.documentElement).appendChild(_abs);
+        }
+    } catch(e) {}
     function icName(n){ return (n||'emoji_events').toString().toLowerCase().replace(/[^a-z0-9_]/g,''); }
     var rarityColors={common:'#9fb3c8',uncommon:'#34d399',rare:'#60a5fa',epic:'#a78bfa',legendary:'#fbbf24',mythic:'#f43f5e'};
     function rc(r){return rarityColors[(r||'').toLowerCase()]||'#9fb3c8';}
