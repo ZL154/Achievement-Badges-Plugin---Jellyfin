@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.24",
+        "changelog": "Fix sidebar entry missing on the Jellyfin Android app. Previous versions relied entirely on SidebarInjectionMiddleware to rewrite index.html at runtime, but the Android app pre-fetches / caches the HTML file in a way that bypasses the ASP.NET Core middleware pipeline — so the script tags never reached it. New WebInjectionService hosted service patches index.html directly on disk at plugin startup (same approach StarTrack uses), baking three script tags before </body>: sidebar, standalone, and enhance. The on-disk patch is atomic (write-to-tmp then rename) and idempotent (marker detection). SidebarInjectionMiddleware stays registered as a fallback for setups where the web directory isn't writable, and now skips rewriting if the marker is already present to avoid double-injection. Also refreshed Pages/sidebar.js with the modern anchor-strategy that lands next to Plugin Settings — previously sidebar.js carried the legacy broken selector chain.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.24/Jellyfin.Plugin.AchievementBadgesv1.5.24.zip",
+        "checksum": "1F99E0BDD318C30E689F36F0EB81A953"
+      },
+      {
         "version": "1.5.23",
         "changelog": "Hygiene pass from a full-plugin audit. Every JSON store (user badges, playback completion, audit log) now writes atomically: serialize to '<file>.tmp' then 'File.Move(..., overwrite: true)'. Previously 'File.WriteAllText' was used directly, so a process kill or power loss mid-write would truncate or corrupt the JSON file and wipe every user's unlocked badges / playback counters. File.Move is atomic on NTFS when source and target are on the same volume, which they are because the temp file is a sibling. Also fixed a StreamReader in SidebarInjectionMiddleware that was never disposed, with an explicit leaveOpen:true so the encapsulating MemoryStream 'using' still handles cleanup.",
         "targetAbi": "10.11.0.0",

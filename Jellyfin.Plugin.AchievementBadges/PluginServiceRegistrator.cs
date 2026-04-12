@@ -25,6 +25,13 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 
         serviceCollection.AddHostedService<SafeStartupRunner>();
 
+        // Disk patcher: writes our script tags into Jellyfin's index.html
+        // at startup so they're loaded by every client, including native
+        // mobile apps that pre-fetch / cache HTML in ways that bypass the
+        // middleware. Keeps the middleware below as a fallback for setups
+        // where the web directory isn't writable.
+        serviceCollection.AddHostedService<WebInjectionService>();
+
         serviceCollection.AddTransient<IStartupFilter, SidebarInjectionStartup>();
     }
 }

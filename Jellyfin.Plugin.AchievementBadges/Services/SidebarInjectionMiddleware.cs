@@ -248,6 +248,17 @@ public class SidebarInjectionMiddleware
                 using var reader = new StreamReader(buffer, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
                 var html = await reader.ReadToEndAsync();
 
+                // Idempotency: if WebInjectionService has already patched
+                // index.html on disk, the marker is present and we must not
+                // inject again, otherwise we'd load the scripts twice.
+                if (html.Contains("achievementbadges-bootstrap", StringComparison.Ordinal))
+                {
+                    buffer.Seek(0, SeekOrigin.Begin);
+                    context.Response.Body = originalBody;
+                    await buffer.CopyToAsync(originalBody);
+                    return;
+                }
+
                 if (html.Contains("</body>", StringComparison.OrdinalIgnoreCase))
                 {
                     html = html.Replace("</body>", InjectionScript + "</body>",
