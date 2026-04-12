@@ -1056,6 +1056,82 @@ public class AchievementBadgesController : ControllerBase
         return Ok(_auditLog.GetRecent(limit));
     }
 
+    // ---------- Admin: Reset user progress ------------------------------
+
+    [HttpDelete("admin/users/{userId}/reset")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult ResetUserProgress([FromRoute] string userId)
+    {
+        var removed = _badgeService.ResetUserProgress(userId);
+        if (!removed)
+        {
+            return NotFound(new { Error = "User profile not found." });
+        }
+
+        return Ok(new { Success = true });
+    }
+
+    // ---------- Admin: Feature config -----------------------------------
+
+    [HttpGet("admin/feature-config")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetFeatureConfig()
+    {
+        var c = Plugin.Instance?.Configuration;
+        return Ok(new
+        {
+            LeaderboardEnabled = c?.LeaderboardEnabled ?? true,
+            CompareEnabled = c?.CompareEnabled ?? true,
+            ActivityFeedEnabled = c?.ActivityFeedEnabled ?? true,
+            PrestigeEnabled = c?.PrestigeEnabled ?? true,
+            QuestsEnabled = c?.QuestsEnabled ?? true,
+            ForcePrivacyMode = c?.ForcePrivacyMode ?? false,
+            MaxEquippedBadges = c?.MaxEquippedBadges ?? 5,
+            RestrictBadgeVisibility = c?.RestrictBadgeVisibility ?? false,
+            DisabledBadgeCategories = c?.DisabledBadgeCategories ?? new List<string>(),
+            WelcomeMessage = c?.WelcomeMessage ?? ""
+        });
+    }
+
+    public class FeatureConfigRequest
+    {
+        public bool LeaderboardEnabled { get; set; } = true;
+        public bool CompareEnabled { get; set; } = true;
+        public bool ActivityFeedEnabled { get; set; } = true;
+        public bool PrestigeEnabled { get; set; } = true;
+        public bool QuestsEnabled { get; set; } = true;
+        public bool ForcePrivacyMode { get; set; } = false;
+        public int MaxEquippedBadges { get; set; } = 5;
+        public bool RestrictBadgeVisibility { get; set; } = false;
+        public List<string> DisabledBadgeCategories { get; set; } = new();
+        public string WelcomeMessage { get; set; } = "";
+    }
+
+    [HttpPost("admin/feature-config")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult SaveFeatureConfig([FromBody] FeatureConfigRequest request)
+    {
+        var plugin = Plugin.Instance;
+        if (plugin is null) return BadRequest();
+        var config = plugin.Configuration;
+        config.LeaderboardEnabled = request.LeaderboardEnabled;
+        config.CompareEnabled = request.CompareEnabled;
+        config.ActivityFeedEnabled = request.ActivityFeedEnabled;
+        config.PrestigeEnabled = request.PrestigeEnabled;
+        config.QuestsEnabled = request.QuestsEnabled;
+        config.ForcePrivacyMode = request.ForcePrivacyMode;
+        config.MaxEquippedBadges = Math.Clamp(request.MaxEquippedBadges, 1, 10);
+        config.RestrictBadgeVisibility = request.RestrictBadgeVisibility;
+        config.DisabledBadgeCategories = request.DisabledBadgeCategories ?? new();
+        config.WelcomeMessage = request.WelcomeMessage ?? "";
+        plugin.UpdateConfiguration(config);
+        return Ok(new { Success = true });
+    }
+
     // ---------- Challenge templates -----------------------------------
 
     [HttpGet("admin/challenge-templates")]

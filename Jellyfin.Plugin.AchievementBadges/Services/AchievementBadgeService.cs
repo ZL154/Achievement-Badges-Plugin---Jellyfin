@@ -44,6 +44,17 @@ public class AchievementBadgeService
 
     public object CompareUsers(string userIdA, string userIdB)
     {
+        var config = Plugin.Instance?.Configuration;
+        if (config != null && !config.CompareEnabled)
+        {
+            return new { Error = "Compare feature is disabled." };
+        }
+
+        if (config?.ForcePrivacyMode ?? false)
+        {
+            return new { Error = "Privacy mode is enabled server-wide." };
+        }
+
         userIdA = NormalizeUserId(userIdA);
         userIdB = NormalizeUserId(userIdB);
         lock (_lock)
@@ -51,6 +62,11 @@ public class AchievementBadgeService
             var pa = _userProfiles.TryGetValue(userIdA, out var profileA) ? profileA : null;
             var pb = _userProfiles.TryGetValue(userIdB, out var profileB) ? profileB : null;
             if (pa is null || pb is null) return new { Error = "One or both users not found." };
+
+            if ((pa.Preferences?.HideFromCompare ?? false) || (pb.Preferences?.HideFromCompare ?? false))
+            {
+                return new { Error = "One or both users have disabled profile comparison." };
+            }
 
             EvaluateBadges(pa, userIdA, silent: true);
             EvaluateBadges(pb, userIdB, silent: true);
@@ -113,6 +129,12 @@ public class AchievementBadgeService
 
     public object GetActivityFeed(int page = 1, int pageSize = 20, string? filterUserId = null)
     {
+        var config = Plugin.Instance?.Configuration;
+        if (config != null && !config.ActivityFeedEnabled)
+        {
+            return new { Page = 1, PageSize = pageSize, TotalPages = 0, TotalEntries = 0, Entries = new List<object>() };
+        }
+
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
         if (pageSize > 100) pageSize = 100;
@@ -243,10 +265,21 @@ public class AchievementBadgeService
 
     public object GetPrestigeLeaderboard(int limit = 10)
     {
+        var config = Plugin.Instance?.Configuration;
+        if (config != null && !config.PrestigeEnabled)
+        {
+            return new List<object>();
+        }
+
+        if (config?.ForcePrivacyMode ?? false)
+        {
+            return new List<object>();
+        }
+
         lock (_lock)
         {
             return _userProfiles.Values
-                .Where(p => p.PrestigeLevel > 0 || p.LifetimeScore > 0)
+                .Where(p => (p.PrestigeLevel > 0 || p.LifetimeScore > 0) && !(p.Preferences?.HideFromPrestigeBoard ?? false))
                 .OrderByDescending(p => p.PrestigeLevel)
                 .ThenByDescending(p => p.LifetimeScore)
                 .Take(limit)
@@ -1137,9 +1170,14 @@ public class AchievementBadgeService
                 return true;
             }
 
-            if (profile.EquippedBadgeIds.Count >= 5)
+            var config = Plugin.Instance?.Configuration;
+            var serverMax = config?.MaxEquippedBadges ?? 5;
+            var userSlots = Math.Clamp(profile.Preferences?.EquippedBadgeSlots ?? 5, 1, 10);
+            var effectiveMax = Math.Min(userSlots, serverMax);
+
+            if (profile.EquippedBadgeIds.Count >= effectiveMax)
             {
-                message = "You can only equip up to 5 badges.";
+                message = $"You can only equip up to {effectiveMax} badges.";
                 return false;
             }
 
@@ -1580,9 +1618,23 @@ public class AchievementBadgeService
 
     public object GetLeaderboardByCategory(string category, int limit = 10)
     {
+        var config = Plugin.Instance?.Configuration;
+        if (config != null && !config.LeaderboardEnabled)
+        {
+            return new List<object>();
+        }
+
+        var forcePrivacy = config?.ForcePrivacyMode ?? false;
+        if (forcePrivacy)
+        {
+            return new List<object>();
+        }
+
         lock (_lock)
         {
-            var projected = _userProfiles.Values.Select(profile =>
+            var projected = _userProfiles.Values
+                .Where(profile => !(profile.Preferences?.HideFromLeaderboard ?? false))
+                .Select(profile =>
             {
                 EvaluateBadges(profile, profile.UserId);
                 var counters = profile.Counters;
@@ -1621,9 +1673,22 @@ public class AchievementBadgeService
 
     public object GetLeaderboard(int limit = 10)
     {
+        var config = Plugin.Instance?.Configuration;
+        if (config != null && !config.LeaderboardEnabled)
+        {
+            return new List<object>();
+        }
+
+        var forcePrivacy = config?.ForcePrivacyMode ?? false;
+        if (forcePrivacy)
+        {
+            return new List<object>();
+        }
+
         lock (_lock)
         {
             var entries = _userProfiles.Values
+                .Where(profile => !(profile.Preferences?.HideFromLeaderboard ?? false))
                 .Select(profile =>
                 {
                     EvaluateBadges(profile, profile.UserId);
@@ -1840,6 +1905,11 @@ public class AchievementBadgeService
 
     private static void SanitizeEquippedBadges(UserAchievementProfile profile)
     {
+        var config = Plugin.Instance?.Configuration;
+        var serverMax = config?.MaxEquippedBadges ?? 5;
+        var userSlots = Math.Clamp(profile.Preferences?.EquippedBadgeSlots ?? 5, 1, 10);
+        var effectiveMax = Math.Min(userSlots, serverMax);
+
         var unlockedIds = profile.Badges
             .Where(b => b.Unlocked && IsBadgeEnabled(b.Id))
             .Select(b => b.Id)
@@ -1848,7 +1918,7 @@ public class AchievementBadgeService
         profile.EquippedBadgeIds = profile.EquippedBadgeIds
             .Where(id => unlockedIds.Contains(id))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(5)
+            .Take(effectiveMax)
             .ToList();
     }
 
@@ -1856,9 +1926,12 @@ public class AchievementBadgeService
     {
         var newlyUnlocked = new List<AchievementBadge>();
         var stamp = unlockTimestamp ?? DateTimeOffset.UtcNow;
+        var disabledCategories = Plugin.Instance?.Configuration?.DisabledBadgeCategories;
 
         foreach (var def in GetActiveDefinitions())
         {
+            if (IsBadgeCategoryDisabled(def.Category, disabledCategories)) continue;
+
             var badge = profile.Badges.FirstOrDefault(b => b.Id.Equals(def.Id, StringComparison.OrdinalIgnoreCase));
             if (badge is null)
             {
@@ -1886,6 +1959,25 @@ public class AchievementBadgeService
         }
 
         SanitizeEquippedBadges(profile);
+
+        // Auto-equip newly unlocked badges if user preference is enabled
+        if (newlyUnlocked.Count > 0 && (profile.Preferences?.AutoEquipNewUnlocks ?? true))
+        {
+            var config = Plugin.Instance?.Configuration;
+            var serverMax = config?.MaxEquippedBadges ?? 5;
+            var userSlots = Math.Clamp(profile.Preferences?.EquippedBadgeSlots ?? 5, 1, 10);
+            var effectiveMax = Math.Min(userSlots, serverMax);
+
+            foreach (var badge in newlyUnlocked)
+            {
+                if (profile.EquippedBadgeIds.Count >= effectiveMax) break;
+                if (!IsBadgeEnabled(badge.Id)) continue;
+                if (!profile.EquippedBadgeIds.Contains(badge.Id, StringComparer.OrdinalIgnoreCase))
+                {
+                    profile.EquippedBadgeIds.Add(badge.Id);
+                }
+            }
+        }
 
         if (newlyUnlocked.Count > 0 && !silent)
         {
@@ -2075,15 +2167,43 @@ public class AchievementBadgeService
         return !config.DisabledBadgeIds.Contains(badgeId, StringComparer.OrdinalIgnoreCase);
     }
 
+    private static bool IsBadgeCategoryDisabled(string? category, List<string>? disabledCategories)
+    {
+        if (disabledCategories is null || disabledCategories.Count == 0) return false;
+        if (string.IsNullOrWhiteSpace(category)) return false;
+        return disabledCategories.Contains(category, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public bool ResetUserProgress(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.Remove(userId))
+            {
+                return false;
+            }
+
+            Save();
+            _logger.LogInformation("Reset achievement progress for user {UserId}", userId);
+            _auditLog?.Log(userId, ResolveUserName(userId), "admin-reset", "Progress reset by admin");
+            return true;
+        }
+    }
+
     private List<AchievementBadge> GetEnabledBadgeClones(UserAchievementProfile profile)
     {
         var defsById = GetActiveDefinitions()
             .ToDictionary(d => d.Id, d => d, StringComparer.OrdinalIgnoreCase);
 
+        var spoilerMode = profile.Preferences?.SpoilerMode ?? false;
+        var disabledCategories = Plugin.Instance?.Configuration?.DisabledBadgeCategories;
+
         var result = new List<AchievementBadge>();
         foreach (var b in profile.Badges)
         {
             if (!IsBadgeEnabled(b.Id)) continue;
+            if (IsBadgeCategoryDisabled(b.Category, disabledCategories)) continue;
 
             var isSecret = defsById.TryGetValue(b.Id, out var def) && def.IsSecret;
 
@@ -2094,6 +2214,10 @@ public class AchievementBadgeService
                 clone.Title = "???";
                 clone.Description = "Hidden achievement — keep watching to discover it.";
                 clone.Icon = "help";
+            }
+            else if (spoilerMode && !clone.Unlocked)
+            {
+                clone.Description = "???";
             }
 
             result.Add(clone);

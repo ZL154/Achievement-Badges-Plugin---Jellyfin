@@ -32,4 +32,18 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool EnableHomeWidget { get; set; } = false;
 
     public bool EnableItemDetailRibbon { get; set; } = false;
+
+    // Feature kill switches
+    public bool LeaderboardEnabled { get; set; } = true;
+    public bool CompareEnabled { get; set; } = true;
+    public bool ActivityFeedEnabled { get; set; } = true;
+    public bool PrestigeEnabled { get; set; } = true;
+    public bool QuestsEnabled { get; set; } = true;
+    public bool ForcePrivacyMode { get; set; } = false;
+
+    // Badge controls
+    public int MaxEquippedBadges { get; set; } = 5;
+    public bool RestrictBadgeVisibility { get; set; } = false;
+    public List<string> DisabledBadgeCategories { get; set; } = new();
+    public string WelcomeMessage { get; set; } = "";
 }

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Xbox Achievement — Achievement Badges for Jellyfin</title>
+<style>
+  html,body{height:100%;margin:0;background:#111;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+  .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+
+  /* ============================================================
+     VERBATIM PORT of Uenify's CodePen "Xbox One Achievement in
+     CSS (Regular and Rare)" — https://codepen.io/uenify/pen/KxzKVd
+     Trimmed to regular mode only (no rare sparkle spritesheet)
+     and auto-triggered on load so it loops forever.
+     ============================================================ */
+  .achievement *{box-sizing:border-box;}
+  .achievement{position:relative;pointer-events:none;width:100%;}
+
+  @keyframes rotate{0%{transform:rotateY(0deg);}50%{transform:rotateY(360deg);}100%{transform:rotateY(0deg);}}
+
+  @keyframes scale_circle_1{
+    0%  {transform:scale3d(0,0,0);}
+    2%  {opacity:1;}
+    5%  {transform:scale3d(1,1,1);opacity:.8;}
+    6%  {opacity:0;}
+    9%  {opacity:0;}
+    10% {transform:scale3d(1,1,1);opacity:0;}
+    90% {transform:scale3d(0,0,0);}
+    92% {opacity:1;}
+    95% {transform:scale3d(1,1,1);opacity:.8;}
+    96% {opacity:0;}
+    99% {opacity:0;}
+    100%{transform:scale3d(1,1,1);opacity:0;}
+  }
+
+  @keyframes circle_grow_move{
+    1%  {opacity:0;transform:scale(.1);}
+    4%  {transform:scale(1.1);}
+    5%  {transform:scale(1);opacity:1;}
+    11% {transform:translate(0);background-color:#39960C;}
+    24% {transform:translateX(-140px);background-color:#42ae0e;}
+    85% {transform:translateX(-140px);background-color:#42ae0e;}
+    89% {transform:translateX(0);background-color:#39960C;}
+    94% {transform:scale(1);}
+    96% {transform:scale(1.1);}
+    98% {transform:scale(.1);opacity:1;}
+    99% {opacity:0;}
+    100%{transform:scale(.1);}
+  }
+
+  @keyframes trophy_animate_opacity{
+    0%{opacity:0;} 20%{opacity:0;} 24%{opacity:1;}
+    90%{opacity:1;} 95%{opacity:0;} 100%{opacity:0;}
+  }
+
+  @keyframes xbox_animate_opacity{
+    0%{opacity:1;} 19%{opacity:1;transform:scale3d(1,1,1);} 23%{opacity:0;}
+    90%{opacity:0;} 95%{opacity:1;} 100%{opacity:1;}
+  }
+
+  @keyframes banner-animate{
+    0%  {width:75px;opacity:0;}
+    2%  {opacity:0;}
+    4%  {opacity:1;}
+    11% {width:75px;}
+    24% {width:355px;}
+    85% {width:355px;}
+    89% {width:75px;opacity:1;}
+    90% {opacity:0;}
+  }
+
+  @keyframes textSlide{
+    0%  {transform:translateY(85px);opacity:0;}
+    20% {transform:translateY(85px);opacity:0;}
+    25% {transform:translateY(0);opacity:1;}
+    79% {transform:translateY(0);opacity:1;}
+    84% {transform:translateY(-115px);opacity:0;}
+    100%{opacity:0;}
+  }
+
+  .animation{width:355px;height:110px;padding:5px 0;position:relative;margin:auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;}
+
+  /* Auto-run: infinite loops, not triggered by a class */
+  .circle          {animation:circle_grow_move 10.5s infinite;transform-origin:center;}
+  .circle::before  {animation:scale_circle_1 10.5s infinite;transform-origin:center;}
+  .circle::after   {animation:scale_circle_1 10.5s .1s infinite;transform-origin:center;}
+  .trophy_animate  {animation:trophy_animate_opacity 10.5s infinite;}
+  .xbox_img        {animation:xbox_animate_opacity 10.5s infinite;z-index:102;}
+  .banner          {animation:banner-animate 10.5s infinite;}
+  .achieve_disp    {animation:textSlide 10.5s infinite;}
+
+  .circle{width:75px;height:75px;top:0;opacity:0;margin:0 auto;border-radius:100%;background:#39960C;position:relative;overflow:hidden;z-index:4;}
+  .circle::before{content:"";opacity:0;width:75px;height:75px;background-color:#40a90e;position:absolute;top:0;left:0;border-radius:50%;display:block;}
+  .circle::after {content:"";opacity:0;width:75px;height:75px;background-color:#32830a;position:absolute;top:0;left:0;border-radius:50%;display:block;}
+
+  .circle .img{height:50%;left:25%;top:25%;position:absolute;z-index:100;}
+  .circle .img img{height:100%;position:absolute;}
+  .circle .trophy_1{animation:rotate 6s infinite;}
+
+  .banner{width:355px;height:75px;position:relative;left:0;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;right:0;margin:0 auto;background:#39960C;overflow:hidden;border-radius:100px;}
+  .banner-outer{display:flex;align-items:center;align-content:center;width:100%;top:-75px;position:relative;}
+
+  .achieve_disp{display:flex;flex-direction:column;width:72%;position:absolute;justify-content:center;margin-left:92px;left:0;height:100%;top:0;}
+  .achieve_disp .score_disp{width:100%;display:flex;flex-direction:row;align-items:flex-start;margin-bottom:0;}
+  .achieve_disp .achiev_name{border:none;outline:none;background:none;font-size:13pt;color:#fff;line-height:24px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .acheive_score{margin-left:5px;margin-right:5px;color:#fff;}
+  .unlocked{width:100%;color:#fff;font-weight:400;}
+  .gamerscore{display:flex;flex-direction:row;align-items:center;height:24px;}
+  .hyphen_sep{margin-right:5px;color:#fff;font-size:15pt;line-height:24px;}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="achievement">
+      <div class="animation">
+        <div class="circle">
+          <div class="img trophy_animate trophy_img">
+            <img class="trophy_1" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgdmlld0JveD0iMCAwIDQ5MyA0OTMiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+Cgk8ZyBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNy4wMDAwMDAsIDUuMDAwMDAwKSI+CgkJPHJlY3QgZmlsbD0iI0ZGRkZGRiIgeD0iMTg5LjkzMTAzNCIgeT0iMzQ0LjcyIiB3aWR0aD0iNzkuODIwNDk1MyIgaGVpZ2h0PSI2NS4xMiIgcng9IjgiPgoJCTwvcmVjdD4KCQk8cmVjdCBmaWxsPSIjRkZGRkZGIiB4PSI0NS45MTExNjIxIiB5PSIwIiB3aWR0aD0iMzY1Ljc5MzEwMyIgaGVpZ2h0PSIyNC42NCIgcng9IjEyLjMyIj4KCQk8L3JlY3Q+CgkJPHBhdGggZD0iTTU4LjAzNDQ4MjgsMjMuNjQgTDQwMC45NjU1MTcsMjMuNjQgQzQwMC45NjU1MTcsMjMuNjQgMzkyLjQ5MDQ2OSwyMTIuODk4MDA4IDM1MC41OTE2MTgsMjc5LjMwOTAwNCBDMzA4LjY5Mjc2NywzNDUuNzIgMjcyLjEzMjM0NywzNDUuNzIgMjcyLjEzMjM0NywzNDUuNzIgTDE4Ni44Njc2NTMsMzQ1LjcyIEMxODYuODY3NjUzLDM0NS43MiAxNDUuNTk1MDY4LDM1Mi4wNzgwMDUgMTA1LjUxNzI0MSwyNzkuMzA5MDA0IEM2NS40Mzk0MTQyLDIwNi41NDAwMDIgNTguMDM0NDgyOCwyMy42NCA1OC4wMzQ0ODI4LDIzLjY0IFoiIGZpbGw9IiNGRkZGRkYiPgoJCTwvcGF0aD4KCQk8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLjAwMDAwMCwgNzYuNDQwMDAwKSI+CgkJCTxwYXRoIGQ9Ik0yLjY4OTI5MDI1LDExLjE3Njg0MjIgQy0xLjE4Mjk4Mzk2LDUuMDA0MDQyNjkgMS41ODYyOTQ5MywwIDguODcyMTc3ODQsMCBMNzcuMzc1ODI5MSwwIEw3Ny4zNzU4MjkxLDI2LjQgTDEyLjIzODk2NzMsMjYuNCBMMi42ODkyOTAyNSwxMS4xNzY4NDIyIFoiIGZpbGw9IiNGRkZGRkYiPgoJCQk8L3BhdGg+CgkJCTxwYXRoIGQ9Ik0xNS44Mjc1ODYyLDE1Ljg0IEMxNS44Mjc1ODYyLDE1Ljg0IDM1Ljc4NzE2NTksMTMxLjY4MDk1NiA1OS45NTE1OTQ4LDE3MS4wMDA5ODkgQzg0LjExNjAyMzYsMjEwLjMyMTAyMiAxMzEuOTM2NTkyLDIwNC43NzEwMTEgMTMxLjkzNjU5MiwyMDQuNzcxMDExIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iMjciIHN0cm9rZS1saW5lY2FwPSJzcXVhcmUiPgoJCQk8L3BhdGg+CgkJPC9nPgoJCTxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDM5My4wMDAwMDAsIDE3OS40NDAwMDApIHNjYWxlKC0xLCAxKSB0cmFuc2xhdGUoLTM5My4wMDAwMDAsIC0xNzkuNDQwMDAwKSB0cmFuc2xhdGUoMzI3LjAwMDAwMCwgNzYuNDQwMDAwKSI+CgkJCTxwYXRoIGQ9Ik0yLjY4OTI5MDI1LDExLjE3Njg0MjIgQy0xLjE4Mjk4Mzk2LDUuMDA0MDQyNjkgMS41ODYyOTQ5MywwIDguODcyMTc3ODQsMCBMNzcuMzc1ODI5MSwwIEw3Ny4zNzU4MjkxLDI2LjQgTDEyLjIzODk2NzMsMjYuNCBMMi42ODkyOTAyNSwxMS4xNzY4NDIyIFoiIGZpbGw9IiNGRkZGRkYiPgoJCQk8L3BhdGg+CgkJCTxwYXRoIGQ9Ik0xNS44Mjc1ODYyLDE1Ljg0IEMxNS44Mjc1ODYyLDE1Ljg0IDM1Ljc4NzE2NTksMTMxLjY4MDk1NiA1OS45NTE1OTQ4LDE3MS4wMDA5ODkgQzg0LjExNjAyMzYsMjEwLjMyMTAyMiAxMzEuOTM2NTkyLDIwNC43NzEwMTEgMTMxLjkzNjU5MiwyMDQuNzcxMDExIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iMjciIHN0cm9rZS1saW5lY2FwPSJzcXVhcmUiPgoJCQk8L3BhdGg+CgkJPC9nPgoJCTxwYXRoIGQ9Ik0yMzAuNTg0MTQ5LDM3OS4xNiBDMzEyLjMxMDM3MywzNzkuMTYgMzA0LjQ0NjIxOCw0NDQuMjggMzA0LjQ0NjIxOCw0NDQuMjggTDE1Ni43MjIwOCw0NDQuMjggQzE1Ni43MjIwOCw0NDQuMjggMTQ4Ljg1NzkyNSwzNzkuMTYgMjMwLjU4NDE0OSwzNzkuMTYgWiIgZmlsbD0iI0ZGRkZGRiI+CgkJPC9wYXRoPgoJCTxyZWN0IGZpbGw9IiNGRkZGRkYiIHg9IjE0Mi40NDgyNzYiIHk9IjQ0My4yOCIgd2lkdGg9IjE3NS44NjIwNjkiIGhlaWdodD0iMzguNzIiPgoJCTwvcmVjdD4KCTwvZz4KPC9zdmc+Cg=="/>
+            <img class="trophy_2" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgdmlld0JveD0iMCAwIDQ5MyA0OTMiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+Cgk8ZyBmaWxsPSIjZmZmIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg2Mi4wMDAwMDAsIDUuMDAwMDAwKSI+CgkJPHJlY3QgeD0iMTQ0LjkzMTAzNCIgeT0iMzQ0LjcyIiB3aWR0aD0iNzkuODIwNDk1MyIgaGVpZ2h0PSI2NS4xMiIgcng9IjgiPgoJCTwvcmVjdD4KCQk8cmVjdCB4PSIwLjkxMTE2MjE0NyIgeT0iMCIgd2lkdGg9IjM2NS43OTMxMDMiIGhlaWdodD0iMjQuNjQiIHJ4PSIxMi4zMiI+CgkJPC9yZWN0PgoJCTxwYXRoIGQ9Ik0xMy4wMzQ0ODI4LDIzLjY0IEwzNTUuOTY1NTE3LDIzLjY0IEMzNTUuOTY1NTE3LDIzLjY0IDM0Ny40OTA0NjksMjEyLjg5ODAwOCAzMDUuNTkxNjE4LDI3OS4zMDkwMDQgQzI2My42OTI3NjcsMzQ1LjcyIDIyNy4xMzIzNDcsMzQ1LjcyIDIyNy4xMzIzNDcsMzQ1LjcyIEwxNDEuODY3NjUzLDM0NS43MiBDMTQxLjg2NzY1MywzNDUuNzIgMTAwLjU5NTA2OCwzNTIuMDc4MDA1IDYwLjUxNzI0MTEsMjc5LjMwOTAwNCBDMjAuNDM5NDE0MiwyMDYuNTQwMDAyIDEzLjAzNDQ4MjgsMjMuNjQgMTMuMDM0NDgyOCwyMy42NCBaIj4KCQk8L3BhdGg+CgkJPHBhdGggZD0iTTE4NS41ODQxNDksMzc5LjE2IEMyNjcuMzEwMzczLDM3OS4xNiAyNTkuNDQ2MjE4LDQ0NC4yOCAyNTkuNDQ2MjE4LDQ0NC4yOCBMMTExLjcyMjA4LDQ0NC4yOCBDMTExLjcyMjA4LDQ0NC4yOCAxMDMuODU3OTI1LDM3OS4xNiAxODUuNTg0MTQ5LDM3OS4xNiBaIj4KCQk8L3BhdGg+CgkJPHJlY3QgeD0iOTcuNDQ4Mjc1OSIgeT0iNDQzLjI4IiB3aWR0aD0iMTc1Ljg2MjA2OSIgaGVpZ2h0PSIzOC43MiI+CgkJPC9yZWN0PgoJPC9nPgo8L3N2Zz4K"/>
+          </div>
+          <div class="img xbox_img">
+            <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+Cgk8cGF0aCBmaWxsPSIjZmZmIiBkPSJNNC4xMDIgMjEuMDMzQzYuMjExIDIyLjg4MSA4Ljk3NyAyNCAxMiAyNGMzLjAyNiAwIDUuNzg5LTEuMTE5IDcuOTAyLTIuOTY3IDEuODc3LTEuOTEyLTQuMzE2LTguNzA5LTcuOTAyLTExLjQxNy0zLjU4MiAyLjcwOC05Ljc3OSA5LjUwNS03Ljg5OCAxMS40MTd6bTExLjE2LTE0LjQwNmMyLjUgMi45NjEgNy40ODQgMTAuMzEzIDYuMDc2IDEyLjkxMkMyMy4wMDIgMTcuNDggMjQgMTQuODYxIDI0IDEyLjAwNGMwLTMuMzQtMS4zNjUtNi4zNjItMy41Ny04LjUzNiAwIDAtLjAyNy0uMDIyLS4wODItLjA0Mi0uMDYzLS4wMjItLjE1Mi0uMDQ1LS4yODEtLjA0NS0uNTkyIDAtMS45ODUuNDM0LTQuODA1IDMuMjQ2ek0zLjY1NCAzLjQyNmMtLjA1Ny4wMi0uMDgyLjA0MS0uMDg2LjA0MkMxLjM2NSA1LjY0MiAwIDguNjY0IDAgMTIuMDA0YzAgMi44NTQuOTk4IDUuNDczIDIuNjYxIDcuNTMzLTEuNDAxLTIuNjA1IDMuNTc5LTkuOTUxIDYuMDgtMTIuOTEtMi44Mi0yLjgxMy00LjIxNi0zLjI0NS00LjgwNi0zLjI0NS0uMTMxIDAtLjIyMy4wMjEtLjI4MS4wNDZ2LS4wMDJ6TTEyIDMuNTUxUzkuMDU1IDEuODI4IDYuNzU1IDEuNzQ2Yy0uOTAzLS4wMzMtMS40NTQuMjk1LTEuNTIxLjMzOUM3LjM3OS42NDYgOS42NTkgMCAxMS45ODQgMEgxMmMyLjMzNCAwIDQuNjA1LjY0NiA2Ljc2NiAyLjA4NS0uMDY4LS4wNDYtLjYxNS0uMzcyLTEuNTItLjMzOUMxNC45NDYgMS44MjggMTIgMy41NDUgMTIgMy41NDV2LjAwNnoiIC8+Cjwvc3ZnPgo="/>
+          </div>
+        </div>
+        <div class="banner-outer">
+          <div class="banner">
+            <div class="achieve_disp">
+              <span class="unlocked">Achievement unlocked</span>
+              <div class="score_disp">
+                <div class="gamerscore">
+                  <img width="20" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgdmlld0JveD0iMCAwIDQ5MyA0OTMiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8ZyBmaWxsPSIjRkZGRkZGIj4KICAgICAgICAgICAgPHBhdGggZD0iTTI0Nyw0NjggQzM2OS4wNTQ5Myw0NjggNDY4LDM2OS4wNTQ5MyA0NjgsMjQ3IEM0NjgsMTI0Ljk0NTA3IDM2OS4wNTQ5MywyNiAyNDcsMjYgQzEyNC45NDUwNywyNiAyNiwxMjQuOTQ1MDcgMjYsMjQ3IEMyNiwzNjkuMDU0OTMgMTI0Ljk0NTA3LDQ2OCAyNDcsNDY4IFogTTIzNi40OTcxNTksMjMxLjY1MzY2MSBMMzMzLjg3MjUyNiwyMzEuNjUzNjYxIEwzMzMuODcyNTI2LDM1OC45MTMxOTIgQzMxOC4wOTA5MjIsMzY0LjA2MTggMzAzLjIzMjkzMywzNjcuNjcxMzY4IDI4OS4yOTgxMTIsMzY5Ljc0MjAwNCBDMjc1LjM2MzI5MiwzNzEuODEyNjQgMjYxLjEyMDg4OCwzNzIuODQ3OTQzIDI0Ni41NzA0NzMsMzcyLjg0Nzk0MyBDMjA5LjUyMjg3OCwzNzIuODQ3OTQzIDE4MS4yMzM5MzgsMzYxLjk2MzI3NiAxNjEuNzAyODA0LDM0MC4xOTM2MTcgQzE0Mi4xNzE2NywzMTguNDIzOTU4IDEzMi40MDYyNSwyODcuMTY5MDE2IDEzMi40MDYyNSwyNDYuNDI3ODU1IEMxMzIuNDA2MjUsMjA2LjgwNTk1NiAxNDMuNzM4NjE1LDE3NS45MTQ3NjkgMTY2LjQwMzY4NCwxNTMuNzUzMzY4IEMxODkuMDY4NzUzLDEzMS41OTE5NjcgMjIwLjQ5MTU4MiwxMjAuNTExNDMyIDI2MC42NzMxMTIsMTIwLjUxMTQzMiBDMjg1Ljg1NjUyMywxMjAuNTExNDMyIDMxMC4xNDQxNTgsMTI1LjU0ODAzOSAzMzMuNTM2NzQ5LDEzNS42MjE0MDMgTDMxNi4yNDQyMjcsMTc3LjI1Nzc2NyBDMjk4LjMzNjAyNCwxNjguMzAzNjY1IDI3OS43MDA1NzksMTYzLjgyNjY4MiAyNjAuMzM3MzM1LDE2My44MjY2ODIgQzIzNy44NDAxNTUsMTYzLjgyNjY4MiAyMTkuODIwMjk2LDE3MS4zODE1OTEgMjA2LjI3NzIxOCwxODYuNDkxNjM4IEMxOTIuNzM0MTM5LDIwMS42MDE2ODQgMTg1Ljk2MjcwMiwyMjEuOTE1OTk3IDE4NS45NjI3MDIsMjQ3LjQzNTE4NiBDMTg1Ljk2MjcwMiwyNzQuMDczNjM4IDE5MS40MTkwMjUsMjk0LjQxNTkzMiAyMDIuMzMxODM3LDMwOC40NjI2NzkgQzIxMy4yNDQ2NDgsMzIyLjUwOTQyNSAyMjkuMTA5OTU4LDMyOS41MzI2OTMgMjQ5LjkyODI0NCwzMjkuNTMyNjkzIEMyNjAuNzg1MDkyLDMyOS41MzI2OTMgMjcxLjgwOTY2NCwzMjguNDEzNDQ3IDI4My4wMDIyOTEsMzI2LjE3NDkyMiBMMjgzLjAwMjI5MSwyNzQuOTY4OTEgTDIzNi40OTcxNTksMjc0Ljk2ODkxIEwyMzYuNDk3MTU5LDIzMS42NTM2NjEgWiI+PC9wYXRoPgogICAgPC9nPgo8L3N2Zz4="/>
+                  <span class="acheive_score">100</span>
+                </div>
+                <span class="hyphen_sep">-</span>
+                <span class="achiev_name">Achievement Badges</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

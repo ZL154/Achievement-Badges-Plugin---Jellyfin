@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.33",
+        "changelog": "Full preferences + admin controls backend. 14 user preferences: toast on/off, sound on/off, confetti, milestones, minimum toast rarity filter (all/rare+/epic+/legendary+), achievement page theme (default/dark/light), spoiler mode (hides locked badge descriptions), equipped badge slots (1-10), auto-equip new unlocks, push notifications, and 4 privacy toggles (hide from leaderboard, compare, activity feed, prestige board). 10 admin controls: kill switches for leaderboard/compare/activity/prestige/quests, force privacy mode, max equipped badges, restrict badge visibility, disable badge categories (e.g. Late Night for family servers), and custom welcome message. Privacy filters injected into GetLeaderboard, CompareUsers, GetActivityFeed, GetPrestigeLeaderboard. Spoiler mode blanks locked badge descriptions. Auto-equip adds newly unlocked badges to equipped slots automatically. DisabledBadgeCategories filters badges from evaluation and display. New admin endpoints: DELETE /admin/users/{userId}/reset, GET/POST /admin/feature-config. Frontend settings UI coming in next release.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.33/Jellyfin.Plugin.AchievementBadgesv1.5.33.zip",
+        "checksum": "19E1F7F6D8DAC0EDA67BF4E8B4E1EFC0"
+      },
+      {
         "version": "1.5.32",
         "changelog": "Toast queue now shows one at a time (was 3 stacked). Multiple unlocks queue up and play sequentially so each gets its full animation + sound. Also added a DOM-based fallback for playback detection — if window.Events isn't available (some Jellyfin builds), a MutationObserver watches for .videoPlayerContainer appearing and triggers a poll burst. This should fix toasts not firing during video playback on setups where the Events API isn't exposed.",
         "targetAbi": "10.11.0.0",

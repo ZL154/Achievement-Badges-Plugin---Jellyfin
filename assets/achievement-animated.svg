@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 120" width="440" height="120" role="img" aria-label="Xbox-style achievement unlock toast">
+  <title>Achievement Unlocked — Achievement Badges for Jellyfin</title>
+
+  <defs>
+    <!-- Sphere highlight on the circle: radial gradient fakes a 3D ball -->
+    <radialGradient id="circleSphere" cx="34%" cy="30%" r="65%">
+      <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="30%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Banner vertical sheen: top highlight → bottom shadow -->
+    <linearGradient id="bannerSheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.2"/>
+      <stop offset="35%" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="60%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.22"/>
+    </linearGradient>
+
+    <!-- Shimmer gleam: diagonal white streak -->
+    <linearGradient id="shimmerGleam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"  stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Banner clip so the shimmer only shows within the pill shape -->
+    <clipPath id="bannerClip">
+      <rect id="bannerClipRect" x="43" y="23" width="355" height="75" rx="37" ry="37">
+        <animate attributeName="x"     values="183;183;43;43;183;183;183" keyTimes="0;0.11;0.24;0.85;0.89;0.99;1" dur="10.5s" repeatCount="indefinite"/>
+        <animate attributeName="width" values=" 75; 75;355;355; 75; 75; 75" keyTimes="0;0.11;0.24;0.85;0.89;0.99;1" dur="10.5s" repeatCount="indefinite"/>
+      </rect>
+    </clipPath>
+
+    <!-- Drop shadow filter for the whole banner -->
+    <filter id="bannerShadow" x="-20%" y="-30%" width="140%" height="180%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- ============================================================
+       BANNER BODY (rounded pill, expands horizontally)
+       x and width are animated on the master 10.5s timeline.
+       ============================================================ -->
+  <g filter="url(#bannerShadow)">
+    <rect id="bannerBody" x="183" y="23" width="75" height="75" rx="37" ry="37" fill="#193e91">
+      <animate attributeName="x"     values="183;183;43;43;183;183;183"  keyTimes="0;0.11;0.24;0.85;0.89;0.99;1" dur="10.5s" repeatCount="indefinite"/>
+      <animate attributeName="width" values=" 75; 75;355;355; 75; 75; 75" keyTimes="0;0.11;0.24;0.85;0.89;0.99;1" dur="10.5s" repeatCount="indefinite"/>
+      <animate attributeName="fill"  values="#193e91;#193e91;#2453b8;#2453b8;#193e91;#193e91;#193e91"
+               keyTimes="0;0.11;0.24;0.85;0.89;0.99;1" dur="10.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;0;1;1;1;0;0"
+               keyTimes="0;0.04;0.11;0.85;0.89;0.99;1" dur="10.5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Banner sheen overlay, clipped to the pill -->
+    <rect x="43" y="23" width="355" height="75" rx="37" ry="37" fill="url(#bannerSheen)"
+          clip-path="url(#bannerClip)" pointer-events="none">
+      <animate attributeName="opacity" values="0;0;0;1;1;0;0"
+               keyTimes="0;0.11;0.12;0.24;0.85;0.89;1" dur="10.5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Shimmer streak: a wide skewed gradient that sweeps across the banner -->
+    <g clip-path="url(#bannerClip)">
+      <rect x="0" y="0" width="180" height="120" fill="url(#shimmerGleam)" transform="skewX(-18)">
+        <animate attributeName="x" values="-40;-40;-40;400;400;400"
+                 keyTimes="0;0.27;0.30;0.46;0.84;1" dur="10.5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0;1;1;0;0"
+                 keyTimes="0;0.27;0.30;0.82;0.84;1" dur="10.5s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+  </g>
+
+  <!-- ============================================================
+       TEXT BLOCK (slides up from below when banner is expanded)
+       Fixed position at x=123 (to the right of where the circle
+       lands when it moves left at 24%).
+       ============================================================ -->
+  <g font-family="'Segoe UI', system-ui, -apple-system, sans-serif" fill="#ffffff">
+    <g transform="translate(123, 60)">
+      <animateTransform attributeName="transform" type="translate"
+                        values="123 140; 123 140; 123 60; 123 60; 123 -60; 123 140; 123 140"
+                        keyTimes="0;0.20;0.25;0.79;0.84;0.85;1" dur="10.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity"
+               values="0;0;1;1;0;0;0"
+               keyTimes="0;0.20;0.25;0.79;0.84;0.85;1" dur="10.5s" repeatCount="indefinite"/>
+
+      <!-- "ACHIEVEMENT UNLOCKED" label -->
+      <text x="0" y="-10" font-size="11" font-weight="500" letter-spacing="1.5" opacity="0.95">ACHIEVEMENT UNLOCKED</text>
+      <!-- Main title -->
+      <text x="0" y="12" font-size="16" font-weight="700">
+        <tspan font-weight="800">100</tspan>
+        <tspan opacity="0.7"> &#8226; </tspan>
+        <tspan>Achievement Badges</tspan>
+      </text>
+      <!-- Sub -->
+      <text x="0" y="30" font-size="11" font-weight="400" opacity="0.75">Badges for Jellyfin</text>
+    </g>
+  </g>
+
+  <!-- ============================================================
+       CIRCLE WITH TROPHY (sits on top of the banner's left edge)
+       Translates from center → left as banner expands.
+       Continuously rotating trophy inside.
+       ============================================================ -->
+  <g>
+    <!-- Entire circle group: translate X and scale for pop-in/pop-out -->
+    <g transform="translate(220, 60)">
+      <animateTransform attributeName="transform" type="translate"
+                        values="220 60; 220 60; 220 60; 80 60; 80 60; 220 60; 220 60; 220 60"
+                        keyTimes="0;0.05;0.11;0.24;0.85;0.89;0.96;1" dur="10.5s" repeatCount="indefinite" additive="replace"/>
+
+      <g id="circlePulse">
+        <animateTransform attributeName="transform" type="scale"
+                          values="0.1;1.1;1;1;1;1;1.1;0.1;0.1"
+                          keyTimes="0;0.04;0.05;0.11;0.85;0.89;0.96;0.98;1" dur="10.5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity"
+                 values="0;1;1;1;1;1;1;1;0;0"
+                 keyTimes="0;0.04;0.05;0.11;0.85;0.89;0.96;0.98;0.99;1" dur="10.5s" repeatCount="indefinite"/>
+
+        <!-- Base circle -->
+        <circle r="37" fill="#193e91">
+          <animate attributeName="fill" values="#193e91;#193e91;#2453b8;#2453b8;#193e91;#193e91"
+                   keyTimes="0;0.11;0.24;0.85;0.89;1" dur="10.5s" repeatCount="indefinite"/>
+        </circle>
+
+        <!-- Sphere highlight gradient overlay -->
+        <circle r="37" fill="url(#circleSphere)"/>
+
+        <!-- Inner rim darken for depth -->
+        <circle r="37" fill="none" stroke="#000" stroke-opacity="0.18" stroke-width="1.5"/>
+
+        <!-- Trophy icon (Material Icons emoji_events path) — rotates continuously.
+             Rotator has no static transform so animateTransform doesn't clobber
+             anything. Inner <g> pre-offsets the 24×24 path so its visual centre
+             lands on (0,0) after scale(1.5): (12*1.5, 12*1.5) = (18,18). -->
+        <g>
+          <animateTransform attributeName="transform" type="rotate"
+                            from="0 0 0" to="360 0 0" dur="6s" repeatCount="indefinite"/>
+          <g transform="translate(-18,-18) scale(1.5)">
+            <path fill="#ffffff" d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

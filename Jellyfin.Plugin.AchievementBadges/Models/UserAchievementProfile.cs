@@ -53,11 +53,28 @@ public class CompareHistoryEntry
 
 public class UserNotificationPreferences
 {
+    // Existing toast controls
     public bool EnableUnlockToasts { get; set; } = true;
     public bool EnableMilestoneToasts { get; set; } = true;
     public bool EnableConfetti { get; set; } = true;
     public bool AppearInActivityFeed { get; set; } = true;
     public bool EnableCoWatchBonus { get; set; } = true;
+
+    // Toast controls
+    public bool EnableSound { get; set; } = true;
+    public string MinimumToastRarity { get; set; } = "all"; // "all", "rare", "epic", "legendary"
+
+    // Privacy
+    public bool HideFromLeaderboard { get; set; } = false;
+    public bool HideFromCompare { get; set; } = false;
+    public bool HideFromPrestigeBoard { get; set; } = false;
+
+    // Display
+    public string AchievementPageTheme { get; set; } = "default"; // "default", "dark", "light"
+    public bool SpoilerMode { get; set; } = false;
+    public int EquippedBadgeSlots { get; set; } = 5; // 1-10
+    public bool AutoEquipNewUnlocks { get; set; } = true;
+    public bool EnablePushNotifications { get; set; } = false;
 }
 
 public class QuestState
