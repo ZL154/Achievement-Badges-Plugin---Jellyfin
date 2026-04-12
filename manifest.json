@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.36",
+        "changelog": "Three bug fixes. (1) Admin Feature Controls now visible in Dashboard: configPage.html was wrapped in a full HTML document structure which Jellyfin can't inject — stripped to bare page fragment. (2) Activity feed privacy now works: both save functions (settings panel + notification prefs) were each POSTing only their own fields, causing the other panel's fields to reset to defaults. Both now GET current prefs first, merge changes, then POST the complete object. Also sends both camelCase and PascalCase field names for activity feed toggle. (3) Light theme comprehensive fix: added overrides for streak heatmap cells, personal records, server stats, notification preferences, badge card borders, compare stats labels, category ring labels, activity feed rows, goal cards, settings sections, muted text, and input fields.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.36/Jellyfin.Plugin.AchievementBadgesv1.5.36.zip",
+        "checksum": "18A92FE461768E86D2549279662BF26E"
+      },
+      {
         "version": "1.5.35",
         "changelog": "Fix light theme visibility, activity feed privacy, and add admin config page. Light theme: ~50 CSS overrides added for rank progress bar, streak pills, leaderboard podium, recap stats, wrapped cards, badge cards, compare bars, quest text, toggle labels, and all other elements that were invisible against white backgrounds. Activity feed privacy: fixed field name inversion — the toggle now correctly maps 'Hide from activity feed' (checked) to appearInActivityFeed=false. Admin config page: new 'Feature Controls' section in Dashboard plugin settings with all 10 admin controls — kill switches for leaderboard/compare/activity/prestige/quests, force privacy mode, max equipped badges, restrict badge visibility, disable badge categories (comma-separated), and custom welcome message.",
         "targetAbi": "10.11.0.0",

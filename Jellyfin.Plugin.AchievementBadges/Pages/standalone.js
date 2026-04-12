@@ -463,7 +463,59 @@
             '#' + ROOT_ID + '.ab-theme-light .ab-btn{color:rgba(0,0,0,0.8);}' +
             '#' + ROOT_ID + '.ab-theme-light .ab-pager{color:rgba(0,0,0,0.85);}' +
             '#' + ROOT_ID + '.ab-theme-light .ab-error{color:#dc2626;}' +
-            '#' + ROOT_ID + '.ab-theme-light .ab-eta{color:rgba(0,0,0,0.55);}';
+            '#' + ROOT_ID + '.ab-theme-light .ab-eta{color:rgba(0,0,0,0.55);}' +
+            // Light theme — streak heatmap cells
+            '#' + ROOT_ID + '.ab-theme-light .ab-streak-cell{background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.1);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-streak-cell[style*="background"]{border-color:rgba(0,0,0,0.15);}' +
+            // Light theme — personal records
+            '#' + ROOT_ID + '.ab-theme-light .ab-record{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.1);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-record-val{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-record-label{color:rgba(0,0,0,0.6);opacity:1;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-records-grid{color:rgba(0,0,0,0.85);}' +
+            // Light theme — server stats
+            '#' + ROOT_ID + '.ab-theme-light .ab-server-card{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.1);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-server-card:hover{background:rgba(0,0,0,0.06);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-server-num{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-server-label{color:rgba(0,0,0,0.6);opacity:1;}' +
+            // Light theme — notification/pref labels
+            '#' + ROOT_ID + '.ab-theme-light .ab-pref-label{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-pref-desc{color:rgba(0,0,0,0.55);opacity:1;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-pref{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-prefs{color:rgba(0,0,0,0.85);}' +
+            // Light theme — badge card border + shadow
+            '#' + ROOT_ID + '.ab-theme-light .ab-card{border:1px solid rgba(0,0,0,0.12);box-shadow:0 2px 8px rgba(0,0,0,0.08);}' +
+            // Light theme — rank progress bar
+            '#' + ROOT_ID + '.ab-theme-light .ab-prog-fill{background:#3b82f6;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-prog-text{color:rgba(0,0,0,0.7);}' +
+            // Light theme — compare stats
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-metric{color:rgba(0,0,0,0.75);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-label{color:rgba(0,0,0,0.6);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-vs{color:rgba(0,0,0,0.4);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-name{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-val{color:rgba(0,0,0,0.85);}' +
+            // Light theme — category completion rings
+            '#' + ROOT_ID + '.ab-theme-light .ab-cat-ring{background:rgba(0,0,0,0.03);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cat-ring-label{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cat-ring-sub{color:rgba(0,0,0,0.55);opacity:1;}' +
+            // Light theme — activity feed
+            '#' + ROOT_ID + '.ab-theme-light .ab-feed-row{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.08);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-feed-icon{background:rgba(0,0,0,0.07);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-feed-text{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-feed-meta{color:rgba(0,0,0,0.55);opacity:1;}' +
+            // Light theme — goal cards
+            '#' + ROOT_ID + '.ab-theme-light .ab-goal-card{background:linear-gradient(135deg,rgba(102,126,234,0.08),rgba(118,75,162,0.06));border-color:rgba(102,126,234,0.3);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-goal-label{color:rgba(0,0,0,0.55);opacity:1;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-goal-text{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-goal-meta{color:rgba(0,0,0,0.6);opacity:1;}' +
+            // Light theme — settings section
+            '#' + ROOT_ID + '.ab-theme-light .ab-settings-section{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-settings-grid{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-setting-row{color:rgba(0,0,0,0.85);}' +
+            // Light theme — muted text override
+            '#' + ROOT_ID + '.ab-theme-light .ab-muted{color:rgba(0,0,0,0.5);}' +
+            // Light theme — input fields
+            '#' + ROOT_ID + '.ab-theme-light .ab-input{background:rgba(255,255,255,0.95);border:1px solid rgba(0,0,0,0.15);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-select{background:rgba(255,255,255,0.95);border:1px solid rgba(0,0,0,0.15);color:rgba(0,0,0,0.85);}';
         document.head.appendChild(s);
     }
 
@@ -1620,11 +1672,13 @@
     }
 
     function savePreferences(box) {
-        var payload = {};
-        box.querySelectorAll('input[data-pref]').forEach(function (cb) {
-            payload[cb.getAttribute('data-pref')] = cb.checked;
-        });
-        fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload).catch(function () { });
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').then(function (existing) {
+            var payload = existing || {};
+            box.querySelectorAll('input[data-pref]').forEach(function (cb) {
+                payload[cb.getAttribute('data-pref')] = cb.checked;
+            });
+            return fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload);
+        }).catch(function () { });
     }
 
     function applyPageTheme(theme) {
@@ -1738,30 +1792,33 @@
     }
 
     function saveSettingsPrefs(box) {
-        var payload = {};
-        box.querySelectorAll('input[data-settings-key]').forEach(function (cb) {
-            var key = cb.getAttribute('data-settings-key');
-            if (key === 'hideFromActivityFeed') {
-                payload['appearInActivityFeed'] = !cb.checked;
-            } else {
-                payload[key] = cb.checked;
-            }
-        });
-        box.querySelectorAll('select[data-settings-select]').forEach(function (sel) {
-            payload[sel.getAttribute('data-settings-select')] = sel.value;
-        });
-        box.querySelectorAll('input[data-settings-number]').forEach(function (inp) {
-            var v = parseInt(inp.value, 10);
-            if (!isNaN(v)) {
-                var min = parseInt(inp.min, 10) || 1;
-                var max = parseInt(inp.max, 10) || 10;
-                if (v < min) v = min;
-                if (v > max) v = max;
-                inp.value = v;
-                payload[inp.getAttribute('data-settings-number')] = v;
-            }
-        });
-        fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload).catch(function () { });
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').then(function (existing) {
+            var payload = existing || {};
+            box.querySelectorAll('input[data-settings-key]').forEach(function (cb) {
+                var key = cb.getAttribute('data-settings-key');
+                if (key === 'hideFromActivityFeed') {
+                    payload['appearInActivityFeed'] = !cb.checked;
+                    payload['AppearInActivityFeed'] = !cb.checked;
+                } else {
+                    payload[key] = cb.checked;
+                }
+            });
+            box.querySelectorAll('select[data-settings-select]').forEach(function (sel) {
+                payload[sel.getAttribute('data-settings-select')] = sel.value;
+            });
+            box.querySelectorAll('input[data-settings-number]').forEach(function (inp) {
+                var v = parseInt(inp.value, 10);
+                if (!isNaN(v)) {
+                    var min = parseInt(inp.min, 10) || 1;
+                    var max = parseInt(inp.max, 10) || 10;
+                    if (v < min) v = min;
+                    if (v > max) v = max;
+                    inp.value = v;
+                    payload[inp.getAttribute('data-settings-number')] = v;
+                }
+            });
+            return fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload);
+        }).catch(function () { });
     }
 
     function renderPinnedRow(badges) {
