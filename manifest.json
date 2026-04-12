@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.31",
+        "changelog": "Fix green background on diamond spritesheet. The original CodePen spritesheet PNG had a solid green (#42AF0D) background baked into every pixel with no alpha channel. The diamond sparkle content was drawn on top of this green. When rendered on non-green rarity colors (e.g. legendary gold), the green background showed through. Fixed by processing the PNG to make all green-dominant pixels (G>100, R<120, B<80) fully transparent, preserving only the diamond sparkle content (18% of pixels). The rarity color now shows through correctly behind the diamond.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.31/Jellyfin.Plugin.AchievementBadgesv1.5.31.zip",
+        "checksum": "81B86FC268AE8E3CDBA9E243FA030868"
+      },
+      {
         "version": "1.5.30",
         "changelog": "Diamond spritesheet for legendary/mythic toasts + diagnostic endpoint. Legendary and mythic unlocks now show the CodePen diamond spritesheet animation (147 frames, served from a new binary asset endpoint) instead of the trophy. The trophy is hidden for these tiers and replaced with the rotating/sparkling diamond. The client-script endpoint now also serves PNG/MP3/SVG embedded resources (not just JS). The /test endpoint now returns full injection diagnostics (WebPath, IndexFound, IndexPatched, PatchedPath, LastError, embedded resource availability) so users with enhance.js loading issues can troubleshoot.",
         "targetAbi": "10.11.0.0",
