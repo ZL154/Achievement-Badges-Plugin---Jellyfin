@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.29",
+        "changelog": "Complete toast rewrite — carbon copy of the CodePen animation with per-rarity colors. The entire toast CSS and HTML structure has been replaced to exactly match the standalone HTML demos we built from Uenify's Xbox One Achievement CodePen. Structure: .circle (75x75 sphere gradient, pulse ring ::before/::after) containing Xbox logo + trophy SVG images (both inlined as base64), .banner-outer > .banner (355px pill with horizontal+vertical gradient, shimmer sweep, text slide). Xbox logo visible at idle, fades out at 23% as trophy fades in and rotates (rotateY). All keyframes are the exact CodePen originals (circle_grow_move, scale_circle_1, banner_animate, textSlide, rotate, shimmerSweep). Both achievement sounds inlined: regular Xbox 360 chime for common/uncommon, rare Xbox One chime for rare/epic/legendary/mythic. Per-rarity colors applied via CSS custom properties on circle + banner backgrounds.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.29/Jellyfin.Plugin.AchievementBadgesv1.5.29.zip",
+        "checksum": "1BD3B3E735DD9E5547256EB2E86B1248"
+      },
+      {
         "version": "1.5.28",
         "changelog": "Full CodePen-style toast port. The Xbox logo now appears inside the circle at idle and swaps to the trophy icon when the banner expands — matching the original Uenify CodePen animation we spent hours perfecting in the standalone HTML demos. Xbox fades out at 22% of the cycle, trophy fades in at 23%, trophy fades back out at 92%, Xbox returns at 93%. Trophy rotates via rotateY while visible. The Xbox SVG path is inlined directly in the toast HTML (no external dependency). Trophy starts at opacity:0 and is absolutely centered inside the circle so both icons occupy the same space and the swap is seamless.",
         "targetAbi": "10.11.0.0",
