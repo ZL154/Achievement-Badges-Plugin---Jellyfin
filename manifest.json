@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.34",
+        "changelog": "Frontend settings panel + themes. Gear icon on the achievements page tab bar opens a full settings panel with 3 sections: Toast & Sound (5 controls), Privacy (4 toggles), Display & Features (5 controls including theme dropdown and equipped badge slots). All settings auto-save on change — no submit button, instant feedback. Three achievement page themes: Default (current look), Dark (deeper blacks, reduced glow), Light (white cards, dark text, fully adapted tabs/buttons/inputs). Theme applies immediately on selection and persists via user preferences. Enhance.js now respects MinimumToastRarity preference — if set to 'rare+', common/uncommon unlocks are silently skipped (still marked as seen so they won't re-appear). Sound toggle was already wired.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.34/Jellyfin.Plugin.AchievementBadgesv1.5.34.zip",
+        "checksum": "6DD8FD8F884BBF981D45DC7A83C816C1"
+      },
+      {
         "version": "1.5.33",
         "changelog": "Full preferences + admin controls backend. 14 user preferences: toast on/off, sound on/off, confetti, milestones, minimum toast rarity filter (all/rare+/epic+/legendary+), achievement page theme (default/dark/light), spoiler mode (hides locked badge descriptions), equipped badge slots (1-10), auto-equip new unlocks, push notifications, and 4 privacy toggles (hide from leaderboard, compare, activity feed, prestige board). 10 admin controls: kill switches for leaderboard/compare/activity/prestige/quests, force privacy mode, max equipped badges, restrict badge visibility, disable badge categories (e.g. Late Night for family servers), and custom welcome message. Privacy filters injected into GetLeaderboard, CompareUsers, GetActivityFeed, GetPrestigeLeaderboard. Spoiler mode blanks locked badge descriptions. Auto-equip adds newly unlocked badges to equipped slots automatically. DisabledBadgeCategories filters badges from evaluation and display. New admin endpoints: DELETE /admin/users/{userId}/reset, GET/POST /admin/feature-config. Frontend settings UI coming in next release.",
         "targetAbi": "10.11.0.0",

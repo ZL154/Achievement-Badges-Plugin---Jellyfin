@@ -301,9 +301,17 @@
         }).then(function (res) {
             if (!res) return null;
             if (res.Badges) {
+                var _rarityOrder = {common:0, uncommon:1, rare:2, epic:3, legendary:4, mythic:5};
+                var _minRarity = (userPrefs && (userPrefs.minimumToastRarity || userPrefs.MinimumToastRarity)) || 'all';
+                var _minOrder = _minRarity === 'all' ? 0 : (_rarityOrder[_minRarity] || 0);
                 res.Badges.forEach(function (b) {
                     var key = b.Id + '|' + (b.UnlockedAt || '');
                     if (!shown[key]) {
+                        var badgeRarity = (b.Rarity || 'common').toLowerCase();
+                        if ((_rarityOrder[badgeRarity] || 0) < _minOrder) {
+                            markShown(key);
+                            return; // below minimum rarity threshold, skip toast
+                        }
                         showToast(b);
                         markShown(key);
                     }

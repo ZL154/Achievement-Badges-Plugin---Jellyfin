@@ -344,7 +344,59 @@
             '#' + ROOT_ID + '.ab-theme-legend .ab-hero{background:linear-gradient(135deg,rgba(244,67,54,0.22),rgba(255,152,0,0.15));border-color:#ff6b35;box-shadow:0 0 60px rgba(244,67,54,0.2);}' +
             '#' + ROOT_ID + '.ab-theme-immortal{background:radial-gradient(circle at top,#1a0f2e 0%,#0d0618 100%);}' +
             '#' + ROOT_ID + '.ab-theme-immortal .ab-hero{background:linear-gradient(135deg,rgba(255,215,0,0.22),rgba(156,39,176,0.15));border-color:#ffd700;box-shadow:0 0 80px rgba(255,215,0,0.3);}' +
-            '@media(max-width:900px){#' + ROOT_ID + '{padding:1em;}}';
+            '@media(max-width:900px){#' + ROOT_ID + '{padding:1em;}}' +
+            // Settings panel
+            '#' + ROOT_ID + ' .ab-settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0.75em;}' +
+            '#' + ROOT_ID + ' .ab-settings-section{margin-bottom:1.5em;}' +
+            '#' + ROOT_ID + ' .ab-settings-section .ab-eyebrow{margin-bottom:0.6em;padding-bottom:0.4em;border-bottom:1px solid rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + ' .ab-toggle{display:flex;align-items:center;gap:0.75em;padding:0.7em 0.9em;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);cursor:pointer;transition:background 0.15s;}' +
+            '#' + ROOT_ID + ' .ab-toggle:hover{background:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + ' .ab-toggle-switch{position:relative;width:40px;height:22px;flex-shrink:0;}' +
+            '#' + ROOT_ID + ' .ab-toggle-switch input{opacity:0;width:0;height:0;position:absolute;}' +
+            '#' + ROOT_ID + ' .ab-toggle-track{position:absolute;inset:0;border-radius:11px;background:rgba(255,255,255,0.15);transition:background 0.2s;cursor:pointer;}' +
+            '#' + ROOT_ID + ' .ab-toggle-track::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);}' +
+            '#' + ROOT_ID + ' .ab-toggle-switch input:checked + .ab-toggle-track{background:#667eea;}' +
+            '#' + ROOT_ID + ' .ab-toggle-switch input:checked + .ab-toggle-track::after{transform:translateX(18px);}' +
+            '#' + ROOT_ID + ' .ab-toggle-info{flex:1;min-width:0;}' +
+            '#' + ROOT_ID + ' .ab-toggle-label{font-size:0.9em;font-weight:600;}' +
+            '#' + ROOT_ID + ' .ab-toggle-desc{font-size:0.75em;opacity:0.6;margin-top:0.1em;}' +
+            '#' + ROOT_ID + ' .ab-setting-row{display:flex;align-items:center;gap:0.75em;padding:0.7em 0.9em;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + ' .ab-setting-row .ab-select,#' + ROOT_ID + ' .ab-setting-row .ab-input{max-width:180px;}' +
+            '#' + ROOT_ID + ' .ab-setting-row .ab-toggle-info{flex:1;}' +
+            // Dark theme
+            '#' + ROOT_ID + '.ab-theme-dark{background:#0a0a0a !important;}' +
+            '#' + ROOT_ID + '.ab-theme-dark .ab-hero{background:rgba(0,0,0,0.4);border-color:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-dark .ab-stat{background:rgba(0,0,0,0.3);border-color:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-dark .ab-panel-card{background:rgba(0,0,0,0.3);border-color:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-dark .ab-card{background:rgba(0,0,0,0.4);border-color:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-dark .ab-tab{background:rgba(0,0,0,0.3);border-color:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-dark .ab-tab.active{background:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-dark{color:rgba(255,255,255,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-dark .ab-toggle,#' + ROOT_ID + '.ab-theme-dark .ab-setting-row{background:rgba(0,0,0,0.3);border-color:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-dark .ab-input,#' + ROOT_ID + '.ab-theme-dark .ab-select{background:rgba(0,0,0,0.5);border-color:rgba(255,255,255,0.08);}' +
+            // Light theme
+            '#' + ROOT_ID + '.ab-theme-light{background:#f5f5f5 !important;color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-hero{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-stat{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-stat-t{color:rgba(0,0,0,0.6);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-stat-v{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-panel-card{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-card{background:rgba(255,255,255,0.92);border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-tab{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.75);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-tab.active{background:rgba(0,0,0,0.12);color:rgba(0,0,0,0.9);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-eyebrow{color:rgba(0,0,0,0.55);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-muted{color:rgba(0,0,0,0.55);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-input,#' + ROOT_ID + '.ab-theme-light .ab-select{background:rgba(255,255,255,0.95);border-color:rgba(0,0,0,0.15);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-select option{background:#fff;color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-toggle,#' + ROOT_ID + '.ab-theme-light .ab-setting-row{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.1);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-toggle:hover{background:rgba(0,0,0,0.06);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-toggle-track{background:rgba(0,0,0,0.2);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-back{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-hero-sub{color:rgba(0,0,0,0.6);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-btn{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.8);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-prog-bar{background:rgba(0,0,0,0.08);border-color:rgba(0,0,0,0.12);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-settings-section .ab-eyebrow{border-bottom-color:rgba(0,0,0,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-light h2,#' + ROOT_ID + '.ab-theme-light h3{color:rgba(0,0,0,0.85);}';
         document.head.appendChild(s);
     }
 
@@ -400,6 +452,7 @@
                     '<button type="button" class="ab-tab" id="abSaTabActivity">Activity</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabWrapped">Wrapped</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabStats">Stats</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabSettings" title="Settings"><span class="material-icons" style="font-size:1.1em;vertical-align:middle;">settings</span></button>' +
                 '</div>' +
                 '<div id="abSaPanelBadges" class="ab-panel">' +
                     '<div id="abSaPinnedWrap" style="display:none;">' +
@@ -525,6 +578,12 @@
                         '<div id="abSaPrefs" class="ab-prefs">Loading...</div>' +
                     '</div>' +
                 '</div>' +
+                '<div id="abSaPanelSettings" class="ab-panel" style="display:none;">' +
+                    '<div class="ab-panel-card">' +
+                        '<h3 style="margin:0 0 1em;">Settings</h3>' +
+                        '<div id="abSaSettingsContent">Loading settings...</div>' +
+                    '</div>' +
+                '</div>' +
             '</div>';
         return r;
     }
@@ -535,8 +594,8 @@
     }
 
     function setTab(name) {
-        var panels = { badges: 'abSaPanelBadges', quests: 'abSaPanelQuests', recap: 'abSaPanelRecap', lb: 'abSaPanelLb', compare: 'abSaPanelCompare', activity: 'abSaPanelActivity', wrapped: 'abSaPanelWrapped', stats: 'abSaPanelStats' };
-        var tabs = { badges: 'abSaTabBadges', quests: 'abSaTabQuests', recap: 'abSaTabRecap', lb: 'abSaTabLb', compare: 'abSaTabCompare', activity: 'abSaTabActivity', wrapped: 'abSaTabWrapped', stats: 'abSaTabStats' };
+        var panels = { badges: 'abSaPanelBadges', quests: 'abSaPanelQuests', recap: 'abSaPanelRecap', lb: 'abSaPanelLb', compare: 'abSaPanelCompare', activity: 'abSaPanelActivity', wrapped: 'abSaPanelWrapped', stats: 'abSaPanelStats', settings: 'abSaPanelSettings' };
+        var tabs = { badges: 'abSaTabBadges', quests: 'abSaTabQuests', recap: 'abSaTabRecap', lb: 'abSaTabLb', compare: 'abSaTabCompare', activity: 'abSaTabActivity', wrapped: 'abSaTabWrapped', stats: 'abSaTabStats', settings: 'abSaTabSettings' };
         for (var k in panels) {
             var p = el(panels[k]); if (p) p.style.display = k === name ? 'block' : 'none';
             var t = el(tabs[k]); if (t) t.classList.toggle('active', k === name);
@@ -548,6 +607,7 @@
         if (name === 'activity') { loadActivity(); }
         if (name === 'wrapped') { loadWrapped(); }
         if (name === 'lb') { loadCategoryLb('score'); }
+        if (name === 'settings') { loadSettingsPanel(); }
     }
 
     function loadWrapped() {
@@ -1001,6 +1061,10 @@
             var bank = r[0], summary = r[1], recap = r[2], calendar = r[3];
             var records = r[4], categoryProgress = r[5], prestigeLb = r[6], clock = r[7], streakCal = r[8], prefs = r[9];
             renderPreferences(prefs);
+
+            // Apply user page theme preference
+            var pageTheme = prefs && (prefs.achievementPageTheme || prefs.AchievementPageTheme) || 'default';
+            applyPageTheme(pageTheme);
 
             renderCategoryRings(categoryProgress);
             renderRecords(records);
@@ -1496,6 +1560,138 @@
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload).catch(function () { });
     }
 
+    function applyPageTheme(theme) {
+        if (!root) return;
+        var classes = root.className.split(/\s+/).filter(function (c) {
+            return c !== 'ab-theme-dark' && c !== 'ab-theme-light';
+        });
+        if (theme === 'dark') classes.push('ab-theme-dark');
+        else if (theme === 'light') classes.push('ab-theme-light');
+        root.className = classes.join(' ');
+    }
+
+    function loadSettingsPanel() {
+        var box = el('abSaSettingsContent');
+        if (!box) return;
+        box.innerHTML = 'Loading settings...';
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').then(function (prefs) {
+            renderSettingsPanel(prefs || {});
+        }).catch(function () {
+            box.innerHTML = '<div class="ab-muted">Failed to load settings.</div>';
+        });
+    }
+
+    function renderSettingsPanel(prefs) {
+        var box = el('abSaSettingsContent');
+        if (!box) return;
+
+        function toggle(key, label, desc, checked) {
+            return '<label class="ab-toggle">' +
+                '<div class="ab-toggle-switch">' +
+                    '<input type="checkbox"' + (checked ? ' checked' : '') + ' data-settings-key="' + key + '">' +
+                    '<span class="ab-toggle-track"></span>' +
+                '</div>' +
+                '<div class="ab-toggle-info">' +
+                    '<div class="ab-toggle-label">' + label + '</div>' +
+                    (desc ? '<div class="ab-toggle-desc">' + desc + '</div>' : '') +
+                '</div>' +
+            '</label>';
+        }
+
+        var minRarity = prefs.minimumToastRarity || prefs.MinimumToastRarity || 'all';
+        var pageTheme = prefs.achievementPageTheme || prefs.AchievementPageTheme || 'default';
+        var slots = prefs.equippedBadgeSlots || prefs.EquippedBadgeSlots || 5;
+
+        var html =
+            '<div class="ab-settings-section">' +
+                '<div class="ab-eyebrow">Toast & Sound</div>' +
+                '<div class="ab-settings-grid">' +
+                    toggle('enableUnlockToasts', 'Enable unlock toasts', 'Show a notification when you unlock a badge', prefs.enableUnlockToasts !== false && prefs.EnableUnlockToasts !== false) +
+                    toggle('enableSound', 'Enable toast sound', 'Play a sound effect with notifications', prefs.enableSound !== false && prefs.EnableSound !== false) +
+                    toggle('enableConfetti', 'Enable confetti', 'Particle burst effects on rare+ unlocks', prefs.enableConfetti !== false && prefs.EnableConfetti !== false) +
+                    toggle('enableMilestoneToasts', 'Enable milestone toasts', 'Celebrate 25/50/75/100% completion', prefs.enableMilestoneToasts !== false && prefs.EnableMilestoneToasts !== false) +
+                    '<div class="ab-setting-row">' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">Minimum toast rarity</div><div class="ab-toggle-desc">Only show toasts for badges at or above this rarity</div></div>' +
+                        '<select class="ab-select" data-settings-select="minimumToastRarity">' +
+                            '<option value="all"' + (minRarity === 'all' ? ' selected' : '') + '>All</option>' +
+                            '<option value="rare"' + (minRarity === 'rare' ? ' selected' : '') + '>Rare+</option>' +
+                            '<option value="epic"' + (minRarity === 'epic' ? ' selected' : '') + '>Epic+</option>' +
+                            '<option value="legendary"' + (minRarity === 'legendary' ? ' selected' : '') + '>Legendary+</option>' +
+                        '</select>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="ab-settings-section">' +
+                '<div class="ab-eyebrow">Privacy</div>' +
+                '<div class="ab-settings-grid">' +
+                    toggle('hideFromLeaderboard', 'Hide from leaderboard', 'Remove yourself from the public leaderboard', prefs.hideFromLeaderboard === true || prefs.HideFromLeaderboard === true) +
+                    toggle('hideFromCompare', 'Hide from compare profiles', 'Prevent others from comparing with you', prefs.hideFromCompare === true || prefs.HideFromCompare === true) +
+                    toggle('appearInActivityFeed', 'Show in activity feed', 'Let others see your unlocks in the server feed', prefs.appearInActivityFeed !== false && prefs.AppearInActivityFeed !== false) +
+                    toggle('hideFromPrestigeBoard', 'Hide from prestige board', 'Remove yourself from the prestige leaderboard', prefs.hideFromPrestigeBoard === true || prefs.HideFromPrestigeBoard === true) +
+                '</div>' +
+            '</div>' +
+            '<div class="ab-settings-section">' +
+                '<div class="ab-eyebrow">Display & Features</div>' +
+                '<div class="ab-settings-grid">' +
+                    '<div class="ab-setting-row">' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">Achievement page theme</div><div class="ab-toggle-desc">Visual theme for this page</div></div>' +
+                        '<select class="ab-select" data-settings-select="achievementPageTheme" id="abSaThemeSelect">' +
+                            '<option value="default"' + (pageTheme === 'default' ? ' selected' : '') + '>Default</option>' +
+                            '<option value="dark"' + (pageTheme === 'dark' ? ' selected' : '') + '>Dark</option>' +
+                            '<option value="light"' + (pageTheme === 'light' ? ' selected' : '') + '>Light</option>' +
+                        '</select>' +
+                    '</div>' +
+                    toggle('spoilerMode', 'Spoiler mode', 'Hide locked badge descriptions to avoid spoilers', prefs.spoilerMode === true || prefs.SpoilerMode === true) +
+                    '<div class="ab-setting-row">' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">Equipped badge slots</div><div class="ab-toggle-desc">Number of badges in your showcase (1-10)</div></div>' +
+                        '<input type="number" class="ab-input" data-settings-number="equippedBadgeSlots" min="1" max="10" value="' + slots + '" style="width:70px;text-align:center;">' +
+                    '</div>' +
+                    toggle('autoEquipNewUnlocks', 'Auto-equip new unlocks', 'Automatically equip newly unlocked badges', prefs.autoEquipNewUnlocks === true || prefs.AutoEquipNewUnlocks === true) +
+                    toggle('enablePushNotifications', 'Push notifications', 'Receive push notifications for achievements', prefs.enablePushNotifications === true || prefs.EnablePushNotifications === true) +
+                '</div>' +
+            '</div>';
+
+        box.innerHTML = html;
+
+        // Wire auto-save on any change
+        box.querySelectorAll('input[data-settings-key]').forEach(function (cb) {
+            cb.addEventListener('change', function () { saveSettingsPrefs(box); });
+        });
+        box.querySelectorAll('select[data-settings-select]').forEach(function (sel) {
+            sel.addEventListener('change', function () {
+                saveSettingsPrefs(box);
+                if (sel.getAttribute('data-settings-select') === 'achievementPageTheme') {
+                    applyPageTheme(sel.value);
+                }
+            });
+        });
+        box.querySelectorAll('input[data-settings-number]').forEach(function (inp) {
+            inp.addEventListener('change', function () { saveSettingsPrefs(box); });
+        });
+    }
+
+    function saveSettingsPrefs(box) {
+        var payload = {};
+        box.querySelectorAll('input[data-settings-key]').forEach(function (cb) {
+            payload[cb.getAttribute('data-settings-key')] = cb.checked;
+        });
+        box.querySelectorAll('select[data-settings-select]').forEach(function (sel) {
+            payload[sel.getAttribute('data-settings-select')] = sel.value;
+        });
+        box.querySelectorAll('input[data-settings-number]').forEach(function (inp) {
+            var v = parseInt(inp.value, 10);
+            if (!isNaN(v)) {
+                var min = parseInt(inp.min, 10) || 1;
+                var max = parseInt(inp.max, 10) || 10;
+                if (v < min) v = min;
+                if (v > max) v = max;
+                inp.value = v;
+                payload[inp.getAttribute('data-settings-number')] = v;
+            }
+        });
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload).catch(function () { });
+    }
+
     function renderPinnedRow(badges) {
         var wrap = el('abSaPinnedWrap');
         var row = el('abSaPinnedRow');
@@ -1748,6 +1944,7 @@
         el('abSaTabActivity').addEventListener('click', function () { setTab('activity'); });
         el('abSaTabWrapped').addEventListener('click', function () { setTab('wrapped'); });
         el('abSaTabStats').addEventListener('click', function () { setTab('stats'); loadStats(); });
+        el('abSaTabSettings').addEventListener('click', function () { setTab('settings'); });
         setTab('badges');
 
         var search = el('abSaSearch');
