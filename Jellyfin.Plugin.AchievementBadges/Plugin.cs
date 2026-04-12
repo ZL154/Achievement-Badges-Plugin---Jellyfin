@@ -34,6 +34,11 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
                 DisplayName = "Achievements",
                 MenuSection = "user",
                 MenuIcon = "emoji_events"
+            },
+            new PluginPageInfo
+            {
+                Name = "achievementbadgesconfigpage",
+                EmbeddedResourcePath = "Jellyfin.Plugin.AchievementBadges.Configuration.configPage.html"
             }
         };
     }

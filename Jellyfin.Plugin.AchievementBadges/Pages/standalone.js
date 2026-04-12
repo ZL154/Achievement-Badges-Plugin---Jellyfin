@@ -396,7 +396,74 @@
             '#' + ROOT_ID + '.ab-theme-light .ab-btn{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12);color:rgba(0,0,0,0.8);}' +
             '#' + ROOT_ID + '.ab-theme-light .ab-prog-bar{background:rgba(0,0,0,0.08);border-color:rgba(0,0,0,0.12);}' +
             '#' + ROOT_ID + '.ab-theme-light .ab-settings-section .ab-eyebrow{border-bottom-color:rgba(0,0,0,0.08);}' +
-            '#' + ROOT_ID + '.ab-theme-light h2,#' + ROOT_ID + '.ab-theme-light h3{color:rgba(0,0,0,0.85);}';
+            '#' + ROOT_ID + '.ab-theme-light h2,#' + ROOT_ID + '.ab-theme-light h3{color:rgba(0,0,0,0.85);}' +
+            // Light theme — rank progress bar fill
+            '#' + ROOT_ID + '.ab-theme-light .ab-prog-fill{background:#3b82f6;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-prog-bar{background:rgba(0,0,0,0.1);border-color:rgba(0,0,0,0.15);}' +
+            // Light theme — streak section
+            '#' + ROOT_ID + '.ab-theme-light .ab-streak-header{background:linear-gradient(135deg,rgba(255,87,34,0.15),rgba(255,152,0,0.1));border-color:rgba(255,152,0,0.35);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-streak-label{color:rgba(0,0,0,0.6);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-streak-stat{border-left-color:rgba(0,0,0,0.12);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-streak-cell{background:rgba(0,0,0,0.06);}' +
+            // Light theme — compare pills and bars
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-pill{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.15);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-history-pill{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.15);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-history-pill:hover{background:rgba(102,126,234,0.12);border-color:rgba(102,126,234,0.4);color:rgba(0,0,0,0.9);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-bar{background:rgba(0,0,0,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-name{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-val{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-label{color:rgba(0,0,0,0.55);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-winner{color:#16a34a;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-cmp-vs{color:rgba(0,0,0,0.4);}' +
+            // Light theme — leaderboard / podium
+            '#' + ROOT_ID + '.ab-theme-light .ab-lb-row-new{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.1);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-lb-rank{color:#475569;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-lb-name{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-lb-value{color:#4338ca;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-lb-bar{background:rgba(0,0,0,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-lb-podium-name{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-lb-podium-val{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-lb-podium-bar{color:rgba(0,0,0,0.7);box-shadow:0 -4px 12px rgba(0,0,0,0.1) inset;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-lb-row{border-bottom-color:rgba(0,0,0,0.08);color:rgba(0,0,0,0.85);}' +
+            // Light theme — recap section
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-big-num{background:linear-gradient(135deg,#1e3a5f,#4338ca);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-big-label{color:rgba(0,0,0,0.55);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-mini{background:rgba(0,0,0,0.04);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-mini-num{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-mini-label{color:rgba(0,0,0,0.55);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-section{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.1);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-section-title{color:rgba(0,0,0,0.6);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-bar-name{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-bar-track{background:rgba(0,0,0,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-bar-val{color:#4338ca;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-recap-hero{background:linear-gradient(135deg,rgba(102,126,234,0.12),rgba(118,75,162,0.12));border-color:rgba(102,126,234,0.3);}' +
+            // Light theme — wrapped cards
+            '#' + ROOT_ID + '.ab-theme-light .ab-wrapped-card{background:rgba(0,0,0,0.03);border-color:rgba(0,0,0,0.1);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-wrapped-card:hover{border-color:rgba(0,0,0,0.25);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-wrapped-big{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-wrapped-label{color:rgba(0,0,0,0.55);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-wrapped-icon{color:rgba(0,0,0,0.5);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-wrapped-section-title{color:rgba(0,0,0,0.55);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-wrapped-list li{border-bottom-color:rgba(0,0,0,0.08);color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-wrapped-list li span{color:rgba(0,0,0,0.55);}' +
+            // Light theme — badge cards: shadows, descriptions, footer text
+            '#' + ROOT_ID + '.ab-theme-light .ab-card{box-shadow:0 2px 8px rgba(0,0,0,0.08);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-desc{color:rgba(0,0,0,0.7);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-card-title{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-card-meta{color:rgba(0,0,0,0.6);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-card-icon{background:rgba(0,0,0,0.07);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-prog-text{color:rgba(0,0,0,0.65);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-unlocked{color:#16a34a;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-locked{color:#dc2626;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-badge-pts{color:rgba(0,0,0,0.6);}' +
+            // Light theme — toggle label/description text
+            '#' + ROOT_ID + '.ab-theme-light .ab-toggle-label{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-toggle-desc{color:rgba(0,0,0,0.55);}' +
+            // Light theme — generic white text fallback
+            '#' + ROOT_ID + '.ab-theme-light .ab-btn{color:rgba(0,0,0,0.8);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-pager{color:rgba(0,0,0,0.85);}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-error{color:#dc2626;}' +
+            '#' + ROOT_ID + '.ab-theme-light .ab-eta{color:rgba(0,0,0,0.55);}';
         document.head.appendChild(s);
     }
 
@@ -1626,7 +1693,7 @@
                 '<div class="ab-settings-grid">' +
                     toggle('hideFromLeaderboard', 'Hide from leaderboard', 'Remove yourself from the public leaderboard', prefs.hideFromLeaderboard === true || prefs.HideFromLeaderboard === true) +
                     toggle('hideFromCompare', 'Hide from compare profiles', 'Prevent others from comparing with you', prefs.hideFromCompare === true || prefs.HideFromCompare === true) +
-                    toggle('appearInActivityFeed', 'Show in activity feed', 'Let others see your unlocks in the server feed', prefs.appearInActivityFeed !== false && prefs.AppearInActivityFeed !== false) +
+                    toggle('hideFromActivityFeed', 'Hide from activity feed', 'Prevent your unlocks from appearing in the server feed', prefs.appearInActivityFeed === false || prefs.AppearInActivityFeed === false) +
                     toggle('hideFromPrestigeBoard', 'Hide from prestige board', 'Remove yourself from the prestige leaderboard', prefs.hideFromPrestigeBoard === true || prefs.HideFromPrestigeBoard === true) +
                 '</div>' +
             '</div>' +
@@ -1673,7 +1740,12 @@
     function saveSettingsPrefs(box) {
         var payload = {};
         box.querySelectorAll('input[data-settings-key]').forEach(function (cb) {
-            payload[cb.getAttribute('data-settings-key')] = cb.checked;
+            var key = cb.getAttribute('data-settings-key');
+            if (key === 'hideFromActivityFeed') {
+                payload['appearInActivityFeed'] = !cb.checked;
+            } else {
+                payload[key] = cb.checked;
+            }
         });
         box.querySelectorAll('select[data-settings-select]').forEach(function (sel) {
             payload[sel.getAttribute('data-settings-select')] = sel.value;

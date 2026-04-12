@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Achievement Badges</title>
+</head>
+<body>
+    <div id="AchievementBadgesConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
+         data-require="emby-input,emby-checkbox,emby-button">
+        <div data-role="content">
+            <div class="content-primary">
+                <h2>Achievement Badges Settings</h2>
+
+                <details open>
+                    <summary>General</summary>
+                    <div class="detailSection">
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="Enabled" is="emby-checkbox" />
+                                <span>Enable plugin</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="ShowOnUserHome" is="emby-checkbox" />
+                                <span>Show on user home</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="EnableDebugEndpoints" is="emby-checkbox" />
+                                <span>Enable debug API endpoints</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="MinimumPlaySecondsForCompletion">Minimum play seconds for completion</label>
+                            <input type="number" id="MinimumPlaySecondsForCompletion" is="emby-input" min="0" />
+                            <div class="fieldDescription">Number of seconds a session must last to count as a play completion.</div>
+                        </div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Toasts &amp; Widgets</summary>
+                    <div class="detailSection">
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="EnableUnlockToasts" is="emby-checkbox" />
+                                <span>Enable unlock toasts</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="EnableHomeWidget" is="emby-checkbox" />
+                                <span>Enable home widget</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="EnableItemDetailRibbon" is="emby-checkbox" />
+                                <span>Enable item detail ribbon</span>
+                            </label>
+                        </div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Webhook</summary>
+                    <div class="detailSection">
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="WebhookEnabled" is="emby-checkbox" />
+                                <span>Enable webhook notifications</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="WebhookUrl">Webhook URL</label>
+                            <input type="text" id="WebhookUrl" is="emby-input" />
+                            <div class="fieldDescription">URL to send achievement unlock notifications to.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="WebhookMessageTemplate">Webhook message template</label>
+                            <input type="text" id="WebhookMessageTemplate" is="emby-input" />
+                            <div class="fieldDescription">Placeholders: {user}, {badge}, {rarity}, {description}</div>
+                        </div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Feature Controls</summary>
+                    <div class="detailSection">
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="LeaderboardEnabled" is="emby-checkbox" />
+                                <span>Enable leaderboard</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="CompareEnabled" is="emby-checkbox" />
+                                <span>Enable compare profiles</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="ActivityFeedEnabled" is="emby-checkbox" />
+                                <span>Enable activity feed</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="PrestigeEnabled" is="emby-checkbox" />
+                                <span>Enable prestige system</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="QuestsEnabled" is="emby-checkbox" />
+                                <span>Enable quests</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="ForcePrivacyMode" is="emby-checkbox" />
+                                <span>Force privacy mode</span>
+                            </label>
+                            <div class="fieldDescription">Override all users to hidden from all social features.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="MaxEquippedBadges">Maximum equipped badges</label>
+                            <input type="number" id="MaxEquippedBadges" is="emby-input" min="1" max="10" />
+                            <div class="fieldDescription">Number of badges a user can equip in their showcase (1-10).</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="RestrictBadgeVisibility" is="emby-checkbox" />
+                                <span>Restrict badge visibility</span>
+                            </label>
+                            <div class="fieldDescription">Users can only see their own badges.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="DisabledBadgeCategories">Disabled badge categories</label>
+                            <input type="text" id="DisabledBadgeCategories" is="emby-input" />
+                            <div class="fieldDescription">Comma-separated list of badge categories to disable, e.g. Late Night, Early Morning</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="WelcomeMessage">Welcome message</label>
+                            <input type="text" id="WelcomeMessage" is="emby-input" />
+                            <div class="fieldDescription">Custom text shown on the achievements page.</div>
+                        </div>
+                    </div>
+                </details>
+
+                <div>
+                    <button is="emby-button" type="button" class="raised button-submit block emby-button"
+                            onclick="AchievementBadgesConfig.save()">
+                        <span>Save</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            var AchievementBadgesConfig = {
+                pluginId: 'd9f4b7d2-6c4d-4d7e-9d2d-1c6b4f8e2a11',
+
+                load: function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(this.pluginId).then(function (config) {
+                        document.getElementById('Enabled').checked = config.Enabled;
+                        document.getElementById('ShowOnUserHome').checked = config.ShowOnUserHome;
+                        document.getElementById('EnableDebugEndpoints').checked = config.EnableDebugEndpoints;
+                        document.getElementById('MinimumPlaySecondsForCompletion').value = config.MinimumPlaySecondsForCompletion;
+                        document.getElementById('EnableUnlockToasts').checked = config.EnableUnlockToasts;
+                        document.getElementById('EnableHomeWidget').checked = config.EnableHomeWidget;
+                        document.getElementById('EnableItemDetailRibbon').checked = config.EnableItemDetailRibbon;
+                        document.getElementById('WebhookEnabled').checked = config.WebhookEnabled;
+                        document.getElementById('WebhookUrl').value = config.WebhookUrl || '';
+                        document.getElementById('WebhookMessageTemplate').value = config.WebhookMessageTemplate || '';
+
+                        // Feature Controls
+                        document.getElementById('LeaderboardEnabled').checked = config.LeaderboardEnabled;
+                        document.getElementById('CompareEnabled').checked = config.CompareEnabled;
+                        document.getElementById('ActivityFeedEnabled').checked = config.ActivityFeedEnabled;
+                        document.getElementById('PrestigeEnabled').checked = config.PrestigeEnabled;
+                        document.getElementById('QuestsEnabled').checked = config.QuestsEnabled;
+                        document.getElementById('ForcePrivacyMode').checked = config.ForcePrivacyMode;
+                        document.getElementById('MaxEquippedBadges').value = config.MaxEquippedBadges;
+                        document.getElementById('RestrictBadgeVisibility').checked = config.RestrictBadgeVisibility;
+                        document.getElementById('DisabledBadgeCategories').value = (config.DisabledBadgeCategories || []).join(', ');
+                        document.getElementById('WelcomeMessage').value = config.WelcomeMessage || '';
+
+                        Dashboard.hideLoadingMsg();
+                    });
+                },
+
+                save: function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(this.pluginId).then(function (config) {
+                        config.Enabled = document.getElementById('Enabled').checked;
+                        config.ShowOnUserHome = document.getElementById('ShowOnUserHome').checked;
+                        config.EnableDebugEndpoints = document.getElementById('EnableDebugEndpoints').checked;
+                        config.MinimumPlaySecondsForCompletion = parseInt(document.getElementById('MinimumPlaySecondsForCompletion').value, 10) || 300;
+                        config.EnableUnlockToasts = document.getElementById('EnableUnlockToasts').checked;
+                        config.EnableHomeWidget = document.getElementById('EnableHomeWidget').checked;
+                        config.EnableItemDetailRibbon = document.getElementById('EnableItemDetailRibbon').checked;
+                        config.WebhookEnabled = document.getElementById('WebhookEnabled').checked;
+                        config.WebhookUrl = document.getElementById('WebhookUrl').value || null;
+                        config.WebhookMessageTemplate = document.getElementById('WebhookMessageTemplate').value;
+
+                        // Feature Controls
+                        config.LeaderboardEnabled = document.getElementById('LeaderboardEnabled').checked;
+                        config.CompareEnabled = document.getElementById('CompareEnabled').checked;
+                        config.ActivityFeedEnabled = document.getElementById('ActivityFeedEnabled').checked;
+                        config.PrestigeEnabled = document.getElementById('PrestigeEnabled').checked;
+                        config.QuestsEnabled = document.getElementById('QuestsEnabled').checked;
+                        config.ForcePrivacyMode = document.getElementById('ForcePrivacyMode').checked;
+                        config.MaxEquippedBadges = parseInt(document.getElementById('MaxEquippedBadges').value, 10) || 5;
+                        config.RestrictBadgeVisibility = document.getElementById('RestrictBadgeVisibility').checked;
+                        var cats = document.getElementById('DisabledBadgeCategories').value;
+                        config.DisabledBadgeCategories = cats ? cats.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+                        config.WelcomeMessage = document.getElementById('WelcomeMessage').value || '';
+
+                        ApiClient.updatePluginConfiguration(AchievementBadgesConfig.pluginId, config).then(function () {
+                            Dashboard.processPluginConfigurationUpdateResult();
+                        });
+                    });
+                }
+            };
+
+            document.querySelector('#AchievementBadgesConfigPage')
+                .addEventListener('pageshow', function () {
+                    AchievementBadgesConfig.load();
+                });
+        </script>
+    </div>
+</body>
+</html>
