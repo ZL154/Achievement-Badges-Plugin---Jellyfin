@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.32",
+        "changelog": "Toast queue now shows one at a time (was 3 stacked). Multiple unlocks queue up and play sequentially so each gets its full animation + sound. Also added a DOM-based fallback for playback detection — if window.Events isn't available (some Jellyfin builds), a MutationObserver watches for .videoPlayerContainer appearing and triggers a poll burst. This should fix toasts not firing during video playback on setups where the Events API isn't exposed.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.32/Jellyfin.Plugin.AchievementBadgesv1.5.32.zip",
+        "checksum": "D78806B6723481024FE2427ECCCC3D67"
+      },
+      {
         "version": "1.5.31",
         "changelog": "Fix green background on diamond spritesheet. The original CodePen spritesheet PNG had a solid green (#42AF0D) background baked into every pixel with no alpha channel. The diamond sparkle content was drawn on top of this green. When rendered on non-green rarity colors (e.g. legendary gold), the green background showed through. Fixed by processing the PNG to make all green-dominant pixels (G>100, R<120, B<80) fully transparent, preserving only the diamond sparkle content (18% of pixels). The rarity color now shows through correctly behind the diamond.",
         "targetAbi": "10.11.0.0",

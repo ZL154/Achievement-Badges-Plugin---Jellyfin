@@ -8,7 +8,7 @@
     var LAST_SEEN_KEY = 'ab-last-unlock-seen';
     var SHOWN_IDS_KEY = 'ab-shown-unlock-ids';
     var REDUCED_MOTION_KEY = 'ab-reduced-motion';
-    var MAX_VISIBLE_TOASTS = 3;
+    var MAX_VISIBLE_TOASTS = 1;
     var toastQueue = [];
     var visibleToastCount = 0;
     var features = { EnableUnlockToasts: true, EnableHomeWidget: false, EnableItemDetailRibbon: false };
@@ -610,6 +610,26 @@
             bindPlaybackEvents();
             setTimeout(bindPlaybackEvents, 2000);
             setTimeout(bindPlaybackEvents, 6000);
+
+            // DOM fallback: if window.Events isn't available, detect video
+            // player via MutationObserver on .videoPlayerContainer appearing.
+            var _abVideoObserverBound = false;
+            function bindVideoObserver() {
+                if (_abVideoObserverBound) return;
+                _abVideoObserverBound = true;
+                var wasPlaying = false;
+                new MutationObserver(function () {
+                    var playing = !!document.querySelector('.videoPlayerContainer, video[src], .htmlVideoPlayer');
+                    if (playing && !wasPlaying) {
+                        // Playback started — burst poll
+                        pollUnlocks();
+                        setTimeout(pollUnlocks, 2000);
+                        setTimeout(pollUnlocks, 5000);
+                    }
+                    wasPlaying = playing;
+                }).observe(document.body, { childList: true, subtree: true });
+            }
+            setTimeout(bindVideoObserver, 3000);
         });
     }
 
