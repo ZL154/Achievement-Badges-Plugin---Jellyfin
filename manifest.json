@@ -9,6 +9,13 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.30",
+        "changelog": "Diamond spritesheet for legendary/mythic toasts + diagnostic endpoint. Legendary and mythic unlocks now show the CodePen diamond spritesheet animation (147 frames, served from a new binary asset endpoint) instead of the trophy. The trophy is hidden for these tiers and replaced with the rotating/sparkling diamond. The client-script endpoint now also serves PNG/MP3/SVG embedded resources (not just JS). The /test endpoint now returns full injection diagnostics (WebPath, IndexFound, IndexPatched, PatchedPath, LastError, embedded resource availability) so users with enhance.js loading issues can troubleshoot.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.30/Jellyfin.Plugin.AchievementBadgesv1.5.30.zip",
+        "checksum": "F70D0518191610C60583E753582C7DAA"
+      },
+      {
         "version": "1.5.29",
         "changelog": "Complete toast rewrite — carbon copy of the CodePen animation with per-rarity colors. The entire toast CSS and HTML structure has been replaced to exactly match the standalone HTML demos we built from Uenify's Xbox One Achievement CodePen. Structure: .circle (75x75 sphere gradient, pulse ring ::before/::after) containing Xbox logo + trophy SVG images (both inlined as base64), .banner-outer > .banner (355px pill with horizontal+vertical gradient, shimmer sweep, text slide). Xbox logo visible at idle, fades out at 23% as trophy fades in and rotates (rotateY). All keyframes are the exact CodePen originals (circle_grow_move, scale_circle_1, banner_animate, textSlide, rotate, shimmerSweep). Both achievement sounds inlined: regular Xbox 360 chime for common/uncommon, rare Xbox One chime for rare/epic/legendary/mythic. Per-rarity colors applied via CSS custom properties on circle + banner backgrounds.",
         "targetAbi": "10.11.0.0",

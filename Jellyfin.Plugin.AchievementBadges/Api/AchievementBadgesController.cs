@@ -46,10 +46,29 @@ public class AchievementBadgesController : ControllerBase
 
     [HttpGet("test")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-    public ActionResult<string> Test()
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    public ActionResult Test()
     {
-        return Ok("Achievement Badges plugin working!");
+        return Ok(new
+        {
+            Status = "Achievement Badges plugin working!",
+            Version = typeof(AchievementBadgesController).Assembly.GetName().Version?.ToString() ?? "unknown",
+            InjectionDiag = new
+            {
+                WebInjectionService.DiagWebPath,
+                WebInjectionService.DiagIndexFound,
+                WebInjectionService.DiagIndexPatched,
+                WebInjectionService.DiagPatchedPath,
+                WebInjectionService.DiagLastError
+            },
+            EmbeddedResources = new
+            {
+                EnhanceJs = ResourceReader.ReadEmbeddedText("Jellyfin.Plugin.AchievementBadges.Pages.enhance.js") != null,
+                SidebarJs = ResourceReader.ReadEmbeddedText("Jellyfin.Plugin.AchievementBadges.Pages.sidebar.js") != null,
+                StandaloneJs = ResourceReader.ReadEmbeddedText("Jellyfin.Plugin.AchievementBadges.Pages.standalone.js") != null,
+                Spritesheet = typeof(AchievementBadgesController).Assembly.GetManifestResourceStream("Jellyfin.Plugin.AchievementBadges.Pages.spritesheet.png") != null
+            }
+        });
     }
 
     [HttpGet("client-script/{name}")]
@@ -66,15 +85,32 @@ public class AchievementBadgesController : ControllerBase
             }
         }
 
+        // Try JS first
         var content = ResourceReader.ReadEmbeddedText(
             "Jellyfin.Plugin.AchievementBadges.Pages." + name + ".js");
 
-        if (content is null)
+        if (content is not null)
         {
-            return NotFound();
+            return Content(content, "application/javascript");
         }
 
-        return Content(content, "application/javascript");
+        // Try binary assets (PNG for spritesheet, etc.)
+        var assembly = typeof(AchievementBadgesController).Assembly;
+        string[] extensions = { ".png", ".mp3", ".svg" };
+        string[] mimeTypes = { "image/png", "audio/mpeg", "image/svg+xml" };
+        for (int i = 0; i < extensions.Length; i++)
+        {
+            var resourceName = "Jellyfin.Plugin.AchievementBadges.Pages." + name + extensions[i];
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream != null)
+            {
+                var bytes = new byte[stream.Length];
+                stream.Read(bytes, 0, bytes.Length);
+                return File(bytes, mimeTypes[i]);
+            }
+        }
+
+        return NotFound();
     }
 
     [HttpGet("users/{userId}")]

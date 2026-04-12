@@ -31,6 +31,13 @@ public class WebInjectionService : IHostedService
         "<script src=\"/Plugins/AchievementBadges/client-script/standalone\" defer></script>" +
         "<script src=\"/Plugins/AchievementBadges/client-script/enhance\" defer></script>";
 
+    // Diagnostics for the test endpoint
+    public static string DiagWebPath = "not set";
+    public static bool DiagIndexFound;
+    public static bool DiagIndexPatched;
+    public static string DiagPatchedPath = "none";
+    public static string DiagLastError = "none";
+
     private readonly IApplicationPaths _appPaths;
     private readonly ILogger<WebInjectionService> _logger;
 
@@ -42,6 +49,7 @@ public class WebInjectionService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        DiagWebPath = _appPaths.WebPath ?? "null";
         _logger.LogInformation("[AchievementBadges] WebInjectionService starting. WebPath={P}", _appPaths.WebPath);
         await TryPatchIndexHtmlAsync().ConfigureAwait(false);
 
@@ -81,10 +89,13 @@ public class WebInjectionService : IHostedService
             {
                 if (!File.Exists(path)) continue;
 
+                DiagIndexFound = true;
                 var html = await File.ReadAllTextAsync(path).ConfigureAwait(false);
 
                 if (html.Contains(Marker, StringComparison.Ordinal))
                 {
+                    DiagIndexPatched = true;
+                    DiagPatchedPath = path;
                     _logger.LogInformation("[AchievementBadges] index.html already patched at {P}", path);
                     return;
                 }
@@ -93,21 +104,23 @@ public class WebInjectionService : IHostedService
 
                 var patched = html.Replace("</body>", ScriptBlock + "</body>", StringComparison.OrdinalIgnoreCase);
 
-                // Atomic write so a crash mid-write doesn't leave Jellyfin's
-                // web UI with a truncated index.html.
                 var tmp = path + ".ab.tmp";
                 await File.WriteAllTextAsync(tmp, patched).ConfigureAwait(false);
                 File.Move(tmp, path, overwrite: true);
 
+                DiagIndexPatched = true;
+                DiagPatchedPath = path;
                 _logger.LogInformation("[AchievementBadges] Patched index.html at {P}", path);
                 return;
             }
             catch (UnauthorizedAccessException uex)
             {
+                DiagLastError = $"Unauthorized: {path} - {uex.Message}";
                 _logger.LogWarning("[AchievementBadges] Can't write {P}: {M}", path, uex.Message);
             }
             catch (Exception ex)
             {
+                DiagLastError = $"{path} - {ex.Message}";
                 _logger.LogWarning(ex, "[AchievementBadges] Patch attempt failed at {P}", path);
             }
         }
