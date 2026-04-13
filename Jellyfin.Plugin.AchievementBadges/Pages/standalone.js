@@ -2023,13 +2023,72 @@
         });
     }
 
+    function applyFeatureFlags(cfg) {
+        var privacy = cfg.ForcePrivacyMode || cfg.forcePrivacyMode || false;
+
+        // Individual kill switches (ForcePrivacyMode overrides all to hidden)
+        var lbOff = privacy || cfg.LeaderboardEnabled === false || cfg.leaderboardEnabled === false;
+        var compareOff = privacy || cfg.CompareEnabled === false || cfg.compareEnabled === false;
+        var activityOff = privacy || cfg.ActivityFeedEnabled === false || cfg.activityFeedEnabled === false;
+        var questsOff = privacy || cfg.QuestsEnabled === false || cfg.questsEnabled === false;
+        var prestigeOff = privacy || cfg.PrestigeEnabled === false || cfg.prestigeEnabled === false;
+
+        // Hide/show tab buttons
+        var tabMap = {
+            abSaTabLb: lbOff,
+            abSaTabCompare: compareOff,
+            abSaTabActivity: activityOff,
+            abSaTabQuests: questsOff
+        };
+        var hiddenTabs = {};
+        for (var tabId in tabMap) {
+            var tabEl = el(tabId);
+            if (tabEl) {
+                tabEl.style.display = tabMap[tabId] ? 'none' : '';
+            }
+            if (tabMap[tabId]) hiddenTabs[tabId] = true;
+        }
+
+        // If current active tab is now hidden, switch to My Badges
+        var activeTab = root ? root.querySelector('.ab-tab.active') : null;
+        if (activeTab && activeTab.id && hiddenTabs[activeTab.id]) {
+            setTab('badges');
+        }
+
+        // Hide server stats section on the Stats tab when ForcePrivacyMode is on
+        var serverStatsEl = el('abSaServerStats');
+        if (serverStatsEl) {
+            // Hide both the heading and the content div
+            serverStatsEl.style.display = privacy ? 'none' : '';
+            // Also hide the h3 heading before it
+            if (serverStatsEl.previousElementSibling && serverStatsEl.previousElementSibling.tagName === 'H3') {
+                serverStatsEl.previousElementSibling.style.display = privacy ? 'none' : '';
+            }
+        }
+
+        // Hide prestige leaderboard section when prestige is disabled or privacy mode
+        var prestigeLbEl = el('abSaPrestigeLb');
+        if (prestigeLbEl) {
+            prestigeLbEl.style.display = prestigeOff ? 'none' : '';
+            if (prestigeLbEl.previousElementSibling && prestigeLbEl.previousElementSibling.tagName === 'H3') {
+                prestigeLbEl.previousElementSibling.style.display = prestigeOff ? 'none' : '';
+            }
+        }
+
+        // Hide the activity user filter dropdown when privacy mode is on
+        var activityUserFilter = el('abSaActivityUserFilter');
+        if (activityUserFilter && privacy) {
+            activityUserFilter.style.display = 'none';
+        }
+    }
+
     function loadAll() {
         if (!userId) { showError('Could not detect user.'); return Promise.resolve(); }
         var eqIds = {};
         // fire login ping (safe even if it fails)
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/login-ping', 'POST').catch(function () {});
 
-        // Fetch and show welcome message if configured
+        // Fetch and show welcome message if configured, and apply feature-flag tab hiding
         fetchJson('Plugins/AchievementBadges/public-config').then(function (cfg) {
             var banner = el('abSaWelcomeBanner');
             if (banner && cfg && cfg.WelcomeMessage) {
@@ -2041,6 +2100,7 @@
             } else if (banner) {
                 banner.style.display = 'none';
             }
+            if (cfg) applyFeatureFlags(cfg);
         }).catch(function () {});
 
         return Promise.all([

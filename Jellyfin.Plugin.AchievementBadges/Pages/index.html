@@ -1697,6 +1697,35 @@ font-size:0.88em;
         });
     });
     loadFeatureConfig();
+
+    // --- Ultra Privacy Mode: hide leaderboard & server stats on admin page ---
+    fetchJson('Plugins/AchievementBadges/admin/feature-config').then(function (cfg) {
+        if (!cfg) return;
+        var privacy = !!cfg.ForcePrivacyMode;
+        var lbOff = privacy || cfg.LeaderboardEnabled === false;
+        // Hide the Leaderboard tab button and panel
+        if (lbOff) {
+            if (tabLeaderboardBtn) tabLeaderboardBtn.style.display = 'none';
+            if (panelLeaderboard) panelLeaderboard.style.display = 'none';
+            // If leaderboard was active, switch to badges
+            if (tabLeaderboardBtn && tabLeaderboardBtn.classList.contains('active')) {
+                tabLeaderboardBtn.classList.remove('active');
+                tabBadgesBtn.classList.add('active');
+                panelBadges.style.display = '';
+            }
+        }
+        // Hide the Stats tab button and panel when privacy mode is on
+        if (privacy) {
+            if (tabStatsBtn) tabStatsBtn.style.display = 'none';
+            if (panelStats) panelStats.style.display = 'none';
+            // If stats was active, switch to badges
+            if (tabStatsBtn && tabStatsBtn.classList.contains('active')) {
+                tabStatsBtn.classList.remove('active');
+                tabBadgesBtn.classList.add('active');
+                panelBadges.style.display = '';
+            }
+        }
+    }).catch(function () {});
 })();
 </script>
 

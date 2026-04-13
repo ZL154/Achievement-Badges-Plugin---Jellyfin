@@ -1089,7 +1089,8 @@ public class AchievementBadgesController : ControllerBase
             CompareEnabled = c?.CompareEnabled ?? true,
             ActivityFeedEnabled = c?.ActivityFeedEnabled ?? true,
             PrestigeEnabled = c?.PrestigeEnabled ?? true,
-            QuestsEnabled = c?.QuestsEnabled ?? true
+            QuestsEnabled = c?.QuestsEnabled ?? true,
+            ForcePrivacyMode = c?.ForcePrivacyMode ?? false
         });
     }
 
