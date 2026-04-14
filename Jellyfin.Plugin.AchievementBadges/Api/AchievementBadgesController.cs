@@ -1091,7 +1091,8 @@ public class AchievementBadgesController : ControllerBase
             PrestigeEnabled = c?.PrestigeEnabled ?? true,
             QuestsEnabled = c?.QuestsEnabled ?? true,
             ForcePrivacyMode = c?.ForcePrivacyMode ?? false,
-            ForceSpoilerMode = c?.ForceSpoilerMode ?? false
+            ForceSpoilerMode = c?.ForceSpoilerMode ?? false,
+            ForceExtremeSpoilerMode = c?.ForceExtremeSpoilerMode ?? false
         });
     }
 
@@ -1112,6 +1113,7 @@ public class AchievementBadgesController : ControllerBase
             QuestsEnabled = c?.QuestsEnabled ?? true,
             ForcePrivacyMode = c?.ForcePrivacyMode ?? false,
             ForceSpoilerMode = c?.ForceSpoilerMode ?? false,
+            ForceExtremeSpoilerMode = c?.ForceExtremeSpoilerMode ?? false,
             MaxEquippedBadges = c?.MaxEquippedBadges ?? 5,
             RestrictBadgeVisibility = c?.RestrictBadgeVisibility ?? false,
             DisabledBadgeCategories = c?.DisabledBadgeCategories ?? new List<string>(),
@@ -1128,6 +1130,7 @@ public class AchievementBadgesController : ControllerBase
         public bool QuestsEnabled { get; set; } = true;
         public bool ForcePrivacyMode { get; set; } = false;
         public bool ForceSpoilerMode { get; set; } = false;
+        public bool ForceExtremeSpoilerMode { get; set; } = false;
         public int MaxEquippedBadges { get; set; } = 5;
         public bool RestrictBadgeVisibility { get; set; } = false;
         public List<string> DisabledBadgeCategories { get; set; } = new();
@@ -1149,6 +1152,7 @@ public class AchievementBadgesController : ControllerBase
         config.QuestsEnabled = request.QuestsEnabled;
         config.ForcePrivacyMode = request.ForcePrivacyMode;
         config.ForceSpoilerMode = request.ForceSpoilerMode;
+        config.ForceExtremeSpoilerMode = request.ForceExtremeSpoilerMode;
         config.MaxEquippedBadges = Math.Clamp(request.MaxEquippedBadges, 1, 10);
         config.RestrictBadgeVisibility = request.RestrictBadgeVisibility;
         config.DisabledBadgeCategories = request.DisabledBadgeCategories ?? new();

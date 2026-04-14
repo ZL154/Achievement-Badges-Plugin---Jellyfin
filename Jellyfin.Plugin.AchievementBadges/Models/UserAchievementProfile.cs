@@ -94,6 +94,9 @@ public class UserNotificationPreferences
     [JsonPropertyName("SpoilerMode")]
     public bool SpoilerMode { get; set; } = false;
 
+    [JsonPropertyName("ExtremeSpoilerMode")]
+    public bool ExtremeSpoilerMode { get; set; } = false;
+
     [JsonPropertyName("EquippedBadgeSlots")]
     public int EquippedBadgeSlots { get; set; } = 5; // 1-10
 

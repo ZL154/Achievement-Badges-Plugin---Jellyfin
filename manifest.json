@@ -9,6 +9,13 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.5.43",
+        "changelog": "Self-only quests/activity in privacy mode + Extreme Spoiler Mode. Force Privacy Mode no longer hides the Quests and Activity tabs — users can still see their own quests and their own activity. Activity feed in privacy mode auto-filters to the current user only, hides the user dropdown, renames heading to 'Your activity'. New Extreme Spoiler Mode (user pref + admin force): completely hides locked badges from the list instead of just blanking descriptions. Spoiler and Extreme Spoiler are separate toggles in both user settings and admin Feature Controls. If both on, extreme wins.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.43/Jellyfin.Plugin.AchievementBadgesv1.5.43.zip",
+        "checksum": "BA778DE66B4E01F76CDEC71E97873C15"
+      },
+      {
         "version": "1.5.42",
         "changelog": "Recently unlocked filter + admin-forced settings hide user toggles. New 'Recently unlocked' option in the badge filter dropdown (sorts by UnlockedAt desc, top 10). Force Privacy Mode now ALSO hides the user's privacy toggles + activity feed checkbox (since admin enforces them server-side). New admin setting ForceSpoilerMode — when enabled, spoiler mode applies to all users and their toggle is hidden. Pattern: when admin forces something, the user toggle hides with 'Enforced by admin' note. Individual kill switches also hide corresponding user toggles (e.g., LeaderboardEnabled=false hides HideFromLeaderboard).",
         "targetAbi": "10.11.0.0",

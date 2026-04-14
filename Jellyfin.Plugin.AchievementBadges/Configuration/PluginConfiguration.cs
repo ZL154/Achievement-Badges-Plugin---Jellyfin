@@ -41,6 +41,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool QuestsEnabled { get; set; } = true;
     public bool ForcePrivacyMode { get; set; } = false;
     public bool ForceSpoilerMode { get; set; } = false;
+    public bool ForceExtremeSpoilerMode { get; set; } = false;
 
     // Badge controls
     public int MaxEquippedBadges { get; set; } = 5;

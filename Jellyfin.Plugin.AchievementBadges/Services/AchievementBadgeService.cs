@@ -1133,6 +1133,14 @@ public class AchievementBadgeService
             var userSpoilerMode = profile.Preferences?.SpoilerMode ?? false;
             var adminForceSpoiler = Plugin.Instance?.Configuration?.ForceSpoilerMode ?? false;
             var spoilerMode = userSpoilerMode || adminForceSpoiler;
+            var userExtremeSpoiler = profile.Preferences?.ExtremeSpoilerMode ?? false;
+            var adminForceExtremeSpoiler = Plugin.Instance?.Configuration?.ForceExtremeSpoilerMode ?? false;
+            var extremeSpoilerMode = userExtremeSpoiler || adminForceExtremeSpoiler;
+
+            if (extremeSpoilerMode && !clone.Unlocked)
+            {
+                return null;
+            }
 
             if (isSecret && !clone.Unlocked)
             {
@@ -2225,6 +2233,9 @@ public class AchievementBadgeService
         var userSpoilerMode = profile.Preferences?.SpoilerMode ?? false;
         var adminForceSpoiler = Plugin.Instance?.Configuration?.ForceSpoilerMode ?? false;
         var spoilerMode = userSpoilerMode || adminForceSpoiler;
+        var userExtremeSpoiler = profile.Preferences?.ExtremeSpoilerMode ?? false;
+        var adminForceExtremeSpoiler = Plugin.Instance?.Configuration?.ForceExtremeSpoilerMode ?? false;
+        var extremeSpoilerMode = userExtremeSpoiler || adminForceExtremeSpoiler;
         var disabledCategories = Plugin.Instance?.Configuration?.DisabledBadgeCategories;
 
         var result = new List<AchievementBadge>();
@@ -2232,6 +2243,9 @@ public class AchievementBadgeService
         {
             if (!IsBadgeEnabled(b.Id)) continue;
             if (IsBadgeCategoryDisabled(b.Category, disabledCategories)) continue;
+
+            // Extreme spoiler mode: completely omit locked badges from the list
+            if (extremeSpoilerMode && !b.Unlocked) continue;
 
             var isSecret = defsById.TryGetValue(b.Id, out var def) && def.IsSecret;
 

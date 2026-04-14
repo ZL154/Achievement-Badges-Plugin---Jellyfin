@@ -614,6 +614,9 @@ font-size:0.88em;
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
                             <input type="checkbox" id="abFcForceSpoilerMode"> Force Spoiler Mode (hide locked badge descriptions for all users)
                         </label>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
+                            <input type="checkbox" id="abFcForceExtremeSpoilerMode"> Force Extreme Spoiler Mode (completely hide locked badges for all users)
+                        </label>
                         <label style="display:block; margin-bottom:0.75em;">Max equipped badges (1-10):<br>
                             <input type="number" id="abFcMaxEquippedBadges" value="5" min="1" max="10" style="width:80px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                         </label>
@@ -1667,6 +1670,7 @@ font-size:0.88em;
             document.getElementById('abFcQuestsEnabled').checked = c.QuestsEnabled !== false;
             document.getElementById('abFcForcePrivacyMode').checked = !!c.ForcePrivacyMode;
             document.getElementById('abFcForceSpoilerMode').checked = !!c.ForceSpoilerMode;
+            document.getElementById('abFcForceExtremeSpoilerMode').checked = !!c.ForceExtremeSpoilerMode;
             document.getElementById('abFcMaxEquippedBadges').value = c.MaxEquippedBadges || 5;
             document.getElementById('abFcRestrictBadgeVisibility').checked = !!c.RestrictBadgeVisibility;
             document.getElementById('abFcDisabledBadgeCategories').value = (c.DisabledBadgeCategories || []).join(', ');
@@ -1691,6 +1695,7 @@ font-size:0.88em;
             QuestsEnabled: document.getElementById('abFcQuestsEnabled').checked,
             ForcePrivacyMode: document.getElementById('abFcForcePrivacyMode').checked,
             ForceSpoilerMode: document.getElementById('abFcForceSpoilerMode').checked,
+            ForceExtremeSpoilerMode: document.getElementById('abFcForceExtremeSpoilerMode').checked,
             MaxEquippedBadges: maxBadges,
             RestrictBadgeVisibility: document.getElementById('abFcRestrictBadgeVisibility').checked,
             DisabledBadgeCategories: categories,

@@ -751,7 +751,7 @@
                 '</div>' +
                 '<div id="abSaPanelActivity" class="ab-panel" style="display:none;">' +
                     '<div class="ab-panel-card">' +
-                        '<h3 style="margin:0 0 0.75em;">Server activity feed</h3>' +
+                        '<h3 id="abSaActivityHeading" style="margin:0 0 0.75em;">Server activity feed</h3>' +
                         '<div style="display:flex; gap:0.6em; flex-wrap:wrap; margin-bottom:1em; align-items:center;">' +
                             '<select id="abSaActivityUserFilter" class="ab-select" style="min-width:200px;"></select>' +
                             '<div style="flex:1;"></div>' +
@@ -1228,6 +1228,12 @@
         var box = el('abSaActivity');
         if (!box) return;
         box.innerHTML = 'Loading...';
+        // When admin force-privacy is on, always scope to the current user.
+        var pc = publicConfigGlobal || {};
+        var forcePrivacy = !!(pc.ForcePrivacyMode || pc.forcePrivacyMode);
+        if (forcePrivacy && userId) {
+            activityFilter = userId;
+        }
         ensureActivityFilterPopulated().then(function () {
             var qs = '?page=' + activityPage + '&pageSize=20';
             if (activityFilter) qs += '&userId=' + encodeURIComponent(activityFilter);
@@ -1852,6 +1858,7 @@
         var pc = publicConfigGlobal || {};
         var forcePrivacy = !!(pc.ForcePrivacyMode || pc.forcePrivacyMode);
         var forceSpoiler = !!(pc.ForceSpoilerMode || pc.forceSpoilerMode);
+        var forceExtremeSpoiler = !!(pc.ForceExtremeSpoilerMode || pc.forceExtremeSpoilerMode);
         var lbOff = pc.LeaderboardEnabled === false || pc.leaderboardEnabled === false;
         var compareOff = pc.CompareEnabled === false || pc.compareEnabled === false;
         var activityOff = pc.ActivityFeedEnabled === false || pc.activityFeedEnabled === false;
@@ -1897,6 +1904,15 @@
               '</div>'
             : toggle('spoilerMode', 'Spoiler mode', 'Hide locked badge descriptions to avoid spoilers', prefs.spoilerMode === true || prefs.SpoilerMode === true);
 
+        var extremeSpoilerRowHtml = forceExtremeSpoiler
+            ? '<div class="ab-setting-row">' +
+                '<div class="ab-toggle-info">' +
+                    '<div class="ab-toggle-label">Extreme spoiler mode</div>' +
+                    '<div class="ab-toggle-desc">Enforced by admin.</div>' +
+                '</div>' +
+              '</div>'
+            : toggle('extremeSpoilerMode', 'Extreme spoiler mode', 'Completely hide locked badges (not just descriptions)', prefs.extremeSpoilerMode === true || prefs.ExtremeSpoilerMode === true);
+
         var html =
             '<div class="ab-settings-section">' +
                 '<div class="ab-eyebrow">Toast & Sound</div>' +
@@ -1929,6 +1945,7 @@
                         '</select>' +
                     '</div>' +
                     spoilerRowHtml +
+                    extremeSpoilerRowHtml +
                     '<div class="ab-setting-row">' +
                         '<div class="ab-toggle-info"><div class="ab-toggle-label">Equipped badge slots</div><div class="ab-toggle-desc">Number of badges in your showcase (1-10)</div></div>' +
                         '<input type="number" class="ab-input" data-settings-number="equippedBadgeSlots" min="1" max="10" value="' + slots + '" style="width:70px;text-align:center;">' +
@@ -2097,11 +2114,12 @@
         publicConfigGlobal = cfg || {};
         var privacy = cfg.ForcePrivacyMode || cfg.forcePrivacyMode || false;
 
-        // Individual kill switches (ForcePrivacyMode overrides all to hidden)
+        // Individual kill switches. Leaderboard/Compare/Prestige are fully hidden under privacy.
+        // Quests and Activity stay visible but scope to the current user only.
         var lbOff = privacy || cfg.LeaderboardEnabled === false || cfg.leaderboardEnabled === false;
         var compareOff = privacy || cfg.CompareEnabled === false || cfg.compareEnabled === false;
-        var activityOff = privacy || cfg.ActivityFeedEnabled === false || cfg.activityFeedEnabled === false;
-        var questsOff = privacy || cfg.QuestsEnabled === false || cfg.questsEnabled === false;
+        var activityOff = cfg.ActivityFeedEnabled === false || cfg.activityFeedEnabled === false;
+        var questsOff = cfg.QuestsEnabled === false || cfg.questsEnabled === false;
         var prestigeOff = privacy || cfg.PrestigeEnabled === false || cfg.prestigeEnabled === false;
 
         // Hide/show tab buttons
@@ -2146,10 +2164,18 @@
             }
         }
 
-        // Hide the activity user filter dropdown when privacy mode is on
+        // Hide the activity user filter dropdown when privacy mode is on, and force
+        // the feed to the current user only. Also rename the heading to "Your activity".
         var activityUserFilter = el('abSaActivityUserFilter');
         if (activityUserFilter && privacy) {
             activityUserFilter.style.display = 'none';
+        }
+        var activityHeading = el('abSaActivityHeading');
+        if (activityHeading) {
+            activityHeading.textContent = privacy ? 'Your activity' : 'Server activity feed';
+        }
+        if (privacy && userId) {
+            activityFilter = userId;
         }
     }
 
