@@ -514,6 +514,38 @@ font-size:0.88em;
 
                 <details class="abAdminSection" style="margin-top:1em;">
                     <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                        Toast center icon (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;">
+                            Upload a custom SVG to replace the center icon in the unlock toast. Leave blank to use the built-in default.
+                            Max 100&nbsp;KB. Scripts, event handlers, and external references are rejected server-side.
+                        </p>
+                        <label style="display:block; margin-bottom:0.75em;">Upload SVG file:<br>
+                            <input type="file" id="abToastIconFile" accept=".svg,image/svg+xml">
+                            <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;">Reads the file into the box below — you can also paste SVG markup directly.</div>
+                        </label>
+                        <label style="display:block; margin-bottom:0.75em;">SVG markup:<br>
+                            <textarea id="abToastIconSvg" rows="8" style="width:100%; font-family:monospace; font-size:0.85em; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></textarea>
+                        </label>
+                        <div style="display:flex; gap:1em; align-items:flex-start; margin-bottom:0.75em;">
+                            <div>
+                                <div class="secondaryText" style="font-size:0.85em; margin-bottom:0.25em;">Preview</div>
+                                <div id="abToastIconPreview" style="width:80px; height:80px; padding:8px; background:#222; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+                                    <span style="color:#888; font-size:0.8em;">none</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:0.5em; flex-wrap:wrap;">
+                            <button is="emby-button" type="button" class="raised button-submit" id="abToastIconSaveBtn">Save icon</button>
+                            <button is="emby-button" type="button" class="raised" id="abToastIconClearBtn">Reset to default</button>
+                        </div>
+                        <div id="abToastIconStatus" class="secondaryText" style="margin-top:0.5em;"></div>
+                    </div>
+                </details>
+
+                <details class="abAdminSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
                         UI features (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
@@ -1575,6 +1607,89 @@ font-size:0.88em;
             }
         });
     });
+
+    // --- Toast center icon ---
+    var toastIconFileEl = document.getElementById('abToastIconFile');
+    var toastIconSvgEl = document.getElementById('abToastIconSvg');
+    var toastIconPreviewEl = document.getElementById('abToastIconPreview');
+    var toastIconSaveBtn = document.getElementById('abToastIconSaveBtn');
+    var toastIconClearBtn = document.getElementById('abToastIconClearBtn');
+    var toastIconStatusEl = document.getElementById('abToastIconStatus');
+
+    function setToastIconStatus(msg, isError) {
+        if (!toastIconStatusEl) return;
+        toastIconStatusEl.textContent = msg || '';
+        toastIconStatusEl.style.color = isError ? '#fca5a5' : '';
+    }
+
+    function renderToastIconPreview() {
+        if (!toastIconPreviewEl || !toastIconSvgEl) return;
+        var svg = (toastIconSvgEl.value || '').trim();
+        if (!svg) {
+            toastIconPreviewEl.innerHTML = '<span style="color:#888; font-size:0.8em;">none</span>';
+            return;
+        }
+        var dataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        var img = document.createElement('img');
+        img.src = dataUri;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        toastIconPreviewEl.innerHTML = '';
+        toastIconPreviewEl.appendChild(img);
+    }
+
+    function loadToastIcon() {
+        fetchJson('Plugins/AchievementBadges/admin/toast-icon').then(function (res) {
+            if (toastIconSvgEl) toastIconSvgEl.value = (res && res.Svg) || '';
+            renderToastIconPreview();
+        }).catch(function () { /* ignore */ });
+    }
+
+    function saveToastIcon() {
+        var svg = (toastIconSvgEl && toastIconSvgEl.value || '').trim();
+        setToastIconStatus('Saving...', false);
+        fetchJson('Plugins/AchievementBadges/admin/toast-icon', 'POST', { Svg: svg }).then(function (res) {
+            if (res && res.Cleared) {
+                setToastIconStatus('Cleared — default icon will be used.', false);
+            } else {
+                setToastIconStatus('Saved (' + ((res && res.Bytes) || 0) + ' bytes).', false);
+            }
+        }).catch(function (err) {
+            setToastIconStatus((err && err.message) || 'Save failed.', true);
+        });
+    }
+
+    if (toastIconFileEl) {
+        toastIconFileEl.addEventListener('change', function () {
+            var f = toastIconFileEl.files && toastIconFileEl.files[0];
+            if (!f) return;
+            if (f.size > 100000) {
+                setToastIconStatus('File too large (max 100 KB).', true);
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function () {
+                if (toastIconSvgEl) toastIconSvgEl.value = String(reader.result || '');
+                renderToastIconPreview();
+                setToastIconStatus('Loaded. Click "Save icon" to apply.', false);
+            };
+            reader.readAsText(f);
+        });
+    }
+    if (toastIconSvgEl) {
+        toastIconSvgEl.addEventListener('input', renderToastIconPreview);
+    }
+    if (toastIconSaveBtn) {
+        toastIconSaveBtn.addEventListener('click', saveToastIcon);
+    }
+    if (toastIconClearBtn) {
+        toastIconClearBtn.addEventListener('click', function () {
+            if (toastIconSvgEl) toastIconSvgEl.value = '';
+            renderToastIconPreview();
+            saveToastIcon();
+        });
+    }
+    loadToastIcon();
 
     // --- Visual badge editor ---
     var vbAddBtn = document.getElementById('abVbAddBtn');
