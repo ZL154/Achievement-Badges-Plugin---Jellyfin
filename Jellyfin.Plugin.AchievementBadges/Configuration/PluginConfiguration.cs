@@ -48,4 +48,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool RestrictBadgeVisibility { get; set; } = false;
     public List<string> DisabledBadgeCategories { get; set; } = new();
     public string WelcomeMessage { get; set; } = "";
+
+    // Default UI language when a user hasn't picked one. Supported: "en", "fr", "es".
+    public string DefaultLanguage { get; set; } = "en";
 }

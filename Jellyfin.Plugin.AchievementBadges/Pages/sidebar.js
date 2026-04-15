@@ -21,7 +21,19 @@
             (document.head || document.documentElement).appendChild(s);
         }
     } catch(e) {}
-    function icName(n){ return (n||'emoji_events').toString().toLowerCase().replace(/[^a-z0-9_]/g,''); }
+    // Allowlist of Material Icons glyph names that actually render in the
+    // current Material Icons font. Must stay in sync with standalone.js.
+    // Anything not in here falls back to emoji_events, otherwise the font
+    // shows the raw text ("CASSETTE", "VINYL") in the sidebar pills / header.
+    var VALID_SET=(function(){
+        var arr=['play_circle','travel_explore','weekend','chair','home','movie_filter','live_tv','theaters','local_fire_department','bolt','military_tech','auto_awesome','movie','tv','dark_mode','nights_stay','bedtime','wb_sunny','light_mode','sunny','event','event_available','celebration','stars','collections_bookmark','inventory_2','today','calendar_month','favorite','timeline','insights','all_inclusive','speed','rocket_launch','whatshot','emoji_events','cake','help','settings','push_pin','schedule','star','emoji_objects','public','new_releases','verified','workspace_premium','school','science','psychology','self_improvement','fitness_center','sports_esports','music_note','headphones','album','library_music','radio','audiotrack','mic','piano','queue_music','videocam','photo_camera','image','thermostat','ac_unit','cloud','filter_drama','nightlight','shield','security','lock','diamond','paid','savings','account_balance','shopping_cart','redeem','card_giftcard','loyalty','groups','person','face','mood','thumb_up','handshake','pets','eco','lightbulb','tips_and_updates','edit','draw','brush','palette','build','code','devices','phone_android','phone_iphone','laptop','monitor','watch','headset','speaker','volume_up','notifications','campaign','flag','bookmark','tag','description','article','chat','mail','share','download','upload','sync','refresh','replay','replay_circle_filled','history','update','access_time','timer','alarm','hourglass_empty','hourglass_bottom','hourglass_top','hourglass_full','autorenew','loop','fast_forward','fast_rewind','skip_next','skip_previous','play_arrow','pause','circle','category','extension','casino','local_bar','restaurant','local_pizza','icecream','local_cafe','coffee','liquor','wine_bar','nightlife','attractions','park','beach_access','spa','hiking','directions_bike','directions_run','directions_walk','flight','flight_takeoff','directions_car','explore','map','place','language','translate','trending_up','date_range','calendar_today','calendar_view_week','event_repeat','menu_book','library_books','auto_stories','auto_awesome_motion','auto_fix_high','av_timer','award_star','bed','check_circle','connected_tv','fastfood','festival','flash_on','gavel','local_movies','movie_creation','record_voice_over','repeat','repeat_on','rocket','sports_martial_arts','sports_score','swap_horiz','theater_comedy','wb_twilight'];
+        var s={}; for(var i=0;i<arr.length;i++) s[arr[i]]=1; return s;
+    })();
+    function icName(n){
+        var s=(n||'emoji_events').toString().toLowerCase().replace(/[^a-z0-9_]/g,'');
+        if(!s||!VALID_SET[s]) return 'emoji_events';
+        return s;
+    }
     var rarityColors={common:'#9fb3c8',uncommon:'#34d399',rare:'#60a5fa',epic:'#a78bfa',legendary:'#fbbf24',mythic:'#f43f5e'};
     function rc(r){return rarityColors[(r||'').toLowerCase()]||'#9fb3c8';}
 

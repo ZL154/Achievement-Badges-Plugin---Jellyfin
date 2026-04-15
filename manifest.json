@@ -9,6 +9,13 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.5.44",
+        "changelog": "Multi-language support (English, French, Spanish), profile card back button, CASSETTE/VINYL bug definitively fixed. Root cause of the icon text bug: sidebar.js bypassed the icon allowlist, so equipped badges with invalid icon names rendered raw text in the sidebar showcase pills and header badge dots. Now applies the same Material Icons allowlist as standalone.js. Also fixed 5 badge definitions with invalid icon names (vinyl→album, cassette→music_note, sports→audiotrack, mosque→public, rocket→rocket_launch). Profile card: added a top-left back button with iOS safe-area support (44x44 touch target). i18n: ~50 UI strings translated to en/fr/es, user can pick language in settings, admin sets server default. Badge titles/descriptions not yet translated (future work).",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.5.44/Jellyfin.Plugin.AchievementBadgesv1.5.44.zip",
+        "checksum": "316F28728164B322783F3ACC102FDDEA"
+      },
+      {
         "version": "1.5.43",
         "changelog": "Self-only quests/activity in privacy mode + Extreme Spoiler Mode. Force Privacy Mode no longer hides the Quests and Activity tabs — users can still see their own quests and their own activity. Activity feed in privacy mode auto-filters to the current user only, hides the user dropdown, renames heading to 'Your activity'. New Extreme Spoiler Mode (user pref + admin force): completely hides locked badges from the list instead of just blanking descriptions. Spoiler and Extreme Spoiler are separate toggles in both user settings and admin Feature Controls. If both on, extreme wins.",
         "targetAbi": "10.11.0.0",

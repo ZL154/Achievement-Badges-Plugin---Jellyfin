@@ -105,6 +105,11 @@ public class UserNotificationPreferences
 
     [JsonPropertyName("EnablePushNotifications")]
     public bool EnablePushNotifications { get; set; } = false;
+
+    // UI language preference. "default" means use the admin-configured
+    // DefaultLanguage; otherwise one of "en", "fr", "es".
+    [JsonPropertyName("Language")]
+    public string Language { get; set; } = "default";
 }
 
 public class QuestState
