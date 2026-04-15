@@ -53,4 +53,8 @@ public class PluginConfiguration : BasePluginConfiguration
     // Validated by SvgSanitizer on save; rendered via <img src="data:...">
     // so <script> inside SVG can't execute (browser image-loading context).
     public string? ToastCenterIconSvg { get; set; }
+
+    // Default UI language when a user hasn't picked one. Supported: "en", "fr", "es".
+    public string DefaultLanguage { get; set; } = "en";
+
 }

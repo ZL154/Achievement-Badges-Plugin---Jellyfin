@@ -14,11 +14,65 @@
         emoji_events:'\ud83c\udfc6'
     };
 
-    var VALID_MATERIAL_ICONS = ['play_circle','travel_explore','weekend','chair','home','movie_filter','live_tv','theaters','local_fire_department','bolt','military_tech','auto_awesome','movie','tv','dark_mode','nights_stay','bedtime','wb_sunny','light_mode','sunny','event','event_available','celebration','stars','collections_bookmark','inventory_2','today','calendar_month','favorite','timeline','insights','all_inclusive','speed','rocket_launch','whatshot','emoji_events','cake','help','settings','push_pin','schedule','star','emoji_objects','public','new_releases','verified','workspace_premium','school','science','psychology','self_improvement','fitness_center','sports_esports','music_note','headphones','album','library_music','radio','audiotrack','mic','piano','queue_music','smart_display','videocam','camera','photo_camera','image','panorama','landscape','terrain','forest','water','air','thermostat','ac_unit','cloud','thunderstorm','filter_drama','nightlight','shield','security','lock','vpn_key','token','diamond','paid','monetization_on','savings','account_balance','storefront','shopping_cart','redeem','card_giftcard','loyalty','volunteer_activism','diversity_3','groups','person','face','sentiment_satisfied','mood','thumb_up','handshake','pets','cruelty_free','eco','recycling','compost','energy_savings_leaf','solar_power','wind_power','electric_bolt','flash_on','highlight','lightbulb','tips_and_updates','edit','draw','brush','palette','color_lens','format_paint','architecture','design_services','construction','build','handyman','plumbing','hardware','precision_manufacturing','biotech','api','code','terminal','data_object','storage','dns','hub','lan','router','wifi','bluetooth','cast','devices','phone_android','laptop','desktop_windows','monitor','tablet','watch','headset','speaker','tv_gen','display_settings','tune','equalizer','graphic_eq','surround_sound','spatial_audio','volume_up','notifications','campaign','flag','bookmark','label','tag','sell','receipt','description','article','newspaper','feed','forum','chat','message','mail','send','attach_file','link','share','ios_share','content_copy','content_cut','content_paste','delete','remove','add','done','close','check','clear','search','zoom_in','zoom_out','filter_list','sort','swap_vert','swap_horiz','compare_arrows','open_in_new','launch','download','upload','cloud_upload','cloud_download','sync','refresh','replay','undo','redo','history','update','access_time','timer','alarm','hourglass_empty','pending','autorenew','loop','rotate_right','flip','crop','straighten','transform','animation','motion_photos_auto','slow_motion_video','speed','fast_forward','fast_rewind','skip_next','skip_previous','play_arrow','pause','stop','fiber_manual_record','circle','square','hexagon','pentagon','change_history','category','shapes','interests','extension','puzzle','casino','sports_bar','local_bar','restaurant','local_dining','local_pizza','bakery_dining','lunch_dining','dinner_dining','brunch_dining','tapas','ramen_dining','icecream','local_cafe','coffee','emoji_food_beverage','liquor','wine_bar','nightlife','attractions','park','beach_access','pool','hot_tub','spa','sailing','kayaking','surfing','skateboarding','snowboarding','hiking','directions_bike','directions_run','directions_walk','flight','airport_shuttle','directions_car','directions_bus','directions_railway','directions_boat','navigation','explore','map','place','location_on','my_location','near_me','gps_fixed','compass_calibration','north','south','east','west','language','translate','g_translate'];
+    // Allowlist of Material Icons glyph names that actually render in the
+    // current Material Icons font. Anything not in here falls back to
+    // emoji_events, otherwise the font shows the raw text ("CASSETTE",
+    // "VINYL", etc.) on a badge card. Keep in sync with sidebar.js.
+    var VALID_MATERIAL_ICONS = ['play_circle','travel_explore','weekend','chair','home','movie_filter','live_tv','theaters','local_fire_department','bolt','military_tech','auto_awesome','movie','tv','dark_mode','nights_stay','bedtime','wb_sunny','light_mode','sunny','event','event_available','celebration','stars','collections_bookmark','inventory_2','today','calendar_month','favorite','timeline','insights','all_inclusive','speed','rocket_launch','whatshot','emoji_events','cake','help','settings','push_pin','schedule','star','emoji_objects','public','new_releases','verified','workspace_premium','school','science','psychology','self_improvement','fitness_center','sports_esports','music_note','headphones','album','library_music','radio','audiotrack','mic','piano','queue_music','smart_display','videocam','camera','photo_camera','image','panorama','landscape','terrain','forest','water','air','thermostat','ac_unit','cloud','thunderstorm','filter_drama','nightlight','shield','security','lock','vpn_key','token','diamond','paid','monetization_on','savings','account_balance','storefront','shopping_cart','redeem','card_giftcard','loyalty','volunteer_activism','diversity_3','groups','person','face','sentiment_satisfied','mood','thumb_up','handshake','pets','cruelty_free','eco','recycling','compost','energy_savings_leaf','solar_power','wind_power','electric_bolt','flash_on','highlight','lightbulb','tips_and_updates','edit','draw','brush','palette','color_lens','format_paint','architecture','design_services','construction','build','handyman','plumbing','hardware','precision_manufacturing','biotech','api','code','terminal','data_object','storage','dns','hub','lan','router','wifi','bluetooth','cast','devices','phone_android','phone_iphone','laptop','desktop_windows','monitor','tablet','watch','headset','speaker','tv_gen','display_settings','tune','equalizer','graphic_eq','surround_sound','spatial_audio','volume_up','notifications','campaign','flag','bookmark','label','tag','sell','receipt','description','article','newspaper','feed','forum','chat','message','mail','send','attach_file','link','share','ios_share','content_copy','content_cut','content_paste','delete','remove','add','done','close','check','clear','search','zoom_in','zoom_out','filter_list','sort','swap_vert','swap_horiz','compare_arrows','open_in_new','launch','download','upload','cloud_upload','cloud_download','sync','refresh','replay','replay_circle_filled','undo','redo','history','update','access_time','timer','alarm','hourglass_empty','hourglass_bottom','hourglass_top','hourglass_full','pending','autorenew','loop','rotate_right','flip','crop','straighten','transform','animation','motion_photos_auto','slow_motion_video','speed','fast_forward','fast_rewind','skip_next','skip_previous','play_arrow','pause','stop','fiber_manual_record','circle','square','hexagon','pentagon','change_history','category','shapes','interests','extension','puzzle','casino','sports_bar','local_bar','restaurant','local_dining','local_pizza','bakery_dining','lunch_dining','dinner_dining','brunch_dining','tapas','ramen_dining','icecream','local_cafe','coffee','emoji_food_beverage','liquor','wine_bar','nightlife','attractions','park','beach_access','pool','hot_tub','spa','sailing','kayaking','surfing','skateboarding','snowboarding','hiking','directions_bike','directions_run','directions_walk','flight','flight_takeoff','airport_shuttle','directions_car','directions_bus','directions_railway','directions_boat','navigation','explore','map','place','location_on','my_location','near_me','gps_fixed','compass_calibration','north','south','east','west','language','translate','g_translate','auto_stories','auto_awesome_motion','auto_fix_high','av_timer','award_star','bed','calendar_today','calendar_view_week','check_circle','connected_tv','date_range','event_repeat','fastfood','festival','gavel','library_books','local_movies','menu_book','movie_creation','record_voice_over','repeat','repeat_on','rocket','sports_martial_arts','sports_score','theater_comedy','trending_up','wb_twilight'];
+    var VALID_SET = (function(){ var s={}; for (var i=0;i<VALID_MATERIAL_ICONS.length;i++) s[VALID_MATERIAL_ICONS[i]]=1; return s; })();
+    // Central safe icon resolver: always returns a renderable Material Icons
+    // glyph name. Use this everywhere instead of inlining badge.Icon.
+    function safeIcon(name) {
+        var safe = (name || 'emoji_events').toString().toLowerCase().replace(/[^a-z0-9_]/g, '');
+        if (!safe || !VALID_SET[safe]) return 'emoji_events';
+        return safe;
+    }
     function icon(name) {
-        var safe = (name || 'emoji_events').toLowerCase().replace(/[^a-z0-9_]/g, '');
-        if (safe && VALID_MATERIAL_ICONS.indexOf(safe) === -1) safe = 'emoji_events';
-        return '<span class="material-icons" aria-hidden="true" style="font-family:\'Material Icons\';font-size:1.4em;line-height:1;vertical-align:middle;">' + safe + '</span>';
+        return '<span class="material-icons" aria-hidden="true" style="font-family:\'Material Icons\';font-size:1.4em;line-height:1;vertical-align:middle;">' + safeIcon(name) + '</span>';
+    }
+
+    // ===== i18n =====
+    // Holds the currently loaded translation dictionary. Starts empty so tr()
+    // gracefully falls back to the key (English-like) before translations load.
+    var translations = {};
+    var currentLang = 'en';
+    function tr(key, fallback) {
+        if (translations && Object.prototype.hasOwnProperty.call(translations, key)) {
+            return translations[key];
+        }
+        return fallback != null ? fallback : key;
+    }
+    // Load a language bundle from the server. Resolves even on failure so
+    // page load never blocks; tr() just keeps using its current dict.
+    function loadTranslations(lang) {
+        var clean = (lang || 'en').toString().toLowerCase().replace(/[^a-z-]/g, '');
+        if (!clean) clean = 'en';
+        currentLang = clean;
+        return fetchJson('Plugins/AchievementBadges/translations/' + clean)
+            .then(function (data) { translations = data || {}; return translations; })
+            .catch(function () { translations = translations || {}; return translations; });
+    }
+    // Walk the DOM and replace text/title/placeholder on any element that
+    // has a data-i18n / data-i18n-title / data-i18n-placeholder marker.
+    // Safe to call repeatedly (on tab re-render, language change, etc.).
+    function applyStaticTranslations(scope) {
+        var rootEl = scope || document.getElementById(ROOT_ID);
+        if (!rootEl) return;
+        rootEl.querySelectorAll('[data-i18n]').forEach(function (node) {
+            var k = node.getAttribute('data-i18n');
+            var v = tr(k, null);
+            if (v != null) node.textContent = v;
+        });
+        rootEl.querySelectorAll('[data-i18n-title]').forEach(function (node) {
+            var k = node.getAttribute('data-i18n-title');
+            var v = tr(k, null);
+            if (v != null) node.setAttribute('title', v);
+        });
+        rootEl.querySelectorAll('[data-i18n-placeholder]').forEach(function (node) {
+            var k = node.getAttribute('data-i18n-placeholder');
+            var v = tr(k, null);
+            if (v != null) node.setAttribute('placeholder', v);
+        });
     }
 
     function rarityClass(r) {
@@ -653,15 +707,15 @@
                     '<div class="ab-stat"><div class="ab-stat-t">Score</div><div id="abSaScore" class="ab-stat-v">0</div></div>' +
                 '</div>' +
                 '<div class="ab-tabs">' +
-                    '<button type="button" class="ab-tab active" id="abSaTabBadges">My Badges</button>' +
-                    '<button type="button" class="ab-tab" id="abSaTabQuests">Quests</button>' +
-                    '<button type="button" class="ab-tab" id="abSaTabRecap">Recap</button>' +
-                    '<button type="button" class="ab-tab" id="abSaTabLb">Leaderboard</button>' +
-                    '<button type="button" class="ab-tab" id="abSaTabCompare">Compare</button>' +
-                    '<button type="button" class="ab-tab" id="abSaTabActivity">Activity</button>' +
-                    '<button type="button" class="ab-tab" id="abSaTabWrapped">Wrapped</button>' +
-                    '<button type="button" class="ab-tab" id="abSaTabStats">Stats</button>' +
-                    '<button type="button" class="ab-tab" id="abSaTabSettings" title="Settings"><span class="material-icons" style="font-size:1.1em;vertical-align:middle;">settings</span></button>' +
+                    '<button type="button" class="ab-tab active" id="abSaTabBadges" data-i18n="tabs.my_badges">My Badges</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabQuests" data-i18n="tabs.quests">Quests</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabRecap" data-i18n="tabs.recap">Recap</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabLb" data-i18n="tabs.leaderboard">Leaderboard</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabCompare" data-i18n="tabs.compare">Compare</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabActivity" data-i18n="tabs.activity">Activity</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabWrapped" data-i18n="tabs.wrapped">Wrapped</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabStats" data-i18n="tabs.stats">Stats</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabSettings" data-i18n-title="tabs.settings" title="Settings"><span class="material-icons" style="font-size:1.1em;vertical-align:middle;">settings</span></button>' +
                 '</div>' +
                 '<div id="abSaPanelBadges" class="ab-panel">' +
                     '<div id="abSaPinnedWrap" style="display:none;">' +
@@ -1852,6 +1906,7 @@
         var minRarity = prefs.minimumToastRarity || prefs.MinimumToastRarity || 'all';
         var pageTheme = prefs.achievementPageTheme || prefs.AchievementPageTheme || 'default';
         var slots = prefs.equippedBadgeSlots || prefs.EquippedBadgeSlots || 5;
+        var prefLang = (prefs.language || prefs.Language || 'default').toString().toLowerCase();
 
         // Admin-forced feature flags (from public-config). When an admin has forced a behavior
         // globally, the corresponding user toggle is moot and hidden.
@@ -1937,6 +1992,15 @@
                 '<div class="ab-eyebrow">Display & Features</div>' +
                 '<div class="ab-settings-grid">' +
                     '<div class="ab-setting-row">' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.language', 'Language') + '</div><div class="ab-toggle-desc">UI language for the achievements page</div></div>' +
+                        '<select class="ab-select" data-settings-select="language" id="abSaLanguageSelect">' +
+                            '<option value="default"' + (prefLang === 'default' ? ' selected' : '') + '>' + tr('settings.language_default', 'Default (admin)') + '</option>' +
+                            '<option value="en"' + (prefLang === 'en' ? ' selected' : '') + '>' + tr('settings.language_en', 'English') + '</option>' +
+                            '<option value="fr"' + (prefLang === 'fr' ? ' selected' : '') + '>' + tr('settings.language_fr', 'Français') + '</option>' +
+                            '<option value="es"' + (prefLang === 'es' ? ' selected' : '') + '>' + tr('settings.language_es', 'Español') + '</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="ab-setting-row">' +
                         '<div class="ab-toggle-info"><div class="ab-toggle-label">Achievement page theme</div><div class="ab-toggle-desc">Visual theme for this page</div></div>' +
                         '<select class="ab-select" data-settings-select="achievementPageTheme" id="abSaThemeSelect">' +
                             '<option value="default"' + (pageTheme === 'default' ? ' selected' : '') + '>Default</option>' +
@@ -1966,6 +2030,18 @@
                 saveSettingsPrefs(box);
                 if (sel.getAttribute('data-settings-select') === 'achievementPageTheme') {
                     applyPageTheme(sel.value);
+                }
+                if (sel.getAttribute('data-settings-select') === 'language') {
+                    // Resolve the chosen language now (honor "default" -> admin).
+                    var chosen = sel.value;
+                    var pc = publicConfigGlobal || {};
+                    var adminLang = (pc.DefaultLanguage || pc.defaultLanguage || 'en').toString().toLowerCase();
+                    var eff = (!chosen || chosen === 'default') ? adminLang : chosen;
+                    loadTranslations(eff).then(function () {
+                        applyStaticTranslations();
+                        // Re-render the settings panel so its own labels update.
+                        renderSettingsPanel(prefs);
+                    });
                 }
             });
         });
@@ -2184,6 +2260,21 @@
         var eqIds = {};
         // fire login ping (safe even if it fails)
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/login-ping', 'POST').catch(function () {});
+
+        // Resolve effective language: user preference wins ("default" means
+        // fall back to admin-configured DefaultLanguage from public-config).
+        // We kick this off early but don't block other requests on it.
+        Promise.all([
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').catch(function () { return null; }),
+            fetchJson('Plugins/AchievementBadges/public-config').catch(function () { return null; })
+        ]).then(function (parts) {
+            var p = parts[0] || {};
+            var cfg = parts[1] || {};
+            var userLang = (p.Language || p.language || 'default').toString().toLowerCase();
+            var adminLang = (cfg.DefaultLanguage || cfg.defaultLanguage || 'en').toString().toLowerCase();
+            var effective = (userLang === 'default' || !userLang) ? adminLang : userLang;
+            return loadTranslations(effective).then(function () { applyStaticTranslations(); });
+        }).catch(function () {});
 
         // Fetch and show welcome message if configured, and apply feature-flag tab hiding
         fetchJson('Plugins/AchievementBadges/public-config').then(function (cfg) {

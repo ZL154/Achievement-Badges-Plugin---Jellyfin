@@ -629,6 +629,14 @@ font-size:0.88em;
                         <label style="display:block; margin-bottom:0.75em;">Welcome message (shown on achievements page):<br>
                             <input type="text" id="abFcWelcomeMessage" placeholder="Welcome to achievements!" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                         </label>
+                        <label style="display:block; margin-bottom:0.75em;">Default language (used when a user hasn't chosen one):<br>
+                            <select id="abFcDefaultLanguage" style="padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                <option value="en">English</option>
+                                <option value="fr">Français</option>
+                                <option value="es">Español</option>
+                            </select>
+                            <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;">Badge titles/descriptions are not yet localized; only UI chrome is translated.</div>
+                        </label>
                         <button is="emby-button" type="button" class="raised button-submit" id="abFcSaveBtn">Save feature config</button>
                         <div id="abFcStatus" class="secondaryText"></div>
                     </div>
@@ -1675,6 +1683,8 @@ font-size:0.88em;
             document.getElementById('abFcRestrictBadgeVisibility').checked = !!c.RestrictBadgeVisibility;
             document.getElementById('abFcDisabledBadgeCategories').value = (c.DisabledBadgeCategories || []).join(', ');
             document.getElementById('abFcWelcomeMessage').value = c.WelcomeMessage || '';
+            var dlSel = document.getElementById('abFcDefaultLanguage');
+            if (dlSel) dlSel.value = (c.DefaultLanguage || 'en');
         }).catch(function (e) {
             if (fcStatusEl) fcStatusEl.textContent = 'Failed to load feature config: ' + (e.message || e);
         });
@@ -1699,7 +1709,8 @@ font-size:0.88em;
             MaxEquippedBadges: maxBadges,
             RestrictBadgeVisibility: document.getElementById('abFcRestrictBadgeVisibility').checked,
             DisabledBadgeCategories: categories,
-            WelcomeMessage: document.getElementById('abFcWelcomeMessage').value || ''
+            WelcomeMessage: document.getElementById('abFcWelcomeMessage').value || '',
+            DefaultLanguage: (document.getElementById('abFcDefaultLanguage') || {}).value || 'en'
         }).then(function () {
             if (fcStatusEl) fcStatusEl.textContent = 'Feature config saved.';
         }).catch(function (e) {

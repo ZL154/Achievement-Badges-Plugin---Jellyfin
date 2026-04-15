@@ -96,6 +96,15 @@ public class AchievementBadgesController : ControllerBase
             return Content(content, "application/javascript");
         }
 
+        // Try JSON (e.g. translation files live under Pages/translations, but
+        // clients can also fetch them via the flat client-script route).
+        var jsonContent = ResourceReader.ReadEmbeddedText(
+            "Jellyfin.Plugin.AchievementBadges.Pages." + name + ".json");
+        if (jsonContent is not null)
+        {
+            return Content(jsonContent, "application/json");
+        }
+
         // Try binary assets (PNG for spritesheet, etc.)
         var assembly = typeof(AchievementBadgesController).Assembly;
         string[] extensions = { ".png", ".mp3", ".svg" };
@@ -113,6 +122,29 @@ public class AchievementBadgesController : ControllerBase
         }
 
         return NotFound();
+    }
+
+    // ---------- i18n: translations -----------------------------------------
+    [HttpGet("translations/{lang}")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetTranslations([FromRoute] string lang)
+    {
+        // Sanitize lang to prevent path traversal (only letters + dash).
+        var clean = new string((lang ?? "en").ToLowerInvariant()
+            .Where(c => (c >= 'a' && c <= 'z') || c == '-').ToArray());
+        if (string.IsNullOrEmpty(clean)) clean = "en";
+
+        var content = ResourceReader.ReadEmbeddedText(
+            "Jellyfin.Plugin.AchievementBadges.Pages.translations." + clean + ".json");
+        if (content is null && clean != "en")
+        {
+            // Fall back to English if the requested language isn't bundled.
+            content = ResourceReader.ReadEmbeddedText(
+                "Jellyfin.Plugin.AchievementBadges.Pages.translations.en.json");
+        }
+        if (content is null) return NotFound();
+        return Content(content, "application/json");
     }
 
     [HttpGet("users/{userId}")]
@@ -1147,7 +1179,9 @@ public class AchievementBadgesController : ControllerBase
             ForcePrivacyMode = c?.ForcePrivacyMode ?? false,
             ForceSpoilerMode = c?.ForceSpoilerMode ?? false,
             ForceExtremeSpoilerMode = c?.ForceExtremeSpoilerMode ?? false,
-            ToastCenterIconSvg = c?.ToastCenterIconSvg ?? ""
+            ToastCenterIconSvg = c?.ToastCenterIconSvg ?? "",
+            DefaultLanguage = c?.DefaultLanguage ?? "en"
+
         });
     }
 
@@ -1213,7 +1247,8 @@ public class AchievementBadgesController : ControllerBase
             MaxEquippedBadges = c?.MaxEquippedBadges ?? 5,
             RestrictBadgeVisibility = c?.RestrictBadgeVisibility ?? false,
             DisabledBadgeCategories = c?.DisabledBadgeCategories ?? new List<string>(),
-            WelcomeMessage = c?.WelcomeMessage ?? ""
+            WelcomeMessage = c?.WelcomeMessage ?? "",
+            DefaultLanguage = c?.DefaultLanguage ?? "en"
         });
     }
 
@@ -1231,6 +1266,7 @@ public class AchievementBadgesController : ControllerBase
         public bool RestrictBadgeVisibility { get; set; } = false;
         public List<string> DisabledBadgeCategories { get; set; } = new();
         public string WelcomeMessage { get; set; } = "";
+        public string DefaultLanguage { get; set; } = "en";
     }
 
     [HttpPost("admin/feature-config")]
@@ -1253,6 +1289,10 @@ public class AchievementBadgesController : ControllerBase
         config.RestrictBadgeVisibility = request.RestrictBadgeVisibility;
         config.DisabledBadgeCategories = request.DisabledBadgeCategories ?? new();
         config.WelcomeMessage = request.WelcomeMessage ?? "";
+        // Only accept known language codes; default to "en".
+        var lang = (request.DefaultLanguage ?? "en").ToLowerInvariant();
+        if (lang != "en" && lang != "fr" && lang != "es") lang = "en";
+        config.DefaultLanguage = lang;
         plugin.UpdateConfiguration(config);
         return Ok(new { Success = true });
     }

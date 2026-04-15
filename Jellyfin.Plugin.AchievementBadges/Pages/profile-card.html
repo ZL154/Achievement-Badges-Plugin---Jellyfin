@@ -225,9 +225,42 @@
     letter-spacing: 1px;
     text-transform: uppercase;
   }
+  /* Back button: fixed top-left, 44x44 min touch target per iOS HIG. */
+  .ab-back-btn {
+    position: fixed;
+    top: max(1em, env(safe-area-inset-top, 0px));
+    left: max(1em, env(safe-area-inset-left, 0px));
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    text-decoration: none;
+    cursor: pointer;
+    z-index: 100;
+    font-size: 22px;
+    line-height: 1;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    transition: background 0.15s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ab-back-btn:hover, .ab-back-btn:active { background: rgba(0,0,0,0.8); transform: scale(0.96); }
+  .ab-back-btn svg { width: 22px; height: 22px; fill: currentColor; }
 </style>
 </head>
 <body>
+  <a class="ab-back-btn" href="/web/index.html#!/achievements" aria-label="Back to Jellyfin"
+     onclick="try{if(document.referrer&&window.history.length>1){window.history.back();return false;}}catch(e){}return true;">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+  </a>
   <div class="card">
     <div class="header">
       <div class="avatar-ring">
