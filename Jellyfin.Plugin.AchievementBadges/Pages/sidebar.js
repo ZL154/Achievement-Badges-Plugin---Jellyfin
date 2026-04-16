@@ -545,7 +545,7 @@
     // Stamp our build id on every DOM node we create, so a newer version
     // loaded alongside an older cached copy can detect and clean up the
     // stale artifacts before mounting fresh.
-    var AB_SIDEBAR_VER = '1.7.14';
+    var AB_SIDEBAR_VER = '1.7.15';
     function _destroyStaleFriendsDom(){
         ['abFriendsBtn', 'abFriendsDrawer', 'abFriendsBackdrop'].forEach(function(id){
             var n = document.getElementById(id);

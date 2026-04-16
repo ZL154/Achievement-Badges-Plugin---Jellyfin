@@ -742,39 +742,47 @@ font-size:0.88em;
                             Id as a built-in will replace the built-in.
                         </p>
 
+                        <!-- Built-in quests: each with a disable checkbox. Checking
+                             removes the quest from the rotation. -->
                         <div style="display:flex; gap:1em; flex-wrap:wrap; margin-bottom:1em;">
                             <div style="flex:1; min-width:300px;">
-                                <div style="font-weight:600; margin-bottom:0.3em;" data-i18n="admin.quests_builtin_daily">Built-in daily quests</div>
+                                <div style="font-weight:600; margin-bottom:0.5em;" data-i18n="admin.quests_builtin_daily">Built-in daily quests</div>
                                 <div id="abBuiltInDaily" class="secondaryText" style="font-size:0.85em;"></div>
                             </div>
                             <div style="flex:1; min-width:300px;">
-                                <div style="font-weight:600; margin-bottom:0.3em;" data-i18n="admin.quests_builtin_weekly">Built-in weekly quests</div>
+                                <div style="font-weight:600; margin-bottom:0.5em;" data-i18n="admin.quests_builtin_weekly">Built-in weekly quests</div>
                                 <div id="abBuiltInWeekly" class="secondaryText" style="font-size:0.85em;"></div>
                             </div>
                         </div>
 
-                        <div style="font-weight:600; margin-top:0.8em; margin-bottom:0.3em;" data-i18n="admin.quests_custom">Custom quests (JSON)</div>
-                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.quests_custom_help">
-                            Two arrays — daily and weekly. Valid Metric values:
-                            <code>TotalItemsWatched</code>, <code>MoviesWatched</code>, <code>SeriesCompleted</code>,
-                            <code>CurrentWatchStreak</code>, <code>TotalMinutesWatched</code>, <code>LateNightSessions</code>,
-                            <code>EarlyMorningSessions</code>, <code>WeekendSessions</code>, <code>UniqueGenresWatched</code>,
-                            <code>UniqueLibrariesVisited</code>, <code>RewatchCount</code>, <code>MaxEpisodesInSingleDay</code>,
-                            <code>MaxMoviesInSingleDay</code>, <code>LongestItemMinutes</code>, <code>ShortItemsWatched</code>.
-                        </p>
-                        <textarea id="abQuestsJson" rows="14" style="width:100%; font-family:monospace; font-size:0.85em; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></textarea>
+                        <!-- Custom quests: form-based editor. Each quest is a
+                             card with inputs. Add/remove buttons. Old raw-JSON
+                             editor kept as an Advanced escape hatch below. -->
+                        <div style="font-weight:600; margin-top:1em; margin-bottom:0.5em;" data-i18n="admin.quests_custom_daily">Custom daily quests</div>
+                        <div id="abCustomDailyList"></div>
+                        <button is="emby-button" type="button" class="raised" id="abAddDailyQuestBtn" style="margin-top:0.35em;" data-i18n="admin.quests_add_daily">+ Add daily quest</button>
 
-                        <div style="font-weight:600; margin-top:0.8em; margin-bottom:0.3em;" data-i18n="admin.quests_disabled">Disabled built-in quest Ids</div>
-                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.quests_disabled_help">
-                            Comma-separated quest Ids to remove from the rotation (e.g. <code>daily-late-night, weekly-weekend</code>).
-                        </p>
-                        <input type="text" id="abQuestsDisabledIds" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                        <div style="font-weight:600; margin-top:1em; margin-bottom:0.5em;" data-i18n="admin.quests_custom_weekly">Custom weekly quests</div>
+                        <div id="abCustomWeeklyList"></div>
+                        <button is="emby-button" type="button" class="raised" id="abAddWeeklyQuestBtn" style="margin-top:0.35em;" data-i18n="admin.quests_add_weekly">+ Add weekly quest</button>
 
-                        <div style="margin-top:0.75em;">
+                        <div style="margin-top:1em;">
                             <button is="emby-button" type="button" class="raised" id="abQuestsLoadBtn" data-i18n="admin.quests_reload">Reload</button>
                             <button is="emby-button" type="button" class="raised button-submit" id="abQuestsSaveBtn" data-i18n="admin.quests_save">Save quests</button>
                         </div>
                         <div id="abQuestsStatus" class="secondaryText"></div>
+
+                        <!-- Advanced: raw JSON editor + disabled-id input,
+                             hidden in a nested <details> so the form UI
+                             above is the primary flow. -->
+                        <details style="margin-top:1.25em;">
+                            <summary style="cursor:pointer; font-size:0.85em; opacity:0.7;" data-i18n="admin.quests_advanced">Advanced: raw JSON editor</summary>
+                            <div style="margin-top:0.5em;">
+                                <div class="secondaryText" style="font-size:0.8em; margin-bottom:0.35em;" data-i18n="admin.quests_custom_help">Two arrays — daily and weekly. Valid Metric values: TotalItemsWatched, MoviesWatched, SeriesCompleted, CurrentWatchStreak, TotalMinutesWatched, LateNightSessions, EarlyMorningSessions, WeekendSessions, UniqueGenresWatched, UniqueLibrariesVisited, RewatchCount, MaxEpisodesInSingleDay, MaxMoviesInSingleDay, LongestItemMinutes, ShortItemsWatched.</div>
+                                <textarea id="abQuestsJson" rows="12" style="width:100%; font-family:monospace; font-size:0.82em; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></textarea>
+                                <div class="secondaryText" style="font-size:0.8em; margin-top:0.5em;" data-i18n="admin.quests_json_note">Editing this overrides the form above on save. Use only for bulk paste.</div>
+                            </div>
+                        </details>
                     </div>
                 </details>
 
@@ -1876,54 +1884,171 @@ font-size:0.88em;
 
     // --- Quests (admin) ---
     var questsJsonEl = document.getElementById('abQuestsJson');
-    var questsDisabledEl = document.getElementById('abQuestsDisabledIds');
     var questsLoadBtn = document.getElementById('abQuestsLoadBtn');
     var questsSaveBtn = document.getElementById('abQuestsSaveBtn');
     var questsStatusEl = document.getElementById('abQuestsStatus');
     var builtInDailyEl = document.getElementById('abBuiltInDaily');
     var builtInWeeklyEl = document.getElementById('abBuiltInWeekly');
+    var customDailyListEl = document.getElementById('abCustomDailyList');
+    var customWeeklyListEl = document.getElementById('abCustomWeeklyList');
+    var addDailyBtn = document.getElementById('abAddDailyQuestBtn');
+    var addWeeklyBtn = document.getElementById('abAddWeeklyQuestBtn');
 
-    function renderBuiltInList(target, list) {
+    // Metrics dropdown options — match server-side AchievementMetric enum.
+    var QUEST_METRICS = [
+        'TotalItemsWatched', 'MoviesWatched', 'SeriesCompleted', 'CurrentWatchStreak',
+        'TotalMinutesWatched', 'LateNightSessions', 'EarlyMorningSessions', 'WeekendSessions',
+        'UniqueGenresWatched', 'UniqueLibrariesVisited', 'RewatchCount',
+        'MaxEpisodesInSingleDay', 'MaxMoviesInSingleDay', 'LongestItemMinutes', 'ShortItemsWatched'
+    ];
+
+    // Render a built-in quest with a "disabled" checkbox. Checking
+    // removes it from the rotation (adds its Id to DisabledQuestIds).
+    function renderBuiltInList(target, list, disabledSet) {
         if (!target) return;
         if (!list || !list.length) { target.textContent = tr('admin.msg.none_parens', '(none)'); return; }
         target.innerHTML = list.map(function (q) {
-            return '<div style="padding:0.3em 0; border-bottom:1px solid rgba(255,255,255,0.05);">' +
-                '<code>' + q.Id + '</code> &mdash; ' + q.Title +
-                ' <span style="opacity:0.6;">(' + tr('admin.msg.target', 'target') + ' ' + q.Target + ', +' + q.Reward + ')</span>' +
-                '</div>';
+            var isDisabled = disabledSet[q.Id];
+            return '<label style="display:flex; align-items:center; gap:0.5em; padding:0.4em 0.5em; border:1px solid rgba(255,255,255,0.08); border-radius:6px; margin-bottom:0.3em; background:rgba(255,255,255,0.02); cursor:pointer;">' +
+                '<input type="checkbox" class="ab-quest-disable" data-qid="' + q.Id + '"' + (isDisabled ? ' checked' : '') + '>' +
+                '<div style="flex:1; ' + (isDisabled ? 'opacity:0.45;text-decoration:line-through;' : '') + '">' +
+                    '<div style="font-weight:600;">' + q.Title + '</div>' +
+                    '<div style="font-size:0.78em; opacity:0.65;"><code>' + q.Id + '</code> · ' + tr('admin.msg.target', 'target') + ' ' + q.Target + ' · +' + q.Reward + ' ' + tr('badge.pts_label', 'pts') + '</div>' +
+                '</div>' +
+                '</label>';
         }).join('');
     }
 
+    // Build one editable custom-quest card. Returns HTML; values are
+    // read back at save time by walking the data-qfield attributes.
+    function questCardHtml(q, idx, kind) {
+        q = q || {};
+        var metrics = QUEST_METRICS.map(function (m) {
+            return '<option value="' + m + '"' + (q.Metric === m ? ' selected' : '') + '>' + m + '</option>';
+        }).join('');
+        return '<div class="ab-quest-card" data-quest-idx="' + idx + '" data-quest-kind="' + kind + '" style="border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:0.75em; margin-bottom:0.5em; background:rgba(255,255,255,0.02);">' +
+            '<div style="display:flex; gap:0.5em; flex-wrap:wrap; margin-bottom:0.4em;">' +
+                '<label style="flex:1; min-width:120px;"><span style="font-size:0.78em; opacity:0.7;">' + tr('admin.quest.id', 'Id') + '</span><input type="text" data-qfield="Id" value="' + (q.Id || '').replace(/"/g, '&quot;') + '" placeholder="' + kind + '-my-quest" style="width:100%; padding:0.4em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px; font-family:monospace; font-size:0.82em;"></label>' +
+                '<label style="flex:1.5; min-width:160px;"><span style="font-size:0.78em; opacity:0.7;">' + tr('admin.quest.title', 'Title') + '</span><input type="text" data-qfield="Title" value="' + (q.Title || '').replace(/"/g, '&quot;') + '" style="width:100%; padding:0.4em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>' +
+                '<label style="flex:0; min-width:110px;"><span style="font-size:0.78em; opacity:0.7;">' + tr('admin.quest.icon', 'Icon') + '</span><input type="text" data-qfield="Icon" value="' + (q.Icon || 'play_circle').replace(/"/g, '&quot;') + '" placeholder="play_circle" style="width:100%; padding:0.4em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px; font-family:monospace; font-size:0.82em;"></label>' +
+            '</div>' +
+            '<label style="display:block; margin-bottom:0.4em;"><span style="font-size:0.78em; opacity:0.7;">' + tr('admin.quest.desc', 'Description') + '</span><input type="text" data-qfield="Description" value="' + (q.Description || '').replace(/"/g, '&quot;') + '" style="width:100%; padding:0.4em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>' +
+            '<div style="display:flex; gap:0.5em; flex-wrap:wrap; align-items:flex-end;">' +
+                '<label style="flex:1; min-width:160px;"><span style="font-size:0.78em; opacity:0.7;">' + tr('admin.quest.metric', 'Metric') + '</span><select data-qfield="Metric" style="width:100%; padding:0.4em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">' + metrics + '</select></label>' +
+                '<label style="flex:0; min-width:90px;"><span style="font-size:0.78em; opacity:0.7;">' + tr('admin.quest.target', 'Target') + '</span><input type="number" data-qfield="Target" min="1" value="' + (q.Target || 1) + '" style="width:100%; padding:0.4em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>' +
+                '<label style="flex:0; min-width:90px;"><span style="font-size:0.78em; opacity:0.7;">' + tr('admin.quest.reward', 'Reward') + '</span><input type="number" data-qfield="Reward" min="0" value="' + (q.Reward || 20) + '" style="width:100%; padding:0.4em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>' +
+                '<button is="emby-button" type="button" class="raised ab-quest-delete" style="background:rgba(244,63,94,0.12); color:#fca5a5; border-color:rgba(244,63,94,0.35);">' + tr('admin.quest.delete', 'Delete') + '</button>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function renderCustomQuestList(target, list, kind) {
+        if (!target) return;
+        target.innerHTML = (list || []).map(function (q, i) { return questCardHtml(q, i, kind); }).join('');
+    }
+
+    // Read card contents back into an array of QuestDefinition objects.
+    function collectQuestCards(container) {
+        var out = [];
+        container.querySelectorAll('.ab-quest-card').forEach(function (card) {
+            var q = {};
+            card.querySelectorAll('[data-qfield]').forEach(function (el) {
+                var key = el.getAttribute('data-qfield');
+                var val = el.value;
+                if (key === 'Target' || key === 'Reward') val = parseInt(val, 10) || 0;
+                q[key] = val;
+            });
+            // Skip blank rows (empty Id AND Title — probably user clicked Add and left it empty).
+            if (q.Id || q.Title) out.push(q);
+        });
+        return out;
+    }
+
+    function wireCustomListEvents(container) {
+        container.addEventListener('click', function (ev) {
+            var del = ev.target.closest('.ab-quest-delete');
+            if (del) {
+                var card = del.closest('.ab-quest-card');
+                if (card && card.parentNode) card.parentNode.removeChild(card);
+            }
+        });
+    }
+    if (customDailyListEl) wireCustomListEvents(customDailyListEl);
+    if (customWeeklyListEl) wireCustomListEvents(customWeeklyListEl);
+
+    if (addDailyBtn) addDailyBtn.addEventListener('click', function () {
+        if (!customDailyListEl) return;
+        var idx = customDailyListEl.querySelectorAll('.ab-quest-card').length;
+        customDailyListEl.insertAdjacentHTML('beforeend', questCardHtml({ Metric: 'TotalItemsWatched', Target: 1, Reward: 20, Icon: 'play_circle' }, idx, 'daily'));
+    });
+    if (addWeeklyBtn) addWeeklyBtn.addEventListener('click', function () {
+        if (!customWeeklyListEl) return;
+        var idx = customWeeklyListEl.querySelectorAll('.ab-quest-card').length;
+        customWeeklyListEl.insertAdjacentHTML('beforeend', questCardHtml({ Metric: 'MoviesWatched', Target: 5, Reward: 150, Icon: 'theaters' }, idx, 'weekly'));
+    });
+
     function loadQuests() {
         fetchJson('Plugins/AchievementBadges/admin/quests').then(function (r) {
-            renderBuiltInList(builtInDailyEl, r.BuiltInDaily || []);
-            renderBuiltInList(builtInWeeklyEl, r.BuiltInWeekly || []);
-            var payload = {
-                CustomDailyQuests: r.CustomDailyQuests || [],
-                CustomWeeklyQuests: r.CustomWeeklyQuests || []
-            };
-            questsJsonEl.value = JSON.stringify(payload, null, 2);
-            questsDisabledEl.value = (r.DisabledQuestIds || []).join(', ');
+            var disabledSet = {};
+            (r.DisabledQuestIds || []).forEach(function (id) { disabledSet[id] = true; });
+            renderBuiltInList(builtInDailyEl, r.BuiltInDaily || [], disabledSet);
+            renderBuiltInList(builtInWeeklyEl, r.BuiltInWeekly || [], disabledSet);
+            renderCustomQuestList(customDailyListEl, r.CustomDailyQuests || [], 'daily');
+            renderCustomQuestList(customWeeklyListEl, r.CustomWeeklyQuests || [], 'weekly');
+            // Sync the advanced JSON textarea for power users.
+            if (questsJsonEl) {
+                questsJsonEl.value = JSON.stringify({
+                    CustomDailyQuests: r.CustomDailyQuests || [],
+                    CustomWeeklyQuests: r.CustomWeeklyQuests || []
+                }, null, 2);
+            }
         }).catch(function (e) { questsStatusEl.textContent = tr('admin.msg.load_failed', 'Load failed:') + ' ' + (e.message || e); });
     }
-    if (questsLoadBtn) questsLoadBtn.addEventListener('click', loadQuests);
-    if (questsSaveBtn) questsSaveBtn.addEventListener('click', function () {
+
+    function saveQuests() {
+        // Collect disabled Ids from the built-in checkboxes.
+        var disabledIds = [];
+        document.querySelectorAll('.ab-quest-disable').forEach(function (cb) {
+            if (cb.checked) disabledIds.push(cb.getAttribute('data-qid'));
+        });
+
+        // Collect custom quests from the form cards (not the JSON textarea —
+        // forms are the source of truth; JSON is just an advanced view).
+        var customDaily = customDailyListEl ? collectQuestCards(customDailyListEl) : [];
+        var customWeekly = customWeeklyListEl ? collectQuestCards(customWeeklyListEl) : [];
+
+        // If the user edited the raw JSON, prefer that (opt-in power mode).
+        // Detect by comparing the textarea contents to what we rendered.
         try {
-            var parsed = JSON.parse(questsJsonEl.value || '{}');
-            var disabledIds = (questsDisabledEl.value || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-            var body = {
-                CustomDailyQuests: parsed.CustomDailyQuests || [],
-                CustomWeeklyQuests: parsed.CustomWeeklyQuests || [],
-                DisabledQuestIds: disabledIds
-            };
-            fetchJson('Plugins/AchievementBadges/admin/quests', 'POST', body)
-                .then(function (r) { questsStatusEl.textContent = tr('admin.msg.saved', 'Saved.') + ' ' + tr('admin.msg.custom_daily', 'Custom daily:') + ' ' + r.CustomDaily + ', ' + tr('admin.msg.custom_weekly', 'custom weekly:') + ' ' + r.CustomWeekly + ', ' + tr('admin.msg.disabled_suffix', 'disabled:') + ' ' + r.Disabled + '.'; })
-                .catch(function (e) { questsStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
+            if (questsJsonEl && questsJsonEl.value) {
+                var parsed = JSON.parse(questsJsonEl.value);
+                var rendered = JSON.stringify({ CustomDailyQuests: customDaily, CustomWeeklyQuests: customWeekly }, null, 2);
+                if (questsJsonEl.value.trim() !== rendered.trim()) {
+                    // Textarea was edited — use its values as override.
+                    if (Array.isArray(parsed.CustomDailyQuests)) customDaily = parsed.CustomDailyQuests;
+                    if (Array.isArray(parsed.CustomWeeklyQuests)) customWeekly = parsed.CustomWeeklyQuests;
+                }
+            }
         } catch (e) {
             questsStatusEl.textContent = tr('admin.msg.invalid_json', 'Invalid JSON:') + ' ' + e.message;
+            return;
         }
-    });
-    if (questsJsonEl) loadQuests();
+
+        fetchJson('Plugins/AchievementBadges/admin/quests', 'POST', {
+            CustomDailyQuests: customDaily,
+            CustomWeeklyQuests: customWeekly,
+            DisabledQuestIds: disabledIds
+        })
+            .then(function (r) {
+                questsStatusEl.textContent = tr('admin.msg.saved', 'Saved.') + ' ' + tr('admin.msg.custom_daily', 'Custom daily:') + ' ' + r.CustomDaily + ', ' + tr('admin.msg.custom_weekly', 'custom weekly:') + ' ' + r.CustomWeekly + ', ' + tr('admin.msg.disabled_suffix', 'disabled:') + ' ' + r.Disabled + '.';
+                loadQuests();
+            })
+            .catch(function (e) { questsStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
+    }
+
+    if (questsLoadBtn) questsLoadBtn.addEventListener('click', loadQuests);
+    if (questsSaveBtn) questsSaveBtn.addEventListener('click', saveQuests);
+    loadQuests();
 
     // --- Test unlock toast ---
     var testToastStatus = document.getElementById('abTestToastStatus');
