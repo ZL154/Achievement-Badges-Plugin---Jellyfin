@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Jellyfin-10.11%2B-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
   <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
-  <img src="https://img.shields.io/badge/Version-1.7.7-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/Version-1.7.10-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/License-MIT-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
 </p>
 
@@ -91,12 +91,15 @@ Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin
 - **Bi-directional** friendship with a proper **request / accept** flow — nobody follows you silently
 - **Global floating button** anchored bottom-left on every Jellyfin page — not just the achievements tab. Auto-hides on `/dashboard` + `/plugins` pages and during media playback; reappears as soon as you leave either state
 - **Xbox-guide-style side drawer** with three sub-tabs: Friends / Requests / Find
-- **Online / offline** status pulled live from Jellyfin's `ISessionManager`
+- **Jellyfin profile-image avatars** per friend row (initials fall back when no image is set)
+- **Online / offline** status pulled live from Jellyfin's `ISessionManager`, with a 15-minute grace window so casual browsing still counts as online (not just active playback)
 - **Now playing** display — see the series + episode title each online friend is watching
 - Each friend's **equipped badges** shown next to their row (respects their privacy prefs)
 - **Type-to-search** user picker in the Find tab (not a giant dropdown of every server user)
 - **Red unread badge** on the floating button + Requests tab when someone has sent you a friend request
 - **Mutual** indicator on friend rows; **Auto-accept** kicks in if the target has already sent a request to you
+- **Privacy toggles** in user settings: *Appear offline to friends* (always shows you as offline) and *Hide what I'm watching* (still online, but the series/episode is hidden). Enforced server-side in `FriendsService.BuildFriendRow` — can't be bypassed by client tampering
+- **Compact request rows** — Accept / Decline / Cancel buttons are icon-only with tooltips, so the Requests tab doesn't visually bloat
 
 ### 🏅 Rarity percentage chip (new in v1.7.6)
 - Every badge card on the achievements page shows a coloured chip with the **% of users on your server** who have unlocked that badge

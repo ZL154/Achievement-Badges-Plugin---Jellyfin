@@ -1523,18 +1523,21 @@ public class AchievementBadgesController : ControllerBase
         // Custom Xbox logo SVG — sanitize before storing. We accept either a
         // raw SVG string or a base64-encoded one; store base64 so the frontend
         // can stuff it into an <img src="data:image/svg+xml;base64,..."> tag.
-        config.CustomXboxLogoSvg = SanitizeAndEncodeSvg(request.CustomXboxLogoSvg ?? "");
+        var (encodedSvg, svgError) = SanitizeAndEncodeSvgWithReason(request.CustomXboxLogoSvg ?? "");
+        config.CustomXboxLogoSvg = encodedSvg;
 
         config.RedactUsernamesInAuditLog = request.RedactUsernamesInAuditLog;
         config.ForceHideEquippedShowcase = request.ForceHideEquippedShowcase;
 
-        // Track whether the admin provided SVG content that was rejected as
-        // invalid so we can surface a warning in the response.
+        // Surface the specific sanitizer error so the admin knows what to
+        // fix instead of seeing a generic "rejected" message.
         var rawSvg = request.CustomXboxLogoSvg ?? "";
         var svgWarning = "";
-        if (!string.IsNullOrWhiteSpace(rawSvg) && string.IsNullOrEmpty(config.CustomXboxLogoSvg))
+        if (!string.IsNullOrWhiteSpace(rawSvg) && string.IsNullOrEmpty(encodedSvg))
         {
-            svgWarning = "The uploaded Xbox logo SVG was rejected (invalid markup, disallowed elements, or over 100 KB). The default logo is still being used.";
+            svgWarning = string.IsNullOrWhiteSpace(svgError)
+                ? "The uploaded Xbox logo SVG was rejected. The default logo is still being used."
+                : "SVG rejected: " + svgError + " The default logo is still being used.";
         }
 
         plugin.UpdateConfiguration(config);
@@ -1543,7 +1546,13 @@ public class AchievementBadgesController : ControllerBase
 
     private static string SanitizeAndEncodeSvg(string input)
     {
-        if (string.IsNullOrWhiteSpace(input)) return "";
+        var (encoded, _) = SanitizeAndEncodeSvgWithReason(input);
+        return encoded;
+    }
+
+    private static (string encoded, string? error) SanitizeAndEncodeSvgWithReason(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return ("", null);
         var trimmed = input.Trim();
         // Cap the length to prevent config-file blow-up.
         if (trimmed.Length > 131072) trimmed = trimmed.Substring(0, 131072);
@@ -1580,12 +1589,12 @@ public class AchievementBadgesController : ControllerBase
         }
 
         // Validate via the XML-parsing sanitizer (more robust than regex).
-        if (!Helpers.SvgSanitizer.TryValidate(svg, out var _))
+        if (!Helpers.SvgSanitizer.TryValidate(svg, out var svgErr))
         {
-            return "";
+            return ("", svgErr);
         }
 
-        return System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg));
+        return (System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg)), null);
     }
 
     // ---------- Challenge templates -----------------------------------

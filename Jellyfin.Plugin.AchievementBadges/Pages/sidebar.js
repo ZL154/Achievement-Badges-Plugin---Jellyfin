@@ -302,11 +302,34 @@
     // page. When the user toggles ShowEquippedShowcase we want the sidebar
     // pills and header dots to update immediately without a hard refresh.
     try {
-        window.addEventListener('ab:showcase-pref-changed', function () {
-            _showcaseEnabled = null; // force re-resolve from server
+        window.addEventListener('ab:showcase-pref-changed', function (ev) {
+            // If the event includes the new value, use it directly instead
+            // of re-fetching /preferences — saves a race where the pref POST
+            // hasn't landed yet and the server still returns the OLD state.
+            if (ev && ev.detail && typeof ev.detail.show === 'boolean') {
+                _showcaseEnabled = ev.detail.show;
+                if (!ev.detail.show) {
+                    installShowcaseWatchdog();
+                    removeShowcaseDom();
+                }
+                tryInject();
+                return;
+            }
+            _showcaseEnabled = null;
             tryInject();
         });
     } catch (e) {}
+
+    // Periodic re-resolve so ADMIN-side changes to ForceHideEquippedShowcase
+    // (which the admin user can't broadcast to OTHER users' tabs) get
+    // picked up automatically within ~60s. Also covers the case where the
+    // admin themself toggles it without broadcasting.
+    setInterval(function(){
+        _showcaseEnabled = null;
+        resolveShowcaseEnabled().then(function(enabled){
+            if (!enabled) removeShowcaseDom();
+        });
+    }, 60000);
 
     // ====================== Friends drawer ==============================
     // Global floating button + Xbox-guide-style side drawer. Lives in
