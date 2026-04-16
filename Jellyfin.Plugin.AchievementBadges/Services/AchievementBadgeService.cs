@@ -858,6 +858,16 @@ public class AchievementBadgeService
         }
     }
 
+    // Public accessor for services that need to create-on-demand (e.g. friend
+    // list, which adds a follower to a user that may not yet have a profile).
+    public UserAchievementProfile GetOrCreateProfileDirect(string userId)
+    {
+        lock (_lock)
+        {
+            return GetOrCreateProfile(userId);
+        }
+    }
+
     public void SaveProfileDirect(UserAchievementProfile profile)
     {
         lock (_lock)

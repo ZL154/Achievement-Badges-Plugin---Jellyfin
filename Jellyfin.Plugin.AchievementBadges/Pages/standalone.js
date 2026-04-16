@@ -42,6 +42,29 @@
         }
         return fallback != null ? fallback : key;
     }
+    // Translate a badge category label (e.g. "Binge", "Weekend Watching").
+    // Categories come back from the server as-is in English — look them up
+    // under the "category.<Name>" key and fall back to the English label
+    // when no translation exists. Also slug-variants the name so both
+    // "Weekend Watching" and a category.weekend_watching key work.
+    function trCategory(cat) {
+        if (cat == null || cat === '') return '';
+        var raw = String(cat);
+        var direct = translations && translations['category.' + raw];
+        if (direct) return direct;
+        var slug = raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+        var bySlug = translations && translations['category.' + slug];
+        if (bySlug) return bySlug;
+        return raw;
+    }
+    // Translate a badge rarity label (Common, Uncommon, Rare, Epic, Legendary, Mythic).
+    function trRarity(r) {
+        if (r == null || r === '') return '';
+        var raw = String(r);
+        var key = 'rarity.' + raw.toLowerCase();
+        if (translations && translations[key]) return translations[key];
+        return raw;
+    }
     // Load a language bundle from the server. Resolves even on failure so
     // page load never blocks; tr() just keeps using its current dict.
     function loadTranslations(lang) {
@@ -798,6 +821,7 @@
                     '<button type="button" class="ab-tab" id="abSaTabLb" data-i18n="tabs.leaderboard">Leaderboard</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabCompare" data-i18n="tabs.compare">Compare</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabActivity" data-i18n="tabs.activity">Activity</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabFriends" data-i18n="tabs.friends">Friends</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabWrapped" data-i18n="tabs.wrapped">Wrapped</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabStats" data-i18n="tabs.stats">Stats</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabSettings" data-i18n-title="tabs.settings" title="Settings"><span class="material-icons" style="font-size:1.1em;vertical-align:middle;">settings</span></button>' +
@@ -901,6 +925,17 @@
                         '<div id="abSaActivity" data-i18n="common.loading">Loading...</div>' +
                     '</div>' +
                 '</div>' +
+                '<div id="abSaPanelFriends" class="ab-panel" style="display:none;">' +
+                    '<div class="ab-panel-card">' +
+                        '<h3 style="margin:0 0 0.75em;" data-i18n="friends.title">Friends</h3>' +
+                        '<div class="ab-muted" style="font-size:0.88em;margin-bottom:1em;" data-i18n="friends.help">Follow other users on this server to see their equipped badges, online status, and what they\'re watching.</div>' +
+                        '<div style="display:flex; gap:0.75em; flex-wrap:wrap; margin-bottom:1em;">' +
+                            '<select id="abSaFriendAddSel" class="ab-select" style="flex:1; min-width:220px;"></select>' +
+                            '<button type="button" id="abSaFriendAddBtn" class="ab-btn" data-i18n="friends.add">Add friend</button>' +
+                        '</div>' +
+                        '<div id="abSaFriendsList" data-i18n="common.loading">Loading...</div>' +
+                    '</div>' +
+                '</div>' +
                 '<div id="abSaPanelWrapped" class="ab-panel" style="display:none;">' +
                     '<div class="ab-panel-card">' +
                         '<div style="display:flex; align-items:center; gap:1em; margin-bottom:1em; flex-wrap:wrap;">' +
@@ -945,8 +980,8 @@
     }
 
     function setTab(name) {
-        var panels = { badges: 'abSaPanelBadges', quests: 'abSaPanelQuests', recap: 'abSaPanelRecap', lb: 'abSaPanelLb', compare: 'abSaPanelCompare', activity: 'abSaPanelActivity', wrapped: 'abSaPanelWrapped', stats: 'abSaPanelStats', settings: 'abSaPanelSettings' };
-        var tabs = { badges: 'abSaTabBadges', quests: 'abSaTabQuests', recap: 'abSaTabRecap', lb: 'abSaTabLb', compare: 'abSaTabCompare', activity: 'abSaTabActivity', wrapped: 'abSaTabWrapped', stats: 'abSaTabStats', settings: 'abSaTabSettings' };
+        var panels = { badges: 'abSaPanelBadges', quests: 'abSaPanelQuests', recap: 'abSaPanelRecap', lb: 'abSaPanelLb', compare: 'abSaPanelCompare', activity: 'abSaPanelActivity', friends: 'abSaPanelFriends', wrapped: 'abSaPanelWrapped', stats: 'abSaPanelStats', settings: 'abSaPanelSettings' };
+        var tabs = { badges: 'abSaTabBadges', quests: 'abSaTabQuests', recap: 'abSaTabRecap', lb: 'abSaTabLb', compare: 'abSaTabCompare', activity: 'abSaTabActivity', friends: 'abSaTabFriends', wrapped: 'abSaTabWrapped', stats: 'abSaTabStats', settings: 'abSaTabSettings' };
         for (var k in panels) {
             var p = el(panels[k]); if (p) p.style.display = k === name ? 'block' : 'none';
             var t = el(tabs[k]); if (t) t.classList.toggle('active', k === name);
@@ -956,6 +991,7 @@
         if (name === 'quests') { loadQuests(); }
         if (name === 'compare') { loadCompareUserList(); }
         if (name === 'activity') { loadActivity(); }
+        if (name === 'friends') { loadFriends(); }
         if (name === 'wrapped') { loadWrapped(); }
         if (name === 'lb') { loadCategoryLb('score'); }
         if (name === 'settings') { loadSettingsPanel(); }
@@ -1249,6 +1285,76 @@
             .catch(function () { return []; });
     }
 
+    // Populate the add-friend <select> with server users minus self and
+    // minus users the caller already follows.
+    function populateAddFriendSelect(currentFriendIds) {
+        var sel = el('abSaFriendAddSel');
+        if (!sel) return Promise.resolve();
+        return fetchServerUsers().then(function (users) {
+            var existing = {};
+            (currentFriendIds || []).forEach(function (id) { existing[String(id).toLowerCase().replace(/-/g, '')] = true; });
+            var me = (userId || '').toLowerCase().replace(/-/g, '');
+            sel.innerHTML = '<option value="">' + tr('friends.pick_user', 'Pick a user to follow...') + '</option>';
+            users.forEach(function (u) {
+                var nid = (u.Id || '').toLowerCase().replace(/-/g, '');
+                if (nid === me) return;
+                if (existing[nid]) return;
+                var opt = document.createElement('option');
+                opt.value = u.Id; opt.textContent = u.Name;
+                sel.appendChild(opt);
+            });
+        });
+    }
+
+    function loadFriends() {
+        var box = el('abSaFriendsList');
+        if (!box) return;
+        box.innerHTML = tr('common.loading', 'Loading...');
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/friends').then(function (list) {
+            list = list || [];
+            populateAddFriendSelect(list.map(function (f) { return f.UserId; }));
+            if (!list.length) { box.innerHTML = '<div class="ab-muted">' + tr('friends.empty', 'You haven\'t added any friends yet.') + '</div>'; return; }
+            box.innerHTML = list.map(function (f) {
+                var dotColor = f.Online ? '#4ade80' : 'rgba(255,255,255,0.25)';
+                var statusText = f.Online
+                    ? (f.NowPlaying && f.NowPlaying.Name
+                        ? tr('friends.watching_prefix', 'Watching') + ' <strong>' + escapeHtml(
+                            f.NowPlaying.SeriesName
+                                ? (f.NowPlaying.SeriesName + (f.NowPlaying.Name ? ' — ' + f.NowPlaying.Name : ''))
+                                : f.NowPlaying.Name
+                          ) + '</strong>'
+                        : tr('friends.online', 'Online'))
+                    : (f.LastSeen
+                        ? tr('friends.last_seen', 'Last seen') + ' ' + new Date(f.LastSeen).toLocaleString()
+                        : tr('friends.offline', 'Offline'));
+                var mutualBadge = f.Mutual
+                    ? '<span style="margin-left:0.5em;padding:0.15em 0.45em;border-radius:4px;font-size:0.7em;background:rgba(102,126,234,0.2);color:#a3b5f7;border:1px solid rgba(102,126,234,0.35);letter-spacing:1px;">' + tr('friends.mutual', 'MUTUAL') + '</span>'
+                    : '';
+                return '<div class="ab-feed-row" style="align-items:flex-start;">' +
+                    '<div class="ab-feed-icon" style="background:' + (f.Online ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.05)') + ';border:2px solid ' + dotColor + ';">' +
+                        '<span class="material-icons" style="font-size:1.1em;color:#fff;">person</span>' +
+                    '</div>' +
+                    '<div class="ab-feed-body">' +
+                        '<div class="ab-feed-text"><strong>' + escapeHtml(f.UserName) + '</strong>' + mutualBadge + '</div>' +
+                        '<div class="ab-feed-meta">' + statusText + '</div>' +
+                        (f.Equipped && f.Equipped.length ? '<div style="margin-top:0.4em;">' + renderEquippedDots(f.Equipped, 18) + '</div>' : '') +
+                    '</div>' +
+                    '<button type="button" class="ab-btn" style="background:rgba(244,63,94,0.12);border-color:rgba(244,63,94,0.4);color:#fca5a5;" data-ab-friend-remove="' + escapeHtml(f.UserId) + '">' + tr('friends.remove', 'Remove') + '</button>' +
+                '</div>';
+            }).join('');
+            box.querySelectorAll('[data-ab-friend-remove]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var fid = btn.getAttribute('data-ab-friend-remove');
+                    fetchJson('Plugins/AchievementBadges/users/' + userId + '/friends/' + fid, 'DELETE')
+                        .then(function () { loadFriends(); })
+                        .catch(function () {});
+                });
+            });
+        }).catch(function () {
+            box.innerHTML = '<div class="ab-muted">' + tr('friends.load_failed', 'Failed to load friends.') + '</div>';
+        });
+    }
+
     function loadCompareUserList() {
         fetchServerUsers().then(function (users) {
             var a = el('abSaCompareUserA');
@@ -1400,7 +1506,7 @@
                     '<div class="ab-feed-icon ' + rarityCls + '">' + icon(e.Icon) + '</div>' +
                     '<div class="ab-feed-body">' +
                         '<div class="ab-feed-text"><strong>' + escapeHtml(e.UserName) + '</strong> ' + tr('activity.unlocked_verb', 'unlocked') + ' <strong>' + escapeHtml(e.Title) + '</strong></div>' +
-                        '<div class="ab-feed-meta"><span class="' + rarityCls + '">' + e.Rarity + '</span> · ' + escapeHtml(e.Category || '') + ' · ' + when + '</div>' +
+                        '<div class="ab-feed-meta"><span class="' + rarityCls + '">' + escapeHtml(trRarity(e.Rarity)) + '</span> · ' + escapeHtml(trCategory(e.Category || '')) + ' · ' + when + '</div>' +
                     '</div>' +
                 '</div>';
             }).join('');
@@ -1510,7 +1616,7 @@
                     '<circle cx="36" cy="36" r="28" stroke="' + color + '" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="' + dash + ' ' + circ + '" transform="rotate(-90 36 36)"/>' +
                     '<text x="36" y="40" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">' + pct + '%</text>' +
                 '</svg>' +
-                '<div class="ab-cat-ring-label">' + escapeHtml(it.Category) + '</div>' +
+                '<div class="ab-cat-ring-label">' + escapeHtml(trCategory(it.Category)) + '</div>' +
                 '<div class="ab-cat-ring-sub">' + it.Unlocked + '/' + it.Total + '</div>' +
             '</div>';
         }).join('');
@@ -1887,12 +1993,12 @@
                 '<div class="ab-card-h">' +
                     '<div class="ab-card-icon">' + icon(b.Icon) + '</div>' +
                     '<div style="flex:1; min-width:0;">' +
-                        '<div class="ab-card-title">' + b.Title + '</div>' +
-                        '<div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + b.Rarity + ' \u2022 ' + b.Category + '</div>' +
+                        '<div class="ab-card-title">' + escapeHtml(b.Title) + '</div>' +
+                        '<div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + escapeHtml(trRarity(b.Rarity)) + ' \u2022 ' + escapeHtml(trCategory(b.Category)) + '</div>' +
                     '</div>' +
                     '<div class="ab-badge-pts" title="' + (currentPrestige > 0 ? tr('badge.pts_tooltip_prestige', 'Points awarded on unlock (prestige bonus applied)') : tr('badge.pts_tooltip', 'Points awarded on unlock')) + '">+' + pts + ' ' + tr('badge.pts_label', 'pts') + '</div>' +
                 '</div>' +
-                '<div class="ab-desc">' + b.Description + '</div>' +
+                '<div class="ab-desc">' + escapeHtml(b.Description) + '</div>' +
                 '<div class="ab-prog-text"><span>' + tr('badge.progress', 'Progress') + '</span><span>' + cur + '/' + tar + '</span></div>' +
                 '<div class="ab-prog-bar"><div class="ab-prog-fill" style="width:' + pct + '%;"></div></div>' +
                 etaHtml +
@@ -2163,7 +2269,7 @@
         });
         box.querySelectorAll('select[data-settings-select]').forEach(function (sel) {
             sel.addEventListener('change', function () {
-                saveSettingsPrefs(box);
+                var savePromise = saveSettingsPrefs(box) || Promise.resolve();
                 if (sel.getAttribute('data-settings-select') === 'achievementPageTheme') {
                     applyPageTheme(sel.value);
                 }
@@ -2173,11 +2279,23 @@
                     var pc = publicConfigGlobal || {};
                     var adminLang = (pc.DefaultLanguage || pc.defaultLanguage || 'en').toString().toLowerCase();
                     var eff = (!chosen || chosen === 'default') ? adminLang : chosen;
-                    loadTranslations(eff).then(function () {
-                        applyStaticTranslations();
-                        // Re-render the settings panel so its own labels update.
-                        renderSettingsPanel(prefs);
-                    });
+                    // Keep the local prefs in sync with the user's choice so
+                    // the re-rendered <select> marks the right option (the
+                    // old behaviour passed back stale `prefs` and the box
+                    // still highlighted English).
+                    prefs.Language = chosen;
+                    prefs.language = chosen;
+                    // Wait for the preference save (kicked off at the top
+                    // of this handler) to land on disk — otherwise the
+                    // server still has the old Language stored and
+                    // BadgeLocalizer would localise to the wrong language
+                    // when loadAll re-fetches badges.
+                    Promise.all([loadTranslations(eff), savePromise])
+                        .then(function () {
+                            applyStaticTranslations();
+                            if (typeof loadAll === 'function') loadAll();
+                            renderSettingsPanel(prefs);
+                        });
                 }
             });
         });
@@ -2191,7 +2309,10 @@
     }
 
     function saveSettingsPrefs(box) {
-        fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').then(function (existing) {
+        // Returns a promise so callers that depend on the save having
+        // landed server-side (e.g. the language picker, which wants to
+        // re-fetch server-localised badges) can await it.
+        return fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').then(function (existing) {
             var payload = existing || {};
             box.querySelectorAll('input[data-settings-key]').forEach(function (cb) {
                 var key = cb.getAttribute('data-settings-key');
@@ -2540,7 +2661,10 @@
                 allBadges.forEach(function (b) { if (b.Category) cats[b.Category] = true; });
                 Object.keys(cats).sort().forEach(function (c) {
                     var opt = document.createElement('option');
-                    opt.value = c; opt.textContent = c;
+                    // Keep the filter value as the canonical English category
+                    // name (that's what the server sends back on each badge),
+                    // but show the localised label to the user.
+                    opt.value = c; opt.textContent = trCategory(c);
                     catSel.appendChild(opt);
                 });
             }
@@ -2613,6 +2737,17 @@
         el('abSaTabLb').addEventListener('click', function () { setTab('lb'); });
         el('abSaTabCompare').addEventListener('click', function () { setTab('compare'); });
         el('abSaTabActivity').addEventListener('click', function () { setTab('activity'); });
+        var friendsTab = el('abSaTabFriends');
+        if (friendsTab) friendsTab.addEventListener('click', function () { setTab('friends'); });
+        var friendsAddBtn = el('abSaFriendAddBtn');
+        if (friendsAddBtn) friendsAddBtn.addEventListener('click', function () {
+            var sel = el('abSaFriendAddSel');
+            var fid = sel && sel.value;
+            if (!fid) return;
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/friends/' + fid, 'POST')
+                .then(function () { loadFriends(); })
+                .catch(function (e) { alert((e && e.message) || 'Failed to add friend'); });
+        });
         el('abSaTabWrapped').addEventListener('click', function () { setTab('wrapped'); });
         el('abSaTabStats').addEventListener('click', function () { setTab('stats'); loadStats(); });
         el('abSaTabSettings').addEventListener('click', function () { setTab('settings'); });

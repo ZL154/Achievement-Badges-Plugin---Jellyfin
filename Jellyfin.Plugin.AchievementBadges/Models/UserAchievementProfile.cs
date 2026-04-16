@@ -42,6 +42,11 @@ public class UserAchievementProfile
 
     public List<CompareHistoryEntry> CompareHistory { get; set; } = new();
 
+    // One-sided follow list — who this user has added as a friend. Mutual
+    // friendship is implicit (if B is also in A's Friends list). Kept as a
+    // small list of GUID strings so the JSON remains simple.
+    public List<string> Friends { get; set; } = new();
+
     public UserNotificationPreferences Preferences { get; set; } = new();
 }
 

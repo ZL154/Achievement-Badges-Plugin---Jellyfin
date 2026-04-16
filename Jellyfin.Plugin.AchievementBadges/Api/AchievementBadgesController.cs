@@ -29,6 +29,7 @@ public class AchievementBadgesController : ControllerBase
     private readonly AuditLogService _auditLog;
     private readonly IUserManager _userManager;
     private readonly IAuthorizationService _authService;
+    private readonly FriendsService _friendsService;
 
     public AchievementBadgesController(
         AchievementBadgeService badgeService,
@@ -40,7 +41,8 @@ public class AchievementBadgesController : ControllerBase
         QuestService questService,
         AuditLogService auditLog,
         IUserManager userManager,
-        IAuthorizationService authService)
+        IAuthorizationService authService,
+        FriendsService friendsService)
     {
         _badgeService = badgeService;
         _playbackCompletionService = playbackCompletionService;
@@ -52,6 +54,7 @@ public class AchievementBadgesController : ControllerBase
         _auditLog = auditLog;
         _userManager = userManager;
         _authService = authService;
+        _friendsService = friendsService;
     }
 
     [HttpGet("test")]
@@ -343,6 +346,33 @@ public class AchievementBadgesController : ControllerBase
     {
         var badges = _badgeService.GetEquippedBadges(userId);
         return Ok(badges);
+    }
+
+    // ---------- Friends --------------------------------------------
+
+    [HttpGet("users/{userId}/friends")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetFriends([FromRoute] string userId)
+    {
+        return Ok(_friendsService.ListFriends(userId));
+    }
+
+    [HttpPost("users/{userId}/friends/{friendUserId}")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult AddFriend([FromRoute] string userId, [FromRoute] string friendUserId)
+    {
+        var (ok, message) = _friendsService.AddFriend(userId, friendUserId);
+        return Ok(new { Success = ok, Message = message });
+    }
+
+    [HttpDelete("users/{userId}/friends/{friendUserId}")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult RemoveFriend([FromRoute] string userId, [FromRoute] string friendUserId)
+    {
+        var (ok, message) = _friendsService.RemoveFriend(userId, friendUserId);
+        return Ok(new { Success = ok, Message = message });
     }
 
     // Public read of another user's equipped badges. The route deliberately

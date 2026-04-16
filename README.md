@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Jellyfin-10.11%2B-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
   <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
-  <img src="https://img.shields.io/badge/Version-1.5.44-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/Version-1.7.1-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/License-MIT-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
 </p>
 
@@ -23,7 +23,7 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd, built natively into your media server.
 
-> **Status:** Active development — v1.5.40 adds user preferences, privacy controls, admin feature toggles, achievement page themes, Xbox-style toasts with sound, and diamond animations for legendary/mythic unlocks.
+> **Status:** Active development — v1.7.1 adds a Friends tab (online status, now-playing, equipped badges), admin quest customization, public equipped-badge previews on leaderboards/compare, genuinely comprehensive translations (all 171 badges + 659 UI keys × 8 languages including localised categories and rarities), a full security audit pass (compare-endpoint IDOR, stored XSS in admin UI, privacy tightening, webhook SSRF, rate limits), and fixes for the language-dropdown-stays-on-English bug + the equipped-showcase toggle actually hiding sidebar pills.
 
 ---
 
@@ -81,10 +81,19 @@ Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin
 - Visible on profile and leaderboard
 
 ### 🎯 Daily & weekly quests
-- **3 concurrent daily quests** rotating from 12 templates
-- **3 concurrent weekly quests** rotating from 8 templates
+- **3 concurrent daily quests** rotating from 12 built-in templates
+- **3 concurrent weekly quests** rotating from 8 built-in templates
 - Deterministic rotation — everyone on the server gets the same quests per day/week
 - Completing quests pays into the score bank
+- **Admin quest customization** (new in v1.7.0) — add / edit / remove daily + weekly quests from the admin page, replace built-in quests by Id, or disable built-ins your server can't satisfy
+
+### 👥 Friends (new in v1.7.1)
+- One-sided follow model — follow other users on your Jellyfin server
+- See **online / offline** status pulled live from Jellyfin's session manager
+- See each friend's **equipped badges** (respects their privacy prefs)
+- See what they're **watching right now** (series name + episode)
+- **Mutual** indicator when you both follow each other
+- Dedicated Friends tab on the achievements page
 
 ### 📊 Stats & visualization
 - **Recap tab** — weekly / monthly / yearly breakdowns with top genres, directors, actors
@@ -114,6 +123,14 @@ A gear icon on the achievements page opens a full settings panel with auto-save:
 - **Spoiler mode** — hides locked badge descriptions with "???" so you discover them naturally
 - **Equipped badge slots** — choose how many badges show in your showcase (1-10)
 - **Auto-equip new unlocks** — newly earned badges automatically fill empty slots
+
+### 🌍 Languages
+- **8 languages** — English, Français, Español, Deutsch, Italiano, Português, 中文 (简体), 日本語
+- **659 UI keys** translated across every tab (achievements profile, stats, heatmap, streak calendar, prestige leaderboard, notification prefs, server stats, compare, leaderboards, recap, quests, admin page)
+- **All 171 built-in badges** translated — titles + descriptions per language
+- **Badge categories + rarities** also localised ("Binge" → "Marathon", "Legendary" → "Légendaire", etc.)
+- **Per-user language picker** in preferences; admin can set a server-wide default
+- Translations loaded client-side + server-side (`BadgeLocalizer`) so both UI chrome and badge titles on the leaderboard / showcase localise together
 
 ### 🛠️ Admin features
 - **Feature Controls** — kill switches for leaderboard, compare, activity feed, prestige, quests
@@ -400,6 +417,15 @@ Auto-injected into the Jellyfin nav menu — no theme changes required.
 <p align="center">
   <img alt="Sidebar entry" src="assets/screenshots/sidebar-entry.png" />
 </p>
+
+---
+
+## 🙏 Credits & thanks
+
+- **xdnewlun1 (Techno Cricket, CCDC)** — responsible disclosure of 12 security findings in v1.6.0 including the critical IDOR that led to the `UserOwnershipFilter`.
+- **French community contributions** — bug reports and feature requests (deactivate equipped badges, quest customization, Xbox logo upload) from a fork author on v1.6.1. French translation strings from his fork will be merged when available.
+- **Uenify** — the Xbox-style toast animation (circle grow, banner sweep, shimmer, text slide) is a port of his [CodePen](https://codepen.io/uenify) to vanilla JS + per-rarity colour palettes.
+- Translations by automated pass (fr/es/de/it/pt/zh-CN/ja) — welcoming native-speaker polish via PRs.
 
 ---
 
