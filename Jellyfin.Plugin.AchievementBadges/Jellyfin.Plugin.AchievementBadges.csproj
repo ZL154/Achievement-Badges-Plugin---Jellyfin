@@ -9,7 +9,7 @@
     <RootNamespace>Jellyfin.Plugin.AchievementBadges</RootNamespace>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
-    <Version>1.7.3</Version>
+    <Version>1.7.4</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,8 +25,30 @@
 
 
   <ItemGroup>
+    <!-- Microsoft.NET.Sdk.Web implicitly classifies JSON under Pages\ as
+         Content (via StaticWebAssets). Strip that first. -->
+    <Content Remove="Pages\**\*.json" />
+    <None Remove="Pages\**\*.json" />
     <EmbeddedResource Include="Pages\**\*" />
     <EmbeddedResource Include="Configuration\configPage.html" />
+  </ItemGroup>
+
+  <!-- Files matching *.<culture>.<ext> like badges.fr.json get pulled into
+       culture-satellite assemblies (fr/Jellyfin.Plugin.AchievementBadges.
+       resources.dll etc.) instead of the main DLL — that means
+       BadgeLocalizer's `assembly.GetManifestResourceStream(...)` call on
+       the main assembly returns null for every non-English language.
+       Opt out of the satellite-assembly path by setting WithCulture=false
+       and pinning LogicalName so each file keeps a unique resource name. -->
+  <ItemGroup>
+    <EmbeddedResource Update="Pages\translations\badges.en.json" WithCulture="false" LogicalName="Jellyfin.Plugin.AchievementBadges.Pages.translations.badges.en.json" />
+    <EmbeddedResource Update="Pages\translations\badges.fr.json" WithCulture="false" LogicalName="Jellyfin.Plugin.AchievementBadges.Pages.translations.badges.fr.json" />
+    <EmbeddedResource Update="Pages\translations\badges.es.json" WithCulture="false" LogicalName="Jellyfin.Plugin.AchievementBadges.Pages.translations.badges.es.json" />
+    <EmbeddedResource Update="Pages\translations\badges.de.json" WithCulture="false" LogicalName="Jellyfin.Plugin.AchievementBadges.Pages.translations.badges.de.json" />
+    <EmbeddedResource Update="Pages\translations\badges.it.json" WithCulture="false" LogicalName="Jellyfin.Plugin.AchievementBadges.Pages.translations.badges.it.json" />
+    <EmbeddedResource Update="Pages\translations\badges.pt.json" WithCulture="false" LogicalName="Jellyfin.Plugin.AchievementBadges.Pages.translations.badges.pt.json" />
+    <EmbeddedResource Update="Pages\translations\badges.zh.json" WithCulture="false" LogicalName="Jellyfin.Plugin.AchievementBadges.Pages.translations.badges.zh.json" />
+    <EmbeddedResource Update="Pages\translations\badges.ja.json" WithCulture="false" LogicalName="Jellyfin.Plugin.AchievementBadges.Pages.translations.badges.ja.json" />
   </ItemGroup>
 
 </Project>

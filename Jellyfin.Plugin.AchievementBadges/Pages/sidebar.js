@@ -116,14 +116,53 @@
         })();
         return Promise.all([pubPromise, prefPromise]).then(function(results){
             var pub = results[0], prefs = results[1];
-            if (pub && pub.ForceHideEquippedShowcase) { _showcaseEnabled = false; return false; }
-            if (prefs && prefs.ShowEquippedShowcase === false) { _showcaseEnabled = false; return false; }
+            if (pub && pub.ForceHideEquippedShowcase) { _showcaseEnabled = false; installShowcaseWatchdog(); return false; }
+            if (prefs && prefs.ShowEquippedShowcase === false) { _showcaseEnabled = false; installShowcaseWatchdog(); return false; }
             _showcaseEnabled = true; return true;
         });
     }
     function removeShowcaseDom(){
         var sc = document.getElementById(SHOWCASE_ID); if (sc && sc.parentNode) sc.parentNode.removeChild(sc);
         var hdr = document.getElementById(HEADER_ID); if (hdr && hdr.parentNode) hdr.parentNode.removeChild(hdr);
+    }
+
+    // When showcase is disabled we install a permanent watchdog that keeps
+    // removing the showcase/header DOM whenever anything re-creates it. This
+    // is essential on upgrades from pre-v1.7.0 where the old bloated inline
+    // script is STILL in the user's cached index.html and keeps re-inserting
+    // the pills on a setInterval. The admin's plugin upgrade would strip it
+    // from disk, but Jellyfin's static caching / browser caching often
+    // keeps the old HTML alive for a while. This watchdog kills the DOM
+    // in both cases.
+    var _showcaseWatchdogInstalled = false;
+    function installShowcaseWatchdog(){
+        if (_showcaseWatchdogInstalled) return;
+        _showcaseWatchdogInstalled = true;
+        // Aggressive sweep every 250ms — cheap (just two getElementById).
+        setInterval(function(){ if (_showcaseEnabled === false) removeShowcaseDom(); }, 250);
+        // Also a MutationObserver so we react immediately when something
+        // adds either element, not just on the next tick.
+        try {
+            if (document.body) {
+                new MutationObserver(function(muts){
+                    if (_showcaseEnabled !== false) return;
+                    for (var i = 0; i < muts.length; i++) {
+                        var m = muts[i];
+                        for (var j = 0; j < m.addedNodes.length; j++) {
+                            var n = m.addedNodes[j];
+                            if (!n || n.nodeType !== 1) continue;
+                            if (n.id === SHOWCASE_ID || n.id === HEADER_ID) {
+                                if (n.parentNode) n.parentNode.removeChild(n);
+                            } else if (n.querySelector) {
+                                // Added subtree might contain them nested.
+                                var nested = n.querySelector('#' + SHOWCASE_ID + ', #' + HEADER_ID);
+                                if (nested && nested.parentNode) nested.parentNode.removeChild(nested);
+                            }
+                        }
+                    }
+                }).observe(document.body, { childList: true, subtree: true });
+            }
+        } catch(e) {}
     }
 
     function injectSidebar(){
@@ -253,6 +292,10 @@
             injectSidebar();
             injectHeader();
         });
+        // Idempotent — mounts the friends button/drawer exactly once, but
+        // is cheap to call repeatedly so the retry loop covers the case
+        // where document.body wasn't ready on the first start() call.
+        try { ensureFriendsDrawer(); } catch(e) {}
     }
 
     // Listen for live preference changes broadcast from the achievements
@@ -265,10 +308,310 @@
         });
     } catch (e) {}
 
+    // ====================== Friends drawer ==============================
+    // Global floating button + Xbox-guide-style side drawer. Lives in
+    // sidebar.js so it's available on EVERY Jellyfin page, not just the
+    // achievements tab. Anchored bottom-LEFT per user feedback.
+    function rarityColour(r){ return rarityColors[(r||'').toLowerCase()] || rarityColors.common; }
+    function renderEquippedDots(eq, size){
+        if (!eq || !eq.length) return '';
+        var px = size || 16;
+        return '<span style="display:inline-flex;gap:3px;vertical-align:middle;">' +
+            eq.slice(0,5).map(function(b){
+                var c = rarityColour(b.Rarity);
+                return '<span title="'+escapeHtml(b.Title||'')+'" style="width:'+px+'px;height:'+px+'px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:'+c+'26;border:1.5px solid '+c+';box-shadow:0 0 6px '+c+'55;">' +
+                    '<span class="material-icons" style="font-family:Material Icons;font-size:'+Math.max(10,px-6)+'px;line-height:1;color:#fff;">'+icName(b.Icon)+'</span>' +
+                '</span>';
+            }).join('') +
+        '</span>';
+    }
+
+    var _friendsMounted = false;
+    var _friendsOpen = false;
+    var _friendsCachedUsers = null;
+    function ensureFriendsDrawer(){
+        if (_friendsMounted) return;
+        _friendsMounted = true;
+
+        // One-time stylesheet.
+        if (!document.getElementById('ab-friends-styles')) {
+            var fst = document.createElement('style');
+            fst.id = 'ab-friends-styles';
+            fst.textContent =
+                '#abFriendsBtn{position:fixed;left:1em;bottom:1.2em;width:52px;height:52px;border-radius:16px;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 8px 22px rgba(102,126,234,0.45),inset 0 0 0 1px rgba(255,255,255,0.1);cursor:pointer;z-index:9999998;display:flex;align-items:center;justify-content:center;transition:transform 0.15s,box-shadow 0.15s;}' +
+                '#abFriendsBtn:hover{transform:scale(1.08);box-shadow:0 12px 28px rgba(102,126,234,0.6),inset 0 0 0 1px rgba(255,255,255,0.2);}' +
+                '#abFriendsBtn .material-icons{font-size:1.6em;}' +
+                '#abFriendsBadge{position:absolute;top:-5px;right:-5px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:0.7em;font-weight:800;display:none;align-items:center;justify-content:center;box-shadow:0 0 0 2px rgba(10,12,18,0.92);}' +
+                '#abFriendsBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:9999997;opacity:0;transition:opacity 0.22s;}' +
+                '#abFriendsDrawer{display:none;position:fixed;top:0;left:0;width:min(360px,92vw);height:100vh;background:linear-gradient(170deg,#1a1f2e 0%,#0d1017 100%);border-right:1px solid rgba(255,255,255,0.08);box-shadow:10px 0 40px rgba(0,0,0,0.6);z-index:9999999;flex-direction:column;transform:translateX(-100%);transition:transform 0.28s cubic-bezier(.22,.9,.3,1);color:#fff;font-family:inherit;}' +
+                '.ab-fd-header{padding:1.1em 1.2em 0.9em;display:flex;align-items:center;gap:0.6em;border-bottom:1px solid rgba(255,255,255,0.06);background:linear-gradient(90deg,rgba(102,126,234,0.1),transparent);}' +
+                '.ab-fd-ico{background:linear-gradient(135deg,#667eea,#764ba2);width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1em;color:#fff;}' +
+                '.ab-fd-title{font-weight:800;font-size:1.05em;flex:1;letter-spacing:0.2px;}' +
+                '.ab-fd-close{background:rgba(255,255,255,0.06);border:none;color:#fff;cursor:pointer;width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}' +
+                '.ab-fd-close:hover{background:rgba(255,255,255,0.15);}' +
+                '.ab-fd-tabs{display:flex;padding:0.6em 0.8em;gap:0.35em;border-bottom:1px solid rgba(255,255,255,0.06);}' +
+                '.ab-fd-tab{flex:1;padding:0.6em 0.6em;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#c7d2fe;font-size:0.82em;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3em;transition:all 0.15s;}' +
+                '.ab-fd-tab:hover{background:rgba(255,255,255,0.05);}' +
+                '.ab-fd-tab.active{background:linear-gradient(135deg,rgba(102,126,234,0.22),rgba(118,75,162,0.22));border-color:rgba(102,126,234,0.55);color:#fff;box-shadow:0 4px 12px rgba(102,126,234,0.2);}' +
+                '.ab-fd-body{flex:1;overflow-y:auto;padding:0.8em;}' +
+                '.ab-fd-row{display:flex;align-items:center;gap:0.7em;padding:0.7em 0.55em;border-radius:12px;transition:background 0.15s;margin-bottom:0.2em;}' +
+                '.ab-fd-row:hover{background:rgba(255,255,255,0.04);}' +
+                '.ab-fd-avatar{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:0.9em;position:relative;background:linear-gradient(135deg,#334155,#1e293b);color:#cbd5e1;}' +
+                '.ab-fd-avatar.online{background:linear-gradient(135deg,rgba(74,222,128,0.3),rgba(34,197,94,0.18));color:#bbf7d0;box-shadow:inset 0 0 0 2px #4ade80;}' +
+                '.ab-fd-avatar::after{content:"";position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:999px;background:rgba(255,255,255,0.22);border:2px solid #0d1017;}' +
+                '.ab-fd-avatar.online::after{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,0.8);}' +
+                '.ab-fd-info{flex:1;min-width:0;}' +
+                '.ab-fd-name{font-weight:700;font-size:0.95em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+                '.ab-fd-status{font-size:0.75em;opacity:0.65;margin-top:0.1em;}' +
+                '.ab-fd-status.online{color:#86efac;opacity:0.9;}' +
+                '.ab-fd-actions{display:flex;gap:0.3em;}' +
+                '.ab-fd-act{padding:0.4em 0.7em;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#c7d2fe;font-size:0.8em;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:0.3em;transition:all 0.15s;}' +
+                '.ab-fd-act:hover{background:rgba(255,255,255,0.14);color:#fff;}' +
+                '.ab-fd-act.accept{background:rgba(74,222,128,0.18);color:#86efac;}' +
+                '.ab-fd-act.accept:hover{background:rgba(74,222,128,0.3);}' +
+                '.ab-fd-act.decline{background:rgba(239,68,68,0.15);color:#fca5a5;}' +
+                '.ab-fd-act.decline:hover{background:rgba(239,68,68,0.3);}' +
+                '.ab-fd-act .material-icons{font-size:1em;}' +
+                '.ab-fd-section{font-size:0.72em;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.45);font-weight:700;margin:0.85em 0.4em 0.4em;}' +
+                '.ab-fd-empty{text-align:center;padding:2em 1em;color:rgba(255,255,255,0.5);}' +
+                '.ab-fd-empty .material-icons{font-size:2.8em;opacity:0.3;margin-bottom:0.4em;display:block;}' +
+                '.ab-fd-search{width:100%;padding:0.7em 0.9em;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-family:inherit;font-size:0.92em;margin-bottom:0.85em;box-sizing:border-box;}' +
+                '.ab-fd-search:focus{outline:none;border-color:rgba(102,126,234,0.55);box-shadow:0 0 0 3px rgba(102,126,234,0.18);}' +
+                '#abFriendsIncBadge{margin-left:0.3em;padding:0 6px;border-radius:999px;background:#ef4444;color:#fff;font-size:0.65em;font-weight:800;line-height:16px;min-width:18px;text-align:center;}';
+            (document.head || document.documentElement).appendChild(fst);
+        }
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'abFriendsBtn';
+        btn.title = tr('friends.title', 'Friends');
+        btn.innerHTML = '<span class="material-icons">groups</span><span id="abFriendsBadge"></span>';
+        document.body.appendChild(btn);
+
+        var backdrop = document.createElement('div');
+        backdrop.id = 'abFriendsBackdrop';
+        document.body.appendChild(backdrop);
+
+        var drawer = document.createElement('div');
+        drawer.id = 'abFriendsDrawer';
+        drawer.innerHTML =
+            '<div class="ab-fd-header">' +
+                '<span class="ab-fd-ico"><span class="material-icons" style="font-size:1em;">groups</span></span>' +
+                '<div class="ab-fd-title">' + tr('friends.title', 'Friends') + '</div>' +
+                '<button type="button" class="ab-fd-close" id="abFriendsClose"><span class="material-icons" style="font-size:1em;">close</span></button>' +
+            '</div>' +
+            '<div class="ab-fd-tabs">' +
+                '<button type="button" class="ab-fd-tab active" data-ab-fdtab="friends">' + tr('friends.tab_friends', 'Friends') + '</button>' +
+                '<button type="button" class="ab-fd-tab" data-ab-fdtab="requests">' + tr('friends.tab_requests', 'Requests') + '<span id="abFriendsIncBadge" style="display:none;"></span></button>' +
+                '<button type="button" class="ab-fd-tab" data-ab-fdtab="find">' + tr('friends.tab_find', 'Find') + '</button>' +
+            '</div>' +
+            '<div class="ab-fd-body">' +
+                '<div id="abFriendsPaneFriends"></div>' +
+                '<div id="abFriendsPaneRequests" style="display:none;"></div>' +
+                '<div id="abFriendsPaneFind" style="display:none;">' +
+                    '<input type="search" id="abFriendsSearch" class="ab-fd-search" placeholder="' + tr('friends.search_placeholder', 'Search users...') + '">' +
+                    '<div id="abFriendsSearchResults"></div>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(drawer);
+
+        function open(){ _friendsOpen = true; backdrop.style.display='block'; drawer.style.display='flex'; void drawer.offsetHeight; backdrop.style.opacity='1'; drawer.style.transform='translateX(0)'; loadFriends(); }
+        function close(){ _friendsOpen = false; backdrop.style.opacity='0'; drawer.style.transform='translateX(-100%)'; setTimeout(function(){ drawer.style.display='none'; backdrop.style.display='none'; }, 280); }
+
+        btn.addEventListener('click', open);
+        backdrop.addEventListener('click', close);
+        drawer.querySelector('#abFriendsClose').addEventListener('click', close);
+
+        drawer.querySelectorAll('[data-ab-fdtab]').forEach(function(b){
+            b.addEventListener('click', function(){
+                var which = b.getAttribute('data-ab-fdtab');
+                document.getElementById('abFriendsPaneFriends').style.display = which==='friends'?'':'none';
+                document.getElementById('abFriendsPaneRequests').style.display = which==='requests'?'':'none';
+                document.getElementById('abFriendsPaneFind').style.display = which==='find'?'':'none';
+                drawer.querySelectorAll('[data-ab-fdtab]').forEach(function(bb){ bb.classList.toggle('active', bb===b); });
+                if (which === 'find') {
+                    var inp = document.getElementById('abFriendsSearch');
+                    if (inp) setTimeout(function(){ inp.focus(); }, 60);
+                }
+            });
+        });
+
+        var searchInput = drawer.querySelector('#abFriendsSearch');
+        var searchTimer = null;
+        searchInput.addEventListener('input', function(){
+            if (searchTimer) clearTimeout(searchTimer);
+            searchTimer = setTimeout(function(){ renderFriendSearch(searchInput.value || ''); }, 150);
+        });
+
+        // Poll the unread badge every 30s.
+        refreshFriendsBadge();
+        setInterval(refreshFriendsBadge, 30000);
+    }
+
+    function initials(name){
+        var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return '?';
+        return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+    }
+
+    function refreshFriendsBadge(){
+        var uid = getUserId(); if (!uid) return;
+        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/friends'), { headers: authHeaders(), credentials: 'include' })
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(data){
+                var inc = (data && data.Incoming) ? data.Incoming.length : 0;
+                var b = document.getElementById('abFriendsBadge');
+                if (b) { b.textContent = inc > 99 ? '99+' : String(inc); b.style.display = inc > 0 ? 'flex' : 'none'; }
+                var inb = document.getElementById('abFriendsIncBadge');
+                if (inb) { inb.textContent = inc > 99 ? '99+' : String(inc); inb.style.display = inc > 0 ? 'inline-flex' : 'none'; }
+            }).catch(function(){});
+    }
+
+    function loadFriends(){
+        var uid = getUserId(); if (!uid) return;
+        var fBox = document.getElementById('abFriendsPaneFriends');
+        var rBox = document.getElementById('abFriendsPaneRequests');
+        if (!fBox || !rBox) return;
+        fBox.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">hourglass_empty</span><div>' + tr('common.loading', 'Loading...') + '</div></div>';
+        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/friends'), { headers: authHeaders(), credentials: 'include' })
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(data){
+                data = data || { Friends: [], Incoming: [], Outgoing: [] };
+                var friends = data.Friends || [];
+                var incoming = data.Incoming || [];
+                var outgoing = data.Outgoing || [];
+
+                if (!friends.length) {
+                    fBox.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">people_outline</span><div>' + tr('friends.empty', "You haven't added any friends yet.") + '</div></div>';
+                } else {
+                    fBox.innerHTML = friends.map(function(f){
+                        var status = f.Online
+                            ? (f.NowPlaying && f.NowPlaying.Name
+                                ? tr('friends.watching_prefix', 'Watching') + ' <strong>' + escapeHtml(f.NowPlaying.SeriesName ? (f.NowPlaying.SeriesName + (f.NowPlaying.Name ? ' — ' + f.NowPlaying.Name : '')) : f.NowPlaying.Name) + '</strong>'
+                                : tr('friends.online', 'Online'))
+                            : (f.LastSeen ? tr('friends.last_seen', 'Last seen') + ' ' + new Date(f.LastSeen).toLocaleString() : tr('friends.offline', 'Offline'));
+                        return '<div class="ab-fd-row">' +
+                            '<div class="ab-fd-avatar'+(f.Online?' online':'')+'">' + escapeHtml(initials(f.UserName)) + '</div>' +
+                            '<div class="ab-fd-info">' +
+                                '<div class="ab-fd-name">' + escapeHtml(f.UserName) + '</div>' +
+                                '<div class="ab-fd-status'+(f.Online?' online':'')+'">' + status + '</div>' +
+                                (f.Equipped && f.Equipped.length ? '<div style="margin-top:0.35em;">' + renderEquippedDots(f.Equipped, 16) + '</div>' : '') +
+                            '</div>' +
+                            '<div class="ab-fd-actions"><button type="button" class="ab-fd-act decline" data-ab-friend-remove="' + escapeHtml(f.UserId) + '" title="'+tr('friends.remove','Remove')+'"><span class="material-icons">person_remove</span></button></div>' +
+                        '</div>';
+                    }).join('');
+                }
+
+                var rHtml = '';
+                if (incoming.length){
+                    rHtml += '<div class="ab-fd-section">' + tr('friends.incoming', 'Incoming requests') + '</div>';
+                    rHtml += incoming.map(function(r){
+                        return '<div class="ab-fd-row">' +
+                            '<div class="ab-fd-avatar">' + escapeHtml(initials(r.UserName)) + '</div>' +
+                            '<div class="ab-fd-info"><div class="ab-fd-name">' + escapeHtml(r.UserName) + '</div><div class="ab-fd-status">' + tr('friends.wants_to_be_friends', 'Wants to be friends') + '</div></div>' +
+                            '<div class="ab-fd-actions">' +
+                                '<button type="button" class="ab-fd-act accept" data-ab-friend-accept="' + escapeHtml(r.UserId) + '"><span class="material-icons">check</span>' + tr('friends.accept', 'Accept') + '</button>' +
+                                '<button type="button" class="ab-fd-act decline" data-ab-friend-remove="' + escapeHtml(r.UserId) + '"><span class="material-icons">close</span></button>' +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
+                }
+                if (outgoing.length){
+                    rHtml += '<div class="ab-fd-section">' + tr('friends.outgoing', 'Sent requests') + '</div>';
+                    rHtml += outgoing.map(function(r){
+                        return '<div class="ab-fd-row">' +
+                            '<div class="ab-fd-avatar">' + escapeHtml(initials(r.UserName)) + '</div>' +
+                            '<div class="ab-fd-info"><div class="ab-fd-name">' + escapeHtml(r.UserName) + '</div><div class="ab-fd-status">' + tr('friends.pending', 'Pending') + '</div></div>' +
+                            '<div class="ab-fd-actions"><button type="button" class="ab-fd-act" data-ab-friend-remove="' + escapeHtml(r.UserId) + '">' + tr('friends.cancel', 'Cancel') + '</button></div>' +
+                        '</div>';
+                    }).join('');
+                }
+                if (!rHtml) rHtml = '<div class="ab-fd-empty"><span class="material-icons">inbox</span><div>' + tr('friends.no_requests', 'No pending requests.') + '</div></div>';
+                rBox.innerHTML = rHtml;
+
+                var inb = document.getElementById('abFriendsIncBadge');
+                if (inb) { inb.textContent = incoming.length > 99 ? '99+' : String(incoming.length); inb.style.display = incoming.length > 0 ? 'inline-flex' : 'none'; }
+                var btnBadge = document.getElementById('abFriendsBadge');
+                if (btnBadge) { btnBadge.textContent = incoming.length > 99 ? '99+' : String(incoming.length); btnBadge.style.display = incoming.length > 0 ? 'flex' : 'none'; }
+
+                document.querySelectorAll('[data-ab-friend-accept]').forEach(function(btn){
+                    btn.addEventListener('click', function(){
+                        var fid = btn.getAttribute('data-ab-friend-accept');
+                        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/friends/'+fid+'/accept'), { method:'POST', headers: authHeaders(), credentials: 'include' })
+                            .then(function(){ loadFriends(); });
+                    });
+                });
+                document.querySelectorAll('[data-ab-friend-remove]').forEach(function(btn){
+                    btn.addEventListener('click', function(){
+                        var fid = btn.getAttribute('data-ab-friend-remove');
+                        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/friends/'+fid), { method:'DELETE', headers: authHeaders(), credentials: 'include' })
+                            .then(function(){ loadFriends(); });
+                    });
+                });
+
+                window.__abFriendIds = {};
+                [friends, incoming, outgoing].forEach(function(arr){
+                    arr.forEach(function(f){ window.__abFriendIds[String(f.UserId||'').toLowerCase().replace(/-/g,'')] = true; });
+                });
+            }).catch(function(){
+                fBox.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">error_outline</span><div>' + tr('friends.load_failed', 'Failed to load friends.') + '</div></div>';
+            });
+    }
+
+    function fetchServerUsers(){
+        if (_friendsCachedUsers) return Promise.resolve(_friendsCachedUsers);
+        return fetch(buildUrl('Users'), { headers: authHeaders(), credentials: 'include' })
+            .then(function(r){ return r.ok ? r.json() : []; })
+            .then(function(list){
+                _friendsCachedUsers = (list || []).map(function(u){ return { Id: (u.Id||'').toString(), Name: u.Name || u.Id }; });
+                return _friendsCachedUsers;
+            }).catch(function(){ return []; });
+    }
+
+    function renderFriendSearch(q){
+        var box = document.getElementById('abFriendsSearchResults');
+        if (!box) return;
+        q = (q || '').trim().toLowerCase();
+        if (!q) { box.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">search</span><div>' + tr('friends.type_to_search', 'Start typing to find users.') + '</div></div>'; return; }
+        fetchServerUsers().then(function(users){
+            var uid = getUserId();
+            var me = (uid || '').toLowerCase().replace(/-/g,'');
+            var skip = window.__abFriendIds || {};
+            var matches = users.filter(function(u){
+                var nid = (u.Id || '').toLowerCase().replace(/-/g,'');
+                if (nid === me) return false;
+                if (skip[nid]) return false;
+                return (u.Name || '').toLowerCase().indexOf(q) !== -1;
+            }).slice(0, 20);
+            if (!matches.length) { box.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">person_search</span><div>' + tr('friends.no_matches', 'No users match.') + '</div></div>'; return; }
+            box.innerHTML = matches.map(function(u){
+                return '<div class="ab-fd-row">' +
+                    '<div class="ab-fd-avatar">' + escapeHtml(initials(u.Name)) + '</div>' +
+                    '<div class="ab-fd-info"><div class="ab-fd-name">' + escapeHtml(u.Name) + '</div></div>' +
+                    '<div class="ab-fd-actions"><button type="button" class="ab-fd-act accept" data-ab-friend-add="' + escapeHtml(u.Id) + '"><span class="material-icons">person_add</span>' + tr('friends.send_request', 'Send request') + '</button></div>' +
+                '</div>';
+            }).join('');
+            box.querySelectorAll('[data-ab-friend-add]').forEach(function(btn){
+                btn.addEventListener('click', function(){
+                    var fid = btn.getAttribute('data-ab-friend-add');
+                    btn.disabled = true;
+                    fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/friends/'+fid), { method:'POST', headers: authHeaders(), credentials:'include' })
+                        .then(function(r){ return r.ok ? r.json() : null; })
+                        .then(function(res){
+                            btn.innerHTML = (res && res.Success) ? '<span class="material-icons">check</span>' + tr('friends.sent', 'Sent') : tr('friends.failed', 'Failed');
+                            loadFriends();
+                        }).catch(function(){ btn.textContent = tr('friends.failed', 'Failed'); });
+                });
+            });
+        });
+    }
+
     function start(){
         try { console.log('[AchievementBadges] start() running, readyState=', document.readyState); } catch(e){}
         loadSidebarTranslations();
         tryInject();
+        // Mount the global friends button + drawer. Idempotent.
+        try { ensureFriendsDrawer(); } catch(e) {}
         var attempts = 0;
         var retryInterval = setInterval(function(){
             attempts++;
