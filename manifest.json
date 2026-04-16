@@ -9,6 +9,13 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.7.8",
+        "changelog": "EQUIPPED BADGES LOCALIZE: GetEquippedBadges was bypassing BadgeLocalizer — it returned raw profile.Badges clones with English Title/Description regardless of the user's saved Language pref. So switching languages would flip every other UI string but leave the equipped row in English. Now Localize runs on each clone using profile.Preferences.Language. Same fix applied to BuildEquippedPreview so the leaderboard / compare / public equipped dots also translate. ADMIN PAGE i18n made robust: the translator IIFE now waits for Jellyfin's ApiClient to mount (up to 5s, polled every 80ms) and passes the auth token + fully-qualified URL to the /translations fetch — previously the optimistic early fetch could 404 under reverse-proxy subpath setups or fail CORS/auth checks, leaving the page stuck in English even when localStorage had 'pt'/'fr'/etc. Also seeds from localStorage immediately while waiting for the server round-trip, so the first paint is already in the right language.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.7.8/Jellyfin.Plugin.AchievementBadgesv1.7.8.zip",
+        "checksum": "915BBE73EA159D855CC753D565E5D916"
+      },
+      {
         "version": "1.7.7",
         "changelog": "REAL fix for hero 'Loading...' stuck: applyStaticTranslations was called AFTER loadAll had populated abSaSub (and other text-only data-i18n placeholders) — and because the element had no child elements, my v1.7.5 'skip populated containers' guard didn't cover it. So every translation pass re-set textContent back to the literal 'Loading...' string. Now the translator explicitly skips data-i18n='common.loading' keys so they're never clobbered post-render. Subtitle / stats / rank-bar labels now actually stay populated. ADMIN PAGE category + rarity labels now localised via client-side lookup of the existing rarity.* and category.* i18n keys — the enable/disable grid's section headings and per-badge rarity chips stop being English for French/etc. admins (badge.Title/Description were already passed through ?lang= server-side since v1.7.6; now the client-side labels match). README updated with the Friends drawer, rarity-% chip, data-loss recovery chain, and credit to @frenchyx24 for the hand-translated French.",
         "targetAbi": "10.11.0.0",

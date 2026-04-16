@@ -1204,11 +1204,23 @@ public class AchievementBadgeService
             var profile = GetOrCreateProfile(userId);
             EvaluateBadges(profile, userId);
 
+            // Localize titles/descriptions to the user's preferred language
+            // (the rest of the badge-fetch endpoints go through GetEnabledBadgeClones
+            // which already calls BadgeLocalizer, but GetEquippedBadges was
+            // shipping raw English text — so changing language in settings
+            // would flip all UI strings to French/Portuguese/etc. but the
+            // equipped-badges row would stay English until next unlock).
+            var lang = profile.Preferences?.Language;
             var equipped = profile.EquippedBadgeIds
                 .Where(IsBadgeEnabled)
                 .Select(id => profile.Badges.FirstOrDefault(b => b.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
                 .Where(b => b is not null)
-                .Select(b => CloneBadge(b!))
+                .Select(b =>
+                {
+                    var clone = CloneBadge(b!);
+                    Helpers.BadgeLocalizer.Localize(clone, lang);
+                    return clone;
+                })
                 .ToList();
 
             return equipped;
@@ -1816,15 +1828,23 @@ public class AchievementBadgeService
         if (cfg?.ForceHideEquippedShowcase == true) return new List<object>();
 
         var result = new List<object>();
+        var lang = prefs?.Language;
         foreach (var id in profile.EquippedBadgeIds)
         {
             if (!IsBadgeEnabled(id)) continue;
             var b = profile.Badges.FirstOrDefault(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
             if (b == null || !b.Unlocked) continue;
+            // Localize the equipped-preview title too so leaderboard dots /
+            // compare-header dots / public equipped endpoint show titles in
+            // the viewing user's language (sort of — this projection uses
+            // the TARGET user's language pref, which is the best we can do
+            // without a per-viewer context). Matches what GetEquippedBadges
+            // does for the owning user.
+            var (localTitle, _) = Helpers.BadgeLocalizer.Lookup(b.Id, lang);
             result.Add(new
             {
                 Icon = b.Icon,
-                Title = b.Title,
+                Title = localTitle ?? b.Title,
                 Rarity = b.Rarity
             });
         }
