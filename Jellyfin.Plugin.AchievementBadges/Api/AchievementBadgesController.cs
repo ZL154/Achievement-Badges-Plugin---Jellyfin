@@ -1444,6 +1444,7 @@ public class AchievementBadgesController : ControllerBase
     // ---------- Public: feature flags (non-sensitive, for the standalone page) ---
 
     [HttpGet("public-config")]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetPublicConfig()
     {

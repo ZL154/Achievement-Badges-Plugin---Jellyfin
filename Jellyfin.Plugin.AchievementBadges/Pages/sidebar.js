@@ -107,19 +107,33 @@
     var _showcaseEnabled = null;
     function resolveShowcaseEnabled(){
         if (_showcaseEnabled !== null) return Promise.resolve(_showcaseEnabled);
+        // Track whether EITHER fetch actually succeeded — when both fail
+        // (e.g. on page refresh before auth / ApiClient mounts), we must
+        // NOT fall through to `_showcaseEnabled = true` because a failed
+        // call doesn't mean the admin hasn't force-hidden. Keep the flag
+        // `null` so the periodic re-resolve retries.
+        var anySucceeded = false;
         var pubPromise = fetch(buildUrl('Plugins/AchievementBadges/public-config'), { headers: authHeaders(), credentials: 'include' })
-            .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+            .then(function(r){ if (r.ok) { anySucceeded = true; return r.json(); } return null; }).catch(function(){ return null; });
         var prefPromise = (function(){
             var uid = getUserId(); if (!uid) return Promise.resolve(null);
             return fetch(buildUrl('Plugins/AchievementBadges/users/' + uid + '/preferences'), { headers: authHeaders(), credentials: 'include' })
-                .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+                .then(function(r){ if (r.ok) { anySucceeded = true; return r.json(); } return null; }).catch(function(){ return null; });
         })();
         return Promise.all([pubPromise, prefPromise]).then(function(results){
             var pub = results[0], prefs = results[1];
             if (pub && pub.ForceHideEquippedShowcase) { _showcaseEnabled = false; installShowcaseWatchdog(); return false; }
             if (prefs && prefs.ShowEquippedShowcase === false) { _showcaseEnabled = false; installShowcaseWatchdog(); return false; }
+            // If BOTH fetches failed, keep _showcaseEnabled null so the
+            // next pass retries. Don't assume the showcase should be on
+            // — that was the root cause of "force-hide broken on refresh":
+            // public-config fetch 401'd before ApiClient mounted, both
+            // fell to null, and the fallback flipped the flag to true.
+            if (!anySucceeded) {
+                _showcaseEnabled = null;
+                return null;
+            }
             _showcaseEnabled = true;
-            // Showcase is back on — drop the force-hide CSS sheet if any.
             restoreShowcaseCss();
             return true;
         });
@@ -358,7 +372,16 @@
             if (!enabled) removeShowcaseDom();
         });
     }
-    setInterval(forceResolveShowcase, 15000);
+    // Install the watchdog unconditionally on script load. It's idempotent
+    // (only runs actions when _showcaseEnabled === false) so pays nothing
+    // when showcase is enabled. This guarantees that the moment the flag
+    // resolves to false (even mid-page-load), the showcase DOM gets
+    // swept out immediately — before the watchdog install used to be
+    // gated on the resolve completing, so a slow server response could
+    // leave the showcase visible on refresh until the next hashchange.
+    installShowcaseWatchdog();
+    // Tighter poll: 5s instead of 15s for faster admin-flip propagation.
+    setInterval(forceResolveShowcase, 5000);
     try {
         window.addEventListener('hashchange', forceResolveShowcase);
         document.addEventListener('visibilitychange', function(){
@@ -464,9 +487,10 @@
             _friendsAdminEnabled = !!cfg.enabled;
             var btn = document.getElementById('abFriendsBtn');
             if (!cfg.enabled) {
-                // Admin disabled feature — hide but don't destroy (keeps
-                // toggle-on snappy without re-mounting the whole drawer).
-                if (btn) btn.style.display = 'none';
+                // Admin disabled feature — physically remove the DOM so
+                // there's no window in which the button can be visible.
+                // display:none alone races with sync/applyCorner/mount.
+                _destroyAllFriendsDom();
                 return;
             }
             if (!_friendsMounted) {
@@ -498,6 +522,12 @@
     function applySimpleModeUi(){
         var drawer = document.getElementById('abFriendsDrawer');
         if (!drawer) return;
+        // Toggle the class — CSS above handles the actual hiding via
+        // `!important` so nothing can accidentally override it.
+        drawer.classList.toggle('ab-fd-drawer-simple', !!_friendsSimpleMode);
+        // Belt-and-braces: also flip inline display on each element so
+        // old cached stylesheets (that don't have the new CSS rules)
+        // still hide the tabs.
         drawer.querySelectorAll('[data-ab-hide-in-simple]').forEach(function(el){
             el.style.display = _friendsSimpleMode ? 'none' : '';
         });
@@ -515,7 +545,7 @@
     // Stamp our build id on every DOM node we create, so a newer version
     // loaded alongside an older cached copy can detect and clean up the
     // stale artifacts before mounting fresh.
-    var AB_SIDEBAR_VER = '1.7.13';
+    var AB_SIDEBAR_VER = '1.7.14';
     function _destroyStaleFriendsDom(){
         ['abFriendsBtn', 'abFriendsDrawer', 'abFriendsBackdrop'].forEach(function(id){
             var n = document.getElementById(id);
@@ -523,6 +553,19 @@
                 n.parentNode.removeChild(n);
             }
         });
+    }
+    // Physically remove every friends DOM node regardless of version —
+    // used when the admin disables the friends feature entirely, because
+    // merely toggling display:none isn't enough: the user sees the
+    // button for up to 500ms until the sync loop catches up, and the
+    // visibility logic can race with the admin-gate logic. Just remove.
+    function _destroyAllFriendsDom(){
+        ['abFriendsBtn', 'abFriendsDrawer', 'abFriendsBackdrop'].forEach(function(id){
+            var n = document.getElementById(id);
+            if (n && n.parentNode) n.parentNode.removeChild(n);
+        });
+        _friendsMounted = false;
+        _friendsOpen = false;
     }
     function _actuallyMount(){
         // Remove any stale older-version button/drawer/backdrop so we
@@ -555,6 +598,12 @@
                 '.ab-fd-tab{flex:1;padding:0.6em 0.6em;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#c7d2fe;font-size:0.82em;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3em;transition:all 0.15s;}' +
                 '.ab-fd-tab:hover{background:rgba(255,255,255,0.05);}' +
                 '.ab-fd-tab.active{background:linear-gradient(135deg,rgba(102,126,234,0.22),rgba(118,75,162,0.22));border-color:rgba(102,126,234,0.55);color:#fff;box-shadow:0 4px 12px rgba(102,126,234,0.2);}' +
+                // Simple mode: CSS-based hide for Requests + Find tabs and
+                // the associated panes. `!important` beats inline display
+                // so even if something else flips display back on, these
+                // stay hidden while the drawer carries the simple class.
+                '#abFriendsDrawer.ab-fd-drawer-simple [data-ab-hide-in-simple]{display:none !important;}' +
+                '#abFriendsDrawer.ab-fd-drawer-simple #abFriendsPaneRequests, #abFriendsDrawer.ab-fd-drawer-simple #abFriendsPaneFind{display:none !important;}' +
                 '.ab-fd-body{flex:1;overflow-y:auto;padding:0.8em;}' +
                 '.ab-fd-row{display:flex;align-items:center;gap:0.7em;padding:0.7em 0.55em;border-radius:12px;transition:background 0.15s;margin-bottom:0.2em;}' +
                 '.ab-fd-row:hover{background:rgba(255,255,255,0.04);}' +
@@ -627,9 +676,15 @@
                 '</div>' +
             '</div>';
         document.body.appendChild(drawer);
+        // Apply simple-mode class immediately on mount so the Requests/
+        // Find tabs are hidden from the very first drawer render.
+        if (_friendsSimpleMode) drawer.classList.add('ab-fd-drawer-simple');
 
         function open(){
             _friendsOpen = true;
+            // Re-assert simple-mode class on every open so it survives
+            // any external DOM mutation (Jellyfin themes etc).
+            drawer.classList.toggle('ab-fd-drawer-simple', !!_friendsSimpleMode);
             backdrop.style.display='block';
             drawer.style.display='flex';
             void drawer.offsetHeight;
