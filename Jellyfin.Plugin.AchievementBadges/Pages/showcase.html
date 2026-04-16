@@ -167,13 +167,14 @@
                         item.style.borderRadius = '999px';
                         item.style.background = 'rgba(255,255,255,0.05)';
 
+                        var escHtml = function (s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
                         item.innerHTML =
                             '<div style="width:28px;height:28px;border-radius:999px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:1em;">' +
                             iconGlyph(badge.Icon) +
                             '</div>' +
                             '<div style="display:flex;flex-direction:column;line-height:1.1;">' +
-                            '<span style="font-weight:700;">' + badge.Title + '</span>' +
-                            '<span style="font-size:0.8em;color:' + rarityColour(badge.Rarity) + ';">' + badge.Rarity + '</span>' +
+                            '<span style="font-weight:700;">' + escHtml(badge.Title) + '</span>' +
+                            '<span style="font-size:0.8em;color:' + rarityColour(badge.Rarity) + ';">' + escHtml(badge.Rarity) + '</span>' +
                             '</div>';
 
                         root.appendChild(item);

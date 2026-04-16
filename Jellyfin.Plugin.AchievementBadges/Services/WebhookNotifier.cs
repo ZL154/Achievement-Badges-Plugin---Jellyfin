@@ -11,7 +11,14 @@ namespace Jellyfin.Plugin.AchievementBadges.Services;
 
 public class WebhookNotifier
 {
-    private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(10) };
+    // Disable auto-redirects — WebhookUrlValidator only vets the initial URL,
+    // so a malicious webhook server could otherwise 302-redirect us to a
+    // private-range address (cloud metadata, localhost Jellyfin API, etc).
+    private static readonly HttpClient _http = new(new HttpClientHandler
+    {
+        AllowAutoRedirect = false
+    })
+    { Timeout = TimeSpan.FromSeconds(10) };
     private readonly ILogger<WebhookNotifier> _logger;
 
     public WebhookNotifier(ILogger<WebhookNotifier> logger)

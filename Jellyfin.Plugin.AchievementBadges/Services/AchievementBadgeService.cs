@@ -1704,26 +1704,27 @@ public class AchievementBadgeService
                     UserName = ResolveUserName(profile.UserId),
                     Score = AchievementScoreHelper.GetTotalUnlockedScore(enabled),
                     Unlocked = enabled.Count(b => b.Unlocked),
-                    Counters = counters
+                    Counters = counters,
+                    Equipped = BuildEquippedPreview(profile)
                 };
             }).ToList();
 
             IEnumerable<object> ordered = category?.ToLowerInvariant() switch
             {
                 "movies" => projected.OrderByDescending(x => x.Counters.MoviesWatched)
-                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.MoviesWatched }),
+                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.MoviesWatched, x.Equipped }),
                 "episodes" => projected.OrderByDescending(x => x.Counters.TotalItemsWatched - x.Counters.MoviesWatched)
-                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.TotalItemsWatched - x.Counters.MoviesWatched }),
+                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.TotalItemsWatched - x.Counters.MoviesWatched, x.Equipped }),
                 "streak" => projected.OrderByDescending(x => x.Counters.BestWatchStreak)
-                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.BestWatchStreak }),
+                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.BestWatchStreak, x.Equipped }),
                 "hours" => projected.OrderByDescending(x => x.Counters.TotalMinutesWatched)
-                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.TotalMinutesWatched / 60 }),
+                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.TotalMinutesWatched / 60, x.Equipped }),
                 "series" => projected.OrderByDescending(x => x.Counters.SeriesCompleted)
-                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.SeriesCompleted }),
+                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Counters.SeriesCompleted, x.Equipped }),
                 "unlocked" => projected.OrderByDescending(x => x.Unlocked)
-                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Unlocked }),
+                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Unlocked, x.Equipped }),
                 _ => projected.OrderByDescending(x => x.Score)
-                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Score })
+                    .Take(limit).Select(x => (object)new { x.UserId, x.UserName, Value = x.Score, x.Equipped })
             };
 
             return ordered.ToList();
@@ -1765,7 +1766,8 @@ public class AchievementBadgeService
                         Total = total,
                         Percentage = percentage,
                         Score = score,
-                        BestWatchStreak = profile.Counters.BestWatchStreak
+                        BestWatchStreak = profile.Counters.BestWatchStreak,
+                        Equipped = BuildEquippedPreview(profile)
                     };
                 })
                 .OrderByDescending(x => x.Score)
@@ -1776,6 +1778,63 @@ public class AchievementBadgeService
                 .ToList();
 
             return entries;
+        }
+    }
+
+    /// <summary>
+    /// Small read-only projection of a user's equipped badges safe to expose
+    /// in leaderboards / compare / public profile views. Only ships the three
+    /// display fields — never Id, internal state, or unlock date.
+    /// Returns an empty list when the target has opted out of showcases.
+    /// </summary>
+    private List<object> BuildEquippedPreview(UserAchievementProfile profile)
+    {
+        // Respect every privacy toggle — if the user opted out of either the
+        // leaderboard OR compare OR showcase, hide their equipped list from
+        // any public projection. Previously this only checked the showcase
+        // toggle which let the equipped pills leak for users who had only
+        // set HideFromCompare / HideFromLeaderboard.
+        var prefs = profile.Preferences;
+        if (prefs?.ShowEquippedShowcase == false) return new List<object>();
+        if (prefs?.HideFromLeaderboard == true) return new List<object>();
+        if (prefs?.HideFromCompare == true) return new List<object>();
+        var cfg = Plugin.Instance?.Configuration;
+        if (cfg?.ForceHideEquippedShowcase == true) return new List<object>();
+
+        var result = new List<object>();
+        foreach (var id in profile.EquippedBadgeIds)
+        {
+            if (!IsBadgeEnabled(id)) continue;
+            var b = profile.Badges.FirstOrDefault(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            if (b == null || !b.Unlocked) continue;
+            result.Add(new
+            {
+                Icon = b.Icon,
+                Title = b.Title,
+                Rarity = b.Rarity
+            });
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Public equipped-badge view for another user. Respects both the target's
+    /// HideFromLeaderboard / ShowEquippedShowcase prefs and the admin-level
+    /// ForcePrivacyMode / ForceHideEquippedShowcase toggles.
+    /// </summary>
+    public List<object> GetPublicEquippedPreview(string targetUserId)
+    {
+        targetUserId = NormalizeUserId(targetUserId);
+        var cfg = Plugin.Instance?.Configuration;
+        if (cfg?.ForcePrivacyMode == true) return new List<object>();
+        if (cfg?.ForceHideEquippedShowcase == true) return new List<object>();
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(targetUserId, out var profile)) return new List<object>();
+            EvaluateBadges(profile, targetUserId);
+            // BuildEquippedPreview already checks HideFromLeaderboard /
+            // HideFromCompare / ShowEquippedShowcase — don't need to duplicate.
+            return BuildEquippedPreview(profile);
         }
     }
 

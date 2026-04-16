@@ -414,13 +414,13 @@ font-size:0.88em;
                         <div class="abHeroLeft">
                             <div class="abHeroIcon">🏅</div>
                             <div>
-                                <div id="abProfileTitle" class="abHeroTitle">Achievement Profile</div>
-                                <div id="abProfileSubtitle" class="abHeroSubtitle">Loading profile...</div>
+                                <div id="abProfileTitle" class="abHeroTitle" data-i18n="achievements.profile_title">Achievement Profile</div>
+                                <div id="abProfileSubtitle" class="abHeroSubtitle" data-i18n="common.loading">Loading profile...</div>
                             </div>
                         </div>
 
                         <div id="abShowcaseWrap" class="abShowcaseWrap">
-                            <div class="abSectionEyebrow">Showcase</div>
+                            <div class="abSectionEyebrow" data-i18n="achievements.showcase">Showcase</div>
                             <div id="abShowcaseRow" class="abShowcase"></div>
                         </div>
                     </div>
@@ -447,6 +447,7 @@ font-size:0.88em;
                         <input is="emby-input"
                                id="abUserId"
                                label="Manual User ID"
+                               data-i18n-label="admin.manual_user_id"
                                type="text"
                                style="min-width:320px;" />
 
@@ -473,21 +474,19 @@ font-size:0.88em;
                         Webhook notifications (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.webhook.intro">
                             Post a message to Discord / Slack / any webhook URL whenever a user unlocks a badge.
-                            Template placeholders: <code>{user}</code>, <code>{badge}</code>, <code>{rarity}</code>, <code>{description}</code>.
-                            Discord webhook URLs (ending in <code>/webhooks/...</code>) work out of the box.
                         </p>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abWebhookEnabled"> Enable webhook notifications
+                            <input type="checkbox" id="abWebhookEnabled"> <span data-i18n="admin.webhook.enable">Enable webhook notifications</span>
                         </label>
-                        <label style="display:block; margin-bottom:0.75em;">Webhook URL:<br>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.webhook.url">Webhook URL:</span><br>
                             <input type="url" id="abWebhookUrl" placeholder="https://discord.com/api/webhooks/..." style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                         </label>
-                        <label style="display:block; margin-bottom:0.75em;">Message template:<br>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.webhook.template">Message template:</span><br>
                             <input type="text" id="abWebhookTemplate" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                         </label>
-                        <button is="emby-button" type="button" class="raised button-submit" id="abWebhookSaveBtn">Save webhook config</button>
+                        <button is="emby-button" type="button" class="raised button-submit" id="abWebhookSaveBtn" data-i18n="admin.btn_save_webhook">Save webhook config</button>
                         <div id="abWebhookStatus" class="secondaryText"></div>
                     </div>
                 </details>
@@ -497,16 +496,16 @@ font-size:0.88em;
                         Test unlock toast
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.test_toast.intro">
                             Preview the Xbox-style unlock animation for each rarity. Click any button below and watch the bottom-center of the page.
                         </p>
                         <div id="abTestToastButtons" style="display:flex; flex-wrap:wrap; gap:0.5em; margin-top:0.75em;">
-                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="common" style="background:rgba(159,179,200,0.2); border:1px solid #9fb3c8; color:#9fb3c8;">Common</button>
-                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="uncommon" style="background:rgba(52,211,153,0.2); border:1px solid #34d399; color:#34d399;">Uncommon</button>
-                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="rare" style="background:rgba(96,165,250,0.2); border:1px solid #60a5fa; color:#60a5fa;">Rare</button>
-                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="epic" style="background:rgba(167,139,250,0.2); border:1px solid #a78bfa; color:#a78bfa;">Epic</button>
-                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="legendary" style="background:rgba(251,191,36,0.2); border:1px solid #fbbf24; color:#fbbf24;">Legendary</button>
-                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="mythic" style="background:rgba(244,63,94,0.2); border:1px solid #f43f5e; color:#f43f5e;">Mythic</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="common" style="background:rgba(159,179,200,0.2); border:1px solid #9fb3c8; color:#9fb3c8;" data-i18n="rarity.common">Common</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="uncommon" style="background:rgba(52,211,153,0.2); border:1px solid #34d399; color:#34d399;" data-i18n="rarity.uncommon">Uncommon</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="rare" style="background:rgba(96,165,250,0.2); border:1px solid #60a5fa; color:#60a5fa;" data-i18n="rarity.rare">Rare</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="epic" style="background:rgba(167,139,250,0.2); border:1px solid #a78bfa; color:#a78bfa;" data-i18n="rarity.epic">Epic</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="legendary" style="background:rgba(251,191,36,0.2); border:1px solid #fbbf24; color:#fbbf24;" data-i18n="rarity.legendary">Legendary</button>
+                            <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="mythic" style="background:rgba(244,63,94,0.2); border:1px solid #f43f5e; color:#f43f5e;" data-i18n="rarity.mythic">Mythic</button>
                         </div>
                         <div id="abTestToastStatus" class="secondaryText" style="margin-top:0.5em;"></div>
                     </div>
@@ -518,14 +517,14 @@ font-size:0.88em;
                     </summary>
                     <div style="margin-top:0.5em;">
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
-                            <input type="checkbox" id="abUiToasts" checked> Show unlock toast notifications
+                            <input type="checkbox" id="abUiToasts" checked> <span data-i18n="admin.ui.unlock_toasts">Show unlock toast notifications</span>
                         </label>
                         <!-- Home widget removed in v1.5.5 - was unreliable -->
                         <input type="hidden" id="abUiHomeWidget" value="false">
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
-                            <input type="checkbox" id="abUiItemRibbon"> Show achievement ribbon on item detail pages (opt-in)
+                            <input type="checkbox" id="abUiItemRibbon"> <span data-i18n="admin.ui.item_ribbon">Show achievement ribbon on item detail pages (opt-in)</span>
                         </label>
-                        <button is="emby-button" type="button" class="raised" id="abUiFeaturesSaveBtn">Save UI features</button>
+                        <button is="emby-button" type="button" class="raised" id="abUiFeaturesSaveBtn" data-i18n="admin.btn_save_ui">Save UI features</button>
                         <div id="abUiFeaturesStatus" class="secondaryText"></div>
                     </div>
                 </details>
@@ -535,13 +534,13 @@ font-size:0.88em;
                         Visual badge editor (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">Create a custom badge with a form instead of writing JSON.</p>
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.vb.intro">Create a custom badge with a form instead of writing JSON.</p>
                         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.5em;">
-                            <label>Id<br><input type="text" id="abVbId" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
-                            <label>Title<br><input type="text" id="abVbTitle" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
-                            <label>Description<br><input type="text" id="abVbDesc" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
-                            <label>Category<br><input type="text" id="abVbCategory" value="Custom" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
-                            <label>Metric<br>
+                            <label><span data-i18n="admin.vb.id">Id</span><br><input type="text" id="abVbId" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label><span data-i18n="admin.vb.title">Title</span><br><input type="text" id="abVbTitle" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label><span data-i18n="admin.vb.description">Description</span><br><input type="text" id="abVbDesc" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label><span data-i18n="admin.vb.category">Category</span><br><input type="text" id="abVbCategory" value="Custom" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label><span data-i18n="admin.vb.metric">Metric</span><br>
                                 <select id="abVbMetric" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                                     <option>TotalItemsWatched</option><option>MoviesWatched</option><option>SeriesCompleted</option>
                                     <option>LateNightSessions</option><option>EarlyMorningSessions</option><option>WeekendSessions</option>
@@ -556,19 +555,19 @@ font-size:0.88em;
                                     <option>LibraryCompletionPercent</option>
                                 </select>
                             </label>
-                            <label>Target value<br><input type="number" id="abVbTarget" value="1" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
-                            <label>Rarity<br>
+                            <label><span data-i18n="admin.vb.target_value">Target value</span><br><input type="number" id="abVbTarget" value="1" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label><span data-i18n="admin.vb.rarity">Rarity</span><br>
                                 <select id="abVbRarity" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
-                                    <option>Common</option><option>Uncommon</option><option>Rare</option><option>Epic</option><option>Legendary</option><option>Mythic</option>
+                                    <option data-i18n="rarity.common">Common</option><option data-i18n="rarity.uncommon">Uncommon</option><option data-i18n="rarity.rare">Rare</option><option data-i18n="rarity.epic">Epic</option><option data-i18n="rarity.legendary">Legendary</option><option data-i18n="rarity.mythic">Mythic</option>
                                 </select>
                             </label>
-                            <label>Icon (material icons name)<br><input type="text" id="abVbIcon" value="emoji_events" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label><span data-i18n="admin.vb.icon">Icon (material icons name)</span><br><input type="text" id="abVbIcon" value="emoji_events" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
                             <label style="display:flex; align-items:center; gap:0.5em;">
-                                <input type="checkbox" id="abVbSecret"> Secret (hidden until unlocked)
+                                <input type="checkbox" id="abVbSecret"> <span data-i18n="admin.vb.secret">Secret (hidden until unlocked)</span>
                             </label>
                         </div>
                         <div style="margin-top:0.75em;">
-                            <button is="emby-button" type="button" class="raised button-submit" id="abVbAddBtn">Add to custom badges</button>
+                            <button is="emby-button" type="button" class="raised button-submit" id="abVbAddBtn" data-i18n="admin.btn_add_custom_badge">Add to custom badges</button>
                         </div>
                         <div id="abVbStatus" class="secondaryText"></div>
                     </div>
@@ -579,8 +578,8 @@ font-size:0.88em;
                         Challenge templates (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">One-click templates for common seasonal challenges.</p>
-                        <div style="margin-bottom:0.5em;"><button is="emby-button" type="button" class="raised" id="abChallengeTplLoadBtn">Load templates</button></div>
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.challenge_templates.intro">One-click templates for common seasonal challenges.</p>
+                        <div style="margin-bottom:0.5em;"><button is="emby-button" type="button" class="raised" id="abChallengeTplLoadBtn" data-i18n="admin.btn_load_templates">Load templates</button></div>
                         <div id="abChallengeTplList"></div>
                     </div>
                 </details>
@@ -590,46 +589,46 @@ font-size:0.88em;
                         Feature Controls (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.fc.intro">
                             Enable or disable major plugin features server-wide. Changes apply immediately to all users.
                         </p>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abFcLeaderboardEnabled" checked> Leaderboard enabled
+                            <input type="checkbox" id="abFcLeaderboardEnabled" checked> <span data-i18n="admin.fc.leaderboard">Leaderboard enabled</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abFcCompareEnabled" checked> Compare profiles enabled
+                            <input type="checkbox" id="abFcCompareEnabled" checked> <span data-i18n="admin.fc.compare">Compare profiles enabled</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abFcActivityFeedEnabled" checked> Activity feed enabled
+                            <input type="checkbox" id="abFcActivityFeedEnabled" checked> <span data-i18n="admin.fc.activity_feed">Activity feed enabled</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abFcPrestigeEnabled" checked> Prestige system enabled
+                            <input type="checkbox" id="abFcPrestigeEnabled" checked> <span data-i18n="admin.fc.prestige">Prestige system enabled</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abFcQuestsEnabled" checked> Quests enabled
+                            <input type="checkbox" id="abFcQuestsEnabled" checked> <span data-i18n="admin.fc.quests">Quests enabled</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abFcForcePrivacyMode"> Force privacy mode (hide all users from each other)
+                            <input type="checkbox" id="abFcForcePrivacyMode"> <span data-i18n="admin.fc.force_privacy">Force privacy mode (hide all users from each other)</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abFcForceSpoilerMode"> Force Spoiler Mode (hide locked badge descriptions for all users)
+                            <input type="checkbox" id="abFcForceSpoilerMode"> <span data-i18n="admin.fc.force_spoiler">Force Spoiler Mode (hide locked badge descriptions for all users)</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abFcForceExtremeSpoilerMode"> Force Extreme Spoiler Mode (completely hide locked badges for all users)
+                            <input type="checkbox" id="abFcForceExtremeSpoilerMode"> <span data-i18n="admin.fc.force_extreme_spoiler">Force Extreme Spoiler Mode (completely hide locked badges for all users)</span>
                         </label>
-                        <label style="display:block; margin-bottom:0.75em;">Max equipped badges (1-10):<br>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.max_equipped">Max equipped badges (1-10):</span><br>
                             <input type="number" id="abFcMaxEquippedBadges" value="5" min="1" max="10" style="width:80px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
-                            <input type="checkbox" id="abFcRestrictBadgeVisibility"> Restrict badge visibility (users only see their own)
+                            <input type="checkbox" id="abFcRestrictBadgeVisibility"> <span data-i18n="admin.fc.restrict_visibility">Restrict badge visibility (users only see their own)</span>
                         </label>
-                        <label style="display:block; margin-bottom:0.75em;">Disabled badge categories (comma-separated):<br>
-                            <input type="text" id="abFcDisabledBadgeCategories" placeholder="e.g. Challenge, Custom" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.disabled_categories">Disabled badge categories (comma-separated):</span><br>
+                            <input type="text" id="abFcDisabledBadgeCategories" placeholder="e.g. Challenge, Custom" data-i18n-placeholder="admin.fc.disabled_categories_placeholder" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                         </label>
-                        <label style="display:block; margin-bottom:0.75em;">Welcome message (shown on achievements page):<br>
-                            <input type="text" id="abFcWelcomeMessage" placeholder="Welcome to achievements!" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.welcome_message">Welcome message (shown on achievements page):</span><br>
+                            <input type="text" id="abFcWelcomeMessage" placeholder="Welcome to achievements!" data-i18n-placeholder="admin.fc.welcome_message_placeholder" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                         </label>
-                        <label style="display:block; margin-bottom:0.75em;">Default language (used when a user hasn't chosen one):<br>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.default_language">Default language (used when a user hasn't chosen one):</span><br>
                             <select id="abFcDefaultLanguage" style="padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                                 <option value="en">English</option>
                                 <option value="fr">Français</option>
@@ -640,15 +639,15 @@ font-size:0.88em;
                                 <option value="zh">中文</option>
                                 <option value="ja">日本語</option>
                             </select>
-                            <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;">Badge titles/descriptions are not yet localized; only UI chrome is translated.</div>
+                            <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;" data-i18n="admin.fc.lang_note">Badge titles/descriptions are not yet localized; only UI chrome is translated.</div>
                         </label>
-                        <label style="display:block; margin-bottom:0.75em;">Custom toast logo SVG (replaces the Xbox logo in the achievement toast):<br>
-                            <textarea id="abFcCustomXboxLogoSvg" rows="5" placeholder="Paste SVG markup or base64 content. Leave blank to use the default Xbox logo." style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px; font-family:monospace; font-size:0.82em;"></textarea>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.custom_logo">Custom toast logo SVG (replaces the Xbox logo in the achievement toast):</span><br>
+                            <textarea id="abFcCustomXboxLogoSvg" rows="5" placeholder="Paste SVG markup or base64 content. Leave blank to use the default Xbox logo." data-i18n-placeholder="admin.fc.custom_logo_placeholder" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px; font-family:monospace; font-size:0.82em;"></textarea>
                             <div style="margin-top:0.4em; display:flex; gap:0.5em; align-items:center;">
                                 <input type="file" id="abFcCustomXboxLogoFile" accept="image/svg+xml,.svg" style="font-size:0.85em;">
-                                <button is="emby-button" type="button" class="raised" id="abFcCustomXboxLogoClear">Reset to default</button>
+                                <button is="emby-button" type="button" class="raised" id="abFcCustomXboxLogoClear" data-i18n="admin.btn_reset_default">Reset to default</button>
                             </div>
-                            <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;">&lt;script&gt; tags and on* event handlers are stripped server-side before saving.</div>
+                            <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;" data-i18n="admin.fc.script_note">&lt;script&gt; tags and on* event handlers are stripped server-side before saving.</div>
                         </label>
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
                             <input type="checkbox" id="abFcRedactUsernamesInAuditLog">
@@ -668,7 +667,7 @@ font-size:0.88em;
                         Audit log (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <button is="emby-button" type="button" class="raised" id="abAuditReloadBtn">Reload</button>
+                        <button is="emby-button" type="button" class="raised" id="abAuditReloadBtn" data-i18n="admin.btn_reload">Reload</button>
                         <div id="abAuditList" style="max-height:400px; overflow-y:auto; margin-top:0.75em; font-family:monospace; font-size:0.82em;"></div>
                     </div>
                 </details>
@@ -678,13 +677,13 @@ font-size:0.88em;
                         Inject progress (admin / debug)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">Manually set counter values for the currently loaded user (for testing or gifting).</p>
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.inject.intro">Manually set counter values for the currently loaded user (for testing or gifting).</p>
                         <div style="display:grid; grid-template-columns:1fr 120px; gap:0.5em; align-items:center;">
-                            <label>Counter key (e.g. MoviesWatched, TotalItemsWatched, LateNightSessions):<br><input type="text" id="abInjectKey" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
-                            <label>Value<br><input type="number" id="abInjectVal" value="0" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label><span data-i18n="admin.inject.counter_key">Counter key (e.g. MoviesWatched, TotalItemsWatched, LateNightSessions):</span><br><input type="text" id="abInjectKey" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
+                            <label><span data-i18n="admin.inject.value">Value</span><br><input type="number" id="abInjectVal" value="0" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
                         </div>
                         <div style="margin-top:0.5em;">
-                            <button is="emby-button" type="button" class="raised" id="abInjectBtn">Inject</button>
+                            <button is="emby-button" type="button" class="raised" id="abInjectBtn" data-i18n="admin.btn_inject">Inject</button>
                         </div>
                         <div id="abInjectStatus" class="secondaryText"></div>
                     </div>
@@ -695,14 +694,13 @@ font-size:0.88em;
                         Custom badges (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.custom_badges.intro">
                             Define your own badges tied to any existing metric. Paste a JSON array below.
-                            Each badge needs at least <code>Id</code>, <code>Title</code>, <code>Description</code>, <code>Metric</code>, and <code>TargetValue</code>.
                         </p>
                         <textarea id="abCustomBadgesJson" rows="10" style="width:100%; font-family:monospace; font-size:0.85em; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></textarea>
                         <div style="margin-top:0.5em;">
-                            <button is="emby-button" type="button" class="raised" id="abCustomBadgesLoadBtn">Reload</button>
-                            <button is="emby-button" type="button" class="raised button-submit" id="abCustomBadgesSaveBtn">Save custom badges</button>
+                            <button is="emby-button" type="button" class="raised" id="abCustomBadgesLoadBtn" data-i18n="admin.btn_reload">Reload</button>
+                            <button is="emby-button" type="button" class="raised button-submit" id="abCustomBadgesSaveBtn" data-i18n="admin.btn_save_custom_badges">Save custom badges</button>
                         </div>
                         <div id="abCustomBadgesStatus" class="secondaryText"></div>
                     </div>
@@ -713,17 +711,62 @@ font-size:0.88em;
                         Seasonal challenges (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">
-                            Time-limited goals. Each challenge is a badge definition with optional
-                            <code>ChallengeStart</code> and <code>ChallengeEnd</code> ISO dates. Once the window closes,
-                            earned challenges stay in the user's profile permanently.
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.challenges.intro">
+                            Time-limited goals. Each challenge is a badge definition with optional ChallengeStart and ChallengeEnd ISO dates. Once the window closes, earned challenges stay in the user's profile permanently.
                         </p>
                         <textarea id="abChallengesJson" rows="10" style="width:100%; font-family:monospace; font-size:0.85em; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></textarea>
                         <div style="margin-top:0.5em;">
-                            <button is="emby-button" type="button" class="raised" id="abChallengesLoadBtn">Reload</button>
-                            <button is="emby-button" type="button" class="raised button-submit" id="abChallengesSaveBtn">Save challenges</button>
+                            <button is="emby-button" type="button" class="raised" id="abChallengesLoadBtn" data-i18n="admin.btn_reload">Reload</button>
+                            <button is="emby-button" type="button" class="raised button-submit" id="abChallengesSaveBtn" data-i18n="admin.btn_save_challenges">Save challenges</button>
                         </div>
                         <div id="abChallengesStatus" class="secondaryText"></div>
+                    </div>
+                </details>
+
+                <details class="abAdminSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;" data-i18n="admin.section_quests">
+                        Quests (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.quests_help">
+                            Daily and weekly quests reward users with score-bank points. Add your own, or
+                            disable built-in quests your server can't satisfy. Custom quests with the same
+                            Id as a built-in will replace the built-in.
+                        </p>
+
+                        <div style="display:flex; gap:1em; flex-wrap:wrap; margin-bottom:1em;">
+                            <div style="flex:1; min-width:300px;">
+                                <div style="font-weight:600; margin-bottom:0.3em;" data-i18n="admin.quests_builtin_daily">Built-in daily quests</div>
+                                <div id="abBuiltInDaily" class="secondaryText" style="font-size:0.85em;"></div>
+                            </div>
+                            <div style="flex:1; min-width:300px;">
+                                <div style="font-weight:600; margin-bottom:0.3em;" data-i18n="admin.quests_builtin_weekly">Built-in weekly quests</div>
+                                <div id="abBuiltInWeekly" class="secondaryText" style="font-size:0.85em;"></div>
+                            </div>
+                        </div>
+
+                        <div style="font-weight:600; margin-top:0.8em; margin-bottom:0.3em;" data-i18n="admin.quests_custom">Custom quests (JSON)</div>
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.quests_custom_help">
+                            Two arrays — daily and weekly. Valid Metric values:
+                            <code>TotalItemsWatched</code>, <code>MoviesWatched</code>, <code>SeriesCompleted</code>,
+                            <code>CurrentWatchStreak</code>, <code>TotalMinutesWatched</code>, <code>LateNightSessions</code>,
+                            <code>EarlyMorningSessions</code>, <code>WeekendSessions</code>, <code>UniqueGenresWatched</code>,
+                            <code>UniqueLibrariesVisited</code>, <code>RewatchCount</code>, <code>MaxEpisodesInSingleDay</code>,
+                            <code>MaxMoviesInSingleDay</code>, <code>LongestItemMinutes</code>, <code>ShortItemsWatched</code>.
+                        </p>
+                        <textarea id="abQuestsJson" rows="14" style="width:100%; font-family:monospace; font-size:0.85em; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></textarea>
+
+                        <div style="font-weight:600; margin-top:0.8em; margin-bottom:0.3em;" data-i18n="admin.quests_disabled">Disabled built-in quest Ids</div>
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.quests_disabled_help">
+                            Comma-separated quest Ids to remove from the rotation (e.g. <code>daily-late-night, weekly-weekend</code>).
+                        </p>
+                        <input type="text" id="abQuestsDisabledIds" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+
+                        <div style="margin-top:0.75em;">
+                            <button is="emby-button" type="button" class="raised" id="abQuestsLoadBtn" data-i18n="admin.quests_reload">Reload</button>
+                            <button is="emby-button" type="button" class="raised button-submit" id="abQuestsSaveBtn" data-i18n="admin.quests_save">Save quests</button>
+                        </div>
+                        <div id="abQuestsStatus" class="secondaryText"></div>
                     </div>
                 </details>
 
@@ -732,15 +775,13 @@ font-size:0.88em;
                         Enable / disable badges (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">
-                            Disabled badges are hidden from user pages, don't count toward the completion percentage,
-                            and are auto-unequipped from users who had them equipped. Useful if your server doesn't
-                            have enough libraries or long series to ever satisfy a badge.
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.catalog.intro">
+                            Disabled badges are hidden from user pages, don't count toward the completion percentage, and are auto-unequipped from users who had them equipped. Useful if your server doesn't have enough libraries or long series to ever satisfy a badge.
                         </p>
                         <div class="raisedButtonContainer" style="margin-bottom:0.75em;">
-                            <button is="emby-button" type="button" class="raised" id="abCatalogReloadBtn">Reload catalog</button>
-                            <button is="emby-button" type="button" class="raised" id="abCatalogEnableAllBtn">Enable all</button>
-                            <button is="emby-button" type="button" class="raised" id="abCatalogDisableAllBtn">Disable all</button>
+                            <button is="emby-button" type="button" class="raised" id="abCatalogReloadBtn" data-i18n="admin.btn_reload_catalog">Reload catalog</button>
+                            <button is="emby-button" type="button" class="raised" id="abCatalogEnableAllBtn" data-i18n="admin.btn_enable_all">Enable all</button>
+                            <button is="emby-button" type="button" class="raised" id="abCatalogDisableAllBtn" data-i18n="admin.btn_disable_all">Disable all</button>
                         </div>
                         <div id="abCatalogStatus" class="secondaryText"></div>
                         <div id="abCatalog"></div>
@@ -753,55 +794,55 @@ font-size:0.88em;
 
                 <div class="abStats">
                     <div class="abStatCard">
-                        <div class="abStatTitle">Unlocked</div>
+                        <div class="abStatTitle" data-i18n="admin.unlocked">Unlocked</div>
                         <div id="abUnlocked" class="abStatValue">0</div>
                     </div>
 
                     <div class="abStatCard">
-                        <div class="abStatTitle">Total</div>
+                        <div class="abStatTitle" data-i18n="admin.total">Total</div>
                         <div id="abTotal" class="abStatValue">0</div>
                     </div>
 
                     <div class="abStatCard">
-                        <div class="abStatTitle">Completion</div>
+                        <div class="abStatTitle" data-i18n="admin.completion">Completion</div>
                         <div id="abPercentage" class="abStatValue">0%</div>
                     </div>
 
                     <div class="abStatCard">
-                        <div class="abStatTitle">Equipped</div>
+                        <div class="abStatTitle" data-i18n="admin.equipped_count">Equipped</div>
                         <div id="abEquippedCount" class="abStatValue">0</div>
                     </div>
                 </div>
 
                 <div class="abTabs">
-                    <button type="button" class="abTab active" id="abTabBadgesBtn">My Badges</button>
-                    <button type="button" class="abTab" id="abTabLeaderboardBtn">Leaderboard</button>
-                    <button type="button" class="abTab" id="abTabStatsBtn">Stats</button>
+                    <button type="button" class="abTab active" id="abTabBadgesBtn" data-i18n="admin.my_badges">My Badges</button>
+                    <button type="button" class="abTab" id="abTabLeaderboardBtn" data-i18n="admin.leaderboard_tab">Leaderboard</button>
+                    <button type="button" class="abTab" id="abTabStatsBtn" data-i18n="admin.stats_tab">Stats</button>
                 </div>
 
                 <div id="abPanelBadges" class="abPanel">
-                    <h3 style="margin:0 0 0.75em 0;">Equipped badges</h3>
+                    <h3 style="margin:0 0 0.75em 0;" data-i18n="admin.equipped_badges">Equipped badges</h3>
 
-                    <div id="abEquippedEmpty">No equipped badges yet. Equip up to 5 unlocked badges.</div>
+                    <div id="abEquippedEmpty" data-i18n="achievements.equipped_empty">No equipped badges yet. Equip up to 5 unlocked badges.</div>
 
                     <div id="abEquippedRow" class="abBadgeGrid"></div>
 
-                    <div id="abEmpty" style="margin-top:1.5em;">Load badges to view your achievement collection.</div>
+                    <div id="abEmpty" style="margin-top:1.5em;" data-i18n="common.empty">Load badges to view your achievement collection.</div>
 
                     <div id="abGrid" class="abBadgeGrid"></div>
                 </div>
 
                 <div id="abPanelLeaderboard" class="abPanel" style="display:none;">
                     <div class="abCardPanel">
-                        <h3 style="margin:0 0 0.75em 0;">Global leaderboard</h3>
-                        <div id="abLeaderboard">Loading leaderboard...</div>
+                        <h3 style="margin:0 0 0.75em 0;" data-i18n="lb.global_leaderboard">Global leaderboard</h3>
+                        <div id="abLeaderboard" data-i18n="common.loading">Loading leaderboard...</div>
                     </div>
                 </div>
 
                 <div id="abPanelStats" class="abPanel" style="display:none;">
                     <div class="abCardPanel">
-                        <h3 style="margin:0 0 0.75em 0;">Server stats</h3>
-                        <div id="abServerStats">Loading server stats...</div>
+                        <h3 style="margin:0 0 0.75em 0;" data-i18n="stats.server_stats">Server stats</h3>
+                        <div id="abServerStats" data-i18n="common.loading">Loading server stats...</div>
                     </div>
                 </div>
 
@@ -815,8 +856,11 @@ font-size:0.88em;
 // Fetches translations for the admin's preferred language (best-effort) and
 // applies them to any element carrying a `data-i18n="..."` attribute. The
 // translation files are the same JSON docs the standalone page uses, so admin
-// strings live under the `admin.*` key namespace.
+// strings live under the `admin.*` key namespace. Also exposes a global
+// window.abAdminTr(key, fallback) helper used by the dynamic status/error
+// messages further down.
 (function () {
+    var _abAdminDict = {};
     function pickLang() {
         try {
             var stored = (window.localStorage && localStorage.getItem('achievementBadgesLang')) || '';
@@ -828,15 +872,41 @@ font-size:0.88em;
     }
     function apply(dict) {
         if (!dict) return;
+        _abAdminDict = dict;
         var nodes = document.querySelectorAll('[data-i18n]');
         for (var i = 0; i < nodes.length; i++) {
             var key = nodes[i].getAttribute('data-i18n');
             if (key && dict[key]) {
-                // Preserve trailing "(admin)" hint when present, for clarity.
                 nodes[i].textContent = dict[key];
             }
         }
+        // Placeholders: data-i18n-placeholder="admin.something"
+        var phNodes = document.querySelectorAll('[data-i18n-placeholder]');
+        for (var j = 0; j < phNodes.length; j++) {
+            var pk = phNodes[j].getAttribute('data-i18n-placeholder');
+            if (pk && dict[pk]) phNodes[j].setAttribute('placeholder', dict[pk]);
+        }
+        // Labels (for input[is=emby-input] etc.)
+        var lblNodes = document.querySelectorAll('[data-i18n-label]');
+        for (var k = 0; k < lblNodes.length; k++) {
+            var lk = lblNodes[k].getAttribute('data-i18n-label');
+            if (lk && dict[lk]) lblNodes[k].setAttribute('label', dict[lk]);
+        }
+        // Titles (tooltips)
+        var tNodes = document.querySelectorAll('[data-i18n-title]');
+        for (var t = 0; t < tNodes.length; t++) {
+            var tk = tNodes[t].getAttribute('data-i18n-title');
+            if (tk && dict[tk]) tNodes[t].setAttribute('title', dict[tk]);
+        }
     }
+    // Public helper for dynamic JS strings. Falls back to the provided
+    // English text so the page still works before the dict has loaded.
+    window.abAdminTr = function (key, fallback) {
+        if (_abAdminDict && Object.prototype.hasOwnProperty.call(_abAdminDict, key)) {
+            return _abAdminDict[key];
+        }
+        return fallback != null ? fallback : key;
+    };
     function go() {
         var lang = pickLang();
         var url = 'Plugins/AchievementBadges/translations/' + encodeURIComponent(lang);
@@ -863,6 +933,14 @@ font-size:0.88em;
 })();
 
 (function () {
+    // Local alias to the admin page translator (installed by the outer IIFE).
+    // Always defined — falls back to the English fallback if translations
+    // haven't loaded yet or the key is missing.
+    function tr(key, fallback) {
+        if (typeof window.abAdminTr === 'function') return window.abAdminTr(key, fallback);
+        return fallback != null ? fallback : key;
+    }
+
     var userIdInput = document.getElementById('abUserId');
     var meBtn = document.getElementById('abMeBtn');
     var loadBtn = document.getElementById('abLoadBtn');
@@ -1056,10 +1134,19 @@ font-size:0.88em;
         return iconMap[(name || '').toLowerCase()] || '🏅';
     }
 
+    // Escape user-controlled strings before pasting into innerHTML. Admin
+    // badges' titles and Jellyfin usernames are both user-controlled enough
+    // to have delivered stored XSS into this page.
+    function escapeHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML;
+    }
+
     function loadSummary(userId) {
         return fetchJson('Plugins/AchievementBadges/users/' + userId + '/summary').then(function (summary) {
             setSummary(summary);
-            profileSubtitle.textContent = 'Completion: ' + ((summary && summary.Percentage != null) ? summary.Percentage : 0) + '%';
+            profileSubtitle.textContent = tr('achievements.completion', 'Completion') + ': ' + ((summary && summary.Percentage != null) ? summary.Percentage : 0) + '%';
         });
     }
 
@@ -1073,14 +1160,14 @@ font-size:0.88em;
     function loadLeaderboard() {
         return fetchJson('Plugins/AchievementBadges/leaderboard?limit=10').then(function (entries) {
             if (!entries || !entries.length) {
-                leaderboardBox.innerHTML = '<div class="abMuted">No leaderboard data yet.</div>';
+                leaderboardBox.innerHTML = '<div class="abMuted">' + tr('lb.empty', 'No leaderboard data yet.') + '</div>';
                 return;
             }
             leaderboardBox.innerHTML = entries.map(function (entry, index) {
-                var displayName = entry.UserName || entry.UserId || 'Unknown';
+                var displayName = entry.UserName || entry.UserId || tr('common.unknown', 'Unknown');
                 return '<div class="abLeaderboardRow">' +
-                    '<div><strong>#' + (index + 1) + '</strong> &bull; ' + displayName + '</div>' +
-                    '<div>' + (entry.Score || 0) + ' pts &bull; ' + entry.Unlocked + ' unlocked &bull; ' + entry.Percentage + '%</div>' +
+                    '<div><strong>#' + (index + 1) + '</strong> &bull; ' + escapeHtml(displayName) + '</div>' +
+                    '<div>' + (entry.Score || 0) + ' ' + tr('badge.pts_label', 'pts') + ' &bull; ' + entry.Unlocked + ' ' + tr('lb.unlocked_suffix', 'unlocked') + ' &bull; ' + entry.Percentage + '%</div>' +
                 '</div>';
             }).join('');
         });
@@ -1089,19 +1176,19 @@ font-size:0.88em;
     function loadServerStats() {
         return fetchJson('Plugins/AchievementBadges/server/stats').then(function (stats) {
             serverStatsBox.innerHTML =
-                '<div>Total users: ' + (stats.TotalUsers || 0) + '</div>' +
-                '<div style="margin-top:0.45em;">Total badges unlocked: ' + (stats.TotalBadgesUnlocked || 0) + '</div>' +
-                '<div style="margin-top:0.45em;">Total items watched: ' + (stats.TotalItemsWatched || 0) + '</div>' +
-                '<div style="margin-top:0.45em;">Total movies watched: ' + (stats.TotalMoviesWatched || 0) + '</div>' +
-                '<div style="margin-top:0.45em;">Total series completed: ' + (stats.TotalSeriesCompleted || 0) + '</div>' +
-                '<div style="margin-top:0.45em;">Most common badge: ' + (stats.MostCommonBadge || 'None') + '</div>';
+                '<div>' + tr('admin.server.total_users', 'Total users') + ': ' + (stats.TotalUsers || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">' + tr('admin.server.total_badges_unlocked', 'Total badges unlocked') + ': ' + (stats.TotalBadgesUnlocked || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">' + tr('admin.server.total_items_watched', 'Total items watched') + ': ' + (stats.TotalItemsWatched || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">' + tr('admin.server.total_movies_watched', 'Total movies watched') + ': ' + (stats.TotalMoviesWatched || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">' + tr('admin.server.total_series_completed', 'Total series completed') + ': ' + (stats.TotalSeriesCompleted || 0) + '</div>' +
+                '<div style="margin-top:0.45em;">' + tr('admin.server.most_common_badge', 'Most common badge') + ': ' + (stats.MostCommonBadge || tr('stats.server.none', 'None')) + '</div>';
         });
     }
 
     function renderShowcase(badges) {
         showcaseRow.innerHTML = '';
         if (!badges || badges.length === 0) {
-            showcaseRow.innerHTML = '<div class="abMuted">Equip badges to build your showcase.</div>';
+            showcaseRow.innerHTML = '<div class="abMuted">' + tr('achievements.showcase_empty', 'Equip badges to build your showcase.') + '</div>';
             return;
         }
         badges.forEach(function (badge) {
@@ -1110,8 +1197,8 @@ font-size:0.88em;
             card.innerHTML =
                 '<div class="abShowcaseIcon">' + iconGlyph(badge.Icon) + '</div>' +
                 '<div>' +
-                    '<div style="font-weight:700;">' + badge.Title + '</div>' +
-                    '<div class="' + rarityClass(badge.Rarity) + '" style="font-size:0.88em;">' + badge.Rarity + '</div>' +
+                    '<div style="font-weight:700;">' + escapeHtml(badge.Title) + '</div>' +
+                    '<div class="' + rarityClass(badge.Rarity) + '" style="font-size:0.88em;">' + escapeHtml(badge.Rarity) + '</div>' +
                 '</div>';
             showcaseRow.appendChild(card);
         });
@@ -1132,13 +1219,13 @@ font-size:0.88em;
                 '<div class="abBadgeHeader">' +
                     '<div class="abBadgeIcon">' + iconGlyph(badge.Icon) + '</div>' +
                     '<div style="flex:1;">' +
-                        '<div class="abBadgeTitle">' + badge.Title + '</div>' +
-                        '<div class="abBadgeMeta ' + rarityClass(badge.Rarity) + '">' + badge.Rarity + '</div>' +
+                        '<div class="abBadgeTitle">' + escapeHtml(badge.Title) + '</div>' +
+                        '<div class="abBadgeMeta ' + rarityClass(badge.Rarity) + '">' + escapeHtml(badge.Rarity) + '</div>' +
                     '</div>' +
                 '</div>' +
                 '<div class="abBadgeFooter">' +
-                    '<div class="abUnlocked">Equipped</div>' +
-                    '<button type="button" class="abBtn">Unequip</button>' +
+                    '<div class="abUnlocked">' + tr('badge.equipped_state', 'Equipped') + '</div>' +
+                    '<button type="button" class="abBtn">' + tr('badge.unequip', 'Unequip') + '</button>' +
                 '</div>';
             card.querySelector('button').addEventListener('click', function () {
                 unequipBadge(badge.Id);
@@ -1170,7 +1257,7 @@ font-size:0.88em;
             var card = document.createElement('div');
             card.className = 'abBadgeCard';
 
-            var buttonLabel = isEquipped ? 'Unequip' : 'Equip';
+            var buttonLabel = isEquipped ? tr('badge.unequip', 'Unequip') : tr('badge.equip', 'Equip');
             var buttonDisabled = !badge.Unlocked ? 'disabled' : '';
             var buttonOpacity = !badge.Unlocked ? '0.5' : '1';
 
@@ -1178,21 +1265,21 @@ font-size:0.88em;
                 '<div class="abBadgeHeader">' +
                     '<div class="abBadgeIcon">' + iconGlyph(badge.Icon) + '</div>' +
                     '<div style="flex:1;">' +
-                        '<div class="abBadgeTitle">' + badge.Title + '</div>' +
-                        '<div class="abBadgeMeta ' + rarityClass(badge.Rarity) + '">' + badge.Rarity + ' &bull; ' + badge.Category + '</div>' +
+                        '<div class="abBadgeTitle">' + escapeHtml(badge.Title) + '</div>' +
+                        '<div class="abBadgeMeta ' + rarityClass(badge.Rarity) + '">' + escapeHtml(badge.Rarity) + ' &bull; ' + escapeHtml(badge.Category) + '</div>' +
                     '</div>' +
                 '</div>' +
-                '<div class="abBadgeDescription">' + badge.Description + '</div>' +
+                '<div class="abBadgeDescription">' + escapeHtml(badge.Description) + '</div>' +
                 '<div class="abProgressWrap">' +
                     '<div class="abProgressText">' +
-                        '<span>Progress</span><span>' + current + '/' + target + '</span>' +
+                        '<span>' + tr('badge.progress', 'Progress') + '</span><span>' + current + '/' + target + '</span>' +
                     '</div>' +
                     '<div class="abProgressBar">' +
                         '<div class="abProgressFill" style="width:' + progress + '%;"></div>' +
                     '</div>' +
                 '</div>' +
                 '<div class="abBadgeFooter">' +
-                    '<div class="' + (badge.Unlocked ? 'abUnlocked' : 'abLocked') + '">' + (badge.Unlocked ? 'Unlocked' : 'Locked') + '</div>' +
+                    '<div class="' + (badge.Unlocked ? 'abUnlocked' : 'abLocked') + '">' + (badge.Unlocked ? tr('badge.unlocked_state', 'Unlocked') : tr('badge.locked_state', 'Locked')) + '</div>' +
                     '<button type="button" class="abBtn" ' + buttonDisabled + ' style="opacity:' + buttonOpacity + ';">' + buttonLabel + '</button>' +
                 '</div>';
 
@@ -1209,9 +1296,9 @@ font-size:0.88em;
 
     function reloadAll() {
         var userId = getUserId();
-        if (!userId) return Promise.reject(new Error('No user ID was found for this page.'));
+        if (!userId) return Promise.reject(new Error(tr('admin.msg.no_user_id', 'No user ID was found for this page.')));
 
-        profileTitle.textContent = 'Achievement Profile';
+        profileTitle.textContent = tr('achievements.profile_title', 'Achievement Profile');
 
         return fetchJson('Plugins/AchievementBadges/users/' + userId).then(function (badges) {
             return Promise.all([
@@ -1229,26 +1316,26 @@ font-size:0.88em;
         var userId = getUserId();
         if (!userId) {
             setStatus('');
-            setError('No user ID was found for this page.');
+            setError(tr('admin.msg.no_user_id', 'No user ID was found for this page.'));
             return;
         }
         clearError();
-        setStatus('Loading badges...');
+        setStatus(tr('admin.msg.loading_badges', 'Loading badges...'));
 
         reloadAll().then(function () {
-            setStatus('Badges loaded.');
+            setStatus(tr('admin.msg.badges_loaded', 'Badges loaded.'));
         }).catch(function (error) {
             grid.innerHTML = '';
             equippedRow.innerHTML = '';
             showcaseRow.innerHTML = '';
             equippedEmpty.style.display = 'block';
             emptyState.style.display = 'block';
-            leaderboardBox.innerHTML = 'Failed to load leaderboard.';
-            serverStatsBox.innerHTML = 'Failed to load server stats.';
-            profileSubtitle.textContent = 'Could not load profile.';
+            leaderboardBox.innerHTML = tr('admin.msg.lb_failed', 'Failed to load leaderboard.');
+            serverStatsBox.innerHTML = tr('admin.msg.server_stats_failed', 'Failed to load server stats.');
+            profileSubtitle.textContent = tr('admin.msg.profile_failed', 'Could not load profile.');
             setSummary({ Unlocked: 0, Total: 0, Percentage: 0, EquippedCount: 0 });
             setStatus('');
-            setError('Failed to load badges. ' + (error && error.message ? error.message : String(error)));
+            setError(tr('admin.msg.badges_load_failed', 'Failed to load badges.') + ' ' + (error && error.message ? error.message : String(error)));
         });
     }
 
@@ -1256,19 +1343,19 @@ font-size:0.88em;
         var userId = getUserId();
         if (!userId) {
             setStatus('');
-            setError('No user ID was found for this page.');
+            setError(tr('admin.msg.no_user_id', 'No user ID was found for this page.'));
             return;
         }
         clearError();
-        setStatus('Simulating playback...');
+        setStatus(tr('admin.msg.simulating', 'Simulating playback...'));
 
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/simulate-playback', 'POST').then(function () {
             return reloadAll();
         }).then(function () {
-            setStatus('Playback simulated successfully.');
+            setStatus(tr('admin.msg.simulate_ok', 'Playback simulated successfully.'));
         }).catch(function (error) {
             setStatus('');
-            setError('Failed to simulate playback. ' + (error && error.message ? error.message : String(error)));
+            setError(tr('admin.msg.simulate_failed', 'Failed to simulate playback.') + ' ' + (error && error.message ? error.message : String(error)));
         });
     }
 
@@ -1276,70 +1363,70 @@ font-size:0.88em;
         var userId = getUserId();
         if (!userId) {
             setStatus('');
-            setError('No user ID was found for this page.');
+            setError(tr('admin.msg.no_user_id', 'No user ID was found for this page.'));
             return;
         }
         clearError();
-        setStatus('Resetting badges...');
+        setStatus(tr('admin.msg.resetting', 'Resetting badges...'));
 
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/reset', 'POST').then(function () {
             return reloadAll();
         }).then(function () {
-            setStatus('Badges reset successfully.');
+            setStatus(tr('admin.msg.reset_ok', 'Badges reset successfully.'));
         }).catch(function (error) {
             setStatus('');
-            setError('Failed to reset badges. ' + (error && error.message ? error.message : String(error)));
+            setError(tr('admin.msg.reset_failed', 'Failed to reset badges.') + ' ' + (error && error.message ? error.message : String(error)));
         });
     }
 
     function equipBadge(badgeId) {
         var userId = getUserId();
         clearError();
-        setStatus('Equipping badge...');
+        setStatus(tr('admin.msg.equipping', 'Equipping badge...'));
 
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, 'POST').then(function () {
             return reloadAll();
         }).then(function () {
-            setStatus('Badge equipped.');
+            setStatus(tr('admin.msg.equipped_ok', 'Badge equipped.'));
         }).catch(function (error) {
             setStatus('');
-            setError('Failed to equip badge. ' + (error && error.message ? error.message : String(error)));
+            setError(tr('admin.msg.equip_failed', 'Failed to equip badge.') + ' ' + (error && error.message ? error.message : String(error)));
         });
     }
 
     function unequipBadge(badgeId) {
         var userId = getUserId();
         clearError();
-        setStatus('Unequipping badge...');
+        setStatus(tr('admin.msg.unequipping', 'Unequipping badge...'));
 
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, 'DELETE').then(function () {
             return reloadAll();
         }).then(function () {
-            setStatus('Badge unequipped.');
+            setStatus(tr('admin.msg.unequipped_ok', 'Badge unequipped.'));
         }).catch(function (error) {
             setStatus('');
-            setError('Failed to unequip badge. ' + (error && error.message ? error.message : String(error)));
+            setError(tr('admin.msg.unequip_failed', 'Failed to unequip badge.') + ' ' + (error && error.message ? error.message : String(error)));
         });
     }
 
     function useMyAccount() {
         clearError();
-        setStatus('Detecting current user...');
+        setStatus(tr('admin.msg.detecting_user', 'Detecting current user...'));
 
         detectCurrentUserId().then(function (currentUserId) {
-            if (!currentUserId) throw new Error('Could not determine current user.');
+            if (!currentUserId) throw new Error(tr('admin.msg.cannot_determine_user', 'Could not determine current user.'));
             userIdInput.value = currentUserId;
             loadBadges();
         }).catch(function (error) {
             setStatus('');
-            setError('Failed to detect current user. ' + (error && error.message ? error.message : String(error)));
+            setError(tr('admin.msg.detect_failed', 'Failed to detect current user.') + ' ' + (error && error.message ? error.message : String(error)));
         });
     }
 
     function initialisePage() {
         setActiveTab('badges');
         clearError();
-        setStatus('Loading profile...');
+        setStatus(tr('admin.msg.loading_profile', 'Loading profile...'));
 
         var initialUserId = getUserIdFromUrl();
         if (initialUserId) {
@@ -1354,11 +1441,11 @@ font-size:0.88em;
                 loadBadges();
             } else {
                 setStatus('');
-                setError('Could not detect a user automatically. Use "Use my account" or enter a user ID manually.');
+                setError(tr('admin.msg.auto_detect_failed', 'Could not detect a user automatically. Use "Use my account" or enter a user ID manually.'));
             }
         }).catch(function (error) {
             setStatus('');
-            setError('Failed to initialise page. ' + (error && error.message ? error.message : String(error)));
+            setError(tr('admin.msg.init_failed', 'Failed to initialise page.') + ' ' + (error && error.message ? error.message : String(error)));
         });
     }
 
@@ -1374,29 +1461,29 @@ font-size:0.88em;
 
     backfillBtn.addEventListener('click', function () {
         var userId = getUserId();
-        if (!userId) { setError('No user ID.'); return; }
+        if (!userId) { setError(tr('admin.msg.no_user_id_short', 'No user ID.')); return; }
         clearError();
-        setStatus('Scanning watch history... this may take a while...');
+        setStatus(tr('admin.msg.scanning_history', 'Scanning watch history... this may take a while...'));
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/backfill', 'POST').then(function (result) {
             return reloadAll().then(function () {
-                setStatus('Watch history scan complete! ' + (result.MoviesWatched || 0) + ' movies, ' + (result.EpisodesWatched || 0) + ' episodes, ' + (result.SeriesCompleted || 0) + ' series found.');
+                setStatus(tr('admin.msg.scan_done', 'Watch history scan complete!') + ' ' + (result.MoviesWatched || 0) + ' ' + tr('recap.movies', 'Movies').toLowerCase() + ', ' + (result.EpisodesWatched || 0) + ' ' + tr('recap.episodes', 'Episodes').toLowerCase() + ', ' + (result.SeriesCompleted || 0) + ' ' + tr('lb.series', 'Series').toLowerCase() + ' ' + tr('admin.msg.found', 'found.'));
             });
         }).catch(function (err) {
             setStatus('');
-            setError('Backfill failed. ' + (err && err.message ? err.message : String(err)));
+            setError(tr('admin.msg.backfill_failed', 'Backfill failed.') + ' ' + (err && err.message ? err.message : String(err)));
         });
     });
 
     backfillAllBtn.addEventListener('click', function () {
         clearError();
-        setStatus('Scanning watch history for ALL users... this may take a while...');
+        setStatus(tr('admin.msg.scanning_all', 'Scanning watch history for ALL users... this may take a while...'));
         fetchJson('Plugins/AchievementBadges/backfill-all', 'POST').then(function (result) {
             return reloadAll().then(function () {
-                setStatus('Watch history scan complete for all users!');
+                setStatus(tr('admin.msg.scan_all_done', 'Watch history scan complete for all users!'));
             });
         }).catch(function (err) {
             setStatus('');
-            setError('Backfill failed. ' + (err && err.message ? err.message : String(err)));
+            setError(tr('admin.msg.backfill_failed', 'Backfill failed.') + ' ' + (err && err.message ? err.message : String(err)));
         });
     });
 
@@ -1425,7 +1512,7 @@ font-size:0.88em;
     function renderCatalog(catalog) {
         catalogContainer.innerHTML = '';
         if (!catalog || !catalog.length) {
-            catalogContainer.innerHTML = '<div class="secondaryText">No badges defined.</div>';
+            catalogContainer.innerHTML = '<div class="secondaryText">' + tr('admin.msg.no_badges_defined', 'No badges defined.') + '</div>';
             return;
         }
 
@@ -1466,7 +1553,7 @@ font-size:0.88em;
 
                 var title = document.createElement('div');
                 title.style.fontWeight = '600';
-                title.innerHTML = badge.Title + ' <span style="color:' + rarityColor(badge.Rarity) + '; font-size:0.8em; font-weight:400;">' + (badge.Rarity || '') + '</span>';
+                title.innerHTML = escapeHtml(badge.Title) + ' <span style="color:' + rarityColor(badge.Rarity) + '; font-size:0.8em; font-weight:400;">' + escapeHtml(badge.Rarity || '') + '</span>';
 
                 var desc = document.createElement('div');
                 desc.className = 'secondaryText';
@@ -1492,35 +1579,35 @@ font-size:0.88em;
     }
 
     function loadCatalog() {
-        setCatalogStatus('Loading catalog...');
+        setCatalogStatus(tr('admin.msg.loading_catalog', 'Loading catalog...'));
         fetchJson('Plugins/AchievementBadges/admin/badge-catalog').then(function (res) {
             setCatalogStatus('');
             renderCatalog((res && res.Catalog) || []);
         }).catch(function (err) {
-            setCatalogStatus('Failed to load catalog: ' + (err && err.message ? err.message : String(err)));
+            setCatalogStatus(tr('admin.msg.catalog_failed', 'Failed to load catalog:') + ' ' + (err && err.message ? err.message : String(err)));
         });
     }
 
     function toggleBadge(badgeId, disabled, checkbox) {
-        setCatalogStatus(disabled ? ('Disabling ' + badgeId + '...') : ('Enabling ' + badgeId + '...'));
+        setCatalogStatus(disabled ? (tr('admin.msg.disabling', 'Disabling') + ' ' + badgeId + '...') : (tr('admin.msg.enabling', 'Enabling') + ' ' + badgeId + '...'));
         fetchJson('Plugins/AchievementBadges/admin/badge-catalog/toggle', 'POST', { BadgeId: badgeId, Disabled: disabled }).then(function () {
-            setCatalogStatus(disabled ? 'Badge disabled.' : 'Badge enabled.');
+            setCatalogStatus(disabled ? tr('admin.msg.badge_disabled', 'Badge disabled.') : tr('admin.msg.badge_enabled', 'Badge enabled.'));
             reloadAll();
         }).catch(function (err) {
             // revert UI
             if (checkbox) { checkbox.checked = !disabled; }
-            setCatalogStatus('Toggle failed: ' + (err && err.message ? err.message : String(err)));
+            setCatalogStatus(tr('admin.msg.toggle_failed', 'Toggle failed:') + ' ' + (err && err.message ? err.message : String(err)));
         });
     }
 
     function bulkSet(disabledIds) {
-        setCatalogStatus('Saving...');
+        setCatalogStatus(tr('admin.msg.saving', 'Saving...'));
         fetchJson('Plugins/AchievementBadges/admin/badge-catalog/bulk', 'POST', { DisabledBadgeIds: disabledIds }).then(function () {
-            setCatalogStatus('Saved.');
+            setCatalogStatus(tr('admin.msg.saved', 'Saved.'));
             loadCatalog();
             reloadAll();
         }).catch(function (err) {
-            setCatalogStatus('Bulk update failed: ' + (err && err.message ? err.message : String(err)));
+            setCatalogStatus(tr('admin.msg.bulk_failed', 'Bulk update failed:') + ' ' + (err && err.message ? err.message : String(err)));
         });
     }
 
@@ -1560,8 +1647,8 @@ font-size:0.88em;
             WebhookEnabled: webhookEnabledEl.checked,
             WebhookUrl: webhookUrlEl.value,
             WebhookMessageTemplate: webhookTemplateEl.value
-        }).then(function () { webhookStatusEl.textContent = 'Saved.'; })
-         .catch(function (e) { webhookStatusEl.textContent = 'Save failed: ' + (e.message || e); });
+        }).then(function () { webhookStatusEl.textContent = tr('admin.msg.saved', 'Saved.'); })
+         .catch(function (e) { webhookStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
     });
     loadWebhook();
 
@@ -1582,8 +1669,8 @@ font-size:0.88em;
             EnableUnlockToasts: uiToastsEl.checked,
             EnableHomeWidget: uiHomeEl.checked,
             EnableItemDetailRibbon: uiRibbonEl.checked
-        }).then(function () { uiStatusEl.textContent = 'Saved.'; })
-         .catch(function (e) { uiStatusEl.textContent = 'Save failed: ' + (e.message || e); });
+        }).then(function () { uiStatusEl.textContent = tr('admin.msg.saved', 'Saved.'); })
+         .catch(function (e) { uiStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
     });
 
     // --- Custom badges ---
@@ -1602,10 +1689,10 @@ font-size:0.88em;
         try {
             var parsed = JSON.parse(customBadgesJsonEl.value || '[]');
             fetchJson('Plugins/AchievementBadges/admin/custom-badges', 'POST', parsed)
-                .then(function (r) { customBadgesStatusEl.textContent = 'Saved ' + r.Count + ' custom badges.'; reloadAll(); })
-                .catch(function (e) { customBadgesStatusEl.textContent = 'Save failed: ' + (e.message || e); });
+                .then(function (r) { customBadgesStatusEl.textContent = tr('admin.msg.saved_count', 'Saved') + ' ' + r.Count + ' ' + tr('admin.msg.custom_badges_suffix', 'custom badges.'); reloadAll(); })
+                .catch(function (e) { customBadgesStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
         } catch (e) {
-            customBadgesStatusEl.textContent = 'Invalid JSON: ' + e.message;
+            customBadgesStatusEl.textContent = tr('admin.msg.invalid_json', 'Invalid JSON:') + ' ' + e.message;
         }
     });
     loadCustomBadges();
@@ -1626,13 +1713,64 @@ font-size:0.88em;
         try {
             var parsed = JSON.parse(challengesJsonEl.value || '[]');
             fetchJson('Plugins/AchievementBadges/admin/challenges', 'POST', parsed)
-                .then(function (r) { challengesStatusEl.textContent = 'Saved ' + r.Count + ' challenges.'; reloadAll(); })
-                .catch(function (e) { challengesStatusEl.textContent = 'Save failed: ' + (e.message || e); });
+                .then(function (r) { challengesStatusEl.textContent = tr('admin.msg.saved_count', 'Saved') + ' ' + r.Count + ' ' + tr('admin.msg.challenges_suffix', 'challenges.'); reloadAll(); })
+                .catch(function (e) { challengesStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
         } catch (e) {
-            challengesStatusEl.textContent = 'Invalid JSON: ' + e.message;
+            challengesStatusEl.textContent = tr('admin.msg.invalid_json', 'Invalid JSON:') + ' ' + e.message;
         }
     });
     loadChallenges();
+
+    // --- Quests (admin) ---
+    var questsJsonEl = document.getElementById('abQuestsJson');
+    var questsDisabledEl = document.getElementById('abQuestsDisabledIds');
+    var questsLoadBtn = document.getElementById('abQuestsLoadBtn');
+    var questsSaveBtn = document.getElementById('abQuestsSaveBtn');
+    var questsStatusEl = document.getElementById('abQuestsStatus');
+    var builtInDailyEl = document.getElementById('abBuiltInDaily');
+    var builtInWeeklyEl = document.getElementById('abBuiltInWeekly');
+
+    function renderBuiltInList(target, list) {
+        if (!target) return;
+        if (!list || !list.length) { target.textContent = tr('admin.msg.none_parens', '(none)'); return; }
+        target.innerHTML = list.map(function (q) {
+            return '<div style="padding:0.3em 0; border-bottom:1px solid rgba(255,255,255,0.05);">' +
+                '<code>' + q.Id + '</code> &mdash; ' + q.Title +
+                ' <span style="opacity:0.6;">(' + tr('admin.msg.target', 'target') + ' ' + q.Target + ', +' + q.Reward + ')</span>' +
+                '</div>';
+        }).join('');
+    }
+
+    function loadQuests() {
+        fetchJson('Plugins/AchievementBadges/admin/quests').then(function (r) {
+            renderBuiltInList(builtInDailyEl, r.BuiltInDaily || []);
+            renderBuiltInList(builtInWeeklyEl, r.BuiltInWeekly || []);
+            var payload = {
+                CustomDailyQuests: r.CustomDailyQuests || [],
+                CustomWeeklyQuests: r.CustomWeeklyQuests || []
+            };
+            questsJsonEl.value = JSON.stringify(payload, null, 2);
+            questsDisabledEl.value = (r.DisabledQuestIds || []).join(', ');
+        }).catch(function (e) { questsStatusEl.textContent = tr('admin.msg.load_failed', 'Load failed:') + ' ' + (e.message || e); });
+    }
+    if (questsLoadBtn) questsLoadBtn.addEventListener('click', loadQuests);
+    if (questsSaveBtn) questsSaveBtn.addEventListener('click', function () {
+        try {
+            var parsed = JSON.parse(questsJsonEl.value || '{}');
+            var disabledIds = (questsDisabledEl.value || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+            var body = {
+                CustomDailyQuests: parsed.CustomDailyQuests || [],
+                CustomWeeklyQuests: parsed.CustomWeeklyQuests || [],
+                DisabledQuestIds: disabledIds
+            };
+            fetchJson('Plugins/AchievementBadges/admin/quests', 'POST', body)
+                .then(function (r) { questsStatusEl.textContent = tr('admin.msg.saved', 'Saved.') + ' ' + tr('admin.msg.custom_daily', 'Custom daily:') + ' ' + r.CustomDaily + ', ' + tr('admin.msg.custom_weekly', 'custom weekly:') + ' ' + r.CustomWeekly + ', ' + tr('admin.msg.disabled_suffix', 'disabled:') + ' ' + r.Disabled + '.'; })
+                .catch(function (e) { questsStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
+        } catch (e) {
+            questsStatusEl.textContent = tr('admin.msg.invalid_json', 'Invalid JSON:') + ' ' + e.message;
+        }
+    });
+    if (questsJsonEl) loadQuests();
 
     // --- Test unlock toast ---
     var testToastStatus = document.getElementById('abTestToastStatus');
@@ -1641,9 +1779,9 @@ font-size:0.88em;
             var rarity = btn.getAttribute('data-rarity');
             if (typeof window.abAchievementTestToast === 'function') {
                 window.abAchievementTestToast(rarity);
-                if (testToastStatus) testToastStatus.textContent = 'Firing ' + rarity + ' toast at bottom-center...';
+                if (testToastStatus) testToastStatus.textContent = tr('admin.msg.firing_toast', 'Firing') + ' ' + rarity + ' ' + tr('admin.msg.toast_at_bottom', 'toast at bottom-center...');
             } else {
-                if (testToastStatus) testToastStatus.textContent = 'Toast system not loaded. Try refreshing the page (enhance.js needs to be active).';
+                if (testToastStatus) testToastStatus.textContent = tr('admin.msg.toast_system_missing', 'Toast system not loaded. Try refreshing the page (enhance.js needs to be active).');
             }
         });
     });
@@ -1665,16 +1803,16 @@ font-size:0.88em;
             IsSecret: document.getElementById('abVbSecret').checked,
             IsCustom: true
         };
-        if (!newBadge.Id || !newBadge.Title) { vbStatus.textContent = 'Id and Title are required.'; return; }
+        if (!newBadge.Id || !newBadge.Title) { vbStatus.textContent = tr('admin.msg.id_title_required', 'Id and Title are required.'); return; }
         fetchJson('Plugins/AchievementBadges/admin/custom-badges').then(function (list) {
             list = Array.isArray(list) ? list : [];
             list.push(newBadge);
             return fetchJson('Plugins/AchievementBadges/admin/custom-badges', 'POST', list);
         }).then(function (res) {
-            vbStatus.textContent = 'Added. Total custom badges: ' + res.Count;
+            vbStatus.textContent = tr('admin.msg.added_total', 'Added. Total custom badges:') + ' ' + res.Count;
             loadCustomBadges();
             reloadAll();
-        }).catch(function (e) { vbStatus.textContent = 'Failed: ' + (e.message || e); });
+        }).catch(function (e) { vbStatus.textContent = tr('admin.msg.failed_generic', 'Failed:') + ' ' + (e.message || e); });
     });
 
     // --- Challenge templates ---
@@ -1688,7 +1826,7 @@ font-size:0.88em;
                 row.style.cssText = 'padding:0.5em 0.75em; margin:0.5em 0; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;';
                 row.innerHTML = '<div><div style="font-weight:600;">' + tpl.Title + '</div><div class="secondaryText" style="font-size:0.85em;">' + tpl.Description + '</div></div>';
                 var btn = document.createElement('button');
-                btn.textContent = 'Add';
+                btn.textContent = tr('admin.msg.add', 'Add');
                 btn.className = 'raised';
                 btn.addEventListener('click', function () {
                     fetchJson('Plugins/AchievementBadges/admin/challenges').then(function (list) {
@@ -1708,13 +1846,13 @@ font-size:0.88em;
     var auditList = document.getElementById('abAuditList');
     function loadAudit() {
         fetchJson('Plugins/AchievementBadges/admin/audit-log?limit=200').then(function (entries) {
-            if (!entries || !entries.length) { auditList.innerHTML = '<div class="secondaryText">No entries yet.</div>'; return; }
+            if (!entries || !entries.length) { auditList.innerHTML = '<div class="secondaryText">' + tr('admin.msg.no_audit_entries', 'No entries yet.') + '</div>'; return; }
             auditList.innerHTML = entries.map(function (e) {
                 var d = new Date(e.At);
                 return '<div style="padding:0.25em 0; border-bottom:1px solid rgba(255,255,255,0.05);">' +
                     '<span style="opacity:0.6;">' + d.toLocaleString() + '</span> ' +
-                    '<span style="color:#4caf50;">[' + e.Type + ']</span> ' +
-                    '<strong>' + e.UserName + '</strong> — ' + e.Details + '</div>';
+                    '<span style="color:#4caf50;">[' + escapeHtml(e.Type) + ']</span> ' +
+                    '<strong>' + escapeHtml(e.UserName) + '</strong> — ' + escapeHtml(e.Details) + '</div>';
             }).join('');
         });
     }
@@ -1726,15 +1864,15 @@ font-size:0.88em;
     var injectStatus = document.getElementById('abInjectStatus');
     injectBtn.addEventListener('click', function () {
         var uid = getUserId();
-        if (!uid) { injectStatus.textContent = 'Load a user first.'; return; }
+        if (!uid) { injectStatus.textContent = tr('admin.msg.load_user_first', 'Load a user first.'); return; }
         var key = document.getElementById('abInjectKey').value.trim();
         var val = parseInt(document.getElementById('abInjectVal').value, 10) || 0;
-        if (!key) { injectStatus.textContent = 'Enter a counter key.'; return; }
+        if (!key) { injectStatus.textContent = tr('admin.msg.enter_counter_key', 'Enter a counter key.'); return; }
         var counters = {};
         counters[key] = val;
         fetchJson('Plugins/AchievementBadges/admin/users/' + uid + '/inject-counters', 'POST', { Counters: counters })
-            .then(function () { injectStatus.textContent = 'Injected. Reloading...'; reloadAll(); })
-            .catch(function (e) { injectStatus.textContent = 'Failed: ' + (e.message || e); });
+            .then(function () { injectStatus.textContent = tr('admin.msg.injected_reloading', 'Injected. Reloading...'); reloadAll(); })
+            .catch(function (e) { injectStatus.textContent = tr('admin.msg.failed_generic', 'Failed:') + ' ' + (e.message || e); });
     });
 
     // --- Feature Controls (admin) ---
@@ -1764,7 +1902,7 @@ font-size:0.88em;
             var hideShowcaseEl = document.getElementById('abFcForceHideEquippedShowcase');
             if (hideShowcaseEl) hideShowcaseEl.checked = !!c.ForceHideEquippedShowcase;
         }).catch(function (e) {
-            if (fcStatusEl) fcStatusEl.textContent = 'Failed to load feature config: ' + (e.message || e);
+            if (fcStatusEl) fcStatusEl.textContent = tr('admin.msg.feature_config_load_failed', 'Failed to load feature config:') + ' ' + (e.message || e);
         });
     }
 
@@ -1778,7 +1916,7 @@ font-size:0.88em;
                 var f = fileInput.files && fileInput.files[0];
                 if (!f) return;
                 if (f.size > 65536) {
-                    alert('SVG is larger than 64KB — please use a smaller file.');
+                    alert(tr('admin.msg.svg_too_large', 'SVG is larger than 64KB — please use a smaller file.'));
                     fileInput.value = '';
                     return;
                 }
@@ -1821,7 +1959,7 @@ font-size:0.88em;
             ForceHideEquippedShowcase: !!(document.getElementById('abFcForceHideEquippedShowcase') || {}).checked
         }).then(function (res) {
             if (fcStatusEl) {
-                var msg = 'Feature config saved.';
+                var msg = tr('admin.msg.feature_config_saved', 'Feature config saved.');
                 if (res && res.SvgWarning) msg += ' ' + res.SvgWarning;
                 fcStatusEl.textContent = msg;
             }
@@ -1830,7 +1968,7 @@ font-size:0.88em;
             // the re-encoded form, matching what the toast will actually use).
             loadFeatureConfig();
         }).catch(function (e) {
-            if (fcStatusEl) fcStatusEl.textContent = 'Save failed: ' + (e.message || e);
+            if (fcStatusEl) fcStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e);
         });
     });
     loadFeatureConfig();

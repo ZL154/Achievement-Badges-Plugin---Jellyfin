@@ -56,6 +56,49 @@
             .then(function(r){return r.ok?r.json():[];}).catch(function(){return [];});
     }
 
+    // Lightweight i18n for the sidebar entry. Loads the user's preferred
+    // language and re-applies the few translatable bits (sidebar label,
+    // header tooltip) once it resolves.
+    var _abSidebarTranslations = {};
+    function tr(key, fallback){
+        if (_abSidebarTranslations && Object.prototype.hasOwnProperty.call(_abSidebarTranslations, key)){
+            return _abSidebarTranslations[key];
+        }
+        return fallback != null ? fallback : key;
+    }
+    function loadSidebarTranslations(){
+        var uid = getUserId();
+        var prefP = uid
+            ? fetch(buildUrl('Plugins/AchievementBadges/users/' + uid + '/preferences'), { headers: authHeaders(), credentials: 'include' })
+                .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+            : Promise.resolve(null);
+        var pubP = fetch(buildUrl('Plugins/AchievementBadges/public-config'), { headers: authHeaders(), credentials: 'include' })
+            .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+        return Promise.all([prefP, pubP]).then(function(parts){
+            var prefs = parts[0] || {};
+            var cfg = parts[1] || {};
+            var userLang = (prefs.Language || prefs.language || 'default').toString().toLowerCase();
+            var adminLang = (cfg.DefaultLanguage || cfg.defaultLanguage || 'en').toString().toLowerCase();
+            var lang = (userLang === 'default' || !userLang) ? adminLang : userLang;
+            lang = (lang || 'en').replace(/[^a-z-]/g, '') || 'en';
+            return fetch(buildUrl('Plugins/AchievementBadges/translations/' + lang), { headers: authHeaders(), credentials: 'include' })
+                .then(function(r){ return r.ok ? r.json() : {}; })
+                .then(function(data){ _abSidebarTranslations = data || {}; applyTranslations(); })
+                .catch(function(){});
+        }).catch(function(){});
+    }
+    function applyTranslations(){
+        var sb = document.getElementById(SIDEBAR_ID);
+        if (sb){
+            var span = sb.querySelector('.navMenuOptionText');
+            if (span) span.textContent = tr('sidebar.achievements', 'Achievements');
+        }
+        var hdr = document.getElementById(HEADER_ID);
+        if (hdr){
+            hdr.title = tr('sidebar.equipped_badges', 'Equipped Badges');
+        }
+    }
+
     // Cached flag: should we show the equipped-badge showcase UI at all?
     // Resolved from (a) admin force-hide config and (b) per-user preference.
     // Starts as null; once resolved becomes true/false. While null we
@@ -125,7 +168,7 @@
             a.style.cursor = 'pointer';
             a.innerHTML =
                 '<span class="material-icons navMenuOptionIcon" style="font-family:Material Icons;">emoji_events</span>' +
-                '<span class="navMenuOptionText">Achievements</span>';
+                '<span class="navMenuOptionText">' + tr('sidebar.achievements', 'Achievements') + '</span>';
             a.addEventListener('click', function(e){
                 e.preventDefault(); e.stopPropagation();
                 window.location.hash = '/achievements';
@@ -162,7 +205,7 @@
             console.log('[AchievementBadges] injectHeader: found header, adding badges container');
             var container=document.createElement('div');container.id=HEADER_ID;
             container.style.cssText='display:flex;align-items:center;gap:3px;margin-right:6px;';
-            container.title='Equipped Badges';
+            container.title=tr('sidebar.equipped_badges', 'Equipped Badges');
             container.style.cursor='pointer';
             container.addEventListener('click',function(){window.location.hash='/achievements';});
             var parent=headerRight.parentElement;
@@ -212,8 +255,19 @@
         });
     }
 
+    // Listen for live preference changes broadcast from the achievements
+    // page. When the user toggles ShowEquippedShowcase we want the sidebar
+    // pills and header dots to update immediately without a hard refresh.
+    try {
+        window.addEventListener('ab:showcase-pref-changed', function () {
+            _showcaseEnabled = null; // force re-resolve from server
+            tryInject();
+        });
+    } catch (e) {}
+
     function start(){
         try { console.log('[AchievementBadges] start() running, readyState=', document.readyState); } catch(e){}
+        loadSidebarTranslations();
         tryInject();
         var attempts = 0;
         var retryInterval = setInterval(function(){

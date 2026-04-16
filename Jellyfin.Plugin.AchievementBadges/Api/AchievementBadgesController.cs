@@ -28,6 +28,7 @@ public class AchievementBadgesController : ControllerBase
     private readonly QuestService _questService;
     private readonly AuditLogService _auditLog;
     private readonly IUserManager _userManager;
+    private readonly IAuthorizationService _authService;
 
     public AchievementBadgesController(
         AchievementBadgeService badgeService,
@@ -38,7 +39,8 @@ public class AchievementBadgesController : ControllerBase
         RecommendationService recommendationService,
         QuestService questService,
         AuditLogService auditLog,
-        IUserManager userManager)
+        IUserManager userManager,
+        IAuthorizationService authService)
     {
         _badgeService = badgeService;
         _playbackCompletionService = playbackCompletionService;
@@ -49,6 +51,7 @@ public class AchievementBadgesController : ControllerBase
         _questService = questService;
         _auditLog = auditLog;
         _userManager = userManager;
+        _authService = authService;
     }
 
     [HttpGet("test")]
@@ -56,6 +59,15 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public ActionResult Test()
     {
+        var debug = Plugin.Instance?.Configuration?.EnableDebugEndpoints ?? false;
+        if (!debug)
+        {
+            // Don't leak patched path / host-filesystem diagnostics or exact
+            // build version to unauthenticated callers unless debug endpoints
+            // are explicitly enabled by the admin. Keeps plugin fingerprinting
+            // out of anon attackers' hands.
+            return Ok(new { Status = "Achievement Badges plugin working!" });
+        }
         return Ok(new
         {
             Status = "Achievement Badges plugin working!",
@@ -333,7 +345,27 @@ public class AchievementBadgesController : ControllerBase
         return Ok(badges);
     }
 
+    // Public read of another user's equipped badges. The route deliberately
+    // uses {targetUserId} so the UserOwnershipFilter ignores it (the filter
+    // only guards endpoints with a {userId} param). Still requires an
+    // authenticated Jellyfin session. Returns a minimal Icon/Title/Rarity
+    // projection so private fields never leak. Respects the target's privacy
+    // prefs and the admin-level force-privacy / force-hide toggles.
+    [HttpGet("profiles/{targetUserId}/equipped")]
+    [EnableRateLimiting("ip-30-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetPublicEquipped([FromRoute] string targetUserId)
+    {
+        // Reject malformed / oversized ids before any service work — stops
+        // the service-layer dictionary lookup acting as a timing side-channel
+        // for userId probing.
+        if (string.IsNullOrWhiteSpace(targetUserId) || targetUserId.Length > 64 || !Guid.TryParse(targetUserId, out _))
+            return Ok(new List<object>());
+        return Ok(_badgeService.GetPublicEquippedPreview(targetUserId));
+    }
+
     [HttpPost("users/{userId}/equipped/{badgeId}")]
+    [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(typeof(List<AchievementBadge>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public ActionResult<List<AchievementBadge>> EquipBadge([FromRoute] string userId, [FromRoute] string badgeId)
@@ -350,6 +382,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpDelete("users/{userId}/equipped/{badgeId}")]
+    [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(typeof(List<AchievementBadge>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public ActionResult<List<AchievementBadge>> UnequipBadge([FromRoute] string userId, [FromRoute] string badgeId)
@@ -570,10 +603,46 @@ public class AchievementBadgesController : ControllerBase
     // ---------- v1.5.6 features --------------------------------------
 
     [HttpGet("compare/{userIdA}/{userIdB}")]
+    [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult CompareUsers([FromRoute] string userIdA, [FromRoute] string userIdB)
+    public async System.Threading.Tasks.Task<ActionResult> CompareUsers([FromRoute] string userIdA, [FromRoute] string userIdB)
     {
-        _badgeService.RecordCompareHistory(userIdA, userIdB);
+        // UserOwnershipFilter guards only on {userId} route tokens, so this
+        // endpoint would otherwise accept any two attacker-controlled GUIDs.
+        // Enforce here that the caller is either userIdA or userIdB (or admin)
+        // before recording compare-history — otherwise an attacker can
+        // pollute any other user's on-disk compare-history.
+        var caller = User.FindFirst("Jellyfin-UserId")?.Value;
+        bool callerMatchesA = false, callerMatchesB = false;
+        if (!string.IsNullOrEmpty(caller) && Guid.TryParse(caller, out var callerGuid))
+        {
+            if (Guid.TryParse(userIdA, out var agA)) callerMatchesA = agA == callerGuid;
+            if (Guid.TryParse(userIdB, out var agB)) callerMatchesB = agB == callerGuid;
+        }
+
+        var isAdmin = false;
+        if (!callerMatchesA && !callerMatchesB)
+        {
+            var adminAuth = await _authService.AuthorizeAsync(User, null, "RequiresElevation");
+            isAdmin = adminAuth.Succeeded;
+        }
+
+        if (!isAdmin && !callerMatchesA && !callerMatchesB)
+        {
+            return Forbid();
+        }
+
+        // Only record history for the caller's side — never touch the other
+        // user's profile so a malicious call can't be used to flush / inject
+        // entries into a victim's CompareHistory.
+        if (callerMatchesA)
+        {
+            _badgeService.RecordCompareHistory(userIdA, userIdB);
+        }
+        else if (callerMatchesB)
+        {
+            _badgeService.RecordCompareHistory(userIdB, userIdA);
+        }
         return Ok(_badgeService.CompareUsers(userIdA, userIdB));
     }
 
@@ -705,6 +774,7 @@ public class AchievementBadgesController : ControllerBase
     public class PinBadgeRequest { public bool Pinned { get; set; } }
 
     [HttpPost("users/{userId}/pin/{badgeId}")]
+    [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult PinBadge([FromRoute] string userId, [FromRoute] string badgeId, [FromBody] PinBadgeRequest? body)
     {
@@ -714,6 +784,7 @@ public class AchievementBadgesController : ControllerBase
     public class EquipTitleRequest { public string? BadgeId { get; set; } }
 
     [HttpPost("users/{userId}/title")]
+    [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult EquipTitle([FromRoute] string userId, [FromBody] EquipTitleRequest? body)
     {
@@ -748,6 +819,7 @@ public class AchievementBadgesController : ControllerBase
     // ---------- Login ping -------------------------------------------
 
     [HttpPost("users/{userId}/login-ping")]
+    [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult LoginPing([FromRoute] string userId)
     {
@@ -784,23 +856,29 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult GetProfileCard([FromRoute] string userId)
     {
-        // Upfront validation — a malformed or unknown userId would otherwise
-        // allow enumeration of which userIds exist via the profile card.
+        // Unified "unavailable" response for all failure modes so the caller
+        // can't use 200 vs 404 to enumerate which Jellyfin user GUIDs exist
+        // on the server. Respond with a generic HTML page for every failure.
+        ContentResult Unavailable() => Content(
+            "<html><body style='background:#111;color:#fff;font-family:sans-serif;padding:2em;'>" +
+            "<h1>Profile card unavailable</h1><p>This profile could not be rendered right now.</p></body></html>",
+            "text/html");
+
         if (!Guid.TryParse(userId, out var userGuid))
         {
-            return NotFound();
+            return Unavailable();
         }
         try
         {
             var userExists = _userManager.GetUserById(userGuid);
             if (userExists is null)
             {
-                return NotFound();
+                return Unavailable();
             }
         }
         catch
         {
-            return NotFound();
+            return Unavailable();
         }
 
         var content = ResourceReader.ReadEmbeddedText("Jellyfin.Plugin.AchievementBadges.Pages.profile-card.html")
@@ -905,6 +983,95 @@ public class AchievementBadgesController : ControllerBase
         foreach (var b in config.CustomBadges) { b.IsCustom = true; }
         plugin.UpdateConfiguration(config);
         return Ok(new { Count = config.CustomBadges.Count });
+    }
+
+    // ---------- Quests (admin) --------------------------------------
+
+    public class AdminQuestsPayload
+    {
+        public List<QuestDefinition> CustomDailyQuests { get; set; } = new();
+        public List<QuestDefinition> CustomWeeklyQuests { get; set; } = new();
+        public List<string> DisabledQuestIds { get; set; } = new();
+    }
+
+    [HttpGet("admin/quests")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetAdminQuests()
+    {
+        var cfg = Plugin.Instance?.Configuration;
+        // Ship both the raw admin config AND the built-in pool so the admin
+        // UI can render both lists side-by-side with a single fetch.
+        return Ok(new
+        {
+            BuiltInDaily = QuestService.DailyTemplates.Select(t => new
+            {
+                t.Id, t.Title, t.Description, Metric = t.Metric.ToString(), t.Target, t.Reward, t.Icon
+            }).ToList(),
+            BuiltInWeekly = QuestService.WeeklyTemplates.Select(t => new
+            {
+                t.Id, t.Title, t.Description, Metric = t.Metric.ToString(), t.Target, t.Reward, t.Icon
+            }).ToList(),
+            CustomDailyQuests = cfg?.CustomDailyQuests ?? new List<QuestDefinition>(),
+            CustomWeeklyQuests = cfg?.CustomWeeklyQuests ?? new List<QuestDefinition>(),
+            DisabledQuestIds = cfg?.DisabledQuestIds ?? new List<string>()
+        });
+    }
+
+    [HttpPost("admin/quests")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult SaveAdminQuests([FromBody] AdminQuestsPayload payload)
+    {
+        if (payload == null) return BadRequest(new { Message = "Payload required." });
+        var plugin = Plugin.Instance;
+        if (plugin is null) return BadRequest();
+
+        static QuestDefinition SanitiseQuest(QuestDefinition q)
+        {
+            // Bound all free-form fields so a malicious admin payload can't
+            // bloat the on-disk config with megabytes of data.
+            q.Id = (q.Id ?? string.Empty).Trim();
+            if (q.Id.Length > 128) q.Id = q.Id.Substring(0, 128);
+            q.Title = (q.Title ?? string.Empty).Trim();
+            if (q.Title.Length > 200) q.Title = q.Title.Substring(0, 200);
+            q.Description = (q.Description ?? string.Empty).Trim();
+            if (q.Description.Length > 1000) q.Description = q.Description.Substring(0, 1000);
+            q.Icon = string.IsNullOrWhiteSpace(q.Icon) ? "play_circle" : q.Icon.Trim();
+            if (q.Icon.Length > 64) q.Icon = q.Icon.Substring(0, 64);
+            q.Target = Math.Clamp(q.Target, 1, 1_000_000);
+            q.Reward = Math.Clamp(q.Reward, 0, 100_000);
+            return q;
+        }
+
+        var config = plugin.Configuration;
+        // Cap list sizes to keep the config JSON from being weaponised.
+        config.CustomDailyQuests = (payload.CustomDailyQuests ?? new())
+            .Where(q => q != null && !string.IsNullOrWhiteSpace(q.Id) && !string.IsNullOrWhiteSpace(q.Title))
+            .Select(SanitiseQuest)
+            .Take(100)
+            .ToList();
+        config.CustomWeeklyQuests = (payload.CustomWeeklyQuests ?? new())
+            .Where(q => q != null && !string.IsNullOrWhiteSpace(q.Id) && !string.IsNullOrWhiteSpace(q.Title))
+            .Select(SanitiseQuest)
+            .Take(100)
+            .ToList();
+        config.DisabledQuestIds = (payload.DisabledQuestIds ?? new())
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .Where(s => s.Length <= 128)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(200)
+            .ToList();
+
+        plugin.UpdateConfiguration(config);
+        return Ok(new
+        {
+            Success = true,
+            CustomDaily = config.CustomDailyQuests.Count,
+            CustomWeekly = config.CustomWeeklyQuests.Count,
+            Disabled = config.DisabledQuestIds.Count
+        });
     }
 
     // ---------- Challenges (admin) ----------------------------------
@@ -1048,6 +1215,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("users/{userId}/buy-badge/{badgeId}")]
+    [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult BuyBadge([FromRoute] string userId, [FromRoute] string badgeId)
     {
@@ -1056,10 +1224,29 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("users/{userId}/gift/{toUserId}")]
+    [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GiftScore([FromRoute] string userId, [FromRoute] string toUserId, [FromQuery] int amount = 0)
     {
+        // Validate the recipient before handing off — the service would
+        // otherwise lazy-create a brand new on-disk profile for any arbitrary
+        // string, letting a caller bloat the profiles JSON with garbage ids.
+        if (!Guid.TryParse(toUserId, out var toGuid))
+            return BadRequest(new { Message = "Invalid recipient id." });
+        try
+        {
+            if (_userManager.GetUserById(toGuid) is null)
+                return BadRequest(new { Message = "Recipient not found." });
+        }
+        catch
+        {
+            return BadRequest(new { Message = "Recipient not found." });
+        }
+
+        amount = Math.Clamp(amount, 1, 10_000);
+
         var result = _badgeService.GiftScore(userId, toUserId, amount);
+        _auditLog?.Log(userId, User.Identity?.Name ?? string.Empty, "gift-score", "to " + toUserId + " amount=" + amount);
         return Ok(result);
     }
 

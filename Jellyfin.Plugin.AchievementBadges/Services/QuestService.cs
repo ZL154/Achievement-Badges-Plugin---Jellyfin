@@ -48,6 +48,65 @@ public class QuestService
         _badgeService = badgeService;
     }
 
+    /// <summary>
+    /// Returns the effective daily pool after applying admin overrides:
+    /// built-in quests minus any in DisabledQuestIds, plus all CustomDailyQuests
+    /// (a custom quest with the same Id as a built-in replaces it).
+    /// </summary>
+    public static IReadOnlyList<QuestTemplate> GetEffectiveDailyPool()
+    {
+        return MergePool(DailyTemplates, Plugin.Instance?.Configuration?.CustomDailyQuests, Plugin.Instance?.Configuration?.DisabledQuestIds);
+    }
+
+    public static IReadOnlyList<QuestTemplate> GetEffectiveWeeklyPool()
+    {
+        return MergePool(WeeklyTemplates, Plugin.Instance?.Configuration?.CustomWeeklyQuests, Plugin.Instance?.Configuration?.DisabledQuestIds);
+    }
+
+    private static IReadOnlyList<QuestTemplate> MergePool(IReadOnlyList<QuestTemplate> builtin, List<QuestDefinition>? custom, List<string>? disabledIds)
+    {
+        var disabled = disabledIds != null ? new HashSet<string>(disabledIds, StringComparer.OrdinalIgnoreCase) : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var customById = new Dictionary<string, QuestDefinition>(StringComparer.OrdinalIgnoreCase);
+        if (custom != null)
+        {
+            foreach (var q in custom)
+            {
+                if (string.IsNullOrWhiteSpace(q.Id)) continue;
+                if (string.IsNullOrWhiteSpace(q.Title)) continue;
+                if (q.Target < 1) continue;
+                customById[q.Id] = q;
+            }
+        }
+
+        var result = new List<QuestTemplate>();
+        foreach (var t in builtin)
+        {
+            if (disabled.Contains(t.Id)) continue;
+            if (customById.TryGetValue(t.Id, out var overrideDef))
+            {
+                result.Add(ToTemplate(overrideDef));
+                customById.Remove(t.Id);
+            }
+            else
+            {
+                result.Add(t);
+            }
+        }
+        foreach (var c in customById.Values)
+        {
+            result.Add(ToTemplate(c));
+        }
+        return result;
+    }
+
+    private static QuestTemplate ToTemplate(QuestDefinition d)
+    {
+        var reward = Math.Clamp(d.Reward, 0, 100000);
+        var target = Math.Clamp(d.Target, 1, 1000000);
+        var icon = string.IsNullOrWhiteSpace(d.Icon) ? "play_circle" : d.Icon;
+        return new QuestTemplate(d.Id, d.Title, d.Description ?? string.Empty, d.Metric, target, reward, icon);
+    }
+
     public object GetOrCreate(string userId)
     {
         return new
@@ -64,13 +123,18 @@ public class QuestService
 
         var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
         var activeForToday = profile.DailyQuests.Where(q => q.Period == today).ToList();
+        var pool = GetEffectiveDailyPool();
+        if (pool.Count == 0)
+        {
+            return new List<object>();
+        }
 
         if (activeForToday.Count < DailyQuestCount)
         {
             // Drop stale quests from other days and re-pick for today
             profile.DailyQuests.RemoveAll(q => q.Period != today);
 
-            var picked = PickN(DailyTemplates, DailyQuestCount, today.GetHashCode());
+            var picked = PickN(pool, DailyQuestCount, today.GetHashCode());
             foreach (var tpl in picked)
             {
                 if (profile.DailyQuests.Any(q => q.Id == tpl.Id && q.Period == today)) continue;
@@ -85,7 +149,7 @@ public class QuestService
             _badgeService.SaveProfileDirect(profile);
         }
 
-        return EvaluateQuestList(profile, profile.DailyQuests.Where(q => q.Period == today).ToList(), DailyTemplates, "daily");
+        return EvaluateQuestList(profile, profile.DailyQuests.Where(q => q.Period == today).ToList(), pool, "daily");
     }
 
     public List<object> GetOrCreateWeeklyList(string userId)
@@ -99,12 +163,17 @@ public class QuestService
         var weekKey = isoYear + "-W" + isoWeek.ToString("D2");
 
         var activeForWeek = profile.WeeklyQuests.Where(q => q.Period == weekKey).ToList();
+        var pool = GetEffectiveWeeklyPool();
+        if (pool.Count == 0)
+        {
+            return new List<object>();
+        }
 
         if (activeForWeek.Count < WeeklyQuestCount)
         {
             profile.WeeklyQuests.RemoveAll(q => q.Period != weekKey);
 
-            var picked = PickN(WeeklyTemplates, WeeklyQuestCount, weekKey.GetHashCode());
+            var picked = PickN(pool, WeeklyQuestCount, weekKey.GetHashCode());
             foreach (var tpl in picked)
             {
                 if (profile.WeeklyQuests.Any(q => q.Id == tpl.Id && q.Period == weekKey)) continue;
@@ -119,7 +188,7 @@ public class QuestService
             _badgeService.SaveProfileDirect(profile);
         }
 
-        return EvaluateQuestList(profile, profile.WeeklyQuests.Where(q => q.Period == weekKey).ToList(), WeeklyTemplates, "weekly");
+        return EvaluateQuestList(profile, profile.WeeklyQuests.Where(q => q.Period == weekKey).ToList(), pool, "weekly");
     }
 
     // Kept for backward compat with existing controller endpoints

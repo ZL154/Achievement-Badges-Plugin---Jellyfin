@@ -72,6 +72,37 @@
             .then(function (r) { return r.ok ? r.json() : Promise.reject(r.statusText); });
     }
 
+    // ===== i18n (lightweight, mirrors standalone.js) =====
+    var _abTranslations = {};
+    function tr(key, fallback) {
+        if (_abTranslations && Object.prototype.hasOwnProperty.call(_abTranslations, key)) {
+            return _abTranslations[key];
+        }
+        return fallback != null ? fallback : key;
+    }
+    function loadEnhanceTranslations() {
+        // Resolve effective language: per-user pref overrides admin default.
+        var uid = getUserId();
+        var prefP = uid
+            ? fetch(buildUrl('Plugins/AchievementBadges/users/' + uid + '/preferences'), { headers: authHeaders(), credentials: 'include' })
+                .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+            : Promise.resolve(null);
+        var pubP = fetch(buildUrl('Plugins/AchievementBadges/public-config'), { headers: authHeaders(), credentials: 'include' })
+            .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+        return Promise.all([prefP, pubP]).then(function (parts) {
+            var prefs = parts[0] || {};
+            var cfg = parts[1] || {};
+            var userLang = (prefs.Language || prefs.language || 'default').toString().toLowerCase();
+            var adminLang = (cfg.DefaultLanguage || cfg.defaultLanguage || 'en').toString().toLowerCase();
+            var lang = (userLang === 'default' || !userLang) ? adminLang : userLang;
+            lang = (lang || 'en').replace(/[^a-z-]/g, '') || 'en';
+            return fetch(buildUrl('Plugins/AchievementBadges/translations/' + lang), { headers: authHeaders(), credentials: 'include' })
+                .then(function (r) { return r.ok ? r.json() : {}; })
+                .then(function (data) { _abTranslations = data || {}; })
+                .catch(function () { });
+        }).catch(function () {});
+    }
+
     function ensureToastContainer() {
         var c = document.getElementById(TOAST_ID);
         if (c) return c;
@@ -118,7 +149,7 @@
         var color = shades.base;
         var isRare = rarity !== 'common' && rarity !== 'uncommon';
         var scorePts = rarityScorePts[rarity] || 10;
-        var label = isRare ? ((badge.Rarity || 'Rare') + ' achievement unlocked') : 'Achievement unlocked';
+        var label = isRare ? tr('toast.rare_achievement_unlocked', 'Rare achievement unlocked') : tr('toast.achievement_unlocked', 'Achievement unlocked');
         var styleVars =
             '--ab-color:' + shades.base + ';' +
             '--ab-color-lighter:' + shades.lighter + ';' +
@@ -200,9 +231,9 @@
             '<div style="display:flex;align-items:center;gap:14px;">' +
                 '<div style="width:50px;height:50px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 0 30px ' + color + 'aa;">🎉</div>' +
                 '<div style="flex:1;min-width:0;">' +
-                    '<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.8;font-weight:700;color:' + color + ';">MILESTONE REACHED</div>' +
-                    '<div style="font-size:18px;font-weight:900;margin-top:2px;">' + milestone + '% complete!</div>' +
-                    '<div style="font-size:11px;opacity:0.7;font-weight:600;">You\'ve unlocked ' + milestone + '% of all achievements</div>' +
+                    '<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:0.8;font-weight:700;color:' + color + ';">' + tr('toast.milestone_reached', 'MILESTONE REACHED') + '</div>' +
+                    '<div style="font-size:18px;font-weight:900;margin-top:2px;">' + milestone + tr('toast.complete', '% complete!') + '</div>' +
+                    '<div style="font-size:11px;opacity:0.7;font-weight:600;">' + tr('toast.milestone_subtitle', 'You\'ve unlocked {pct}% of all achievements').replace('{pct}', milestone) + '</div>' +
                 '</div>' +
             '</div>';
         c.appendChild(toast);
@@ -356,13 +387,13 @@
         var ribbon = document.createElement('div');
         ribbon.id = DETAIL_ID;
         ribbon.style.cssText = 'margin:0.75em 0;padding:0.75em 1em;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);font-size:0.85em;display:flex;align-items:center;gap:0.75em;';
-        ribbon.innerHTML = '<span style="font-size:1.2em;">🏆</span><span id="ab-ribbon-text">Loading achievement progress...</span>';
+        ribbon.innerHTML = '<span style="font-size:1.2em;">🏆</span><span id="ab-ribbon-text">' + tr('toast.ribbon_loading', 'Loading achievement progress...') + '</span>';
         anchor.insertBefore(ribbon, anchor.firstChild);
 
         fetchJson('Plugins/AchievementBadges/users/' + uid + '/summary').then(function (s) {
             var t = document.getElementById('ab-ribbon-text');
             if (t && s) {
-                t.textContent = s.Unlocked + ' / ' + s.Total + ' achievements unlocked (' + (s.Percentage || 0) + '%) · Score ' + (s.Score || 0);
+                t.textContent = s.Unlocked + ' / ' + s.Total + ' ' + tr('toast.achievement_unlocked_lower', 'achievements unlocked') + ' (' + (s.Percentage || 0) + '%) · ' + tr('lb.score', 'Score') + ' ' + (s.Score || 0);
             }
         }).catch(function () { });
     }
@@ -395,6 +426,8 @@
     };
 
     function start() {
+        // Kick off translation load early so toasts use the user's language.
+        loadEnhanceTranslations();
         var style = document.createElement('style');
         style.textContent =
             // Hide our injected header/sidebar badges + toasts when the video player is active

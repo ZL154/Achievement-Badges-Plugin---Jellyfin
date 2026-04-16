@@ -10,7 +10,7 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public bool ShowOnUserHome { get; set; } = true;
 
-    public bool EnableDebugEndpoints { get; set; } = true;
+    public bool EnableDebugEndpoints { get; set; } = false;
 
     public int MinimumPlaySecondsForCompletion { get; set; } = 300;
 
@@ -67,4 +67,14 @@ public class PluginConfiguration : BasePluginConfiguration
     // header dots, profile-card equipped slots). When true, these elements are
     // hidden for all users regardless of per-user preferences. Default false.
     public bool ForceHideEquippedShowcase { get; set; } = false;
+
+    // Admin-authored quest templates. Merged with the built-in DailyTemplates /
+    // WeeklyTemplates at quest-pick time. Ids must be unique across both
+    // built-in and custom; built-in quests with the same Id are replaced.
+    public List<QuestDefinition> CustomDailyQuests { get; set; } = new();
+    public List<QuestDefinition> CustomWeeklyQuests { get; set; } = new();
+
+    // Built-in quest template Ids the admin has disabled. Entries in either
+    // CustomDailyQuests / CustomWeeklyQuests are still eligible.
+    public List<string> DisabledQuestIds { get; set; } = new();
 }

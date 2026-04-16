@@ -975,9 +975,9 @@
             yearSel.addEventListener('change', loadWrapped);
         }
         var year = yearSel ? yearSel.value : new Date().getFullYear();
-        box.innerHTML = 'Loading...';
+        box.innerHTML = tr('common.loading', 'Loading...');
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/wrapped?year=' + year).then(function (w) {
-            if (!w || w.Empty) { box.innerHTML = '<div class="ab-muted" style="padding:2em; text-align:center;">No watching activity found for ' + year + '.</div>'; return; }
+            if (!w || w.Empty) { box.innerHTML = '<div class="ab-muted" style="padding:2em; text-align:center;">' + tr('wrapped.no_activity', 'No watching activity found for this year.') + ' (' + year + ')</div>'; return; }
 
             var card = function (accent, icon, big, label) {
                 return '<div class="ab-wrapped-card ' + accent + '">' +
@@ -992,7 +992,7 @@
                     ? '<ul class="ab-wrapped-list">' + items.slice(0, 5).map(function (x) {
                         return '<li><strong>' + escapeHtml(x.Name) + '</strong><span>' + x.Count + (suffix || '') + '</span></li>';
                     }).join('') + '</ul>'
-                    : '<div class="ab-muted" style="font-size:0.85em; margin-top:0.5em;">No data</div>';
+                    : '<div class="ab-muted" style="font-size:0.85em; margin-top:0.5em;">' + tr('wrapped.no_data', 'No data') + '</div>';
                 return '<div class="ab-wrapped-card ' + accent + '">' +
                     (icon ? '<div class="ab-wrapped-icon">' + icon + '</div>' : '') +
                     '<div class="ab-wrapped-label" style="margin-bottom:0.3em;">' + title + '</div>' +
@@ -1002,42 +1002,42 @@
 
             box.innerHTML =
                 '<div class="ab-wrapped-hero">' +
-                    '<div class="ab-wrapped-hero-label">Your year in Jellyfin</div>' +
+                    '<div class="ab-wrapped-hero-label">' + tr('wrapped.hero_label', 'Your year in Jellyfin') + '</div>' +
                     '<div class="ab-wrapped-hero-year">\u2014 ' + year + ' \u2014</div>' +
                     '<div class="ab-wrapped-hero-big">' + w.TotalItemsWatched + '</div>' +
-                    '<div class="ab-wrapped-hero-sub">items watched</div>' +
+                    '<div class="ab-wrapped-hero-sub">' + tr('wrapped.items_watched', 'items watched') + '</div>' +
                 '</div>' +
 
                 '<div class="ab-wrapped-section">' +
-                    '<div class="ab-wrapped-section-title">Your numbers</div>' +
+                    '<div class="ab-wrapped-section-title">' + tr('wrapped.your_numbers', 'Your numbers') + '</div>' +
                     '<div class="ab-wrapped-grid">' +
-                        card('', '🎬', w.MoviesWatched, 'movies watched') +
-                        card('', '📺', w.EpisodesWatched, 'episodes') +
-                        card('cool', '📅', w.ActiveDays, 'active days') +
-                        card('warm', '🔥', w.BestStreak, 'best streak ever') +
-                        card('gold', '⏱️', w.TotalHoursWatched, 'total hours') +
+                        card('', '🎬', w.MoviesWatched, tr('wrapped.movies_watched_label', 'movies watched')) +
+                        card('', '📺', w.EpisodesWatched, tr('wrapped.episodes_label', 'episodes')) +
+                        card('cool', '📅', w.ActiveDays, tr('wrapped.active_days_label', 'active days')) +
+                        card('warm', '🔥', w.BestStreak, tr('wrapped.best_streak_label', 'best streak ever')) +
+                        card('gold', '⏱️', w.TotalHoursWatched, tr('wrapped.total_hours_label', 'total hours')) +
                     '</div>' +
                 '</div>' +
 
                 '<div class="ab-wrapped-section">' +
-                    '<div class="ab-wrapped-section-title">Your highlights</div>' +
+                    '<div class="ab-wrapped-section-title">' + tr('wrapped.your_highlights', 'Your highlights') + '</div>' +
                     '<div class="ab-wrapped-grid">' +
-                        (w.BiggestDay ? card('warm', '🏆', w.BiggestDayCount, 'items on ' + w.BiggestDay) : '') +
-                        (w.TopMonth ? card('cool', '🗓️', w.TopMonthCount, 'items in ' + w.TopMonth) : '') +
-                        (w.TopDayOfWeek ? card('green', '⭐', w.TopDayOfWeekCount, 'on a ' + w.TopDayOfWeek) : '') +
+                        (w.BiggestDay ? card('warm', '🏆', w.BiggestDayCount, tr('wrapped.biggest_day_label', 'items on') + ' ' + w.BiggestDay) : '') +
+                        (w.TopMonth ? card('cool', '🗓️', w.TopMonthCount, tr('wrapped.top_month_label', 'items in') + ' ' + w.TopMonth) : '') +
+                        (w.TopDayOfWeek ? card('green', '⭐', w.TopDayOfWeekCount, tr('wrapped.top_dow_label', 'on a') + ' ' + w.TopDayOfWeek) : '') +
                     '</div>' +
                 '</div>' +
 
                 '<div class="ab-wrapped-section">' +
-                    '<div class="ab-wrapped-section-title">Your favorites</div>' +
+                    '<div class="ab-wrapped-section-title">' + tr('wrapped.your_favorites', 'Your favorites') + '</div>' +
                     '<div class="ab-wrapped-grid">' +
-                        listCard('cool', '🎭', 'Top genres', w.TopGenres) +
-                        listCard('warm', '🎬', 'Top directors', w.TopDirectors) +
-                        listCard('gold', '⭐', 'Top actors', w.TopActors) +
+                        listCard('cool', '🎭', tr('recap.top_genres', 'Top genres'), w.TopGenres) +
+                        listCard('warm', '🎬', tr('recap.top_directors', 'Top directors'), w.TopDirectors) +
+                        listCard('gold', '⭐', tr('recap.top_actors', 'Top actors'), w.TopActors) +
                     '</div>' +
                 '</div>';
         }).catch(function () {
-            box.innerHTML = '<div class="ab-muted">Failed to load wrapped.</div>';
+            box.innerHTML = '<div class="ab-muted">' + tr('wrapped.load_failed', 'Failed to load wrapped.') + '</div>';
         });
     }
 
@@ -1191,7 +1191,7 @@
 
     function loadRecap(period) {
         if (!userId) return;
-        var box = el('abSaRecap'); if (box) box.innerHTML = 'Loading recap...';
+        var box = el('abSaRecap'); if (box) box.innerHTML = tr('recap.loading', 'Loading recap...');
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/recap?period=' + period).then(function (r) {
             if (!box) return;
 
@@ -1217,22 +1217,22 @@
                 '<div class="ab-recap-hero">' +
                     '<div class="ab-recap-big">' +
                         '<div class="ab-recap-big-num">' + (r.TotalItems || 0) + '</div>' +
-                        '<div class="ab-recap-big-label">Total items watched</div>' +
+                        '<div class="ab-recap-big-label">' + tr('recap.total_items_watched', 'Total items watched') + '</div>' +
                     '</div>' +
                     '<div class="ab-recap-mini-grid">' +
-                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">🎬</div><div class="ab-recap-mini-num">' + (r.MoviesWatched || 0) + '</div><div class="ab-recap-mini-label">Movies</div></div>' +
-                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">📺</div><div class="ab-recap-mini-num">' + (r.EpisodesWatched || 0) + '</div><div class="ab-recap-mini-label">Episodes</div></div>' +
-                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">📅</div><div class="ab-recap-mini-num">' + (r.DaysWatched || 0) + '</div><div class="ab-recap-mini-label">Active days</div></div>' +
-                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">🏆</div><div class="ab-recap-mini-num">' + (r.BadgesUnlocked || 0) + '</div><div class="ab-recap-mini-label">Unlocks</div></div>' +
+                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">🎬</div><div class="ab-recap-mini-num">' + (r.MoviesWatched || 0) + '</div><div class="ab-recap-mini-label">' + tr('recap.movies', 'Movies') + '</div></div>' +
+                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">📺</div><div class="ab-recap-mini-num">' + (r.EpisodesWatched || 0) + '</div><div class="ab-recap-mini-label">' + tr('recap.episodes', 'Episodes') + '</div></div>' +
+                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">📅</div><div class="ab-recap-mini-num">' + (r.DaysWatched || 0) + '</div><div class="ab-recap-mini-label">' + tr('recap.active_days', 'Active days') + '</div></div>' +
+                        '<div class="ab-recap-mini"><div class="ab-recap-mini-icon">🏆</div><div class="ab-recap-mini-num">' + (r.BadgesUnlocked || 0) + '</div><div class="ab-recap-mini-label">' + tr('recap.unlocks', 'Unlocks') + '</div></div>' +
                     '</div>' +
                 '</div>' +
                 '<div class="ab-recap-grid">' +
-                    barList(r.TopGenres, 'Top genres', '🎭') +
-                    barList(r.TopDirectors, 'Top directors', '🎬') +
-                    barList(r.TopActors, 'Top actors', '⭐') +
+                    barList(r.TopGenres, tr('recap.top_genres', 'Top genres'), '🎭') +
+                    barList(r.TopDirectors, tr('recap.top_directors', 'Top directors'), '🎬') +
+                    barList(r.TopActors, tr('recap.top_actors', 'Top actors'), '⭐') +
                 '</div>';
         }).catch(function () {
-            if (box) box.innerHTML = '<div class="ab-muted">Failed to load recap.</div>';
+            if (box) box.innerHTML = '<div class="ab-muted">' + tr('recap.load_failed', 'Failed to load recap.') + '</div>';
         });
     }
 
@@ -1297,31 +1297,40 @@
         var resultBox = el('abSaCompareResult');
         if (!a || !b || !resultBox) return;
         if (!a.value || !b.value || a.value === b.value) {
-            resultBox.innerHTML = '<div class="ab-muted">Pick two different users.</div>';
+            resultBox.innerHTML = '<div class="ab-muted">' + tr('compare.pick_two_diff', 'Pick two different users.') + '</div>';
             return;
         }
-        resultBox.innerHTML = 'Loading...';
-        fetchJson('Plugins/AchievementBadges/compare/' + a.value + '/' + b.value).then(function (cmp) {
-            if (!cmp || cmp.Error) { resultBox.innerHTML = '<div class="ab-muted">' + (cmp && cmp.Error || 'No data.') + '</div>'; return; }
+        resultBox.innerHTML = tr('common.loading', 'Loading...');
+        Promise.all([
+            fetchJson('Plugins/AchievementBadges/compare/' + a.value + '/' + b.value),
+            fetchJson('Plugins/AchievementBadges/profiles/' + a.value + '/equipped').catch(function () { return []; }),
+            fetchJson('Plugins/AchievementBadges/profiles/' + b.value + '/equipped').catch(function () { return []; })
+        ]).then(function (results) {
+            var cmp = results[0], equippedA = results[1] || [], equippedB = results[2] || [];
+            if (!cmp || cmp.Error) { resultBox.innerHTML = '<div class="ab-muted">' + (cmp && cmp.Error || tr('lb.no_data', 'No data.')) + '</div>'; return; }
             var rows = [
-                ['Score', 'Score', cmp.UserA.Score, cmp.UserB.Score],
-                ['Unlocked', 'Badges', cmp.UserA.Unlocked + ' / ' + cmp.UserA.Total, cmp.UserB.Unlocked + ' / ' + cmp.UserB.Total],
-                ['Prestige', 'Prestige', cmp.UserA.PrestigeLevel, cmp.UserB.PrestigeLevel],
-                ['Items', 'Items watched', cmp.UserA.TotalItemsWatched, cmp.UserB.TotalItemsWatched],
-                ['Movies', 'Movies', cmp.UserA.MoviesWatched, cmp.UserB.MoviesWatched],
-                ['Series', 'Series finished', cmp.UserA.SeriesCompleted, cmp.UserB.SeriesCompleted],
-                ['Streak', 'Best streak', cmp.UserA.BestWatchStreak, cmp.UserB.BestWatchStreak],
-                ['Hours', 'Total hours', Math.round(cmp.UserA.TotalMinutesWatched / 60), Math.round(cmp.UserB.TotalMinutesWatched / 60)],
-                ['Late', 'Late nights', cmp.UserA.LateNightSessions, cmp.UserB.LateNightSessions],
-                ['Weekend', 'Weekend sessions', cmp.UserA.WeekendSessions, cmp.UserB.WeekendSessions],
-                ['Genres', 'Unique genres', cmp.UserA.UniqueGenresWatched, cmp.UserB.UniqueGenresWatched],
-                ['Libraries', 'Libraries visited', cmp.UserA.UniqueLibrariesVisited, cmp.UserB.UniqueLibrariesVisited]
+                [tr('compare.metric_score', 'SCORE'), tr('lb.score', 'Score'), cmp.UserA.Score, cmp.UserB.Score],
+                [tr('compare.metric_badges', 'BADGES'), tr('admin.my_badges', 'My Badges'), cmp.UserA.Unlocked + ' / ' + cmp.UserA.Total, cmp.UserB.Unlocked + ' / ' + cmp.UserB.Total],
+                [tr('compare.metric_prestige', 'PRESTIGE'), tr('achievements.prestige', 'Prestige'), cmp.UserA.PrestigeLevel, cmp.UserB.PrestigeLevel],
+                [tr('compare.metric_score', 'ITEMS'), tr('compare.metric_items_watched', 'Items watched'), cmp.UserA.TotalItemsWatched, cmp.UserB.TotalItemsWatched],
+                [tr('compare.metric_movies', 'MOVIES'), tr('recap.movies', 'Movies'), cmp.UserA.MoviesWatched, cmp.UserB.MoviesWatched],
+                [tr('lb.series', 'Series'), tr('compare.metric_series_finished', 'Series finished'), cmp.UserA.SeriesCompleted, cmp.UserB.SeriesCompleted],
+                [tr('achievements.streak', 'Streak'), tr('compare.metric_best_streak', 'Best streak'), cmp.UserA.BestWatchStreak, cmp.UserB.BestWatchStreak],
+                [tr('compare.metric_hours', 'HOURS'), tr('compare.metric_total_hours', 'Total hours'), Math.round(cmp.UserA.TotalMinutesWatched / 60), Math.round(cmp.UserB.TotalMinutesWatched / 60)],
+                [tr('stats.records.late_nights', 'Late nights'), tr('compare.metric_late_nights', 'Late nights'), cmp.UserA.LateNightSessions, cmp.UserB.LateNightSessions],
+                [tr('stats.records.weekends', 'Weekends'), tr('compare.metric_weekend_sessions', 'Weekend sessions'), cmp.UserA.WeekendSessions, cmp.UserB.WeekendSessions],
+                [tr('stats.records.genres', 'Genres'), tr('compare.metric_unique_genres', 'Unique genres'), cmp.UserA.UniqueGenresWatched, cmp.UserB.UniqueGenresWatched],
+                [tr('stats.records.libraries', 'Libraries'), tr('compare.metric_libraries_visited', 'Libraries visited'), cmp.UserA.UniqueLibrariesVisited, cmp.UserB.UniqueLibrariesVisited]
             ];
             resultBox.innerHTML =
                 '<div class="ab-cmp-header">' +
-                    '<div class="ab-cmp-user"><div class="ab-cmp-name">' + escapeHtml(cmp.UserA.UserName) + '</div></div>' +
-                    '<div class="ab-cmp-vs">VS</div>' +
-                    '<div class="ab-cmp-user"><div class="ab-cmp-name">' + escapeHtml(cmp.UserB.UserName) + '</div></div>' +
+                    '<div class="ab-cmp-user"><div class="ab-cmp-name">' + escapeHtml(cmp.UserA.UserName) + '</div>' +
+                        '<div style="display:flex;justify-content:center;margin-top:0.4em;">' + renderEquippedDots(equippedA, 22) + '</div>' +
+                    '</div>' +
+                    '<div class="ab-cmp-vs">' + tr('compare.vs', 'VS') + '</div>' +
+                    '<div class="ab-cmp-user"><div class="ab-cmp-name">' + escapeHtml(cmp.UserB.UserName) + '</div>' +
+                        '<div style="display:flex;justify-content:center;margin-top:0.4em;">' + renderEquippedDots(equippedB, 22) + '</div>' +
+                    '</div>' +
                 '</div>' +
                 '<div class="ab-cmp-rows">' +
                     rows.map(function (r) {
@@ -1342,12 +1351,12 @@
                     }).join('') +
                 '</div>' +
                 '<div class="ab-cmp-summary">' +
-                    '<div class="ab-cmp-pill"><strong>' + cmp.OnlyA + '</strong> badges only ' + escapeHtml(cmp.UserA.UserName) + ' has</div>' +
-                    '<div class="ab-cmp-pill"><strong>' + cmp.Both + '</strong> shared badges</div>' +
-                    '<div class="ab-cmp-pill"><strong>' + cmp.OnlyB + '</strong> badges only ' + escapeHtml(cmp.UserB.UserName) + ' has</div>' +
+                    '<div class="ab-cmp-pill"><strong>' + cmp.OnlyA + '</strong> ' + tr('compare.only_has_a', 'badges only {name} has').replace('{name}', escapeHtml(cmp.UserA.UserName)) + '</div>' +
+                    '<div class="ab-cmp-pill"><strong>' + cmp.Both + '</strong> ' + tr('compare.shared_badges', 'shared badges') + '</div>' +
+                    '<div class="ab-cmp-pill"><strong>' + cmp.OnlyB + '</strong> ' + tr('compare.only_has_b', 'badges only {name} has').replace('{name}', escapeHtml(cmp.UserB.UserName)) + '</div>' +
                 '</div>';
         }).catch(function () {
-            resultBox.innerHTML = '<div class="ab-muted">Failed to load comparison.</div>';
+            resultBox.innerHTML = '<div class="ab-muted">' + tr('compare.load_failed', 'Failed to load comparison.') + '</div>';
         });
     }
 
@@ -1358,7 +1367,7 @@
         var sel = el('abSaActivityUserFilter');
         if (!sel || sel.options.length > 0) return Promise.resolve();
         return fetchServerUsers().then(function (users) {
-            sel.innerHTML = '<option value="">All users</option>' +
+            sel.innerHTML = '<option value="">' + tr('activity.filter_all', 'All users') + '</option>' +
                 users.map(function (u) { return '<option value="' + u.Id + '">' + escapeHtml(u.Name) + '</option>'; }).join('');
             sel.addEventListener('change', function () {
                 activityFilter = sel.value || '';
@@ -1371,7 +1380,7 @@
     function loadActivity() {
         var box = el('abSaActivity');
         if (!box) return;
-        box.innerHTML = 'Loading...';
+        box.innerHTML = tr('common.loading', 'Loading...');
         // When admin force-privacy is on, always scope to the current user.
         var pc = publicConfigGlobal || {};
         var forcePrivacy = !!(pc.ForcePrivacyMode || pc.forcePrivacyMode);
@@ -1383,21 +1392,21 @@
             if (activityFilter) qs += '&userId=' + encodeURIComponent(activityFilter);
             return fetchJson('Plugins/AchievementBadges/activity-feed' + qs);
         }).then(function (res) {
-            if (!res || !res.Entries || !res.Entries.length) { box.innerHTML = '<div class="ab-muted">No activity yet.</div>'; renderActivityPager(0, 0); return; }
+            if (!res || !res.Entries || !res.Entries.length) { box.innerHTML = '<div class="ab-muted">' + tr('activity.no_activity_yet', 'No activity yet.') + '</div>'; renderActivityPager(0, 0); return; }
             box.innerHTML = res.Entries.map(function (e) {
                 var when = e.At ? new Date(e.At).toLocaleString() : '';
                 var rarityCls = rarityClass(e.Rarity);
                 return '<div class="ab-feed-row">' +
                     '<div class="ab-feed-icon ' + rarityCls + '">' + icon(e.Icon) + '</div>' +
                     '<div class="ab-feed-body">' +
-                        '<div class="ab-feed-text"><strong>' + escapeHtml(e.UserName) + '</strong> unlocked <strong>' + escapeHtml(e.Title) + '</strong></div>' +
+                        '<div class="ab-feed-text"><strong>' + escapeHtml(e.UserName) + '</strong> ' + tr('activity.unlocked_verb', 'unlocked') + ' <strong>' + escapeHtml(e.Title) + '</strong></div>' +
                         '<div class="ab-feed-meta"><span class="' + rarityCls + '">' + e.Rarity + '</span> · ' + escapeHtml(e.Category || '') + ' · ' + when + '</div>' +
                     '</div>' +
                 '</div>';
             }).join('');
             renderActivityPager(res.Page || 1, res.TotalPages || 1);
         }).catch(function () {
-            box.innerHTML = '<div class="ab-muted">Failed to load activity.</div>';
+            box.innerHTML = '<div class="ab-muted">' + tr('activity.load_failed', 'Failed to load activity.') + '</div>';
         });
     }
 
@@ -1409,7 +1418,7 @@
             return '<button type="button" class="ab-pager-btn" data-page="' + target + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>';
         };
         p.innerHTML = btn('\u2039', Math.max(1, page - 1), page <= 1) +
-            '<span class="ab-pager-info">Page ' + page + ' / ' + totalPages + '</span>' +
+            '<span class="ab-pager-info">' + tr('activity.page_label', 'Page') + ' ' + page + ' / ' + totalPages + '</span>' +
             btn('\u203a', Math.min(totalPages, page + 1), page >= totalPages);
         var btns = p.querySelectorAll('.ab-pager-btn');
         btns.forEach(function (b) {
@@ -1457,26 +1466,26 @@
                 var nextMultiplier = 1 + 0.5 * ((bank.PrestigeLevel || 0) + 1);
                 bankBox.innerHTML =
                     '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:0.75em;">' +
-                        '<div class="ab-stat"><div class="ab-stat-t">Score bank</div><div class="ab-stat-v">' + (bank.ScoreBank || 0) + '</div></div>' +
-                        '<div class="ab-stat"><div class="ab-stat-t">Lifetime score</div><div class="ab-stat-v">' + (bank.LifetimeScore || 0) + '</div></div>' +
-                        '<div class="ab-stat"><div class="ab-stat-t">Prestige</div><div class="ab-stat-v">' + (bank.PrestigeLevel || 0) + ' ' + prestigeStars + '</div></div>' +
-                        '<div class="ab-stat"><div class="ab-stat-t">Best combo</div><div class="ab-stat-v">' + (bank.BestComboCount || 0) + '</div></div>' +
+                        '<div class="ab-stat"><div class="ab-stat-t">' + tr('stats.score_bank_label', 'Score bank') + '</div><div class="ab-stat-v">' + (bank.ScoreBank || 0) + '</div></div>' +
+                        '<div class="ab-stat"><div class="ab-stat-t">' + tr('stats.lifetime_score', 'Lifetime score') + '</div><div class="ab-stat-v">' + (bank.LifetimeScore || 0) + '</div></div>' +
+                        '<div class="ab-stat"><div class="ab-stat-t">' + tr('achievements.prestige', 'Prestige') + '</div><div class="ab-stat-v">' + (bank.PrestigeLevel || 0) + ' ' + prestigeStars + '</div></div>' +
+                        '<div class="ab-stat"><div class="ab-stat-t">' + tr('stats.best_combo', 'Best combo') + '</div><div class="ab-stat-v">' + (bank.BestComboCount || 0) + '</div></div>' +
                     '</div>' +
                     '<div style="margin-top:1.25em; text-align:center;">' +
                         '<button type="button" class="ab-prestige-btn" id="abSaPrestigeBtn"' + (canPrestige ? '' : ' disabled') + '>' +
-                            '\u2b50 Prestige \u2b50' +
+                            '\u2b50 ' + tr('stats.prestige_btn', 'Prestige') + ' \u2b50' +
                         '</button>' +
                         '<div class="ab-muted" style="font-size:0.8em; margin-top:0.5em;">' +
                             (canPrestige
-                                ? 'Reset to earn prestige \u2b50 ' + ((bank.PrestigeLevel || 0) + 1) + ' and unlock a ' + nextMultiplier.toFixed(1) + 'x badge score multiplier'
-                                : 'Reach 12000 score (Legend rank) to prestige. Currently ' + (summary.Score || 0) + ' / 12000') +
+                                ? tr('stats.prestige_explain', 'Reset to earn prestige') + ' \u2b50 ' + ((bank.PrestigeLevel || 0) + 1) + ' ' + tr('stats.prestige_explain_suffix', 'and unlock a {mult}x badge score multiplier').replace('{mult}', nextMultiplier.toFixed(1))
+                                : tr('stats.reach_legend', 'Reach 12000 score (Legend rank) to prestige. Currently') + ' ' + (summary.Score || 0) + ' / 12000') +
                         '</div>' +
                     '</div>';
                 var pb = el('abSaPrestigeBtn');
                 if (pb) pb.addEventListener('click', function () {
-                    if (!confirm('Prestige resets your badges and counters but grants a permanent score multiplier and a prestige star. Continue?')) return;
+                    if (!confirm(tr('stats.confirm_prestige', 'Prestige resets your badges and counters but grants a permanent score multiplier and a prestige star. Continue?'))) return;
                     fetchJson('Plugins/AchievementBadges/users/' + userId + '/prestige', 'POST').then(function (res) {
-                        alert(res.Success ? ('Prestige level ' + res.PrestigeLevel + '! Badge rewards now scale ' + (1 + 0.5 * res.PrestigeLevel).toFixed(1) + 'x.') : res.Message);
+                        alert(res.Success ? (tr('achievements.prestige', 'Prestige') + ' ' + tr('lb.rank', 'Rank') + ' ' + res.PrestigeLevel + '! ' + tr('stats.prestige_explain_suffix', 'and unlock a {mult}x badge score multiplier').replace('{mult}', (1 + 0.5 * res.PrestigeLevel).toFixed(1))) : res.Message);
                         loadAll(); loadStats();
                     });
                 });
@@ -1510,24 +1519,24 @@
     function renderRecords(records) {
         var box = el('abSaRecords');
         if (!box) return;
-        if (!records) { box.innerHTML = '<div class="ab-muted">No records.</div>'; return; }
+        if (!records) { box.innerHTML = '<div class="ab-muted">' + tr('stats.no_records', 'No records.') + '</div>'; return; }
         var fields = [
-            ['🎬', 'Movies', records.MoviesWatched],
-            ['📺', 'Total items', records.TotalItemsWatched],
-            ['🏆', 'Series complete', records.SeriesCompleted],
-            ['🔥', 'Best streak', records.BestWatchStreak + ' days'],
-            ['⏱️', 'Total time', records.TotalHoursWatched + ' hours'],
-            ['📅', 'Days watched', records.DaysWatched],
-            ['🎭', 'Genres', records.UniqueGenresWatched],
-            ['🌍', 'Countries', records.UniqueCountriesWatched],
-            ['🗣️', 'Languages', records.UniqueLanguagesWatched],
-            ['📚', 'Libraries', records.UniqueLibrariesVisited],
-            ['🌙', 'Late nights', records.LateNightSessions],
-            ['🌅', 'Early mornings', records.EarlyMorningSessions],
-            ['📆', 'Weekends', records.WeekendSessions],
-            ['⚡', 'Best combo', records.BestComboCount],
-            ['🔁', 'Rewatches', records.RewatchCount],
-            ['🎯', 'Login streak', records.BestLoginStreak]
+            ['🎬', tr('stats.records.movies', 'Movies'), records.MoviesWatched],
+            ['📺', tr('stats.records.total_items', 'Total items'), records.TotalItemsWatched],
+            ['🏆', tr('stats.records.series_complete', 'Series complete'), records.SeriesCompleted],
+            ['🔥', tr('stats.records.best_streak', 'Best streak'), records.BestWatchStreak + ' ' + tr('stats.records.days_suffix', 'days')],
+            ['⏱️', tr('stats.records.total_time', 'Total time'), records.TotalHoursWatched + ' ' + tr('stats.records.hours_suffix', 'hours')],
+            ['📅', tr('stats.records.days_watched', 'Days watched'), records.DaysWatched],
+            ['🎭', tr('stats.records.genres', 'Genres'), records.UniqueGenresWatched],
+            ['🌍', tr('stats.records.countries', 'Countries'), records.UniqueCountriesWatched],
+            ['🗣️', tr('stats.records.languages', 'Languages'), records.UniqueLanguagesWatched],
+            ['📚', tr('stats.records.libraries', 'Libraries'), records.UniqueLibrariesVisited],
+            ['🌙', tr('stats.records.late_nights', 'Late nights'), records.LateNightSessions],
+            ['🌅', tr('stats.records.early_mornings', 'Early mornings'), records.EarlyMorningSessions],
+            ['📆', tr('stats.records.weekends', 'Weekends'), records.WeekendSessions],
+            ['⚡', tr('stats.records.best_combo', 'Best combo'), records.BestComboCount],
+            ['🔁', tr('stats.records.rewatches', 'Rewatches'), records.RewatchCount],
+            ['🎯', tr('stats.records.login_streak', 'Login streak'), records.BestLoginStreak]
         ];
         box.innerHTML = '<div class="ab-records-grid">' + fields.map(function (f) {
             return '<div class="ab-record"><div class="ab-record-icon">' + f[0] + '</div><div class="ab-record-val">' + f[2] + '</div><div class="ab-record-label">' + f[1] + '</div></div>';
@@ -1537,7 +1546,7 @@
     function renderPrestigeLeaderboard(list) {
         var box = el('abSaPrestigeLb');
         if (!box) return;
-        if (!list || !list.length) { box.innerHTML = '<div class="ab-muted">No one has prestiged yet. Be the first!</div>'; return; }
+        if (!list || !list.length) { box.innerHTML = '<div class="ab-muted">' + tr('stats.no_one_prestiged', 'No one has prestiged yet. Be the first!') + '</div>'; return; }
         box.innerHTML = list.map(function (e, i) {
             var stars = '';
             for (var s = 0; s < e.PrestigeLevel; s++) stars += '\u2b50';
@@ -1545,7 +1554,7 @@
                 '<div class="ab-lb-rank">#' + (i + 1) + '</div>' +
                 '<div class="ab-lb-info">' +
                     '<div class="ab-lb-name">' + escapeHtml(e.UserName) + ' ' + stars + '</div>' +
-                    '<div class="ab-muted" style="font-size:0.78em;">Lifetime score ' + (e.LifetimeScore || 0) + '</div>' +
+                    '<div class="ab-muted" style="font-size:0.78em;">' + tr('stats.lifetime_score', 'Lifetime score') + ' ' + (e.LifetimeScore || 0) + '</div>' +
                 '</div>' +
                 '<div class="ab-lb-value">P' + e.PrestigeLevel + '</div>' +
             '</div>';
@@ -1555,7 +1564,7 @@
     function renderRecentUnlocks(list) {
         var box = el('abSaRecentUnlocks');
         if (!box) return;
-        if (!list || !list.length) { box.innerHTML = '<div class="ab-muted">No unlocks yet.</div>'; return; }
+        if (!list || !list.length) { box.innerHTML = '<div class="ab-muted">' + tr('stats.no_unlocks_yet', 'No unlocks yet.') + '</div>'; return; }
         box.innerHTML = list.map(function (b) {
             var when = b.UnlockedAt ? new Date(b.UnlockedAt).toLocaleString() : '';
             return '<div class="ab-feed-row">' +
@@ -1569,7 +1578,7 @@
     }
 
     function renderStreakCalendar(data) {
-        if (!data || !data.Days || !data.Days.length) return '<div class="ab-muted">No data.</div>';
+        if (!data || !data.Days || !data.Days.length) return '<div class="ab-muted">' + tr('stats.no_data', 'No data.') + '</div>';
         var days = data.Days;
         var weeks = Math.ceil(days.length / 7);
         var watchedCount = data.ActiveDays || days.filter(function (d) { return d.W; }).length;
@@ -1578,7 +1587,7 @@
 
         var cellsHtml = days.map(function (d) {
             var cls = d.W ? 'ab-streak-cell ab-streak-cell-on' : 'ab-streak-cell';
-            return '<div class="' + cls + '" title="' + d.D + (d.W ? ' · watched' : '') + '"></div>';
+            return '<div class="' + cls + '" title="' + d.D + (d.W ? ' · ' + tr('streak.watched', 'watched') : '') + '"></div>';
         }).join('');
 
         var streakHeader =
@@ -1587,26 +1596,26 @@
                     '<span class="ab-streak-fire">\ud83d\udd25</span>' +
                     '<div>' +
                         '<div class="ab-streak-num">' + current + '</div>' +
-                        '<div class="ab-streak-label">day streak</div>' +
+                        '<div class="ab-streak-label">' + tr('stats.streak.day_streak', 'day streak') + '</div>' +
                     '</div>' +
                 '</div>' +
                 '<div class="ab-streak-stat">' +
                     '<div class="ab-streak-num">' + best + '</div>' +
-                    '<div class="ab-streak-label">best ever</div>' +
+                    '<div class="ab-streak-label">' + tr('stats.streak.best_ever', 'best ever') + '</div>' +
                 '</div>' +
                 '<div class="ab-streak-stat">' +
                     '<div class="ab-streak-num">' + watchedCount + '</div>' +
-                    '<div class="ab-streak-label">active / ' + days.length + '</div>' +
+                    '<div class="ab-streak-label">' + tr('stats.streak.active', 'active') + ' / ' + days.length + '</div>' +
                 '</div>' +
             '</div>';
 
         return streakHeader +
             '<div class="ab-streak-grid" style="grid-template-columns:repeat(' + weeks + ',1fr);">' + cellsHtml + '</div>' +
-            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.5em;">Each cell is one day in the past year</div>';
+            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.5em;">' + tr('stats.streak.each_cell', 'Each cell is one day in the past year') + '</div>';
     }
 
     function renderWatchClock(clock) {
-        if (!clock) return '<div class="ab-muted">No data.</div>';
+        if (!clock) return '<div class="ab-muted">' + tr('stats.no_data', 'No data.') + '</div>';
         var max = 0;
         for (var k in clock) { if (clock[k] > max) max = clock[k]; }
         if (max === 0) max = 1;
@@ -1627,7 +1636,7 @@
             var y3 = cy + rEdge * Math.sin(endAngle);
             var x4 = cx + rInner * Math.cos(endAngle);
             var y4 = cy + rInner * Math.sin(endAngle);
-            slices += '<path d="M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2 + ' A' + rEdge + ',' + rEdge + ' 0 0 1 ' + x3 + ',' + y3 + ' L' + x4 + ',' + y4 + ' A' + rInner + ',' + rInner + ' 0 0 0 ' + x1 + ',' + y1 + ' Z" fill="' + color + '"><title>' + h + ':00 — ' + (clock[h] || 0) + ' items</title></path>';
+            slices += '<path d="M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2 + ' A' + rEdge + ',' + rEdge + ' 0 0 1 ' + x3 + ',' + y3 + ' L' + x4 + ',' + y4 + ' A' + rInner + ',' + rInner + ' 0 0 0 ' + x1 + ',' + y1 + ' Z" fill="' + color + '"><title>' + h + ':00 — ' + (clock[h] || 0) + ' ' + tr('common.items', 'items') + '</title></path>';
             if (h % 6 === 0) {
                 var labelAngle = ((h + 0.5) * 15 - 90) * Math.PI / 180;
                 var lx = cx + (rOuter + 12) * Math.cos(labelAngle);
@@ -1667,7 +1676,7 @@
                 labels +
                 '</svg>';
         } else {
-            radarSvg = '<div class="ab-muted">Not enough genre data yet.</div>';
+            radarSvg = '<div class="ab-muted">' + tr('stats.no_data_genres', 'Not enough genre data yet.') + '</div>';
         }
 
         // Watch heatmap (last 90 days)
@@ -1678,12 +1687,12 @@
 
         var heatHeader =
             '<div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 0.5em;">' +
-                '<h4 style="margin:0;">Watch heatmap</h4>' +
+                '<h4 style="margin:0;">' + tr('stats.watch_heatmap', 'Watch heatmap') + '</h4>' +
                 '<select id="abSaHeatmapRange" class="ab-select" style="padding:0.3em 0.6em; font-size:0.8em;">' +
-                    '<option value="30"' + (currentHeatmapDays === 30 ? ' selected' : '') + '>30 days</option>' +
-                    '<option value="90"' + (currentHeatmapDays === 90 ? ' selected' : '') + '>90 days</option>' +
-                    '<option value="180"' + (currentHeatmapDays === 180 ? ' selected' : '') + '>180 days</option>' +
-                    '<option value="365"' + (currentHeatmapDays === 365 ? ' selected' : '') + '>1 year</option>' +
+                    '<option value="30"' + (currentHeatmapDays === 30 ? ' selected' : '') + '>' + tr('stats.heatmap.30', '30 days') + '</option>' +
+                    '<option value="90"' + (currentHeatmapDays === 90 ? ' selected' : '') + '>' + tr('stats.heatmap.90', '90 days') + '</option>' +
+                    '<option value="180"' + (currentHeatmapDays === 180 ? ' selected' : '') + '>' + tr('stats.heatmap.180', '180 days') + '</option>' +
+                    '<option value="365"' + (currentHeatmapDays === 365 ? ' selected' : '') + '>' + tr('stats.heatmap.365', '1 year') + '</option>' +
                 '</select>' +
             '</div>';
 
@@ -1691,11 +1700,11 @@
         var streakSvg = renderStreakCalendar(streakCal);
 
         box.innerHTML =
-            '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Genre radar</h4>' + radarSvg + '</div>' +
-            '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Watch clock (24h)</h4>' + clockSvg + '</div>' +
+            '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">' + tr('stats.genre_radar', 'Genre radar') + '</h4>' + radarSvg + '</div>' +
+            '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">' + tr('stats.watch_clock', 'Watch clock (24h)') + '</h4>' + clockSvg + '</div>' +
             '<div class="ab-panel-card" style="grid-column:1 / -1; min-width:0;">' + heatHeader + heatSvg + '</div>' +
-            '<div class="ab-panel-card" style="grid-column:1 / -1; min-width:0;"><h4 style="margin:0 0 0.5em;">Streak calendar (1 year)</h4>' + streakSvg + '</div>' +
-            '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">Stats snapshot</h4>' + histSvg + '</div>';
+            '<div class="ab-panel-card" style="grid-column:1 / -1; min-width:0;"><h4 style="margin:0 0 0.5em;">' + tr('stats.streak_calendar', 'Streak calendar (1 year)') + '</h4>' + streakSvg + '</div>' +
+            '<div class="ab-panel-card"><h4 style="margin:0 0 0.5em;">' + tr('stats.snapshot', 'Stats snapshot') + '</h4>' + histSvg + '</div>';
 
         var rangeEl = document.getElementById('abSaHeatmapRange');
         if (rangeEl) rangeEl.addEventListener('change', function () {
@@ -1729,20 +1738,20 @@
         // so they stay perfectly square regardless of container width.
         var cols = Math.ceil(days / 7);
         var cellsHtml = cells.map(function (c) {
-            var tooltip = c.key + ' · ' + c.count + ' item' + (c.count === 1 ? '' : 's');
+            var tooltip = c.key + ' · ' + c.count + ' ' + (c.count === 1 ? tr('common.item', 'item') : tr('common.items', 'items'));
             var emptyClass = c.count === 0 ? ' ab-heat-empty' : '';
             return '<div class="ab-heat-cell' + emptyClass + '" style="background:' + colorFor(c.count) + ';" title="' + tooltip + '"></div>';
         }).join('');
         return '<div class="ab-heat" style="grid-template-columns:repeat(' + cols + ',1fr);">' + cellsHtml + '</div>' +
-            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.5em;">Last ' + days + ' days · hover for details · max ' + max + ' items/day</div>';
+            '<div class="ab-muted" style="font-size:0.75em; margin-top:0.5em;">' + tr('stats.heatmap.hint', 'Last {days} days · hover for details · max {max} items/day').replace('{days}', days).replace('{max}', max) + '</div>';
     }
 
     function renderHistogram(summary) {
-        if (!summary) return '<div class="ab-muted">No data.</div>';
+        if (!summary) return '<div class="ab-muted">' + tr('stats.no_data', 'No data.') + '</div>';
         var items = [
-            { label: 'Unlocked', value: summary.Unlocked || 0, max: summary.Total || 1, color: '#4caf50' },
-            { label: 'Score', value: summary.Score || 0, max: Math.max(5000, summary.Score || 0), color: '#667eea' },
-            { label: 'Best streak', value: summary.BestWatchStreak || 0, max: Math.max(30, summary.BestWatchStreak || 0), color: '#ff9800' }
+            { label: tr('stats.snapshot.unlocked', 'Unlocked'), value: summary.Unlocked || 0, max: summary.Total || 1, color: '#4caf50' },
+            { label: tr('stats.snapshot.score', 'Score'), value: summary.Score || 0, max: Math.max(5000, summary.Score || 0), color: '#667eea' },
+            { label: tr('stats.snapshot.best_streak', 'Best streak'), value: summary.BestWatchStreak || 0, max: Math.max(30, summary.BestWatchStreak || 0), color: '#ff9800' }
         ];
         return items.map(function (it) {
             var pct = Math.round(100 * it.value / (it.max || 1));
@@ -1755,17 +1764,37 @@
 
     function escapeHtml(s) { var d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML; }
 
+    // Render a compact row of equipped-badge dots next to a leaderboard entry
+    // or podium column. Accepts the Equipped array shipped by the server
+    // (each item: { Icon, Title, Rarity }). Returns empty string when the
+    // target has opted out or has no equipped badges.
+    var LB_RARITY_COLORS = { common: '#9fb3c8', uncommon: '#34d399', rare: '#60a5fa', epic: '#a78bfa', legendary: '#fbbf24', mythic: '#f43f5e' };
+    function renderEquippedDots(equipped, size) {
+        if (!equipped || !equipped.length) return '';
+        var px = size || 20;
+        return '<div class="ab-lb-equipped" style="display:inline-flex;gap:3px;margin-left:0.5em;vertical-align:middle;">' +
+            equipped.slice(0, 5).map(function (b) {
+                var color = LB_RARITY_COLORS[(b.Rarity || '').toLowerCase()] || '#9fb3c8';
+                var iconName = safeIcon(b.Icon);
+                return '<span title="' + escapeHtml(b.Title || '') + ' (' + escapeHtml(b.Rarity || '') + ')" ' +
+                    'style="width:' + px + 'px;height:' + px + 'px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;' +
+                    'background:' + color + '26;border:1.5px solid ' + color + ';box-shadow:0 0 8px ' + color + '55;">' +
+                    '<span class="material-icons" style="font-family:Material Icons;font-size:' + Math.max(10, px - 6) + 'px;line-height:1;color:#fff;">' + iconName + '</span>' +
+                '</span>';
+            }).join('') + '</div>';
+    }
+
     function loadCategoryLb(cat) {
         fetchJson('Plugins/AchievementBadges/leaderboard/' + cat + '?limit=10').then(function (lb) {
             var box = el('abSaLb'); if (!box) return;
-            if (!lb || !lb.length) { box.innerHTML = '<div class="ab-muted">No data yet.</div>'; return; }
+            if (!lb || !lb.length) { box.innerHTML = '<div class="ab-muted">' + tr('lb.no_data', 'No data yet.') + '</div>'; return; }
 
             var maxVal = Math.max.apply(null, lb.map(function (e) { return e.Value || 0; }));
             if (maxVal === 0) maxVal = 1;
 
             var suffix = {
-                score: ' pts', movies: ' movies', episodes: ' episodes',
-                hours: ' hrs', streak: ' days', series: ' series'
+                score: tr('lb.pts_suffix', ' pts'), movies: tr('lb.movies_suffix', ' movies'), episodes: tr('lb.episodes_suffix', ' episodes'),
+                hours: tr('lb.hours_suffix', ' hrs'), streak: tr('lb.days_suffix', ' days'), series: tr('lb.series_suffix', ' series')
             }[cat] || '';
 
             // Top 3 podium
@@ -1776,13 +1805,14 @@
                 var heights = [80, 110, 60];
                 var colors = ['#c0c0c0', '#ffd700', '#cd7f32'];
                 var medals = ['🥈', '🥇', '🥉'];
-                var labels = ['2nd', '1st', '3rd'];
+                var labels = [tr('lb.second', '2nd'), tr('lb.first', '1st'), tr('lb.third', '3rd')];
                 podiumSvg = '<div class="ab-lb-podium">' + ordered.map(function (e, i) {
                     if (!e) return '<div class="ab-lb-podium-col ab-lb-podium-empty" style="height:' + heights[i] + 'px;"></div>';
                     return '<div class="ab-lb-podium-col">' +
                         '<div class="ab-lb-podium-medal">' + medals[i] + '</div>' +
                         '<div class="ab-lb-podium-name">' + escapeHtml(e.UserName || e.UserId) + '</div>' +
                         '<div class="ab-lb-podium-val" style="color:' + colors[i] + ';">' + (e.Value || 0) + suffix + '</div>' +
+                        renderEquippedDots(e.Equipped, 18) +
                         '<div class="ab-lb-podium-bar" style="height:' + heights[i] + 'px; background:linear-gradient(180deg,' + colors[i] + ',' + colors[i] + '66);">' +
                             '<div class="ab-lb-podium-rank">' + labels[i] + '</div>' +
                         '</div>' +
@@ -1797,7 +1827,7 @@
                 return '<div class="ab-lb-row-new">' +
                     '<div class="ab-lb-rank">#' + (i + 4) + '</div>' +
                     '<div class="ab-lb-info">' +
-                        '<div class="ab-lb-name">' + escapeHtml(e.UserName || e.UserId) + '</div>' +
+                        '<div class="ab-lb-name">' + escapeHtml(e.UserName || e.UserId) + renderEquippedDots(e.Equipped, 16) + '</div>' +
                         '<div class="ab-lb-bar"><div class="ab-lb-fill" style="width:' + pct + '%;"></div></div>' +
                     '</div>' +
                     '<div class="ab-lb-value">' + (e.Value || 0) + suffix + '</div>' +
@@ -1811,10 +1841,10 @@
     function renderShowcase(badges) {
         var sc = el('abSaShowcase'); if (!sc) return;
         sc.innerHTML = '';
-        if (!badges || !badges.length) { sc.innerHTML = '<div class="ab-muted">Equip badges to build your showcase.</div>'; return; }
+        if (!badges || !badges.length) { sc.innerHTML = '<div class="ab-muted">' + tr('achievements.showcase_empty', 'Equip badges to build your showcase.') + '</div>'; return; }
         badges.forEach(function (b) {
             var c = document.createElement('div'); c.className = 'ab-sc-card';
-            c.innerHTML = '<div class="ab-sc-icon">' + icon(b.Icon) + '</div><div><div style="font-weight:700;">' + b.Title + '</div><div class="' + rarityClass(b.Rarity) + '" style="font-size:0.88em;">' + b.Rarity + '</div></div>';
+            c.innerHTML = '<div class="ab-sc-icon">' + icon(b.Icon) + '</div><div><div style="font-weight:700;">' + escapeHtml(b.Title) + '</div><div class="' + rarityClass(b.Rarity) + '" style="font-size:0.88em;">' + escapeHtml(b.Rarity) + '</div></div>';
             sc.appendChild(c);
         });
     }
@@ -1826,8 +1856,8 @@
         if (empty) empty.style.display = 'none';
         badges.forEach(function (b) {
             var c = document.createElement('div'); c.className = 'ab-card'; c.setAttribute('data-badge-id', b.Id);
-            c.innerHTML = '<div class="ab-card-h"><div class="ab-card-icon">' + icon(b.Icon) + '</div><div style="flex:1;"><div class="ab-card-title">' + b.Title + '</div><div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + b.Rarity + '</div></div></div>' +
-                '<div class="ab-footer"><div class="ab-unlocked">Equipped</div><button type="button" class="ab-btn">Unequip</button></div>';
+            c.innerHTML = '<div class="ab-card-h"><div class="ab-card-icon">' + icon(b.Icon) + '</div><div style="flex:1;"><div class="ab-card-title">' + escapeHtml(b.Title) + '</div><div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + escapeHtml(b.Rarity) + '</div></div></div>' +
+                '<div class="ab-footer"><div class="ab-unlocked">' + tr('badge.equipped_state', 'Equipped') + '</div><button type="button" class="ab-btn">' + tr('badge.unequip', 'Unequip') + '</button></div>';
             c.querySelector('button').addEventListener('click', function () { doUnequip(b.Id); });
             row.appendChild(c);
         });
@@ -1850,7 +1880,8 @@
             c.classList.add(rarityClass(b.Rarity) + '-border');
             var etaHtml = '';
             if (eta && !b.Unlocked && eta.DaysRemaining != null) {
-                etaHtml = '<div class="ab-eta"><span class="material-icons">schedule</span> ETA ~' + eta.DaysRemaining + ' day' + (eta.DaysRemaining === 1 ? '' : 's') + '</div>';
+                var etaTpl = eta.DaysRemaining === 1 ? tr('badge.eta_days', 'ETA ~{n} day') : tr('badge.eta_days_plural', 'ETA ~{n} days');
+                etaHtml = '<div class="ab-eta"><span class="material-icons">schedule</span> ' + etaTpl.replace('{n}', eta.DaysRemaining) + '</div>';
             }
             c.innerHTML =
                 '<div class="ab-card-h">' +
@@ -1859,18 +1890,18 @@
                         '<div class="ab-card-title">' + b.Title + '</div>' +
                         '<div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + b.Rarity + ' \u2022 ' + b.Category + '</div>' +
                     '</div>' +
-                    '<div class="ab-badge-pts" title="Points awarded on unlock' + (currentPrestige > 0 ? ' (prestige bonus applied)' : '') + '">+' + pts + ' pts</div>' +
+                    '<div class="ab-badge-pts" title="' + (currentPrestige > 0 ? tr('badge.pts_tooltip_prestige', 'Points awarded on unlock (prestige bonus applied)') : tr('badge.pts_tooltip', 'Points awarded on unlock')) + '">+' + pts + ' ' + tr('badge.pts_label', 'pts') + '</div>' +
                 '</div>' +
                 '<div class="ab-desc">' + b.Description + '</div>' +
-                '<div class="ab-prog-text"><span>Progress</span><span>' + cur + '/' + tar + '</span></div>' +
+                '<div class="ab-prog-text"><span>' + tr('badge.progress', 'Progress') + '</span><span>' + cur + '/' + tar + '</span></div>' +
                 '<div class="ab-prog-bar"><div class="ab-prog-fill" style="width:' + pct + '%;"></div></div>' +
                 etaHtml +
                 '<div class="ab-footer">' +
-                    '<div class="' + (b.Unlocked ? 'ab-unlocked' : 'ab-locked') + '">' + (b.Unlocked ? 'Unlocked' : 'Locked') + '</div>' +
+                    '<div class="' + (b.Unlocked ? 'ab-unlocked' : 'ab-locked') + '">' + (b.Unlocked ? tr('badge.unlocked_state', 'Unlocked') : tr('badge.locked_state', 'Locked')) + '</div>' +
                     '<div style="display:flex; gap:0.4em; align-items:center;">' +
-                        '<button type="button" class="ab-pin-btn ' + (isPinned ? 'ab-pin-active' : '') + '" title="' + (isPinned ? 'Unpin' : 'Pin to top') + '"><span class="material-icons">push_pin</span></button>' +
-                        (b.Unlocked ? '<button type="button" class="ab-btn ab-title-btn" title="Equip as title">' + (isTitleEquipped ? 'Title \u2713' : 'As title') + '</button>' : '') +
-                        '<button type="button" class="ab-btn"' + (!b.Unlocked ? ' disabled style="opacity:0.5;"' : '') + '>' + (eq ? 'Unequip' : 'Equip') + '</button>' +
+                        '<button type="button" class="ab-pin-btn ' + (isPinned ? 'ab-pin-active' : '') + '" title="' + (isPinned ? tr('badge.unpin', 'Unpin') : tr('badge.pin', 'Pin to top')) + '"><span class="material-icons">push_pin</span></button>' +
+                        (b.Unlocked ? '<button type="button" class="ab-btn ab-title-btn" title="' + tr('badge.equip_as_title', 'Equip as title') + '">' + (isTitleEquipped ? tr('badge.title_equipped', 'Title \u2713') : tr('badge.as_title', 'As title')) + '</button>' : '') +
+                        '<button type="button" class="ab-btn"' + (!b.Unlocked ? ' disabled style="opacity:0.5;"' : '') + '>' + (eq ? tr('badge.unequip', 'Unequip') : tr('badge.equip', 'Equip')) + '</button>' +
                     '</div>' +
                 '</div>';
             // Pin button
@@ -1916,11 +1947,11 @@
         var hideAppearInActivity = !!(pc.ForcePrivacyMode || pc.forcePrivacyMode)
             || pc.ActivityFeedEnabled === false || pc.activityFeedEnabled === false;
         var defs = [
-            { key: 'EnableUnlockToasts', label: 'Unlock toasts', desc: 'Pop up a notification when you unlock a badge' },
-            { key: 'EnableMilestoneToasts', label: 'Milestone toasts', desc: '25/50/75/100% completion celebrations' },
-            { key: 'EnableConfetti', label: 'Confetti effects', desc: 'Particle bursts on unlock (disable for reduced motion)' },
-            { key: 'AppearInActivityFeed', label: 'Appear in activity feed', desc: 'Let other users see your unlocks in the feed' },
-            { key: 'EnableCoWatchBonus', label: 'Co-watch bonus', desc: 'Earn bonus score when another user watches the same item within an hour' }
+            { key: 'EnableUnlockToasts', label: tr('prefs.unlock_toasts', 'Unlock toasts'), desc: tr('prefs.unlock_toasts_desc', 'Pop up a notification when you unlock a badge') },
+            { key: 'EnableMilestoneToasts', label: tr('prefs.milestone_toasts', 'Milestone toasts'), desc: tr('prefs.milestone_toasts_desc', '25/50/75/100% completion celebrations') },
+            { key: 'EnableConfetti', label: tr('prefs.confetti', 'Confetti effects'), desc: tr('prefs.confetti_desc', 'Particle bursts on unlock (disable for reduced motion)') },
+            { key: 'AppearInActivityFeed', label: tr('prefs.appear_activity', 'Appear in activity feed'), desc: tr('prefs.appear_activity_desc', 'Let other users see your unlocks in the feed') },
+            { key: 'EnableCoWatchBonus', label: tr('prefs.cowatch_bonus', 'Co-watch bonus'), desc: tr('prefs.cowatch_bonus_desc', 'Earn bonus score when another user watches the same item within an hour') }
         ];
         if (hideAppearInActivity) {
             defs = defs.filter(function (d) { return d.key !== 'AppearInActivityFeed'; });
@@ -1968,11 +1999,11 @@
     function loadSettingsPanel() {
         var box = el('abSaSettingsContent');
         if (!box) return;
-        box.innerHTML = 'Loading settings...';
+        box.innerHTML = tr('settings.loading', 'Loading settings...');
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').then(function (prefs) {
             renderSettingsPanel(prefs || {});
         }).catch(function () {
-            box.innerHTML = '<div class="ab-muted">Failed to load settings.</div>';
+            box.innerHTML = '<div class="ab-muted">' + tr('settings.save_failed', 'Failed to save settings.') + '</div>';
         });
     }
 
@@ -2025,17 +2056,17 @@
         var privacySectionHtml = '';
         if (!privacySectionHidden) {
             var privacyNote = forcePrivacy
-                ? '<div class="ab-muted" style="font-size:0.85em; margin-bottom:0.5em;">Privacy is enforced server-side by admin.</div>'
+                ? '<div class="ab-muted" style="font-size:0.85em; margin-bottom:0.5em;">' + tr('settings.privacy_forced_admin', 'Privacy is enforced server-side by admin.') + '</div>'
                 : '';
             privacySectionHtml =
                 '<div class="ab-settings-section">' +
-                    '<div class="ab-eyebrow">Privacy</div>' +
+                    '<div class="ab-eyebrow">' + tr('settings.privacy', 'Privacy') + '</div>' +
                     privacyNote +
                     '<div class="ab-settings-grid">' +
-                        maybeToggle(hideLeaderboardToggle, 'hideFromLeaderboard', 'Hide from leaderboard', 'Remove yourself from the public leaderboard', prefs.hideFromLeaderboard === true || prefs.HideFromLeaderboard === true) +
-                        maybeToggle(hideCompareToggle, 'hideFromCompare', 'Hide from compare profiles', 'Prevent others from comparing with you', prefs.hideFromCompare === true || prefs.HideFromCompare === true) +
-                        maybeToggle(hideActivityToggle, 'hideFromActivityFeed', 'Hide from activity feed', 'Prevent your unlocks from appearing in the server feed', prefs.appearInActivityFeed === false || prefs.AppearInActivityFeed === false) +
-                        maybeToggle(hidePrestigeToggle, 'hideFromPrestigeBoard', 'Hide from prestige board', 'Remove yourself from the prestige leaderboard', prefs.hideFromPrestigeBoard === true || prefs.HideFromPrestigeBoard === true) +
+                        maybeToggle(hideLeaderboardToggle, 'hideFromLeaderboard', tr('settings.hide_from_leaderboard', 'Hide from leaderboard'), tr('settings.hide_from_leaderboard_desc', 'Remove yourself from the public leaderboard'), prefs.hideFromLeaderboard === true || prefs.HideFromLeaderboard === true) +
+                        maybeToggle(hideCompareToggle, 'hideFromCompare', tr('settings.hide_from_compare', 'Hide from compare profiles'), tr('settings.hide_from_compare_desc', 'Prevent others from comparing with you'), prefs.hideFromCompare === true || prefs.HideFromCompare === true) +
+                        maybeToggle(hideActivityToggle, 'hideFromActivityFeed', tr('settings.hide_from_activity', 'Hide from activity feed'), tr('settings.hide_from_activity_desc', 'Prevent your unlocks from appearing in the server feed'), prefs.appearInActivityFeed === false || prefs.AppearInActivityFeed === false) +
+                        maybeToggle(hidePrestigeToggle, 'hideFromPrestigeBoard', tr('settings.hide_from_prestige', 'Hide from prestige board'), tr('settings.hide_from_prestige_desc', 'Remove yourself from the prestige leaderboard'), prefs.hideFromPrestigeBoard === true || prefs.HideFromPrestigeBoard === true) +
                     '</div>' +
                 '</div>';
         }
@@ -2043,46 +2074,46 @@
         var spoilerRowHtml = forceSpoiler
             ? '<div class="ab-setting-row">' +
                 '<div class="ab-toggle-info">' +
-                    '<div class="ab-toggle-label">Spoiler mode</div>' +
-                    '<div class="ab-toggle-desc">Enforced by admin.</div>' +
+                    '<div class="ab-toggle-label">' + tr('settings.spoiler_mode', 'Spoiler mode') + '</div>' +
+                    '<div class="ab-toggle-desc">' + tr('settings.enforced_admin', 'Enforced by admin.') + '</div>' +
                 '</div>' +
               '</div>'
-            : toggle('spoilerMode', 'Spoiler mode', 'Hide locked badge descriptions to avoid spoilers', prefs.spoilerMode === true || prefs.SpoilerMode === true);
+            : toggle('spoilerMode', tr('settings.spoiler_mode', 'Spoiler mode'), tr('settings.spoiler_mode_desc', 'Hide locked badge descriptions to avoid spoilers'), prefs.spoilerMode === true || prefs.SpoilerMode === true);
 
         var extremeSpoilerRowHtml = forceExtremeSpoiler
             ? '<div class="ab-setting-row">' +
                 '<div class="ab-toggle-info">' +
-                    '<div class="ab-toggle-label">Extreme spoiler mode</div>' +
-                    '<div class="ab-toggle-desc">Enforced by admin.</div>' +
+                    '<div class="ab-toggle-label">' + tr('settings.extreme_spoiler_mode', 'Extreme spoiler mode') + '</div>' +
+                    '<div class="ab-toggle-desc">' + tr('settings.enforced_admin', 'Enforced by admin.') + '</div>' +
                 '</div>' +
               '</div>'
-            : toggle('extremeSpoilerMode', 'Extreme spoiler mode', 'Completely hide locked badges (not just descriptions)', prefs.extremeSpoilerMode === true || prefs.ExtremeSpoilerMode === true);
+            : toggle('extremeSpoilerMode', tr('settings.extreme_spoiler_mode', 'Extreme spoiler mode'), tr('settings.extreme_spoiler_mode_desc', 'Completely hide locked badges (not just descriptions)'), prefs.extremeSpoilerMode === true || prefs.ExtremeSpoilerMode === true);
 
         var html =
             '<div class="ab-settings-section">' +
-                '<div class="ab-eyebrow">Toast & Sound</div>' +
+                '<div class="ab-eyebrow">' + tr('settings.toast_sound_section', 'Toast & Sound') + '</div>' +
                 '<div class="ab-settings-grid">' +
-                    toggle('enableUnlockToasts', 'Enable unlock toasts', 'Show a notification when you unlock a badge', prefs.enableUnlockToasts !== false && prefs.EnableUnlockToasts !== false) +
-                    toggle('enableSound', 'Enable toast sound', 'Play a sound effect with notifications', prefs.enableSound !== false && prefs.EnableSound !== false) +
-                    toggle('enableConfetti', 'Enable confetti', 'Particle burst effects on rare+ unlocks', prefs.enableConfetti !== false && prefs.EnableConfetti !== false) +
-                    toggle('enableMilestoneToasts', 'Enable milestone toasts', 'Celebrate 25/50/75/100% completion', prefs.enableMilestoneToasts !== false && prefs.EnableMilestoneToasts !== false) +
+                    toggle('enableUnlockToasts', tr('settings.enable_toasts', 'Enable unlock toasts'), tr('settings.enable_toasts_desc', 'Show a notification when you unlock a badge'), prefs.enableUnlockToasts !== false && prefs.EnableUnlockToasts !== false) +
+                    toggle('enableSound', tr('settings.enable_sound', 'Enable toast sound'), tr('settings.enable_sound_desc', 'Play a sound effect with notifications'), prefs.enableSound !== false && prefs.EnableSound !== false) +
+                    toggle('enableConfetti', tr('settings.confetti', 'Enable confetti'), tr('settings.confetti_desc', 'Particle burst effects on rare+ unlocks'), prefs.enableConfetti !== false && prefs.EnableConfetti !== false) +
+                    toggle('enableMilestoneToasts', tr('settings.enable_milestone_toasts', 'Enable milestone toasts'), tr('settings.enable_milestone_toasts_desc', 'Celebrate 25/50/75/100% completion'), prefs.enableMilestoneToasts !== false && prefs.EnableMilestoneToasts !== false) +
                     '<div class="ab-setting-row">' +
-                        '<div class="ab-toggle-info"><div class="ab-toggle-label">Minimum toast rarity</div><div class="ab-toggle-desc">Only show toasts for badges at or above this rarity</div></div>' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.minimum_rarity', 'Minimum toast rarity') + '</div><div class="ab-toggle-desc">' + tr('settings.minimum_rarity_desc', 'Only show toasts for badges at or above this rarity') + '</div></div>' +
                         '<select class="ab-select" data-settings-select="minimumToastRarity">' +
-                            '<option value="all"' + (minRarity === 'all' ? ' selected' : '') + '>All</option>' +
-                            '<option value="rare"' + (minRarity === 'rare' ? ' selected' : '') + '>Rare+</option>' +
-                            '<option value="epic"' + (minRarity === 'epic' ? ' selected' : '') + '>Epic+</option>' +
-                            '<option value="legendary"' + (minRarity === 'legendary' ? ' selected' : '') + '>Legendary+</option>' +
+                            '<option value="all"' + (minRarity === 'all' ? ' selected' : '') + '>' + tr('settings.rarity_all', 'All') + '</option>' +
+                            '<option value="rare"' + (minRarity === 'rare' ? ' selected' : '') + '>' + tr('settings.rarity_rare_plus', 'Rare+') + '</option>' +
+                            '<option value="epic"' + (minRarity === 'epic' ? ' selected' : '') + '>' + tr('settings.rarity_epic_plus', 'Epic+') + '</option>' +
+                            '<option value="legendary"' + (minRarity === 'legendary' ? ' selected' : '') + '>' + tr('settings.rarity_legendary_plus', 'Legendary+') + '</option>' +
                         '</select>' +
                     '</div>' +
                 '</div>' +
             '</div>' +
             privacySectionHtml +
             '<div class="ab-settings-section">' +
-                '<div class="ab-eyebrow">Display & Features</div>' +
+                '<div class="ab-eyebrow">' + tr('settings.display_features', 'Display & Features') + '</div>' +
                 '<div class="ab-settings-grid">' +
                     '<div class="ab-setting-row">' +
-                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.language', 'Language') + '</div><div class="ab-toggle-desc">UI language for the achievements page</div></div>' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.language', 'Language') + '</div><div class="ab-toggle-desc">' + tr('settings.language_desc', 'UI language for the achievements page') + '</div></div>' +
                         '<select class="ab-select" data-settings-select="language" id="abSaLanguageSelect">' +
                             '<option value="default"' + (prefLang === 'default' ? ' selected' : '') + '>' + tr('settings.language_default', 'Default (admin)') + '</option>' +
                             '<option value="en"' + (prefLang === 'en' ? ' selected' : '') + '>' + tr('settings.language_en', 'English') + '</option>' +
@@ -2096,21 +2127,21 @@
                         '</select>' +
                     '</div>' +
                     '<div class="ab-setting-row">' +
-                        '<div class="ab-toggle-info"><div class="ab-toggle-label">Achievement page theme</div><div class="ab-toggle-desc">Visual theme for this page</div></div>' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.theme', 'Achievement page theme') + '</div><div class="ab-toggle-desc">' + tr('settings.theme_desc', 'Visual theme for this page') + '</div></div>' +
                         '<select class="ab-select" data-settings-select="achievementPageTheme" id="abSaThemeSelect">' +
-                            '<option value="default"' + (pageTheme === 'default' ? ' selected' : '') + '>Default</option>' +
-                            '<option value="dark"' + (pageTheme === 'dark' ? ' selected' : '') + '>Dark</option>' +
-                            '<option value="light"' + (pageTheme === 'light' ? ' selected' : '') + '>Light</option>' +
+                            '<option value="default"' + (pageTheme === 'default' ? ' selected' : '') + '>' + tr('settings.theme_default', 'Default') + '</option>' +
+                            '<option value="dark"' + (pageTheme === 'dark' ? ' selected' : '') + '>' + tr('settings.theme_dark', 'Dark') + '</option>' +
+                            '<option value="light"' + (pageTheme === 'light' ? ' selected' : '') + '>' + tr('settings.theme_light', 'Light') + '</option>' +
                         '</select>' +
                     '</div>' +
                     spoilerRowHtml +
                     extremeSpoilerRowHtml +
                     '<div class="ab-setting-row">' +
-                        '<div class="ab-toggle-info"><div class="ab-toggle-label">Equipped badge slots</div><div class="ab-toggle-desc">Number of badges in your showcase (1-10)</div></div>' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.equipped_slots', 'Equipped badge slots') + '</div><div class="ab-toggle-desc">' + tr('settings.equipped_slots_desc', 'Number of badges in your showcase (1-10)') + '</div></div>' +
                         '<input type="number" class="ab-input" data-settings-number="equippedBadgeSlots" min="1" max="10" value="' + slots + '" style="width:70px;text-align:center;">' +
                     '</div>' +
-                    toggle('autoEquipNewUnlocks', 'Auto-equip new unlocks', 'Automatically equip newly unlocked badges', prefs.autoEquipNewUnlocks === true || prefs.AutoEquipNewUnlocks === true) +
-                    toggle('enablePushNotifications', 'Push notifications', 'Receive push notifications for achievements', prefs.enablePushNotifications === true || prefs.EnablePushNotifications === true) +
+                    toggle('autoEquipNewUnlocks', tr('settings.auto_equip', 'Auto-equip new unlocks'), tr('settings.auto_equip_desc', 'Automatically equip newly unlocked badges'), prefs.autoEquipNewUnlocks === true || prefs.AutoEquipNewUnlocks === true) +
+                    toggle('enablePushNotifications', tr('settings.push_notifications', 'Push notifications'), tr('settings.push_notifications_desc', 'Receive push notifications for achievements'), prefs.enablePushNotifications === true || prefs.EnablePushNotifications === true) +
                     ((pc.ForceHideEquippedShowcase || pc.forceHideEquippedShowcase)
                         ? '<div class="ab-setting-row"><div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.show_equipped_showcase', 'Show equipped showcase') + '</div><div class="ab-toggle-desc">' + tr('settings.showcase_admin_off', 'Hidden by admin.') + '</div></div></div>'
                         : toggle('showEquippedShowcase', tr('settings.show_equipped_showcase', 'Show equipped showcase'), tr('settings.show_equipped_showcase_desc', 'Show the equipped-badge strip in the sidebar, header dots, and equipped slots on this page'), prefs.showEquippedShowcase !== false && prefs.ShowEquippedShowcase !== false)) +
@@ -2213,7 +2244,7 @@
             var cur = b.CurrentValue || 0, tar = b.TargetValue || 0;
             var pct = tar > 0 ? Math.round(100 * cur / tar) : 0;
             var eta = badgeEtaMap[b.Id];
-            var etaText = eta && eta.DaysRemaining != null ? '\u00b7 ETA ~' + eta.DaysRemaining + 'd' : '';
+            var etaText = eta && eta.DaysRemaining != null ? '\u00b7 ' + tr('common.eta', 'ETA ~') + eta.DaysRemaining + tr('common.day_suffix', 'd') : '';
             return '<div class="ab-goal-card ' + rarityClass(b.Rarity) + '-border" data-badge="' + b.Id + '">' +
                 '<div class="ab-goal-label ' + rarityClass(b.Rarity) + '">' + (b.Rarity || '') + '</div>' +
                 '<div class="ab-goal-text">' + escapeHtml(b.Title || '') + '</div>' +
@@ -2262,11 +2293,11 @@
                 '<h3 style="margin:0 0 0.25em;">' + escapeHtml(badge.Title) + '</h3>' +
                 '<div class="ab-muted" style="font-size:0.85em; margin-bottom:1em;">' + escapeHtml(badge.Description || '') + '</div>' +
                 '<div style="margin-bottom:1em; padding:0.6em 0.85em; border-radius:8px; background:rgba(102,126,234,0.1); border:1px solid rgba(102,126,234,0.3);">' +
-                    '<div class="ab-muted" style="font-size:0.78em;">PROGRESS</div>' +
+                    '<div class="ab-muted" style="font-size:0.78em;">' + tr('modal.progress', 'PROGRESS') + '</div>' +
                     '<div style="font-weight:700; font-size:1.1em;">' + (badge.CurrentValue || 0) + ' / ' + (badge.TargetValue || 0) + '</div>' +
                 '</div>' +
-                '<div class="ab-muted" style="font-size:0.78em; margin-bottom:0.5em;">SUGGESTED ITEMS TO WATCH</div>' +
-                '<div id="abSaChaseList">Loading...</div>' +
+                '<div class="ab-muted" style="font-size:0.78em; margin-bottom:0.5em;">' + tr('modal.suggested_items', 'SUGGESTED ITEMS TO WATCH') + '</div>' +
+                '<div id="abSaChaseList">' + tr('common.loading', 'Loading...') + '</div>' +
             '</div>';
         backdrop.addEventListener('click', function (ev) {
             if (ev.target === backdrop) { backdrop.remove(); }
@@ -2279,15 +2310,15 @@
             if (!listBox) return;
             var items = res && res.Items;
             if (!items || !items.length) {
-                listBox.innerHTML = '<div class="ab-muted">No items found. This badge may need a metric we can\'t recommend for.</div>';
+                listBox.innerHTML = '<div class="ab-muted">' + tr('modal.no_items', 'No items found. This badge may need a metric we can\'t recommend for.') + '</div>';
                 return;
             }
             listBox.innerHTML = items.map(function (it) {
-                return '<div class="ab-modal-item"><div class="ab-modal-item-name">' + escapeHtml(it.Name || '') + '</div><div class="ab-modal-item-meta">' + (it.Type || '') + (it.Year ? ' · ' + it.Year : '') + (it.RunTimeMinutes ? ' · ' + it.RunTimeMinutes + ' min' : '') + '</div></div>';
+                return '<div class="ab-modal-item"><div class="ab-modal-item-name">' + escapeHtml(it.Name || '') + '</div><div class="ab-modal-item-meta">' + (it.Type || '') + (it.Year ? ' · ' + it.Year : '') + (it.RunTimeMinutes ? ' · ' + it.RunTimeMinutes + ' ' + tr('common.min', 'min') : '') + '</div></div>';
             }).join('');
         }).catch(function () {
             var listBox = backdrop.querySelector('#abSaChaseList');
-            if (listBox) listBox.innerHTML = '<div class="ab-muted">Failed to load.</div>';
+            if (listBox) listBox.innerHTML = '<div class="ab-muted">' + tr('modal.load_failed', 'Failed to load.') + '</div>';
         });
     }
 
@@ -2353,7 +2384,7 @@
         }
         var activityHeading = el('abSaActivityHeading');
         if (activityHeading) {
-            activityHeading.textContent = privacy ? 'Your activity' : 'Server activity feed';
+            activityHeading.textContent = privacy ? tr('activity.your_activity', 'Your activity') : tr('activity.server_feed', 'Server activity feed');
         }
         if (privacy && userId) {
             activityFilter = userId;
@@ -2375,10 +2406,15 @@
         var show = prefs ? (prefs.ShowEquippedShowcase !== false) : true;
         var wrap1 = el('abSaShowcaseWrap'); if (wrap1) wrap1.style.display = show ? '' : 'none';
         var wrap2 = el('abSaEquippedWrap'); if (wrap2) wrap2.style.display = show ? '' : 'none';
+        // Broadcast so sidebar.js can live-update its sidebar pills / header
+        // dots without waiting for the next hard refresh.
+        try {
+            window.dispatchEvent(new CustomEvent('ab:showcase-pref-changed', { detail: { show: show } }));
+        } catch (e) {}
     }
 
     function loadAll() {
-        if (!userId) { showError('Could not detect user.'); return Promise.resolve(); }
+        if (!userId) { showError(tr('error.no_user_short', 'Could not detect user.')); return Promise.resolve(); }
         var eqIds = {};
         // fire login ping (safe even if it fails)
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/login-ping', 'POST').catch(function () {});
@@ -2438,7 +2474,7 @@
             var heroStreakEl = el('abSaHeroStreak');
             if (heroStreakEl && streakData && streakData.CurrentStreak > 0) {
                 heroStreakEl.style.display = 'inline-flex';
-                heroStreakEl.innerHTML = '\ud83d\udd25 ' + streakData.CurrentStreak + ' day streak';
+                heroStreakEl.innerHTML = '\ud83d\udd25 ' + streakData.CurrentStreak + ' ' + tr('achievements.day_streak', 'day streak');
             } else if (heroStreakEl) {
                 heroStreakEl.style.display = 'none';
             }
@@ -2467,7 +2503,7 @@
             renderPinnedRow(badges);
 
             var sub = el('abSaSub');
-            if (sub) sub.textContent = 'Completion: ' + ((summary && summary.Percentage != null) ? summary.Percentage : 0) + '% \u2022 Score: ' + (summary ? (summary.Score || 0) : 0);
+            if (sub) sub.textContent = tr('achievements.completion', 'Completion') + ': ' + ((summary && summary.Percentage != null) ? summary.Percentage : 0) + '% \u2022 ' + tr('achievements.score', 'Score') + ': ' + (summary ? (summary.Score || 0) : 0);
             var u = el('abSaUnlocked'); if (u) u.textContent = summary ? summary.Unlocked : 0;
             var t = el('abSaTotal'); if (t) t.textContent = summary ? summary.Total : 0;
             var p = el('abSaPct'); if (p) p.textContent = (summary && typeof summary.Percentage === 'number' ? summary.Percentage.toFixed(1) : '0') + '%';
@@ -2485,9 +2521,9 @@
                 var pct = el('abSaRankBarPct');
                 if (pct) {
                     if (rank.NextTier) {
-                        pct.textContent = rank.Score + ' / ' + rank.NextTier.MinScore + ' to ' + rank.NextTier.Name;
+                        pct.textContent = rank.Score + ' / ' + rank.NextTier.MinScore + ' ' + tr('achievements.to_next', 'to') + ' ' + rank.NextTier.Name;
                     } else {
-                        pct.textContent = 'Max rank';
+                        pct.textContent = tr('achievements.max_rank', 'Max rank');
                     }
                 }
             }
@@ -2517,10 +2553,10 @@
 
             var lbBox = el('abSaLb');
             if (lbBox) {
-                if (!lb || !lb.length) { lbBox.innerHTML = '<div class="ab-muted">No data yet.</div>'; }
+                if (!lb || !lb.length) { lbBox.innerHTML = '<div class="ab-muted">' + tr('lb.no_data', 'No data yet.') + '</div>'; }
                 else {
                     lbBox.innerHTML = lb.map(function (e, i) {
-                        return '<div class="ab-lb-row"><div><strong>#' + (i + 1) + '</strong> \u2022 ' + (e.UserName || e.UserId) + '</div><div>' + (e.Score || 0) + ' pts \u2022 ' + e.Unlocked + ' unlocked</div></div>';
+                        return '<div class="ab-lb-row"><div><strong>#' + (i + 1) + '</strong> \u2022 ' + escapeHtml(e.UserName || e.UserId) + renderEquippedDots(e.Equipped, 18) + '</div><div>' + (e.Score || 0) + ' ' + tr('badge.pts_label', 'pts') + ' \u2022 ' + e.Unlocked + ' ' + tr('lb.unlocked_suffix', 'unlocked') + '</div></div>';
                     }).join('');
                 }
             }
@@ -2539,25 +2575,25 @@
             if (stBox && stats) {
                 stBox.innerHTML =
                     '<div class="ab-server-grid">' +
-                        '<div class="ab-server-card"><div class="ab-server-icon">👥</div><div class="ab-server-num">' + (stats.TotalUsers || 0) + '</div><div class="ab-server-label">Users</div></div>' +
-                        '<div class="ab-server-card"><div class="ab-server-icon">🏆</div><div class="ab-server-num">' + (stats.TotalBadgesUnlocked || 0) + '</div><div class="ab-server-label">Badges unlocked</div></div>' +
-                        '<div class="ab-server-card"><div class="ab-server-icon">📽️</div><div class="ab-server-num">' + (stats.TotalItemsWatched || 0) + '</div><div class="ab-server-label">Items watched</div></div>' +
-                        '<div class="ab-server-card"><div class="ab-server-icon">🎬</div><div class="ab-server-num">' + (stats.TotalMoviesWatched || 0) + '</div><div class="ab-server-label">Movies</div></div>' +
-                        '<div class="ab-server-card"><div class="ab-server-icon">📺</div><div class="ab-server-num">' + (stats.TotalSeriesCompleted || 0) + '</div><div class="ab-server-label">Series completed</div></div>' +
-                        '<div class="ab-server-card ab-server-wide"><div class="ab-server-icon">⭐</div><div class="ab-server-num" style="font-size:1.2em;">' + escapeHtml(stats.MostCommonBadge || 'None') + '</div><div class="ab-server-label">Most common badge</div></div>' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">👥</div><div class="ab-server-num">' + (stats.TotalUsers || 0) + '</div><div class="ab-server-label">' + tr('stats.server.users', 'Users') + '</div></div>' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">🏆</div><div class="ab-server-num">' + (stats.TotalBadgesUnlocked || 0) + '</div><div class="ab-server-label">' + tr('stats.server.badges_unlocked', 'Badges unlocked') + '</div></div>' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">📽️</div><div class="ab-server-num">' + (stats.TotalItemsWatched || 0) + '</div><div class="ab-server-label">' + tr('stats.server.items_watched', 'Items watched') + '</div></div>' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">🎬</div><div class="ab-server-num">' + (stats.TotalMoviesWatched || 0) + '</div><div class="ab-server-label">' + tr('stats.server.movies', 'Movies') + '</div></div>' +
+                        '<div class="ab-server-card"><div class="ab-server-icon">📺</div><div class="ab-server-num">' + (stats.TotalSeriesCompleted || 0) + '</div><div class="ab-server-label">' + tr('stats.server.series_completed', 'Series completed') + '</div></div>' +
+                        '<div class="ab-server-card ab-server-wide"><div class="ab-server-icon">⭐</div><div class="ab-server-num" style="font-size:1.2em;">' + escapeHtml(stats.MostCommonBadge || tr('stats.server.none', 'None')) + '</div><div class="ab-server-label">' + tr('stats.server.most_common_badge', 'Most common badge') + '</div></div>' +
                     '</div>';
             }
         }).catch(function (err) {
-            showError('Failed to load achievements. ' + (err && err.message ? err.message : String(err)));
+            showError(tr('error.load_failed', 'Failed to load achievements.') + ' ' + (err && err.message ? err.message : String(err)));
         });
     }
 
     function doEquip(badgeId) {
-        fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, 'POST').then(function () { return loadAll(); }).catch(function (e) { showError('Failed to equip. ' + e.message); });
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, 'POST').then(function () { return loadAll(); }).catch(function (e) { showError(tr('error.equip_failed', 'Failed to equip.') + ' ' + e.message); });
     }
 
     function doUnequip(badgeId) {
-        fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, 'DELETE').then(function () { return loadAll(); }).catch(function (e) { showError('Failed to unequip. ' + e.message); });
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, 'DELETE').then(function () { return loadAll(); }).catch(function (e) { showError(tr('error.unequip_failed', 'Failed to unequip.') + ' ' + e.message); });
     }
 
     function mountRoute() {
@@ -2608,7 +2644,7 @@
             var rmKey = 'ab-reduced-motion';
             var rmEl = document.createElement('label');
             rmEl.style.cssText = 'display:flex; align-items:center; gap:0.5em; padding:0.5em 0.85em; border-radius:8px; background:rgba(255,255,255,0.04); font-size:0.85em; cursor:pointer; margin-left:auto;';
-            rmEl.innerHTML = '<input type="checkbox"' + (localStorage.getItem(rmKey) === 'true' ? ' checked' : '') + '> Reduced motion';
+            rmEl.innerHTML = '<input type="checkbox"' + (localStorage.getItem(rmKey) === 'true' ? ' checked' : '') + '> ' + tr('filter.reduced_motion', 'Reduced motion');
             var cb = rmEl.querySelector('input');
             cb.addEventListener('change', function () { localStorage.setItem(rmKey, cb.checked ? 'true' : 'false'); });
             var filterRow = root.querySelector('.ab-filter-row');
@@ -2631,7 +2667,7 @@
 
         getCurrentUserId().then(function (id) {
             userId = id;
-            if (!id) { showError('Could not detect your user account. Please log in.'); return; }
+            if (!id) { showError(tr('error.no_user', 'Could not detect your user account. Please log in.')); return; }
             return loadAll();
         });
     }
