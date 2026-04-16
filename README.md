@@ -422,10 +422,10 @@ Auto-injected into the Jellyfin nav menu — no theme changes required.
 
 ## 🙏 Credits & thanks
 
+- **[@frenchyx24](https://github.com/frenchyx24)** — **full French translation of all 171 built-in badges** (hand-translated titles + descriptions, merged in v1.7.2 from [issue #5](https://github.com/ZL154/AchievementBadges_for_Jellyfin/issues/5)). Also filed the original multi-language feature request and the deactivate-equipped-badges / quest-customization / Xbox-logo bug reports that shaped v1.6.1 → v1.7.x. Merci beaucoup !
 - **xdnewlun1 (Techno Cricket, CCDC)** — responsible disclosure of 12 security findings in v1.6.0 including the critical IDOR that led to the `UserOwnershipFilter`.
-- **French community contributions** — bug reports and feature requests (deactivate equipped badges, quest customization, Xbox logo upload) from a fork author on v1.6.1. French translation strings from his fork will be merged when available.
 - **Uenify** — the Xbox-style toast animation (circle grow, banner sweep, shimmer, text slide) is a port of his [CodePen](https://codepen.io/uenify) to vanilla JS + per-rarity colour palettes.
-- Translations by automated pass (fr/es/de/it/pt/zh-CN/ja) — welcoming native-speaker polish via PRs.
+- Translations for es / de / it / pt / zh-CN / ja started from an automated pass — native-speaker polish welcomed via PR.
 
 ---
 

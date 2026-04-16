@@ -907,8 +907,7 @@ font-size:0.88em;
         }
         return fallback != null ? fallback : key;
     };
-    function go() {
-        var lang = pickLang();
+    function loadForLang(lang) {
         var url = 'Plugins/AchievementBadges/translations/' + encodeURIComponent(lang);
         try {
             var apiClient = window.ApiClient || window.apiClient || null;
@@ -920,15 +919,63 @@ font-size:0.88em;
         } catch (e) {
             url = '/' + url;
         }
-        fetch(url, { credentials: 'same-origin' })
+        return fetch(url, { credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
-            .then(apply)
-            .catch(function () { /* silent — admin page still works in English */ });
+            .then(apply);
     }
+
+    // Resolve the admin's language by asking the server for their achievement-
+    // badges preference first (so the admin page follows the same language the
+    // user picked in the achievements settings panel). Falls back to local
+    // storage / navigator / English if we can't read prefs.
+    function resolveAndLoad() {
+        var apiClient = window.ApiClient || window.apiClient || null;
+        var adminLang = 'en';
+        var userId = '';
+        try {
+            if (apiClient && typeof apiClient.getCurrentUserId === 'function') {
+                userId = apiClient.getCurrentUserId() || '';
+            }
+        } catch (e) { userId = ''; }
+
+        // Fetch public-config first for the admin-level DefaultLanguage.
+        var pubUrl = 'Plugins/AchievementBadges/public-config';
+        try {
+            pubUrl = (apiClient && typeof apiClient.getUrl === 'function') ? apiClient.getUrl(pubUrl) : ('/' + pubUrl);
+        } catch (e) { pubUrl = '/' + pubUrl; }
+        fetch(pubUrl, { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (cfg) {
+                if (cfg && (cfg.DefaultLanguage || cfg.defaultLanguage)) {
+                    adminLang = (cfg.DefaultLanguage || cfg.defaultLanguage).toLowerCase();
+                }
+                if (!userId) return null;
+                var prefsUrl = 'Plugins/AchievementBadges/users/' + userId + '/preferences';
+                try {
+                    prefsUrl = (apiClient && typeof apiClient.getUrl === 'function') ? apiClient.getUrl(prefsUrl) : ('/' + prefsUrl);
+                } catch (e) { prefsUrl = '/' + prefsUrl; }
+                return fetch(prefsUrl, { credentials: 'same-origin' })
+                    .then(function (r) { return r.ok ? r.json() : null; });
+            })
+            .then(function (prefs) {
+                var userLang = (prefs && (prefs.Language || prefs.language) || '').toLowerCase();
+                var effective = (!userLang || userLang === 'default') ? adminLang : userLang;
+                if (!effective) effective = pickLang();
+                // Remember so the next page load picks it up before the server
+                // round-trip (snappier first paint).
+                try { if (window.localStorage) localStorage.setItem('achievementBadgesLang', effective); } catch (e) {}
+                return loadForLang(effective);
+            })
+            .catch(function () {
+                // Fallback chain: localStorage → navigator → English.
+                return loadForLang(pickLang()).catch(function () {});
+            });
+    }
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', go);
+        document.addEventListener('DOMContentLoaded', resolveAndLoad);
     } else {
-        go();
+        resolveAndLoad();
     }
 })();
 

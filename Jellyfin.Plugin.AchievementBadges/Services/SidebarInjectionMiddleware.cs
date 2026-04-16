@@ -25,7 +25,8 @@ public class SidebarInjectionMiddleware
         "<!-- achievementbadges-bootstrap -->" +
         "<script src=\"/Plugins/AchievementBadges/client-script/sidebar\"></script>" +
         "<script src=\"/Plugins/AchievementBadges/client-script/standalone\" defer></script>" +
-        "<script src=\"/Plugins/AchievementBadges/client-script/enhance\" defer></script>";
+        "<script src=\"/Plugins/AchievementBadges/client-script/enhance\" defer></script>" +
+        "<!-- /achievementbadges-bootstrap -->";
 
     public SidebarInjectionMiddleware(RequestDelegate next, ILogger<SidebarInjectionMiddleware> logger)
     {

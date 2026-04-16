@@ -1273,47 +1273,97 @@
     }
 
     // ========================= Friends drawer ==============================
-    // Xbox-style side drawer that slides in from the right. Triggered by a
-    // floating "people" button anchored bottom-right of the achievements
-    // page. Contains three tabs: Friends, Requests, Find.
+    // Xbox-guide-style side drawer that slides in from the left. Triggered
+    // by a floating people-button anchored top-LEFT (bottom-right got in
+    // the way of Jellyfin's own controls). Three sub-tabs: Friends,
+    // Requests, Find. Includes one-off <style> injection for all its
+    // visual classes so the inline styles don't bloat every row.
     function ensureFriendsDrawer() {
         if (document.getElementById('abFriendsBtn')) return;
 
-        // Floating button
+        // One-time style sheet for the drawer — keeps the per-row HTML
+        // lean and makes it easy to theme.
+        if (!document.getElementById('ab-friends-styles')) {
+            var fst = document.createElement('style');
+            fst.id = 'ab-friends-styles';
+            fst.textContent =
+                '#abFriendsBtn{position:fixed;left:1em;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:14px;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 6px 18px rgba(102,126,234,0.4),inset 0 0 0 1px rgba(255,255,255,0.08);cursor:pointer;z-index:999997;display:flex;align-items:center;justify-content:center;transition:transform 0.15s,box-shadow 0.15s;}' +
+                '#abFriendsBtn:hover{transform:translateY(-50%) scale(1.08);box-shadow:0 10px 24px rgba(102,126,234,0.55),inset 0 0 0 1px rgba(255,255,255,0.15);}' +
+                '#abFriendsBtn .material-icons{font-size:1.55em;}' +
+                '#abFriendsBadge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:0.7em;font-weight:800;display:none;align-items:center;justify-content:center;box-shadow:0 0 0 2px rgba(10,12,18,0.9),0 2px 8px rgba(239,68,68,0.5);}' +
+                '#abFriendsBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:999998;opacity:0;transition:opacity 0.22s;}' +
+                '#abFriendsDrawer{display:none;position:fixed;top:0;left:0;width:min(360px,92vw);height:100vh;background:linear-gradient(170deg,#1a1f2e 0%,#0d1017 100%);border-right:1px solid rgba(255,255,255,0.08);box-shadow:10px 0 40px rgba(0,0,0,0.6);z-index:999999;flex-direction:column;transform:translateX(-100%);transition:transform 0.28s cubic-bezier(.22,.9,.3,1);color:#fff;font-family:inherit;}' +
+                '.ab-fd-header{padding:1.1em 1.2em 0.9em;display:flex;align-items:center;gap:0.55em;border-bottom:1px solid rgba(255,255,255,0.06);background:linear-gradient(90deg,rgba(102,126,234,0.08),transparent);}' +
+                '.ab-fd-header .material-icons{background:linear-gradient(135deg,#667eea,#764ba2);width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1em;}' +
+                '.ab-fd-title{font-weight:800;font-size:1.05em;flex:1;letter-spacing:0.2px;}' +
+                '.ab-fd-close{background:rgba(255,255,255,0.06);border:none;color:#fff;opacity:0.8;cursor:pointer;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}' +
+                '.ab-fd-close:hover{background:rgba(255,255,255,0.12);opacity:1;}' +
+                '.ab-fd-tabs{display:flex;padding:0.6em 0.8em;gap:0.35em;border-bottom:1px solid rgba(255,255,255,0.06);}' +
+                '.ab-fd-tab{flex:1;padding:0.55em 0.6em;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#c7d2fe;font-size:0.82em;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3em;transition:all 0.15s;letter-spacing:0.3px;}' +
+                '.ab-fd-tab:hover{background:rgba(255,255,255,0.05);}' +
+                '.ab-fd-tab.active{background:linear-gradient(135deg,rgba(102,126,234,0.2),rgba(118,75,162,0.2));border-color:rgba(102,126,234,0.5);color:#fff;box-shadow:0 4px 12px rgba(102,126,234,0.2);}' +
+                '.ab-fd-body{flex:1;overflow-y:auto;padding:0.8em;}' +
+                '.ab-fd-row{display:flex;align-items:center;gap:0.7em;padding:0.7em 0.5em;border-radius:10px;transition:background 0.15s;margin-bottom:0.25em;}' +
+                '.ab-fd-row:hover{background:rgba(255,255,255,0.03);}' +
+                '.ab-fd-avatar{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:0.95em;position:relative;background:linear-gradient(135deg,#334155,#1e293b);color:#cbd5e1;}' +
+                '.ab-fd-avatar.online{background:linear-gradient(135deg,rgba(74,222,128,0.25),rgba(34,197,94,0.15));color:#bbf7d0;box-shadow:inset 0 0 0 2px #4ade80;}' +
+                '.ab-fd-avatar::after{content:"";position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:999px;background:rgba(255,255,255,0.2);border:2px solid #0d1017;}' +
+                '.ab-fd-avatar.online::after{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,0.8);}' +
+                '.ab-fd-info{flex:1;min-width:0;}' +
+                '.ab-fd-name{font-weight:700;font-size:0.95em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+                '.ab-fd-status{font-size:0.75em;opacity:0.65;margin-top:0.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+                '.ab-fd-status.online{color:#86efac;opacity:0.9;}' +
+                '.ab-fd-equipped{margin-top:0.4em;margin-left:3em;}' +
+                '.ab-fd-actions{display:flex;gap:0.3em;}' +
+                '.ab-fd-act{padding:0.4em 0.65em;border-radius:8px;border:none;background:rgba(255,255,255,0.06);color:#c7d2fe;font-size:0.8em;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.25em;transition:all 0.15s;}' +
+                '.ab-fd-act:hover{background:rgba(255,255,255,0.12);color:#fff;}' +
+                '.ab-fd-act.accept{background:rgba(74,222,128,0.18);color:#86efac;}' +
+                '.ab-fd-act.accept:hover{background:rgba(74,222,128,0.3);}' +
+                '.ab-fd-act.decline{background:rgba(239,68,68,0.15);color:#fca5a5;}' +
+                '.ab-fd-act.decline:hover{background:rgba(239,68,68,0.3);}' +
+                '.ab-fd-act .material-icons{font-size:1em;}' +
+                '.ab-fd-section{font-size:0.72em;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.45);font-weight:700;margin:0.8em 0.4em 0.4em;}' +
+                '.ab-fd-empty{text-align:center;padding:2em 1em;color:rgba(255,255,255,0.5);}' +
+                '.ab-fd-empty .material-icons{font-size:2.8em;opacity:0.3;margin-bottom:0.4em;}' +
+                '.ab-fd-search{width:100%;padding:0.7em 0.9em;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-family:inherit;font-size:0.92em;margin-bottom:0.85em;}' +
+                '.ab-fd-search:focus{outline:none;border-color:rgba(102,126,234,0.5);box-shadow:0 0 0 3px rgba(102,126,234,0.15);}' +
+                '.ab-fd-badge-dots{display:inline-flex;gap:3px;vertical-align:middle;}' +
+                '#abFriendsIncBadge{display:none;margin-left:0.3em;padding:0 6px;border-radius:999px;background:#ef4444;color:#fff;font-size:0.65em;font-weight:800;min-width:16px;line-height:16px;text-align:center;}' +
+                '@media (max-width: 640px){#abFriendsBtn{left:0.7em;top:1em;transform:none;}#abFriendsBtn:hover{transform:scale(1.08);}}';
+            (document.head || document.documentElement).appendChild(fst);
+        }
+
+        // Floating button — top-left, vertically centered. On mobile it
+        // slides to top-left corner.
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.id = 'abFriendsBtn';
         btn.title = tr('friends.title', 'Friends');
-        btn.style.cssText = 'position:fixed;right:1.2em;bottom:1.2em;width:54px;height:54px;border-radius:50%;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 6px 18px rgba(102,126,234,0.45);cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;';
-        btn.innerHTML = '<span class="material-icons" style="font-size:1.7em;">people</span><span id="abFriendsBadge" style="position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#ef4444;color:#fff;font-size:0.72em;font-weight:800;display:none;align-items:center;justify-content:center;box-shadow:0 0 0 2px rgba(17,20,28,0.85);"></span>';
+        btn.innerHTML = '<span class="material-icons">groups</span><span id="abFriendsBadge"></span>';
         document.body.appendChild(btn);
 
-        // Backdrop
         var backdrop = document.createElement('div');
         backdrop.id = 'abFriendsBackdrop';
-        backdrop.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999998;animation:abFadeIn 0.2s;';
         document.body.appendChild(backdrop);
 
-        // Drawer
         var drawer = document.createElement('div');
         drawer.id = 'abFriendsDrawer';
-        drawer.style.cssText = 'display:none;position:fixed;top:0;right:0;width:min(380px,92vw);height:100vh;background:linear-gradient(180deg,#181b24,#0d1017);border-left:1px solid rgba(255,255,255,0.1);box-shadow:-8px 0 30px rgba(0,0,0,0.5);z-index:999999;flex-direction:column;transform:translateX(100%);transition:transform 0.25s ease;color:#fff;font-family:inherit;';
         drawer.innerHTML =
-            '<div style="padding:1em 1.2em;display:flex;align-items:center;gap:0.5em;border-bottom:1px solid rgba(255,255,255,0.08);">' +
-                '<span class="material-icons">people</span>' +
-                '<div style="font-weight:800;font-size:1.1em;flex:1;">' + tr('friends.title', 'Friends') + '</div>' +
-                '<button type="button" id="abFriendsClose" style="background:none;border:none;color:#fff;opacity:0.7;cursor:pointer;font-size:1.2em;"><span class="material-icons">close</span></button>' +
+            '<div class="ab-fd-header">' +
+                '<span class="material-icons">groups</span>' +
+                '<div class="ab-fd-title">' + tr('friends.title', 'Friends') + '</div>' +
+                '<button type="button" class="ab-fd-close" id="abFriendsClose"><span class="material-icons" style="font-size:1em;">close</span></button>' +
             '</div>' +
-            '<div style="display:flex;padding:0.5em;gap:0.3em;border-bottom:1px solid rgba(255,255,255,0.08);">' +
-                '<button type="button" class="ab-btn" data-ab-fdtab="friends" style="flex:1;">' + tr('friends.tab_friends', 'Friends') + '</button>' +
-                '<button type="button" class="ab-btn" data-ab-fdtab="requests" style="flex:1;">' + tr('friends.tab_requests', 'Requests') + ' <span id="abFriendsIncBadge" style="display:none;margin-left:0.3em;padding:0 6px;border-radius:10px;background:#ef4444;color:#fff;font-size:0.7em;font-weight:800;"></span></button>' +
-                '<button type="button" class="ab-btn" data-ab-fdtab="find" style="flex:1;">' + tr('friends.tab_find', 'Find') + '</button>' +
+            '<div class="ab-fd-tabs">' +
+                '<button type="button" class="ab-fd-tab active" data-ab-fdtab="friends">' + tr('friends.tab_friends', 'Friends') + '</button>' +
+                '<button type="button" class="ab-fd-tab" data-ab-fdtab="requests">' + tr('friends.tab_requests', 'Requests') + '<span id="abFriendsIncBadge"></span></button>' +
+                '<button type="button" class="ab-fd-tab" data-ab-fdtab="find">' + tr('friends.tab_find', 'Find') + '</button>' +
             '</div>' +
-            '<div style="flex:1;overflow-y:auto;padding:0.85em;">' +
+            '<div class="ab-fd-body">' +
                 '<div id="abFriendsPaneFriends"></div>' +
                 '<div id="abFriendsPaneRequests" style="display:none;"></div>' +
                 '<div id="abFriendsPaneFind" style="display:none;">' +
-                    '<input type="search" id="abFriendsSearch" class="ab-input" style="width:100%;margin-bottom:0.85em;" placeholder="' + tr('friends.search_placeholder', 'Search users...') + '">' +
+                    '<input type="search" id="abFriendsSearch" class="ab-fd-search" placeholder="' + tr('friends.search_placeholder', 'Search users...') + '">' +
                     '<div id="abFriendsSearchResults"></div>' +
                 '</div>' +
             '</div>';
@@ -1322,14 +1372,17 @@
         function openDrawer() {
             backdrop.style.display = 'block';
             drawer.style.display = 'flex';
-            // Force layout so the transform transition runs instead of snapping.
+            // Force layout so the transitions play instead of snapping.
             void drawer.offsetHeight;
+            backdrop.style.opacity = '1';
             drawer.style.transform = 'translateX(0)';
             loadFriendsDrawer();
         }
         function closeDrawer() {
-            drawer.style.transform = 'translateX(100%)';
-            setTimeout(function () { drawer.style.display = 'none'; backdrop.style.display = 'none'; }, 260);
+            backdrop.style.opacity = '0';
+            // Slide out to the LEFT (drawer is anchored left:0).
+            drawer.style.transform = 'translateX(-100%)';
+            setTimeout(function () { drawer.style.display = 'none'; backdrop.style.display = 'none'; }, 280);
         }
         btn.addEventListener('click', openDrawer);
         backdrop.addEventListener('click', closeDrawer);
@@ -1386,49 +1439,58 @@
             var incoming = data.Incoming || [];
             var outgoing = data.Outgoing || [];
 
+            function initials(name) {
+                var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+                if (!parts.length) return '?';
+                return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+            }
+
             if (!friends.length) {
-                fBox.innerHTML = '<div class="ab-muted">' + tr('friends.empty', 'You haven\'t added any friends yet.') + '</div>';
+                fBox.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">people_outline</span><div>' + tr('friends.empty', "You haven't added any friends yet.") + '</div></div>';
             } else {
                 fBox.innerHTML = friends.map(function (f) {
-                    var dot = f.Online ? '#4ade80' : 'rgba(255,255,255,0.25)';
                     var status = f.Online
                         ? (f.NowPlaying && f.NowPlaying.Name
                             ? tr('friends.watching_prefix', 'Watching') + ' <strong>' + escapeHtml(f.NowPlaying.SeriesName ? (f.NowPlaying.SeriesName + (f.NowPlaying.Name ? ' — ' + f.NowPlaying.Name : '')) : f.NowPlaying.Name) + '</strong>'
                             : tr('friends.online', 'Online'))
                         : (f.LastSeen ? tr('friends.last_seen', 'Last seen') + ' ' + new Date(f.LastSeen).toLocaleString() : tr('friends.offline', 'Offline'));
-                    return '<div style="padding:0.75em 0;border-bottom:1px solid rgba(255,255,255,0.06);">' +
-                        '<div style="display:flex;align-items:center;gap:0.6em;">' +
-                            '<div style="width:36px;height:36px;border-radius:999px;background:' + (f.Online ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.05)') + ';border:2px solid ' + dot + ';display:flex;align-items:center;justify-content:center;"><span class="material-icons" style="font-size:1.05em;">person</span></div>' +
-                            '<div style="flex:1;min-width:0;"><div style="font-weight:700;">' + escapeHtml(f.UserName) + '</div><div class="ab-muted" style="font-size:0.78em;">' + status + '</div></div>' +
-                            '<button type="button" class="ab-btn" data-ab-friend-remove="' + escapeHtml(f.UserId) + '" title="' + tr('friends.remove', 'Remove') + '" style="padding:0.3em 0.6em;background:rgba(244,63,94,0.1);border-color:rgba(244,63,94,0.35);color:#fca5a5;"><span class="material-icons" style="font-size:1em;">close</span></button>' +
+                    return '<div class="ab-fd-row">' +
+                        '<div class="ab-fd-avatar' + (f.Online ? ' online' : '') + '">' + escapeHtml(initials(f.UserName)) + '</div>' +
+                        '<div class="ab-fd-info">' +
+                            '<div class="ab-fd-name">' + escapeHtml(f.UserName) + '</div>' +
+                            '<div class="ab-fd-status' + (f.Online ? ' online' : '') + '">' + status + '</div>' +
+                            (f.Equipped && f.Equipped.length ? '<div style="margin-top:0.35em;"><span class="ab-fd-badge-dots">' + renderEquippedDots(f.Equipped, 16) + '</span></div>' : '') +
                         '</div>' +
-                        (f.Equipped && f.Equipped.length ? '<div style="margin-top:0.5em;margin-left:2.7em;">' + renderEquippedDots(f.Equipped, 16) + '</div>' : '') +
+                        '<div class="ab-fd-actions"><button type="button" class="ab-fd-act decline" data-ab-friend-remove="' + escapeHtml(f.UserId) + '" title="' + tr('friends.remove', 'Remove') + '"><span class="material-icons">person_remove</span></button></div>' +
                     '</div>';
                 }).join('');
             }
 
             var rHtml = '';
             if (incoming.length) {
-                rHtml += '<div class="ab-eyebrow" style="margin-bottom:0.5em;">' + tr('friends.incoming', 'Incoming requests') + '</div>';
+                rHtml += '<div class="ab-fd-section">' + tr('friends.incoming', 'Incoming requests') + '</div>';
                 rHtml += incoming.map(function (r) {
-                    return '<div style="display:flex;align-items:center;gap:0.5em;padding:0.6em 0;border-bottom:1px solid rgba(255,255,255,0.06);">' +
-                        '<div style="flex:1;font-weight:600;">' + escapeHtml(r.UserName) + '</div>' +
-                        '<button type="button" class="ab-btn" data-ab-friend-accept="' + escapeHtml(r.UserId) + '" style="padding:0.3em 0.7em;background:rgba(74,222,128,0.15);border-color:rgba(74,222,128,0.4);color:#86efac;">' + tr('friends.accept', 'Accept') + '</button>' +
-                        '<button type="button" class="ab-btn" data-ab-friend-remove="' + escapeHtml(r.UserId) + '" style="padding:0.3em 0.7em;background:rgba(244,63,94,0.1);border-color:rgba(244,63,94,0.35);color:#fca5a5;">' + tr('friends.decline', 'Decline') + '</button>' +
+                    return '<div class="ab-fd-row">' +
+                        '<div class="ab-fd-avatar">' + escapeHtml(initials(r.UserName)) + '</div>' +
+                        '<div class="ab-fd-info"><div class="ab-fd-name">' + escapeHtml(r.UserName) + '</div><div class="ab-fd-status">' + tr('friends.wants_to_be_friends', 'Wants to be friends') + '</div></div>' +
+                        '<div class="ab-fd-actions">' +
+                            '<button type="button" class="ab-fd-act accept" data-ab-friend-accept="' + escapeHtml(r.UserId) + '"><span class="material-icons">check</span>' + tr('friends.accept', 'Accept') + '</button>' +
+                            '<button type="button" class="ab-fd-act decline" data-ab-friend-remove="' + escapeHtml(r.UserId) + '"><span class="material-icons">close</span></button>' +
+                        '</div>' +
                     '</div>';
                 }).join('');
             }
             if (outgoing.length) {
-                rHtml += '<div class="ab-eyebrow" style="margin:1em 0 0.5em;">' + tr('friends.outgoing', 'Sent requests') + '</div>';
+                rHtml += '<div class="ab-fd-section">' + tr('friends.outgoing', 'Sent requests') + '</div>';
                 rHtml += outgoing.map(function (r) {
-                    return '<div style="display:flex;align-items:center;gap:0.5em;padding:0.6em 0;border-bottom:1px solid rgba(255,255,255,0.06);">' +
-                        '<div style="flex:1;">' + escapeHtml(r.UserName) + '</div>' +
-                        '<div class="ab-muted" style="font-size:0.78em;">' + tr('friends.pending', 'Pending') + '</div>' +
-                        '<button type="button" class="ab-btn" data-ab-friend-remove="' + escapeHtml(r.UserId) + '" style="padding:0.3em 0.7em;">' + tr('friends.cancel', 'Cancel') + '</button>' +
+                    return '<div class="ab-fd-row">' +
+                        '<div class="ab-fd-avatar">' + escapeHtml(initials(r.UserName)) + '</div>' +
+                        '<div class="ab-fd-info"><div class="ab-fd-name">' + escapeHtml(r.UserName) + '</div><div class="ab-fd-status">' + tr('friends.pending', 'Pending') + '</div></div>' +
+                        '<div class="ab-fd-actions"><button type="button" class="ab-fd-act" data-ab-friend-remove="' + escapeHtml(r.UserId) + '">' + tr('friends.cancel', 'Cancel') + '</button></div>' +
                     '</div>';
                 }).join('');
             }
-            if (!rHtml) rHtml = '<div class="ab-muted">' + tr('friends.no_requests', 'No pending requests.') + '</div>';
+            if (!rHtml) rHtml = '<div class="ab-fd-empty"><span class="material-icons">inbox</span><div>' + tr('friends.no_requests', 'No pending requests.') + '</div></div>';
             rBox.innerHTML = rHtml;
 
             var incBadge = document.getElementById('abFriendsIncBadge');
@@ -1466,7 +1528,12 @@
         var box = document.getElementById('abFriendsSearchResults');
         if (!box) return;
         q = (q || '').trim().toLowerCase();
-        if (!q) { box.innerHTML = '<div class="ab-muted" style="font-size:0.85em;">' + tr('friends.type_to_search', 'Start typing to find users.') + '</div>'; return; }
+        if (!q) { box.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">search</span><div>' + tr('friends.type_to_search', 'Start typing to find users.') + '</div></div>'; return; }
+        function initials(name) {
+            var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+            if (!parts.length) return '?';
+            return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+        }
         fetchServerUsers().then(function (users) {
             var me = (userId || '').toLowerCase().replace(/-/g, '');
             var skip = window.__abFriendIds || {};
@@ -1476,11 +1543,12 @@
                 if (skip[nid]) return false;
                 return (u.Name || '').toLowerCase().indexOf(q) !== -1;
             }).slice(0, 20);
-            if (!matches.length) { box.innerHTML = '<div class="ab-muted" style="font-size:0.85em;">' + tr('friends.no_matches', 'No users match.') + '</div>'; return; }
+            if (!matches.length) { box.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">person_search</span><div>' + tr('friends.no_matches', 'No users match.') + '</div></div>'; return; }
             box.innerHTML = matches.map(function (u) {
-                return '<div style="display:flex;align-items:center;gap:0.5em;padding:0.55em 0;border-bottom:1px solid rgba(255,255,255,0.06);">' +
-                    '<div style="flex:1;font-weight:600;">' + escapeHtml(u.Name) + '</div>' +
-                    '<button type="button" class="ab-btn" data-ab-friend-add="' + escapeHtml(u.Id) + '" style="padding:0.3em 0.7em;background:rgba(102,126,234,0.15);border-color:rgba(102,126,234,0.4);color:#a3b5f7;">' + tr('friends.send_request', 'Send request') + '</button>' +
+                return '<div class="ab-fd-row">' +
+                    '<div class="ab-fd-avatar">' + escapeHtml(initials(u.Name)) + '</div>' +
+                    '<div class="ab-fd-info"><div class="ab-fd-name">' + escapeHtml(u.Name) + '</div></div>' +
+                    '<div class="ab-fd-actions"><button type="button" class="ab-fd-act accept" data-ab-friend-add="' + escapeHtml(u.Id) + '"><span class="material-icons">person_add</span>' + tr('friends.send_request', 'Send request') + '</button></div>' +
                 '</div>';
             }).join('');
             box.querySelectorAll('[data-ab-friend-add]').forEach(function (btn) {
@@ -1489,13 +1557,13 @@
                     btn.disabled = true;
                     fetchJson('Plugins/AchievementBadges/users/' + userId + '/friends/' + fid, 'POST')
                         .then(function (r) {
-                            btn.textContent = (r && r.Success) ? tr('friends.sent', 'Sent') : tr('friends.failed', 'Failed');
+                            btn.innerHTML = (r && r.Success) ? '<span class="material-icons">check</span>' + tr('friends.sent', 'Sent') : tr('friends.failed', 'Failed');
                             loadFriendsDrawer();
                         }).catch(function () { btn.textContent = tr('friends.failed', 'Failed'); });
                 });
             });
         }).catch(function () {
-            box.innerHTML = '<div class="ab-muted">' + tr('friends.search_failed', 'Search failed.') + '</div>';
+            box.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">error_outline</span><div>' + tr('friends.search_failed', 'Search failed.') + '</div></div>';
         });
     }
 
@@ -2423,35 +2491,49 @@
                     var pc = publicConfigGlobal || {};
                     var adminLang = (pc.DefaultLanguage || pc.defaultLanguage || 'en').toString().toLowerCase();
                     var eff = (!chosen || chosen === 'default') ? adminLang : chosen;
-                    // Keep the local prefs in sync with the user's choice so
-                    // the re-rendered <select> marks the right option.
+                    // Keep the local prefs in sync with the user's choice.
                     prefs.Language = chosen;
                     prefs.language = chosen;
+                    // Mirror to localStorage so the admin page picks up the
+                    // same language on its next load without waiting for
+                    // the server round-trip.
+                    try { if (window.localStorage) localStorage.setItem('achievementBadgesLang', eff); } catch (e) {}
 
-                    // Show a non-stuck status while we wait for save +
-                    // translation load to land. Previously, if any of the
-                    // chained promises threw silently, the panel got stuck
-                    // on "Loading settings..."
-                    var box = el('abSaSettingsContent');
-                    if (box) box.innerHTML = tr('settings.loading', 'Loading settings...');
+                    // Load the translation bundle in parallel with save.
+                    // Don't block the re-render on savePromise — we already
+                    // know what the user chose, and a server error on save
+                    // should NOT cause the dropdown to revert to default in
+                    // the UI. savePromise still runs in the background and
+                    // any failure is best-effort logged in saveSettingsPrefs.
+                    loadTranslations(eff).then(function () {
+                        applyStaticTranslations();
+                        // Re-render with the LOCAL prefs so the dropdown
+                        // always shows the user's chosen language — never
+                        // bounce back to Default because of a racy fetch.
+                        try { renderSettingsPanel(prefs); } catch (e) {}
+                        // Also hard-pin the select's value after render
+                        // as belt-and-braces: even if another async code
+                        // path re-rendered the panel with stale data, the
+                        // user's choice wins.
+                        var reSel = document.getElementById('abSaLanguageSelect');
+                        if (reSel && reSel.value !== chosen) {
+                            for (var i = 0; i < reSel.options.length; i++) {
+                                if (reSel.options[i].value === chosen) { reSel.selectedIndex = i; break; }
+                            }
+                        }
+                    }).catch(function () {
+                        // Translation load failed — still keep the dropdown
+                        // on the user's pick.
+                        try { renderSettingsPanel(prefs); } catch (e) {}
+                    });
 
-                    // Always re-fetch fresh prefs from the server after save
-                    // so we render with the actually-persisted state, not a
-                    // possibly-stale closure object. Use .always-style flow
-                    // with a safety catch so the panel can't get stuck.
-                    Promise.all([loadTranslations(eff), savePromise])
-                        .catch(function () {})
-                        .then(function () { applyStaticTranslations(); })
-                        .then(function () { return fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences').catch(function () { return prefs; }); })
-                        .then(function (fresh) {
-                            try { if (typeof loadAll === 'function') loadAll(); } catch (e) {}
-                            renderSettingsPanel(fresh || prefs);
-                        })
-                        .catch(function () {
-                            // Last-resort: render with what we have so the
-                            // panel never gets stuck on the loading text.
-                            try { renderSettingsPanel(prefs); } catch (e) {}
-                        });
+                    // Once the save lands, silently refresh badge titles /
+                    // categories etc. so BadgeLocalizer picks the new lang.
+                    // We do NOT re-render the settings panel here — that's
+                    // already done above with the correct chosen value.
+                    savePromise.then(function () {
+                        try { if (typeof loadAll === 'function') loadAll(); } catch (e) {}
+                    });
                 }
             });
         });
