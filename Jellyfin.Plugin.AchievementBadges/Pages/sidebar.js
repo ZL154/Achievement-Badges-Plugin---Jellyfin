@@ -118,12 +118,29 @@
             var pub = results[0], prefs = results[1];
             if (pub && pub.ForceHideEquippedShowcase) { _showcaseEnabled = false; installShowcaseWatchdog(); return false; }
             if (prefs && prefs.ShowEquippedShowcase === false) { _showcaseEnabled = false; installShowcaseWatchdog(); return false; }
-            _showcaseEnabled = true; return true;
+            _showcaseEnabled = true;
+            // Showcase is back on — drop the force-hide CSS sheet if any.
+            restoreShowcaseCss();
+            return true;
         });
     }
     function removeShowcaseDom(){
         var sc = document.getElementById(SHOWCASE_ID); if (sc && sc.parentNode) sc.parentNode.removeChild(sc);
         var hdr = document.getElementById(HEADER_ID); if (hdr && hdr.parentNode) hdr.parentNode.removeChild(hdr);
+        // CSS-based double-safety: even if some other script re-creates the
+        // elements between removeShowcaseDom() calls, they're hidden
+        // visually. `!important` beats any inline display value. Only
+        // added once; removed when showcase is re-enabled.
+        if (!document.getElementById('ab-force-hide-css')) {
+            var st = document.createElement('style');
+            st.id = 'ab-force-hide-css';
+            st.textContent = '#' + SHOWCASE_ID + ', #' + HEADER_ID + ' { display: none !important; visibility: hidden !important; }';
+            (document.head || document.documentElement).appendChild(st);
+        }
+    }
+    function restoreShowcaseCss(){
+        var s = document.getElementById('ab-force-hide-css');
+        if (s && s.parentNode) s.parentNode.removeChild(s);
     }
 
     // When showcase is disabled we install a permanent watchdog that keeps
@@ -433,12 +450,19 @@
         });
     }
 
+    // Track the admin's FriendsEnabled verdict separately from the page-
+    // context auto-hide (dashboard/playback). Button is visible only when
+    // BOTH gates say "show".
+    var _friendsAdminEnabled = true;
     // Periodic reconcile: admin toggles / user corner changes propagate
     // without a hard refresh.
     setInterval(function(){
         resolveFriendsConfig().then(function(cfg){
+            _friendsAdminEnabled = !!cfg.enabled;
             var btn = document.getElementById('abFriendsBtn');
             if (!cfg.enabled) {
+                // Admin disabled feature — hide but don't destroy (keeps
+                // toggle-on snappy without re-mounting the whole drawer).
                 if (btn) btn.style.display = 'none';
                 return;
             }
@@ -448,16 +472,41 @@
                 _actuallyMount();
                 applyCorner(cfg.corner);
             } else {
-                if (btn && btn.style.display === 'none') btn.style.display = '';
+                // Re-run the context-aware visibility check — don't
+                // unconditionally clear display here (that was overriding
+                // the dashboard/playback auto-hide).
+                if (typeof window.__abSyncFriendsBtnVisibility === 'function') {
+                    window.__abSyncFriendsBtnVisibility();
+                }
                 if (_friendsSimpleMode !== cfg.simple) {
                     _friendsSimpleMode = cfg.simple;
-                    // Re-render drawer contents so tabs reflect simple mode.
+                    applySimpleModeUi();
                     try { loadFriends(); } catch(e) {}
                 }
                 if (cfg.corner !== _friendsCornerApplied) applyCorner(cfg.corner);
             }
         });
     }, 15000);
+
+    // Toggle the Requests + Find tab buttons in simple mode. Rendered
+    // always but hidden via display:none so the switch is instant
+    // without rebuilding the drawer.
+    function applySimpleModeUi(){
+        var drawer = document.getElementById('abFriendsDrawer');
+        if (!drawer) return;
+        drawer.querySelectorAll('[data-ab-hide-in-simple]').forEach(function(el){
+            el.style.display = _friendsSimpleMode ? 'none' : '';
+        });
+        // If the active tab was Requests/Find and we just switched to
+        // simple mode, drop back to the Friends tab.
+        if (_friendsSimpleMode) {
+            var activeTab = drawer.querySelector('.ab-fd-tab.active');
+            if (activeTab && activeTab.getAttribute('data-ab-fdtab') !== 'friends') {
+                var friendsTab = drawer.querySelector('[data-ab-fdtab="friends"]');
+                if (friendsTab) friendsTab.click();
+            }
+        }
+    }
 
     function _actuallyMount(){
 
@@ -535,10 +584,11 @@
             '</div>' +
             '<div class="ab-fd-tabs">' +
                 '<button type="button" class="ab-fd-tab active" data-ab-fdtab="friends">' + tr('friends.tab_friends', 'Friends') + '</button>' +
-                // Requests + Find tabs hidden in admin-enabled simple mode
-                // (the Friends tab becomes a full server user list).
-                (_friendsSimpleMode ? '' : '<button type="button" class="ab-fd-tab" data-ab-fdtab="requests">' + tr('friends.tab_requests', 'Requests') + '<span id="abFriendsIncBadge" style="display:none;"></span></button>') +
-                (_friendsSimpleMode ? '' : '<button type="button" class="ab-fd-tab" data-ab-fdtab="find">' + tr('friends.tab_find', 'Find') + '</button>') +
+                // Always render the Requests + Find tabs but mark them so
+                // simple mode can toggle their visibility without having
+                // to rebuild the drawer.
+                '<button type="button" class="ab-fd-tab" data-ab-fdtab="requests" data-ab-hide-in-simple' + (_friendsSimpleMode ? ' style="display:none;"' : '') + '>' + tr('friends.tab_requests', 'Requests') + '<span id="abFriendsIncBadge" style="display:none;"></span></button>' +
+                '<button type="button" class="ab-fd-tab" data-ab-fdtab="find" data-ab-hide-in-simple' + (_friendsSimpleMode ? ' style="display:none;"' : '') + '>' + tr('friends.tab_find', 'Find') + '</button>' +
             '</div>' +
             '<div class="ab-fd-body">' +
                 '<div id="abFriendsPaneFriends"></div>' +
@@ -605,10 +655,15 @@
         function shouldHideFriendsBtn(){
             try {
                 var hash = (window.location.hash || '').toLowerCase();
-                // Admin / config panels live under #!/dashboard, #!/plugins,
-                // #!/users, #!/settings, and #!/mypreferences on Jellyfin.
-                if (hash.indexOf('/dashboard') >= 0) return true;
-                if (hash.indexOf('/plugins') >= 0) return true;
+                var pathname = (window.location.pathname || '').toLowerCase();
+                var combined = pathname + ' ' + hash;
+                // Admin / config panels — Jellyfin uses a mix of hash + pathname
+                // routes for these. Match any of them.
+                if (combined.indexOf('/dashboard') >= 0) return true;
+                if (combined.indexOf('/plugins') >= 0) return true;
+                if (combined.indexOf('/configurationpage') >= 0) return true;
+                if (combined.indexOf('/settings') >= 0) return true;
+                if (combined.indexOf('/mypreferences') >= 0) return true;
                 // Playback: look for a visible <video> OR the Jellyfin
                 // nowplayingbar / videoOsd elements.
                 var vids = document.getElementsByTagName('video');
@@ -632,7 +687,9 @@
         function syncFriendsBtnVisibility(){
             var btnEl = document.getElementById('abFriendsBtn');
             if (!btnEl) return;
-            var hide = shouldHideFriendsBtn();
+            // Show ONLY when admin has friends enabled AND we're not on a
+            // dashboard/admin page AND not in media playback.
+            var hide = !_friendsAdminEnabled || shouldHideFriendsBtn();
             btnEl.style.display = hide ? 'none' : 'flex';
             // Also close the drawer if it happens to be open when we enter
             // a hide-state (e.g. user clicked Play while drawer was open).
@@ -640,6 +697,9 @@
                 try { close(); } catch(e) {}
             }
         }
+        // Expose for the admin-reconcile loop above so it can re-sync
+        // visibility after a FriendsEnabled flip without duplicating logic.
+        window.__abSyncFriendsBtnVisibility = syncFriendsBtnVisibility;
         // Run on hash change + every 500ms for playback state changes.
         try { window.addEventListener('hashchange', syncFriendsBtnVisibility); } catch(e) {}
         setInterval(syncFriendsBtnVisibility, 500);

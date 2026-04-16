@@ -107,6 +107,15 @@ public class AchievementBadgesController : ControllerBase
             }
         }
 
+        // Mint a short-lived cache policy so browsers re-fetch on every
+        // plugin upgrade — the old sidebar.js / enhance.js / standalone.js
+        // used to stick around for hours after a version bump, which was
+        // the root cause of users reporting "fix X STILL doesn't work"
+        // after an update. `no-cache` tells the browser to revalidate
+        // (etag match); we don't set etags so the server always sends
+        // 200 with fresh content.
+        Response.Headers["Cache-Control"] = "no-cache, must-revalidate";
+
         // Try JS first
         var content = ResourceReader.ReadEmbeddedText(
             "Jellyfin.Plugin.AchievementBadges.Pages." + name + ".js");

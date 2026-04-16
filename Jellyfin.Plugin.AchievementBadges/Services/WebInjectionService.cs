@@ -30,11 +30,17 @@ public class WebInjectionService : IHostedService
     // standalone.js is the achievements page shell, enhance.js is the
     // toast + polling loop. Wrapped in versioned start/end markers so we
     // can safely strip and replace on subsequent plugin upgrades.
-    private const string ScriptBlock =
+    //
+    // The `?v=<plugin-version>` suffix is a cache-buster — after a plugin
+    // upgrade the URL changes so browsers can't serve stale cached JS
+    // (users were seeing "fix X still doesn't work" because their browser
+    // kept returning the pre-upgrade sidebar.js from disk cache).
+    private static readonly string VerTag = "?v=" + (typeof(WebInjectionService).Assembly.GetName().Version?.ToString() ?? "0");
+    private static readonly string ScriptBlock =
         MarkerStart +
-        "<script src=\"/Plugins/AchievementBadges/client-script/sidebar\"></script>" +
-        "<script src=\"/Plugins/AchievementBadges/client-script/standalone\" defer></script>" +
-        "<script src=\"/Plugins/AchievementBadges/client-script/enhance\" defer></script>" +
+        "<script src=\"/Plugins/AchievementBadges/client-script/sidebar" + VerTag + "\"></script>" +
+        "<script src=\"/Plugins/AchievementBadges/client-script/standalone" + VerTag + "\" defer></script>" +
+        "<script src=\"/Plugins/AchievementBadges/client-script/enhance" + VerTag + "\" defer></script>" +
         MarkerEnd;
 
     // Embedded plugin-version stamp. When it changes across upgrades we
