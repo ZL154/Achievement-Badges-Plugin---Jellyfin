@@ -786,12 +786,19 @@
                 '.ab-chat-msg.me{padding-bottom:0.4em;}' +
                 '.ab-chat-msg.me .ab-chat-text{margin:0;}' +
                 '.ab-chat-msg.them .ab-chat-text{margin:0;}' +
-                // Single 3-dot button on hover; opens a small dropdown with Edit / Delete
-                '.ab-chat-msg-more{position:absolute;top:4px;right:-26px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;transition:background 0.12s,color 0.12s;}' +
-                '.ab-chat-msg.me:hover .ab-chat-msg-more{display:flex;}' +
-                '.ab-chat-msg-more:hover{background:rgba(255,255,255,0.2);color:#fff;}' +
+                // Bigger bubbles so long messages don't wrap after 3 words
+                '.ab-chat-msg{max-width:88%;}' +
+                // Click-anywhere-on-own-bubble WhatsApp style. The whole bubble
+                // is the click target; a faint caret in the corner hints the
+                // interaction on desktop without demanding attention.
+                '.ab-chat-msg.me{cursor:pointer;}' +
+                '.ab-chat-msg-more{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,0.18);color:rgba(255,255,255,0.6);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;opacity:0;transition:opacity 0.12s,background 0.12s,color 0.12s;pointer-events:none;}' +
+                '.ab-chat-msg.me:hover .ab-chat-msg-more{opacity:0.7;}' +
+                '.ab-chat-msg-more:hover{background:rgba(0,0,0,0.35);color:#fff;}' +
                 '.ab-chat-msg-more .material-icons{font-size:0.95em;line-height:1;}' +
-                '.ab-chat-msg-menu{position:absolute;top:28px;right:-2px;background:#20263a;border:1px solid rgba(255,255,255,0.12);border-radius:8px;box-shadow:0 8px 22px rgba(0,0,0,0.5);min-width:120px;z-index:20;display:none;flex-direction:column;overflow:hidden;}' +
+                // Menu opens INSIDE the pane to the LEFT of the bubble edge so
+                // it can\'t clip out of the chat viewport on narrow screens.
+                '.ab-chat-msg-menu{position:absolute;top:28px;right:6px;background:#20263a;border:1px solid rgba(255,255,255,0.12);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,0.55);min-width:140px;z-index:30;display:none;flex-direction:column;overflow:hidden;}' +
                 '.ab-chat-msg-menu.open{display:flex;animation:abMenuIn 0.12s ease-out;}' +
                 '.ab-chat-msg-menu-item{padding:0.5em 0.8em;cursor:pointer;font-size:0.82em;color:rgba(255,255,255,0.85);display:flex;align-items:center;gap:0.55em;border:none;background:none;text-align:left;font-family:inherit;}' +
                 '.ab-chat-msg-menu-item:hover{background:rgba(255,255,255,0.07);}' +
@@ -813,11 +820,12 @@
                 '#abChatAttachPreview button:hover{background:rgba(239,68,68,0.32);color:#fff;}' +
                 '#abChatAttachPreview button .material-icons{font-size:0.8em;}' +
 
-                // Messages-tab header (compact new-group pill, not a big gradient)
-                '.ab-msg-tab-header{padding:0.55em 0.9em;display:flex;justify-content:flex-end;}' +
-                '.ab-msg-newgroup{display:inline-flex;align-items:center;gap:0.35em;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.1);padding:0.3em 0.75em 0.3em 0.55em;border-radius:14px;cursor:pointer;font-size:0.75em;font-weight:500;transition:background 0.12s,color 0.12s,border-color 0.12s;font-family:inherit;}' +
-                '.ab-msg-newgroup:hover{background:rgba(139,92,246,0.15);color:#fff;border-color:rgba(139,92,246,0.5);}' +
-                '.ab-msg-newgroup .material-icons{font-size:1em;opacity:0.85;}' +
+                // Messages-tab header: centered, full-width new-group button
+                '.ab-msg-tab-header{padding:0.75em 0.9em 0.6em;display:flex;justify-content:center;}' +
+                '.ab-msg-newgroup{display:inline-flex;align-items:center;justify-content:center;gap:0.45em;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.12);padding:0.55em 1.4em;border-radius:22px;cursor:pointer;font-size:0.82em;font-weight:600;transition:background 0.12s,color 0.12s,border-color 0.12s,transform 0.1s;font-family:inherit;width:80%;max-width:300px;}' +
+                '.ab-msg-newgroup:hover{background:rgba(139,92,246,0.2);color:#fff;border-color:rgba(139,92,246,0.6);transform:translateY(-1px);}' +
+                '.ab-msg-newgroup:active{transform:translateY(0);}' +
+                '.ab-msg-newgroup .material-icons{font-size:1.05em;opacity:0.9;}' +
 
                 // New-group overlay
                 '#abNewGroupOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:10000001;display:none;align-items:center;justify-content:center;padding:1em;opacity:0;transition:opacity 0.15s;}' +
@@ -1354,13 +1362,17 @@
         // near the bottom (within ~60px) when the redraw happened.
         var wasNearBottom = (scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight) < 80;
         scroll.innerHTML = html;
-        scroll.querySelectorAll('[data-ab-msg-more]').forEach(function(btn){
-            btn.addEventListener('click', function(ev){
+        // WhatsApp-style: tap anywhere on YOUR OWN bubble to toggle its menu.
+        scroll.querySelectorAll('.ab-chat-msg.me').forEach(function(bubble){
+            bubble.addEventListener('click', function(ev){
+                // Ignore clicks inside the menu itself or on attachments
+                if (ev.target.closest('.ab-chat-msg-menu')) return;
+                if (ev.target.closest('.ab-chat-attachment')) return; // let lightbox handle
                 ev.stopPropagation();
-                var id = btn.getAttribute('data-ab-msg-more');
-                var menu = scroll.querySelector('[data-ab-msg-menu-for="' + CSS.escape(id) + '"]');
+                var menu = bubble.querySelector('.ab-chat-msg-menu');
+                if (!menu) return;
                 scroll.querySelectorAll('.ab-chat-msg-menu.open').forEach(function(m){ if (m !== menu) m.classList.remove('open'); });
-                if (menu) menu.classList.toggle('open');
+                menu.classList.toggle('open');
             });
         });
         scroll.querySelectorAll('[data-ab-msg-edit]').forEach(function(btn){
@@ -1706,32 +1718,42 @@
             img.src = URL.createObjectURL(file);
             preview.style.display = 'flex';
         }
-        // CRITICAL: do NOT send our default Content-Type (application/json)
-        // with a FormData body — browser needs to auto-set multipart boundary.
+        // Strip Content-Type — let the browser set it with the multipart
+        // boundary. Keep every other auth-related header (Authorization,
+        // X-Emby-Authorization, X-Emby-Token, etc).
         var uploadHeaders = {};
         var ah = authHeaders();
-        if (ah.Authorization) uploadHeaders.Authorization = ah.Authorization;
-        if (ah['X-Emby-Authorization']) uploadHeaders['X-Emby-Authorization'] = ah['X-Emby-Authorization'];
+        Object.keys(ah || {}).forEach(function(k){
+            if (k.toLowerCase() === 'content-type') return;
+            uploadHeaders[k] = ah[k];
+        });
         fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/attachments'), {
             method: 'POST',
             headers: uploadHeaders,
             credentials: 'include',
             body: fd
         })
-        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(r){
+            return r.text().then(function(txt){
+                var res = null;
+                try { res = JSON.parse(txt); } catch (e) {}
+                if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + (res && res.Message ? res.Message : (txt || '').slice(0, 200)));
+                return res;
+            });
+        })
         .then(function(res){
             if (!res || !res.Success) {
                 showChatError((res && res.Message) || tr('friends.upload_failed','Upload failed.'));
                 clearAttachmentPreview();
                 return;
             }
-            // Server returns attachment metadata — keep the id and enable Send.
-            _chatPendingAttachment = { Id: res.Attachment.id || res.Attachment.Id, FileName: res.Attachment.fileName || res.Attachment.FileName };
+            var a = res.Attachment || {};
+            _chatPendingAttachment = { Id: a.id || a.Id, FileName: a.fileName || a.FileName };
             var send = document.getElementById('abChatSend');
             if (send) send.disabled = false;
         })
-        .catch(function(){
-            showChatError(tr('friends.upload_failed','Upload failed.'));
+        .catch(function(err){
+            showChatError((err && err.message) || tr('friends.upload_failed','Upload failed.'));
             clearAttachmentPreview();
         });
     }

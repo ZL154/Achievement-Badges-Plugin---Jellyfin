@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.8.4.0",
+        "changelog": "Three UX fixes. (1) WHATSAPP-STYLE MESSAGE MENU: click anywhere on your own message bubble to open a compact Edit / Delete dropdown. Menu is positioned inside the chat pane so it can't clip out on narrow screens. The 3-dot button still appears on hover as a visual hint but the entire bubble is the click target. (2) BIGGER BUBBLES: max-width raised 78% -> 88% so long messages don't wrap after 3 words on narrow drawers. (3) UPLOAD FIX (second attempt): strip Content-Type from ALL auth headers (previous pass only stripped from the default JSON header), and surface the actual HTTP status + server message on failure so upload errors are debuggable. (4) NEW GROUP BUTTON: centered, wider (80% up to 300px), soft outlined pill with hover lift — replaces the right-aligned chip.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.8.4/Jellyfin.Plugin.AchievementBadges_1.8.4.0.zip",
+        "checksum": "1d25342623005a1fda2e594660f7528c",
+        "timestamp": "2026-04-19T00:00:00Z"
+      },
+      {
         "version": "1.8.3.0",
         "changelog": "Polish pass from 1.8.2 feedback. (1) RENAME GROUP now uses our own styled modal instead of the browser native prompt() dialog, which looked ugly on some themes. (2) IMAGE UPLOAD FIXED — the upload endpoint now reads Request.Form directly (was failing silently because our default authHeaders() set Content-Type: application/json, which broke multipart boundary detection). Frontend now strips Content-Type from the upload request so the browser auto-sets the correct multipart/form-data boundary. (3) READ RECEIPTS are much more legible — bigger, bolder, with a high-contrast green (#38e07b) + subtle glow for read, and nearly-full opacity white for delivered. No more blending into the bubble background. (4) NEW GROUP BUTTON restyled from a big purple gradient pill to a small subtle outlined chip in the tab header, right-aligned. (5) EDIT + DELETE actions: replaced the pill-tray with a single small 3-dot button (right of own bubbles on hover) that opens a proper dropdown menu with Edit / Delete. Matches Telegram / Discord conventions. Clicking outside the menu closes it.",
         "targetAbi": "10.11.0.0",
