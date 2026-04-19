@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Jellyfin-10.11%2B-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
   <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
-  <img src="https://img.shields.io/badge/Version-1.7.10-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/Version-1.8.4-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/License-MIT-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
 </p>
 
@@ -23,7 +23,7 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd, built natively into your media server.
 
-> **Status:** Active development — v1.7.7 adds the **Friends drawer** (global floating button, bi-directional requests, live online/offline + now-watching from `ISessionManager`), **admin quest customization**, **public equipped-badge previews** on leaderboards + compare, **rarity percentage chip** on every badge card (% of your server's users who've unlocked it), hand-translated **French by [@frenchyx24](https://github.com/frenchyx24)** (all 171 badges), full **security audit** pass (compare-endpoint IDOR, stored XSS, privacy tightening, webhook SSRF, rate limits), and a **3-layer data-loss recovery chain** (primary → .bak → .recovery) so progress survives even catastrophic JSON corruption.
+> **Status:** Active development — **v1.8.x** turns the Friends drawer into a full **messaging suite** (Xbox-style 1:1 chat + group chats, image attachments, read receipts, edit/delete, block, browser notifications, message sound, per-peer mute). Prior highlights from v1.7.x: Friends drawer, admin quest customization, public equipped-badge previews, rarity percentage chip, hand-translated **French by [@frenchyx24](https://github.com/frenchyx24)** (all 171 badges), full **security audit** pass, and a **3-layer data-loss recovery chain**.
 
 ---
 
@@ -31,6 +31,7 @@ A full progression, gamification and achievement system for Jellyfin that reward
 
 - [Overview](#-overview)
 - [Core features](#-core-features) — badges, ranks, score, prestige, quests, stats, UI, preferences, admin
+- [Messaging (new in v1.8)](#-messaging-new-in-v18) — 1:1 + groups, attachments, read receipts, edit/delete, block
 - [Installation](#️-installation)
 - [Requirements](#-requirements)
 - [Troubleshooting](#-troubleshooting) — permissions, NixOS, reverse proxy
@@ -101,6 +102,32 @@ Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin
 - **Mutual** indicator on friend rows; **Auto-accept** kicks in if the target has already sent a request to you
 - **Privacy toggles** in user settings: *Appear offline to friends* (always shows you as offline) and *Hide what I'm watching* (still online, but the series/episode is hidden). Enforced server-side in `FriendsService.BuildFriendRow` — can't be bypassed by client tampering
 - **Compact request rows** — Accept / Decline / Cancel buttons are icon-only with tooltips, so the Requests tab doesn't visually bloat
+
+### 💬 Messaging (new in v1.8)
+
+Xbox-Guide-style chat built into the Friends drawer. No external service, no WebSockets, everything stored on your own server.
+
+- **Messages tab** next to Friends / Requests / Find, with threads newest-first, avatars, last-message preview + timestamp, and a per-conversation unread count
+- **1:1 DMs** and **group chats** (2–20 participants, named, rename + leave + members list)
+- **Image attachments** — PNG / JPEG / GIF / WebP up to 8 MB, server-side magic-byte verification so nobody can smuggle a `.exe` renamed to `.png`. Click-to-zoom lightbox
+- **Read receipts** — single green ✓ for delivered, double green ✓✓ for read. Per-participant `readBy` map so group receipts work too
+- **Edit and delete** your own messages via WhatsApp-style dropdown — click anywhere on your own bubble to open the menu, 24-hour edit window
+- **Clear conversation** button in the chat gear menu (wipes both sides, confirm dialog)
+- **Block user** — bi-directional; existing messages kept, new ones rejected. Stored in `UserAchievementProfile.Preferences.BlockedUsers`
+- **Per-peer mute** (localStorage-only, no server round-trip) + **per-user prefs** in the standalone settings panel:
+  - Master message-notifications toggle
+  - Message sound (subtle Web Audio chime, no audio file)
+  - **Mute during playback** — suppresses notifications while Jellyfin's video player is active
+- **Notifications**:
+  - In-app toast (top-center, 5s auto-dismiss, click to open the thread)
+  - Browser Notification API when the tab isn't visible and permission is granted
+  - Sound chime on inbound message
+- **Unread indicators** — pulsing red dot on the chat button in the friends list + count pill on the Messages tab + combined badge on the floating friends button
+- **Anti-flicker rendering** — content-hashed; the chat pane only repaints when something actually changed, preserving scroll position
+- **Auto-polling** — 6 s inside an open chat, 8 s on the Messages tab, 20 s drawer-wide when closed; all small, all `[Authorize]`-gated
+- **Rate limits** — 20 messages per minute per sender, max 1000 chars per message, 2000-message FIFO cap per conversation
+- **Friendship gate** — only mutual friends can DM; group creators can only add their own friends. Admin's `FriendsSimpleMode` treats the whole server as one friend list for messaging too
+- **Storage** — single `messages.json` + `attachments.json` + `attachments/<id>.<ext>` on disk under `plugins/configurations/achievementbadges/`. Atomic writes via temp file + `File.Move` so a crash mid-send can't corrupt the store. Messages survive server restarts
 
 ### 🏅 Rarity percentage chip (new in v1.7.6)
 - Every badge card on the achievements page shows a coloured chip with the **% of users on your server** who have unlocked that badge

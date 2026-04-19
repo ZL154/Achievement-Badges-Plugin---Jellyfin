@@ -820,12 +820,14 @@
                 '#abChatAttachPreview button:hover{background:rgba(239,68,68,0.32);color:#fff;}' +
                 '#abChatAttachPreview button .material-icons{font-size:0.8em;}' +
 
-                // Messages-tab header: centered, full-width new-group button
-                '.ab-msg-tab-header{padding:0.75em 0.9em 0.6em;display:flex;justify-content:center;}' +
-                '.ab-msg-newgroup{display:inline-flex;align-items:center;justify-content:center;gap:0.45em;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.12);padding:0.55em 1.4em;border-radius:22px;cursor:pointer;font-size:0.82em;font-weight:600;transition:background 0.12s,color 0.12s,border-color 0.12s,transform 0.1s;font-family:inherit;width:80%;max-width:300px;}' +
-                '.ab-msg-newgroup:hover{background:rgba(139,92,246,0.2);color:#fff;border-color:rgba(139,92,246,0.6);transform:translateY(-1px);}' +
-                '.ab-msg-newgroup:active{transform:translateY(0);}' +
-                '.ab-msg-newgroup .material-icons{font-size:1.05em;opacity:0.9;}' +
+                // Messages-tab header: sits right below the tabs row, uses the
+                // SAME visual language as the Friends / Messages tab buttons
+                // (matching border, radius, gradient hover) so the eye reads
+                // it as a third action in that row, not an outlier chip.
+                '.ab-msg-tab-header{padding:0 0.8em 0.6em;}' +
+                '.ab-msg-newgroup{display:flex;align-items:center;justify-content:center;gap:0.4em;width:100%;padding:0.6em 0.6em;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#c7d2fe;font-size:0.82em;font-weight:700;cursor:pointer;transition:all 0.15s;font-family:inherit;}' +
+                '.ab-msg-newgroup:hover{background:linear-gradient(135deg,rgba(102,126,234,0.22),rgba(118,75,162,0.22));border-color:rgba(102,126,234,0.55);color:#fff;box-shadow:0 4px 12px rgba(102,126,234,0.2);}' +
+                '.ab-msg-newgroup .material-icons{font-size:1.05em;}' +
 
                 // New-group overlay
                 '#abNewGroupOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:10000001;display:none;align-items:center;justify-content:center;padding:1em;opacity:0;transition:opacity 0.15s;}' +

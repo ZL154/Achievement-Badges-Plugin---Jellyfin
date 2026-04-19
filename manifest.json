@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.8.5.0",
+        "changelog": "Small UX pass: New Group button now uses the same tab-button visual language (transparent with purple-blue hover gradient, matching border/radius) so it reads as part of the Friends/Messages tab row, sitting full-width right below the tabs instead of looking like an outlier chip. README updated with a proper Messaging section covering 1:1 + groups, attachments, read receipts, edit/delete, block, notifications, prefs, and storage details.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.8.5/Jellyfin.Plugin.AchievementBadges_1.8.5.0.zip",
+        "checksum": "d8b53d7ceb5f7dce07e32159f2ae49ba",
+        "timestamp": "2026-04-19T00:00:00Z"
+      },
+      {
         "version": "1.8.4.0",
         "changelog": "Three UX fixes. (1) WHATSAPP-STYLE MESSAGE MENU: click anywhere on your own message bubble to open a compact Edit / Delete dropdown. Menu is positioned inside the chat pane so it can't clip out on narrow screens. The 3-dot button still appears on hover as a visual hint but the entire bubble is the click target. (2) BIGGER BUBBLES: max-width raised 78% -> 88% so long messages don't wrap after 3 words on narrow drawers. (3) UPLOAD FIX (second attempt): strip Content-Type from ALL auth headers (previous pass only stripped from the default JSON header), and surface the actual HTTP status + server message on failure so upload errors are debuggable. (4) NEW GROUP BUTTON: centered, wider (80% up to 300px), soft outlined pill with hover lift — replaces the right-aligned chip.",
         "targetAbi": "10.11.0.0",
