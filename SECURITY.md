@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please email **[REDACTED]** with the subject `[AchievementBadges] security`
+Please add **zack1544** on discord with the subject `[AchievementBadges] security`
 before opening a public issue. We will acknowledge receipt within 72 hours and
 aim to ship a patched release within 14 days for confirmed vulnerabilities.
 
