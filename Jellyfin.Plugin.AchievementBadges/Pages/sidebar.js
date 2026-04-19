@@ -415,11 +415,18 @@
     // Chat / messaging state
     var _friendUnread = {};         // map of otherUserId → unreadCount
     var _chatOpen = false;          // is the chat pane currently visible?
-    var _chatPeerId = null;         // which friend the open chat is with
+    var _chatPeerId = null;         // for DMs: the other user's id (also keeps per-peer mute working)
+    var _chatConvId = null;         // conversation id (DM or group)
+    var _chatConvType = 'dm';       // 'dm' | 'group'
+    var _chatParticipants = [];     // [{userId,userName}] for groups
     var _chatPeerName = null;       // display name for header
     var _chatPeerOnline = false;    // online state for header dot
     var _chatPollTimer = null;      // setInterval id for in-chat polling
     var _chatUnreadPollTimer = null;// setInterval id for drawer unread polling
+    var _chatMsgsPollTimer = null;  // messages-tab poll while that tab is active
+    var _chatLastRenderHash = '';   // to suppress flicker if nothing changed
+    var _chatPendingAttachment = null; // { Id, FileName, MimeType, ... } before send
+    var _activeFdTab = 'friends';   // track which fd-tab is visible
     // Before mounting, check the admin master switch + user's corner pref.
     // If the admin has turned the friends feature off entirely, we simply
     // don't render the floating button. Periodic re-resolve catches admin
@@ -767,7 +774,70 @@
                 '.ab-confirm-btn{border:none;cursor:pointer;padding:0.55em 1em;border-radius:8px;font-size:0.85em;font-weight:600;font-family:inherit;transition:filter 0.1s;}' +
                 '.ab-confirm-btn.ghost{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);}' +
                 '.ab-confirm-btn.danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;}' +
-                '.ab-confirm-btn:hover{filter:brightness(1.1);}';
+                '.ab-confirm-btn:hover{filter:brightness(1.1);}' +
+
+                // ── v1.8.2 additions ──────────────────────────────────
+                // Author name on group-chat "them" bubbles
+                '.ab-chat-msg.them .ab-chat-author{font-size:0.7em;color:#a5b4ff;font-weight:700;margin-bottom:0.2em;}' +
+                // Receipts (single = delivered/gray, double = read/blue)
+                '.ab-receipt{margin-left:0.3em;font-weight:800;letter-spacing:-0.5px;}' +
+                '.ab-receipt.delivered{color:rgba(255,255,255,0.45);}' +
+                '.ab-receipt.read{color:#60a5fa;}' +
+                '.ab-chat-msg.me{padding-bottom:0.4em;}' +
+                '.ab-chat-msg.me .ab-chat-text{margin:0;}' +
+                '.ab-chat-msg.them .ab-chat-text{margin:0;}' +
+                // Reposition the edit/delete actions ABOVE the bubble, centered
+                '.ab-chat-msg-actions{position:absolute;top:-14px;right:6px;left:auto;display:none;gap:4px;background:rgba(15,17,25,0.9);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:2px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:2;}' +
+                '.ab-chat-msg.me:hover .ab-chat-msg-actions{display:flex;}' +
+                '.ab-chat-msg-action{width:22px;height:22px;border-radius:50%;border:none;background:transparent;color:rgba(255,255,255,0.75);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background 0.1s,color 0.1s;}' +
+                '.ab-chat-msg-action:hover{background:rgba(255,255,255,0.15);color:#fff;}' +
+                '.ab-chat-msg-action.danger:hover{background:rgba(239,68,68,0.25);color:#fca5a5;}' +
+                '.ab-chat-msg-action .material-icons{font-size:0.78em;line-height:1;}' +
+                // Attachments in bubbles
+                '.ab-chat-attachment{margin:0 -0.25em;margin-bottom:0.3em;border-radius:12px;overflow:hidden;max-width:260px;cursor:pointer;}' +
+                '.ab-chat-attachment img{display:block;width:100%;height:auto;max-height:300px;object-fit:cover;}' +
+                '.ab-chat-msg.img-only{background:transparent!important;box-shadow:none!important;padding:0!important;}' +
+                '.ab-chat-msg.img-only .ab-chat-time{padding-top:0.25em;padding-left:0.25em;}' +
+                // Attachment button + preview row above input
+                '.ab-chat-attach-btn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);cursor:pointer;flex-shrink:0;transition:background 0.1s,color 0.1s;}' +
+                '.ab-chat-attach-btn:hover{background:rgba(255,255,255,0.14);color:#fff;}' +
+                '.ab-chat-attach-btn .material-icons{font-size:1.15em;}' +
+                '#abChatAttachPreview{display:flex;align-items:center;gap:0.5em;padding:0 1em 0.5em;}' +
+                '#abChatAttachPreview img{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.12);}' +
+                '#abChatAttachPreview button{width:24px;height:24px;border-radius:50%;border:none;background:rgba(239,68,68,0.18);color:#fca5a5;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}' +
+                '#abChatAttachPreview button:hover{background:rgba(239,68,68,0.32);color:#fff;}' +
+                '#abChatAttachPreview button .material-icons{font-size:0.8em;}' +
+
+                // Messages-tab header (new-group button)
+                '.ab-msg-tab-header{padding:0.5em 0.9em;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:0.3em;}' +
+                '.ab-msg-newgroup{display:inline-flex;align-items:center;gap:0.4em;background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:#fff;border:none;padding:0.5em 1em;border-radius:20px;cursor:pointer;font-size:0.82em;font-weight:600;transition:filter 0.1s,transform 0.1s;font-family:inherit;}' +
+                '.ab-msg-newgroup:hover{filter:brightness(1.1);transform:translateY(-1px);}' +
+                '.ab-msg-newgroup .material-icons{font-size:1em;}' +
+
+                // New-group overlay
+                '#abNewGroupOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:10000001;display:none;align-items:center;justify-content:center;padding:1em;opacity:0;transition:opacity 0.15s;}' +
+                '#abNewGroupOverlay.open{display:flex;opacity:1;}' +
+                '.ab-newgroup-box{background:#1a1f2e;border-radius:14px;padding:1.4em;max-width:420px;width:100%;max-height:85vh;display:flex;flex-direction:column;gap:0.8em;border:1px solid rgba(255,255,255,0.1);box-shadow:0 20px 50px rgba(0,0,0,0.5);}' +
+                '.ab-newgroup-box h3{margin:0;color:#fff;font-size:1.1em;}' +
+                '#abNewGroupName{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.6em 0.9em;border-radius:10px;font-size:0.9em;font-family:inherit;outline:none;}' +
+                '#abNewGroupName:focus{border-color:rgba(102,126,234,0.6);}' +
+                '.ab-newgroup-hint{color:rgba(255,255,255,0.55);font-size:0.8em;}' +
+                '.ab-newgroup-list{flex:1;overflow-y:auto;max-height:260px;display:flex;flex-direction:column;gap:0.2em;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.4em;}' +
+                '.ab-newgroup-row{display:flex;align-items:center;gap:0.7em;padding:0.5em 0.6em;border-radius:8px;cursor:pointer;transition:background 0.1s;}' +
+                '.ab-newgroup-row:hover{background:rgba(255,255,255,0.04);}' +
+                '.ab-newgroup-row input{accent-color:#667eea;width:16px;height:16px;}' +
+                '.ab-newgroup-row .ab-fd-avatar{width:32px;height:32px;font-size:0.72em;}' +
+                '.ab-newgroup-row span{flex:1;color:#fff;font-size:0.88em;}' +
+                '.ab-confirm-btn.primary{background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:#fff;}' +
+
+                // Image lightbox
+                '#abImgLightbox{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000002;display:flex;align-items:center;justify-content:center;padding:2em;cursor:zoom-out;animation:abLightboxIn 0.15s ease-out;}' +
+                '@keyframes abLightboxIn{from{opacity:0;}to{opacity:1;}}' +
+                '#abImgLightbox img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,0.6);}' +
+
+                // Toast — reposition to TOP-CENTER (was bottom-right) per feedback
+                '#abMsgToast{position:fixed;top:24px;left:50%;right:auto;bottom:auto;transform:translateX(-50%) translateY(-100px);max-width:360px;min-width:260px;}' +
+                '#abMsgToast.show{transform:translateX(-50%) translateY(0);}';
             (document.head || document.documentElement).appendChild(fst);
         }
 
@@ -826,13 +896,23 @@
                     '<div class="ab-chat-menu" id="abChatMenu">' +
                         '<button type="button" class="ab-chat-menu-item" id="abChatClear"><span class="material-icons">delete_sweep</span><span>'+tr('friends.clear_chat','Clear conversation')+'</span></button>' +
                         '<button type="button" class="ab-chat-menu-item" id="abChatMute"><span class="material-icons">notifications_off</span><span id="abChatMuteLabel">'+tr('friends.mute','Mute notifications')+'</span></button>' +
+                        '<button type="button" class="ab-chat-menu-item" id="abChatRename" style="display:none;"><span class="material-icons">edit</span><span>'+tr('friends.rename_group','Rename group')+'</span></button>' +
+                        '<button type="button" class="ab-chat-menu-item" id="abChatLeave" style="display:none;"><span class="material-icons">logout</span><span>'+tr('friends.leave_group','Leave group')+'</span></button>' +
                         '<div class="ab-chat-menu-sep"></div>' +
                         '<button type="button" class="ab-chat-menu-item danger" id="abChatBlock"><span class="material-icons">block</span><span>'+tr('friends.block','Block user')+'</span></button>' +
                     '</div>' +
                     '<div class="ab-chat-scroll" id="abChatScroll"></div>' +
                     '<div class="ab-chat-error" id="abChatError" style="display:none;"></div>' +
                     '<div class="ab-chat-counter" id="abChatCounter"></div>' +
+                    '<div id="abChatAttachPreview" style="display:none;">' +
+                        '<img id="abChatAttachPreviewImg" alt="attachment preview" />' +
+                        '<button type="button" id="abChatAttachClear" title="'+tr('friends.remove_attachment','Remove')+'"><span class="material-icons">close</span></button>' +
+                    '</div>' +
                     '<div class="ab-chat-input-row">' +
+                        '<label class="ab-chat-attach-btn" title="'+tr('friends.attach_image','Attach image')+'">' +
+                            '<span class="material-icons">add_photo_alternate</span>' +
+                            '<input type="file" id="abChatAttachInput" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" />' +
+                        '</label>' +
                         '<textarea class="ab-chat-input" id="abChatInput" rows="1" maxlength="1000" placeholder="'+tr('friends.message_placeholder','Message...')+'"></textarea>' +
                         '<button type="button" class="ab-chat-send" id="abChatSend" disabled title="'+tr('friends.send','Send')+'"><span class="material-icons">send</span></button>' +
                     '</div>' +
@@ -878,6 +958,7 @@
         drawer.querySelectorAll('[data-ab-fdtab]').forEach(function(b){
             b.addEventListener('click', function(){
                 var which = b.getAttribute('data-ab-fdtab');
+                _activeFdTab = which;
                 document.getElementById('abFriendsPaneFriends').style.display = which==='friends'?'':'none';
                 document.getElementById('abFriendsPaneMessages').style.display = which==='messages'?'':'none';
                 document.getElementById('abFriendsPaneRequests').style.display = which==='requests'?'':'none';
@@ -889,6 +970,10 @@
                 }
                 if (which === 'messages') {
                     loadMessagesPane();
+                    if (_chatMsgsPollTimer) clearInterval(_chatMsgsPollTimer);
+                    _chatMsgsPollTimer = setInterval(loadMessagesPane, 8000);
+                } else {
+                    if (_chatMsgsPollTimer) { clearInterval(_chatMsgsPollTimer); _chatMsgsPollTimer = null; }
                 }
             });
         });
@@ -1178,20 +1263,40 @@
         var meId = (getUserId() || '').toLowerCase().replace(/-/g, '');
         var scroll = document.getElementById('abChatScroll');
         if (!scroll) return;
+
+        // Skip redraw when content is unchanged — avoids the flicker the
+        // user complained about. Hash includes id/text/edited/readers so
+        // any real change still triggers a repaint.
+        var hash = msgs && msgs.length
+            ? msgs.map(function(m){ return (m.id||'') + '|' + (m.editedAt||'') + '|' + (m.readAt?'1':'0') + '|' + Object.keys(m.readBy || {}).length + '|' + (m.text||'').length; }).join('~')
+            : 'empty';
+        if (hash === _chatLastRenderHash && !scroll.querySelector('.ab-chat-edit-input')) return;
+        _chatLastRenderHash = hash;
+
         if (!msgs || !msgs.length) {
             scroll.innerHTML =
                 '<div class="ab-chat-empty"><span class="material-icons">forum</span>' +
                 '<div>' + tr('friends.chat_empty', 'No messages yet. Say hi!') + '</div></div>';
             return;
         }
-        // Figure out the last "read" message sent by me — used to place the
-        // read-receipt indicator. Peer's readAt stamps inbound-to-peer
-        // messages; server sets it when peer opens the thread.
-        var lastMyReadIndex = -1;
+
+        // Work out the last "read by the other side" of each of my sent
+        // messages. For DMs it's readAt; for groups it's "readBy has any
+        // other participant". Only show the double-check on the LAST of my
+        // read messages so the UI isn't noisy.
+        var lastMyReadIdx = -1;
         for (var i = msgs.length - 1; i >= 0; i--) {
             var m = msgs[i];
-            var mFromMe = (m.fromUserId || '').toLowerCase().replace(/-/g, '') === meId;
-            if (mFromMe && m.readAt) { lastMyReadIndex = i; break; }
+            var fromMe = (m.fromUserId || '').toLowerCase().replace(/-/g, '') === meId;
+            if (!fromMe) continue;
+            var hasOtherReader = false;
+            if (m.readBy) {
+                for (var k in m.readBy) {
+                    if (k.toLowerCase().replace(/-/g,'') !== meId) { hasOtherReader = true; break; }
+                }
+            }
+            // Fallback to legacy readAt for pre-v1.8.2 messages
+            if ((hasOtherReader || m.readAt) && lastMyReadIdx === -1) { lastMyReadIdx = i; break; }
         }
 
         var html = '';
@@ -1205,25 +1310,42 @@
             }
             var fromMe = (m.fromUserId || '').toLowerCase().replace(/-/g, '') === meId;
             var editedHtml = m.editedAt ? ' <span class="edited">(' + tr('friends.edited','edited') + ')</span>' : '';
-            var readMark = (fromMe && idx === lastMyReadIndex)
-                ? ' <span class="ab-read-mark material-icons" title="'+tr('friends.read','Read')+'">done_all</span>'
-                : '';
+            // Single check = delivered. Double check = read. Both blue when read.
+            var receiptHtml = '';
+            if (fromMe) {
+                if (idx === lastMyReadIdx) {
+                    receiptHtml = ' <span class="ab-receipt read" title="'+tr('friends.read','Read')+'">\u2713\u2713</span>';
+                } else {
+                    receiptHtml = ' <span class="ab-receipt delivered" title="'+tr('friends.delivered','Delivered')+'">\u2713</span>';
+                }
+            }
             var actionsHtml = fromMe
                 ? '<div class="ab-chat-msg-actions">' +
                     '<button type="button" class="ab-chat-msg-action" data-ab-msg-edit="' + escapeHtml(m.id) + '" data-ab-msg-text="'+escapeHtml(m.text)+'" title="'+tr('friends.edit','Edit')+'"><span class="material-icons">edit</span></button>' +
-                    '<button type="button" class="ab-chat-msg-action danger" data-ab-msg-delete="' + escapeHtml(m.id) + '" title="'+tr('friends.delete','Delete')+'"><span class="material-icons">close</span></button>' +
+                    '<button type="button" class="ab-chat-msg-action danger" data-ab-msg-delete="' + escapeHtml(m.id) + '" title="'+tr('friends.delete','Delete')+'"><span class="material-icons">delete</span></button>' +
                   '</div>'
                 : '';
-            html += '<div class="ab-chat-msg ' + (fromMe ? 'me' : 'them') + '" data-msg-id="'+escapeHtml(m.id)+'">' +
+            // Author label for groups (non-me only)
+            var authorHtml = (!fromMe && _chatConvType === 'group')
+                ? '<div class="ab-chat-author">' + escapeHtml(m.fromUserName || '') + '</div>'
+                : '';
+            var attachmentHtml = '';
+            if (m.attachmentId) {
+                attachmentHtml = '<div class="ab-chat-attachment"><img src="' + escapeHtml(buildUrl('Plugins/AchievementBadges/attachments/' + m.attachmentId)) + '" loading="lazy" alt="attachment" /></div>';
+            }
+            var textHtml = m.text ? escapeHtml(m.text).replace(/\n/g, '<br>') : '';
+            html += '<div class="ab-chat-msg ' + (fromMe ? 'me' : 'them') + (attachmentHtml && !textHtml ? ' img-only' : '') + '" data-msg-id="'+escapeHtml(m.id)+'">' +
                 actionsHtml +
-                escapeHtml(m.text).replace(/\n/g, '<br>') +
-                editedHtml +
-                '<span class="ab-chat-time">' + escapeHtml(formatChatTime(m.sentAt)) + readMark + '</span>' +
+                authorHtml +
+                attachmentHtml +
+                (textHtml ? '<div class="ab-chat-text">' + textHtml + editedHtml + '</div>' : '') +
+                '<span class="ab-chat-time">' + escapeHtml(formatChatTime(m.sentAt)) + receiptHtml + '</span>' +
             '</div>';
         });
+        // Preserve scroll state: only auto-scroll if the user was already
+        // near the bottom (within ~60px) when the redraw happened.
+        var wasNearBottom = (scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight) < 80;
         scroll.innerHTML = html;
-
-        // Wire edit/delete buttons on own messages
         scroll.querySelectorAll('[data-ab-msg-edit]').forEach(function(btn){
             btn.addEventListener('click', function(ev){
                 ev.stopPropagation();
@@ -1233,13 +1355,22 @@
         scroll.querySelectorAll('[data-ab-msg-delete]').forEach(function(btn){
             btn.addEventListener('click', function(ev){
                 ev.stopPropagation();
-                var mid = btn.getAttribute('data-ab-msg-delete');
-                confirmAndDeleteMessage(mid);
+                confirmAndDeleteMessage(btn.getAttribute('data-ab-msg-delete'));
             });
         });
+        scroll.querySelectorAll('.ab-chat-attachment img').forEach(function(img){
+            img.addEventListener('click', function(){ openLightbox(img.getAttribute('src')); });
+        });
+        if (wasNearBottom) scroll.scrollTop = scroll.scrollHeight;
+    }
 
-        // Auto-scroll to bottom on (re)render
-        scroll.scrollTop = scroll.scrollHeight;
+    // Fullscreen image preview
+    function openLightbox(src){
+        var lb = document.createElement('div');
+        lb.id = 'abImgLightbox';
+        lb.innerHTML = '<img src="' + escapeHtml(src) + '" />';
+        lb.addEventListener('click', function(){ if (lb.parentNode) lb.parentNode.removeChild(lb); });
+        document.body.appendChild(lb);
     }
 
     // ── Message edit / delete ─────────────────────────────────────────
@@ -1300,39 +1431,99 @@
     }
 
     function loadChatMessages(){
-        if (!_chatOpen || !_chatPeerId) return Promise.resolve();
-        return chatApi('/messages/' + _chatPeerId + '?limit=100').then(function(res){
-            if (!_chatOpen || !_chatPeerId) return; // closed while fetching
-            renderChatMessages((res && res.Messages) || []);
-            // Clear this friend's unread in the local map so the red dot
-            // disappears the next time the friend list re-renders.
-            var k = (_chatPeerId || '').toLowerCase().replace(/-/g, '');
-            if (_friendUnread[k]) { _friendUnread[k] = 0; }
-        });
+        if (!_chatOpen || !_chatConvId) return Promise.resolve();
+        var uid = getUserId();
+        return fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+_chatConvId+'/messages?limit=200'),
+            { headers: authHeaders(), credentials: 'include' })
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(res){
+                if (!_chatOpen || !_chatConvId) return;
+                renderChatMessages((res && res.Messages) || []);
+                // Clear per-peer unread + refresh badge
+                if (_chatPeerId) {
+                    var k = _chatPeerId.toLowerCase().replace(/-/g, '');
+                    if (_friendUnread[k]) _friendUnread[k] = 0;
+                }
+            })
+            .catch(function(){});
     }
 
+    // Resolve a DM conversation for a friend (server auto-creates if missing)
+    // then open the pane keyed by that conversationId.
     function openChatPane(peerId, peerName, peerOnline){
         _chatOpen = true;
         _chatPeerId = peerId;
+        _chatConvType = 'dm';
+        _chatParticipants = [];
         _chatPeerName = peerName;
         _chatPeerOnline = !!peerOnline;
+        _chatLastRenderHash = '';
+        _chatPendingAttachment = null;
+        var uid = getUserId();
+        // Hit legacy endpoint — server returns ConversationId
+        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/messages/'+peerId),
+            { headers: authHeaders(), credentials: 'include' })
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(res){
+                _chatConvId = (res && res.ConversationId) || null;
+                openChatPaneInner();
+                if (res && res.Messages) renderChatMessages(res.Messages);
+            });
+    }
+
+    // Open for an existing conversation (DM or group). For groups, pass
+    // participants[] so we can show member list in the header.
+    function openChatPaneForConversation(convId, title, type, participants, peerOnlineByUserId){
+        _chatOpen = true;
+        _chatConvId = convId;
+        _chatConvType = type || 'dm';
+        _chatParticipants = participants || [];
+        _chatLastRenderHash = '';
+        _chatPendingAttachment = null;
+        if (_chatConvType === 'group') {
+            _chatPeerId = null;
+            _chatPeerName = title || _chatParticipants.map(function(p){ return p.userName; }).join(', ');
+            _chatPeerOnline = false;
+        } else {
+            var other = (_chatParticipants && _chatParticipants[0]) || {};
+            _chatPeerId = other.userId || null;
+            _chatPeerName = other.userName || title || '';
+            _chatPeerOnline = !!(peerOnlineByUserId && peerOnlineByUserId[(_chatPeerId||'').toLowerCase().replace(/-/g,'')]);
+        }
+        openChatPaneInner();
+        loadChatMessages();
+    }
+
+    function openChatPaneInner(){
         var pane = document.getElementById('abFriendsChatPane');
         if (!pane) return;
 
-        // Populate header
-        var av = avatarStyle(peerId);
+        // Header
         var avEl = document.getElementById('abChatAvatar');
         if (avEl) {
-            avEl.setAttribute('style', av);
-            avEl.className = 'ab-chat-avatar' + (peerOnline ? ' online' : '');
-            avEl.textContent = av ? '' : initials(peerName);
+            if (_chatConvType === 'group') {
+                avEl.setAttribute('style', 'background:linear-gradient(135deg,#8b5cf6,#3b82f6);');
+                avEl.className = 'ab-chat-avatar';
+                avEl.innerHTML = '<span class="material-icons" style="font-size:1.1em;">group</span>';
+            } else {
+                var av = avatarStyle(_chatPeerId || '');
+                avEl.setAttribute('style', av);
+                avEl.className = 'ab-chat-avatar' + (_chatPeerOnline ? ' online' : '');
+                avEl.textContent = av ? '' : initials(_chatPeerName || '');
+            }
         }
         var nmEl = document.getElementById('abChatPeerName');
-        if (nmEl) nmEl.textContent = peerName || '';
+        if (nmEl) nmEl.textContent = _chatPeerName || '';
         var stEl = document.getElementById('abChatPeerStatus');
         if (stEl) {
-            stEl.textContent = peerOnline ? tr('friends.online', 'Online') : tr('friends.offline', 'Offline');
-            stEl.className = 'ab-chat-peer-status' + (peerOnline ? ' online' : '');
+            if (_chatConvType === 'group') {
+                var n = _chatParticipants.length + 1;
+                stEl.textContent = n + ' ' + tr('friends.members','members');
+                stEl.className = 'ab-chat-peer-status';
+            } else {
+                stEl.textContent = _chatPeerOnline ? tr('friends.online', 'Online') : tr('friends.offline', 'Offline');
+                stEl.className = 'ab-chat-peer-status' + (_chatPeerOnline ? ' online' : '');
+            }
         }
 
         // Reset input state
@@ -1342,20 +1533,31 @@
         hideChatError();
         var send = document.getElementById('abChatSend');
         if (send) send.disabled = true;
+        clearAttachmentPreview();
 
-        // Show pane
-        pane.style.display = 'flex';
-        void pane.offsetHeight;
-        pane.classList.add('open');
+        var pane = document.getElementById('abFriendsChatPane');
+        if (pane) { pane.style.display = 'flex'; void pane.offsetHeight; pane.classList.add('open'); }
 
+        // Group chats don't have a single peer to mute, so swap the Mute
+        // entry for something useful (leave group / rename).
         refreshMuteLabel();
+        var menu = document.getElementById('abChatMenu');
+        if (menu) {
+            var muteItem = document.getElementById('abChatMute');
+            if (muteItem) muteItem.style.display = (_chatConvType === 'group') ? 'none' : 'flex';
+            var blockItem = document.getElementById('abChatBlock');
+            if (blockItem) blockItem.style.display = (_chatConvType === 'group') ? 'none' : 'flex';
+            var renameItem = document.getElementById('abChatRename');
+            if (renameItem) renameItem.style.display = (_chatConvType === 'group') ? 'flex' : 'none';
+            var leaveItem = document.getElementById('abChatLeave');
+            if (leaveItem) leaveItem.style.display = (_chatConvType === 'group') ? 'flex' : 'none';
+        }
 
         // Initial load + polling
         loadChatMessages();
         if (_chatPollTimer) clearInterval(_chatPollTimer);
         _chatPollTimer = setInterval(loadChatMessages, 6000);
 
-        // Focus input after slide animation
         setTimeout(function(){
             var el = document.getElementById('abChatInput');
             if (el) el.focus();
@@ -1365,13 +1567,18 @@
     function closeChatPane(){
         _chatOpen = false;
         _chatPeerId = null;
+        _chatConvId = null;
+        _chatConvType = 'dm';
+        _chatParticipants = [];
         if (_chatPollTimer) { clearInterval(_chatPollTimer); _chatPollTimer = null; }
         var pane = document.getElementById('abFriendsChatPane');
         if (!pane) return;
         pane.classList.remove('open');
         setTimeout(function(){ if (!_chatOpen) pane.style.display = 'none'; }, 280);
-        // Refresh the friend list so the unread badge on this peer updates
         if (typeof loadFriends === 'function') try { loadFriends(); } catch (e) {}
+        // Also refresh the messages-tab list so last-message previews
+        // reflect whatever the user just sent or read.
+        if (_activeFdTab === 'messages') loadMessagesPane();
     }
 
     function showChatError(msg){
@@ -1400,21 +1607,22 @@
     }
 
     function sendChatMessage(){
-        if (!_chatOpen || !_chatPeerId) return;
+        if (!_chatOpen || !_chatConvId) return;
         var input = document.getElementById('abChatInput');
         if (!input) return;
         var text = (input.value || '').trim();
-        if (!text) return;
+        var attachmentId = _chatPendingAttachment ? _chatPendingAttachment.Id : null;
+        if (!text && !attachmentId) return;
         var send = document.getElementById('abChatSend');
         if (send) send.disabled = true;
         hideChatError();
         var uid = getUserId();
         if (!uid) return;
-        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/messages/'+_chatPeerId), {
+        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+_chatConvId+'/messages'), {
             method: 'POST',
             headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
             credentials: 'include',
-            body: JSON.stringify({ Text: text })
+            body: JSON.stringify({ Text: text, AttachmentId: attachmentId })
         })
         .then(function(r){ return r.ok ? r.json() : null; })
         .then(function(res){
@@ -1426,11 +1634,71 @@
             input.value = '';
             autoGrowChatInput(input);
             updateChatCounter('');
+            clearAttachmentPreview();
+            _chatLastRenderHash = ''; // force redraw
             loadChatMessages();
         })
         .catch(function(){
             showChatError(tr('friends.send_failed', 'Could not send message.'));
             if (send) send.disabled = false;
+        });
+    }
+
+    // ── Attachments ───────────────────────────────────────────────────
+
+    function clearAttachmentPreview(){
+        _chatPendingAttachment = null;
+        var row = document.getElementById('abChatAttachPreview');
+        if (row) row.style.display = 'none';
+        var send = document.getElementById('abChatSend');
+        if (send) {
+            var input = document.getElementById('abChatInput');
+            send.disabled = !(input && input.value.trim());
+        }
+    }
+
+    function beginAttachmentUpload(file){
+        if (!file) return;
+        if (file.size > 8 * 1024 * 1024) {
+            showChatError(tr('friends.file_too_big','File is too big (max 8MB).'));
+            return;
+        }
+        if (['image/png','image/jpeg','image/gif','image/webp'].indexOf(file.type) === -1) {
+            showChatError(tr('friends.unsupported_file','Only PNG / JPG / GIF / WEBP supported.'));
+            return;
+        }
+        hideChatError();
+        var uid = getUserId(); if (!uid) return;
+        var fd = new FormData();
+        fd.append('file', file);
+        // Show temp preview
+        var preview = document.getElementById('abChatAttachPreview');
+        var img = document.getElementById('abChatAttachPreviewImg');
+        if (img && preview) {
+            img.src = URL.createObjectURL(file);
+            preview.style.display = 'flex';
+        }
+        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/attachments'), {
+            method: 'POST',
+            headers: authHeaders(),
+            credentials: 'include',
+            body: fd
+        })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(res){
+            if (!res || !res.Success) {
+                showChatError((res && res.Message) || tr('friends.upload_failed','Upload failed.'));
+                clearAttachmentPreview();
+                return;
+            }
+            // Server returns attachment metadata — keep the id and enable Send.
+            _chatPendingAttachment = { Id: res.Attachment.id || res.Attachment.Id, FileName: res.Attachment.fileName || res.Attachment.FileName };
+            var send = document.getElementById('abChatSend');
+            if (send) send.disabled = false;
+        })
+        .catch(function(){
+            showChatError(tr('friends.upload_failed','Upload failed.'));
+            clearAttachmentPreview();
         });
     }
 
@@ -1534,6 +1802,63 @@
                                 : tr('friends.muted_toast','Notifications muted'), '');
             });
         }
+        var renameBtn = document.getElementById('abChatRename');
+        if (renameBtn && !renameBtn.dataset.abBound) {
+            renameBtn.dataset.abBound = '1';
+            renameBtn.addEventListener('click', function(){
+                if (menu) menu.classList.remove('open');
+                if (!_chatConvId || _chatConvType !== 'group') return;
+                var newTitle = prompt(tr('friends.rename_group_prompt','New group name:'), _chatPeerName || '');
+                if (newTitle == null) return;
+                var uid = getUserId();
+                fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+_chatConvId+'/rename'),
+                    { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()), credentials: 'include', body: JSON.stringify({ Title: newTitle }) })
+                .then(function(){
+                    _chatPeerName = newTitle;
+                    var nm = document.getElementById('abChatPeerName'); if (nm) nm.textContent = newTitle;
+                    if (_activeFdTab === 'messages') loadMessagesPane();
+                });
+            });
+        }
+        var leaveBtn = document.getElementById('abChatLeave');
+        if (leaveBtn && !leaveBtn.dataset.abBound) {
+            leaveBtn.dataset.abBound = '1';
+            leaveBtn.addEventListener('click', function(){
+                if (menu) menu.classList.remove('open');
+                if (!_chatConvId || _chatConvType !== 'group') return;
+                var uid = getUserId();
+                abConfirm(
+                    tr('friends.leave_title','Leave this group?'),
+                    tr('friends.leave_body','You will be removed from the group and stop receiving messages from it.'),
+                    tr('friends.leave_group','Leave group'),
+                    function(){
+                        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+_chatConvId+'/members/'+uid),
+                            { method: 'DELETE', headers: authHeaders(), credentials: 'include' })
+                        .then(function(){
+                            showToast(tr('friends.left_group_toast','Left group'),'');
+                            closeChatPane();
+                            if (_activeFdTab === 'messages') loadMessagesPane();
+                        });
+                    }
+                );
+            });
+        }
+
+        // Attachment button + file input + preview clear
+        var attachInput = document.getElementById('abChatAttachInput');
+        if (attachInput && !attachInput.dataset.abBound) {
+            attachInput.dataset.abBound = '1';
+            attachInput.addEventListener('change', function(){
+                var f = attachInput.files && attachInput.files[0];
+                if (f) beginAttachmentUpload(f);
+                attachInput.value = '';
+            });
+        }
+        var attachClear = document.getElementById('abChatAttachClear');
+        if (attachClear && !attachClear.dataset.abBound) {
+            attachClear.dataset.abBound = '1';
+            attachClear.addEventListener('click', clearAttachmentPreview);
+        }
     }
 
     function refreshMuteLabel(){
@@ -1549,46 +1874,145 @@
     function loadMessagesPane(){
         var pane = document.getElementById('abFriendsPaneMessages');
         if (!pane) return;
-        pane.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">hourglass_empty</span><div>'+tr('friends.loading','Loading...')+'</div></div>';
+        // On first load, show a placeholder. Subsequent polls only replace
+        // if the thread list actually changed (hash) to avoid flicker.
         chatApi('/messages/threads').then(function(res){
             var threads = (res && res.Threads) || [];
+            var newHash = threads.map(function(t){
+                return (t.conversationId||'') + '|' + (t.lastAt||'') + '|' + (t.unreadCount||0) + '|' + (t.lastMessage||'').length;
+            }).join('~');
+            if (pane.dataset.abMsgsHash === newHash) return;
+            pane.dataset.abMsgsHash = newHash;
+
+            var header = '<div class="ab-msg-tab-header">' +
+                '<button type="button" class="ab-msg-newgroup" id="abMsgNewGroup"><span class="material-icons">group_add</span> ' + tr('friends.new_group','New group') + '</button>' +
+                '</div>';
+
             if (!threads.length) {
-                pane.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">forum</span><div>'+
+                pane.innerHTML = header +
+                    '<div class="ab-fd-empty"><span class="material-icons">forum</span><div>'+
                     tr('friends.messages_empty','No conversations yet. Tap a friend\'s message icon to say hi.')+
                     '</div></div>';
+                pane.querySelector('#abMsgNewGroup').addEventListener('click', openNewGroupModal);
                 return;
             }
-            var meId = (getUserId() || '').toLowerCase().replace(/-/g, '');
-            pane.innerHTML = threads.map(function(t){
-                var av = avatarStyle(t.otherUserId);
-                var initialsHtml = av ? '' : escapeHtml(initials(t.otherUserName || ''));
+            pane.innerHTML = header + threads.map(function(t){
+                var isGroup = (t.type === 'group');
+                var av = isGroup ? '' : avatarStyle(t.otherUserId);
+                var initialsHtml = isGroup
+                    ? '<span class="material-icons" style="font-size:1.1em;">group</span>'
+                    : (av ? '' : escapeHtml(initials(t.otherUserName || '')));
                 var unread = t.unreadCount || 0;
                 var mePrefix = t.lastFromMe ? '<span class="me-prefix">' + tr('friends.you','You:') + '</span>' : '';
                 var when = t.lastAt ? formatChatTime(t.lastAt) : '';
-                return '<div class="ab-msg-thread" data-ab-chat-open="' + escapeHtml(t.otherUserId) + '" data-ab-chat-name="' + escapeHtml(t.otherUserName || '') + '" data-ab-chat-online="0">' +
-                    '<div class="ab-fd-avatar" style="' + av + '">' + initialsHtml + '</div>' +
+                var lastPreview = (t.lastMessage || '');
+                if (t.hasAttachment && (!lastPreview || lastPreview === '[image]')) lastPreview = tr('friends.sent_image','Sent an image');
+                var avStyle = isGroup ? 'background:linear-gradient(135deg,#8b5cf6,#3b82f6);' : av;
+                return '<div class="ab-msg-thread" data-ab-conv-id="' + escapeHtml(t.conversationId || '') + '" data-ab-conv-type="' + escapeHtml(t.type || 'dm') + '" data-ab-conv-title="' + escapeHtml(t.otherUserName || '') + '" data-ab-chat-open="' + escapeHtml(t.otherUserId || '') + '">' +
+                    '<div class="ab-fd-avatar" style="' + avStyle + '">' + initialsHtml + '</div>' +
                     '<div class="ab-msg-thread-body">' +
                         '<div class="ab-msg-thread-top">' +
                             '<span class="ab-msg-thread-name">' + escapeHtml(t.otherUserName || '') + '</span>' +
                             '<span class="ab-msg-thread-time">' + escapeHtml(when) + '</span>' +
                         '</div>' +
                         '<div class="ab-msg-thread-preview">' +
-                            '<span class="ab-msg-thread-last ' + (unread > 0 ? 'unread' : '') + '">' + mePrefix + escapeHtml(t.lastMessage || '') + '</span>' +
+                            '<span class="ab-msg-thread-last ' + (unread > 0 ? 'unread' : '') + '">' + mePrefix + escapeHtml(lastPreview) + '</span>' +
                             (unread > 0 ? '<span class="ab-msg-thread-unread">' + (unread > 99 ? '99+' : unread) + '</span>' : '') +
                         '</div>' +
                     '</div>' +
                 '</div>';
             }).join('');
-            pane.querySelectorAll('[data-ab-chat-open]').forEach(function(row){
+            pane.querySelector('#abMsgNewGroup').addEventListener('click', openNewGroupModal);
+            pane.querySelectorAll('.ab-msg-thread').forEach(function(row){
                 row.addEventListener('click', function(){
-                    openChatPane(
-                        row.getAttribute('data-ab-chat-open'),
-                        row.getAttribute('data-ab-chat-name'),
-                        row.getAttribute('data-ab-chat-online') === '1'
-                    );
+                    var type = row.getAttribute('data-ab-conv-type') || 'dm';
+                    var convId = row.getAttribute('data-ab-conv-id');
+                    var title = row.getAttribute('data-ab-conv-title') || '';
+                    if (type === 'group') {
+                        // For groups we need participant list — refetch conv
+                        var uid = getUserId();
+                        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+convId),
+                            { headers: authHeaders(), credentials: 'include' })
+                            .then(function(r){ return r.ok ? r.json() : null; })
+                            .then(function(res){
+                                if (!res || !res.Success) return;
+                                var parts = (res.Conversation.participantIds || []).map(function(id){ return { userId: id, userName: '' }; });
+                                openChatPaneForConversation(convId, res.Conversation.title, 'group', parts, {});
+                            });
+                    } else {
+                        openChatPane(row.getAttribute('data-ab-chat-open'), title, false);
+                    }
                 });
             });
         });
+    }
+
+    // ── New-group modal ────────────────────────────────────────────────
+    function openNewGroupModal(){
+        var uid = getUserId(); if (!uid) return;
+        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/friends'),
+            { headers: authHeaders(), credentials: 'include' })
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(data){
+                var friends = (data && data.Friends) || [];
+                if (!friends.length) { showToast(tr('friends.no_friends_yet','Add friends before starting a group.'),''); return; }
+                var overlay = document.createElement('div');
+                overlay.id = 'abNewGroupOverlay';
+                overlay.innerHTML =
+                    '<div class="ab-newgroup-box">' +
+                        '<h3>' + escapeHtml(tr('friends.new_group','New group')) + '</h3>' +
+                        '<input type="text" id="abNewGroupName" placeholder="' + escapeHtml(tr('friends.group_name','Group name (optional)')) + '" maxlength="60" />' +
+                        '<div class="ab-newgroup-hint">' + escapeHtml(tr('friends.pick_members','Pick at least 2 friends:')) + '</div>' +
+                        '<div class="ab-newgroup-list" id="abNewGroupList">' +
+                            friends.map(function(f){
+                                var av = avatarStyle(f.UserId);
+                                var ih = av ? '' : escapeHtml(initials(f.UserName));
+                                return '<label class="ab-newgroup-row">' +
+                                    '<input type="checkbox" value="' + escapeHtml(f.UserId) + '" />' +
+                                    '<div class="ab-fd-avatar" style="' + av + '">' + ih + '</div>' +
+                                    '<span>' + escapeHtml(f.UserName) + '</span>' +
+                                '</label>';
+                            }).join('') +
+                        '</div>' +
+                        '<div class="ab-confirm-actions">' +
+                            '<button type="button" class="ab-confirm-btn ghost" id="abNewGroupCancel">' + escapeHtml(tr('friends.cancel','Cancel')) + '</button>' +
+                            '<button type="button" class="ab-confirm-btn primary" id="abNewGroupCreate">' + escapeHtml(tr('friends.create_group','Create group')) + '</button>' +
+                        '</div>' +
+                    '</div>';
+                document.body.appendChild(overlay);
+                void overlay.offsetHeight;
+                overlay.classList.add('open');
+                var cleanup = function(){ if (overlay.parentNode) overlay.parentNode.removeChild(overlay); };
+                overlay.addEventListener('click', function(e){ if (e.target === overlay) cleanup(); });
+                overlay.querySelector('#abNewGroupCancel').addEventListener('click', cleanup);
+                overlay.querySelector('#abNewGroupCreate').addEventListener('click', function(){
+                    var picks = Array.prototype.slice.call(overlay.querySelectorAll('input[type=checkbox]:checked'))
+                        .map(function(cb){ return cb.value; });
+                    if (picks.length < 2) { showToast(tr('friends.pick_two','Pick at least 2 friends.'),''); return; }
+                    var title = (overlay.querySelector('#abNewGroupName').value || '').trim();
+                    fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations'), {
+                        method: 'POST',
+                        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+                        credentials: 'include',
+                        body: JSON.stringify({ Title: title || null, ParticipantIds: picks })
+                    })
+                    .then(function(r){ return r.ok ? r.json() : null; })
+                    .then(function(res){
+                        if (!res || !res.Success) { showToast((res && res.Message) || tr('friends.create_group_failed','Could not create group.'),''); return; }
+                        cleanup();
+                        var conv = res.Conversation;
+                        var meNorm = uid.toLowerCase().replace(/-/g,'');
+                        var parts = (conv.participantIds || []).filter(function(id){ return (id||'').toLowerCase().replace(/-/g,'') !== meNorm; })
+                            .map(function(id){
+                                var idNorm = (id||'').toLowerCase().replace(/-/g,'');
+                                var match = friends.find(function(f){ return (f.UserId||'').toLowerCase().replace(/-/g,'') === idNorm; });
+                                return { userId: id, userName: match ? match.UserName : '' };
+                            });
+                        openChatPaneForConversation(conv.id, conv.title, 'group', parts, {});
+                        loadMessagesPane();
+                    });
+                });
+            });
     }
 
     // ── Confirm dialog + toast + notifications ────────────────────────
@@ -1716,17 +2140,16 @@
             if (muteDuringPlayback && isWatching()) return;
             threads.forEach(function(t){
                 if (t.lastFromMe || !t.unreadCount) return;
+                var convKey = t.conversationId || (t.otherUserId || '').toLowerCase().replace(/-/g, '');
                 var peerKey = (t.otherUserId || '').toLowerCase().replace(/-/g, '');
-                // Per-peer mute (local)
-                if (localStorage.getItem('abMuted:' + peerKey) === '1') return;
-                // Don't spam the toast if the chat with this peer is open
-                if (_chatOpen && _chatPeerId && _chatPeerId.toLowerCase().replace(/-/g,'') === peerKey) return;
-                var lastId = _abLastSeenMsgId[peerKey];
-                // Build a stable signature from (lastAt + lastMessage) so we
-                // re-fire when a NEW message arrives but not on identical polls.
+                // Per-peer mute (local, DM-only)
+                if (t.type !== 'group' && peerKey && localStorage.getItem('abMuted:' + peerKey) === '1') return;
+                // Don't spam the toast if the same chat is currently open
+                if (_chatOpen && _chatConvId === t.conversationId) return;
+                var lastId = _abLastSeenMsgId[convKey];
                 var signature = (t.lastAt || '') + '|' + (t.lastMessage || '');
                 if (lastId === signature) return;
-                _abLastSeenMsgId[peerKey] = signature;
+                _abLastSeenMsgId[convKey] = signature;
                 // First poll after mount: record, don't notify (skip every
                 // signature that existed before drawer mount).
                 if (!_abNotifBootstrapped) return;
@@ -1789,6 +2212,9 @@
             }
             // Notifications (toast + sound + browser) for brand-new messages.
             processIncomingForNotifications(res.Threads);
+            // Also refresh the messages tab list inline so "last message"
+            // previews update without the user having to re-enter the tab.
+            if (_friendsOpen && _activeFdTab === 'messages') loadMessagesPane();
         });
     }
 

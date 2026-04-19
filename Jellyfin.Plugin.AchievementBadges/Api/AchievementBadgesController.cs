@@ -403,9 +403,10 @@ public class AchievementBadgesController : ControllerBase
     }
 
     // ─── Messaging ───────────────────────────────────────────────────── //
-    // Xbox-style 1:1 chat between friends. All routes are user-scoped so
-    // the UserOwnershipFilter already guards them against other-user
-    // access. MessagingService enforces friendship + rate limits.
+    // Xbox-style 1:1 + group chat. v1.8.2 adds conversations and image
+    // attachments. Old per-pair endpoints still work (delegate to DM
+    // conversation auto-created via GetOrCreateDm) so 1.8.1 clients keep
+    // working during upgrade.
 
     [HttpGet("users/{userId}/messages/unread-count")]
     [EnableRateLimiting("user-60-per-min")]
@@ -425,22 +426,27 @@ public class AchievementBadgesController : ControllerBase
         return Ok(new { Threads = _messagingService.GetThreads(userId) });
     }
 
+    // Legacy per-pair GET — resolves to DM conversation
     [HttpGet("users/{userId}/messages/{otherUserId}")]
     [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetMessageThread(
         [FromRoute] string userId,
         [FromRoute] string otherUserId,
-        [FromQuery] int limit = 100)
+        [FromQuery] int limit = 200)
     {
         if (!FriendsFeatureOn) return Ok(new { Messages = new List<object>() });
-        var msgs = _messagingService.GetThread(userId, otherUserId, limit);
-        return Ok(new { Messages = msgs });
+        var conv = _messagingService.GetOrCreateDm(userId, otherUserId);
+        var msgs = _messagingService.GetConversationMessages(userId, conv.Id, limit);
+        return Ok(new { Messages = msgs, ConversationId = conv.Id });
     }
 
-    public class SendMessageRequest { public string Text { get; set; } = string.Empty; }
+    public class SendMessageRequest { public string Text { get; set; } = string.Empty; public string? AttachmentId { get; set; } }
     public class EditMessageRequest { public string Text { get; set; } = string.Empty; }
+    public class CreateGroupRequest { public string? Title { get; set; } public List<string> ParticipantIds { get; set; } = new(); }
+    public class RenameGroupRequest { public string? Title { get; set; } }
 
+    // Legacy per-pair POST (1:1 DM)
     [HttpPost("users/{userId}/messages/{otherUserId}")]
     [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -450,14 +456,13 @@ public class AchievementBadgesController : ControllerBase
         [FromBody] SendMessageRequest body)
     {
         if (!FriendsFeatureOn) return Ok(new { Success = false, Message = "Messaging disabled by admin." });
-        // Resolve sender's display name from claims so the stored message
-        // has a name even if user-manager lookup later fails.
         var fromName = User.FindFirst("Jellyfin-User")?.Value
                        ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
                        ?? User.Identity?.Name
                        ?? string.Empty;
-        var (ok, err, msg) = _messagingService.Send(userId, fromName, otherUserId, body?.Text ?? string.Empty);
-        return Ok(new { Success = ok, Message = err, Sent = msg });
+        var conv = _messagingService.GetOrCreateDm(userId, otherUserId);
+        var (ok, err, msg) = _messagingService.SendToConversation(userId, fromName, conv.Id, body?.Text ?? string.Empty, body?.AttachmentId);
+        return Ok(new { Success = ok, Message = err, Sent = msg, ConversationId = conv.Id });
     }
 
     [HttpPatch("users/{userId}/messages/{messageId}")]
@@ -486,11 +491,125 @@ public class AchievementBadgesController : ControllerBase
     [HttpDelete("users/{userId}/messages/{otherUserId}/clear")]
     [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult ClearConversation([FromRoute] string userId, [FromRoute] string otherUserId)
+    public ActionResult ClearDmByOther([FromRoute] string userId, [FromRoute] string otherUserId)
     {
         if (!FriendsFeatureOn) return Ok(new { Success = false, Message = "Messaging disabled." });
-        var (ok, deleted) = _messagingService.ClearConversation(userId, otherUserId);
+        var (ok, deleted) = _messagingService.ClearDmByOtherUser(userId, otherUserId);
         return Ok(new { Success = ok, Deleted = deleted });
+    }
+
+    // ─── Conversations (new in v1.8.2) ──────────────────────────────── //
+
+    [HttpGet("users/{userId}/conversations/{convId}")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetConversation([FromRoute] string userId, [FromRoute] string convId)
+    {
+        if (!FriendsFeatureOn) return Ok(new { Success = false });
+        var c = _messagingService.GetConversation(userId, convId);
+        if (c == null) return Ok(new { Success = false, Message = "Not found or not a participant." });
+        return Ok(new { Success = true, Conversation = c });
+    }
+
+    [HttpGet("users/{userId}/conversations/{convId}/messages")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetConvMessages([FromRoute] string userId, [FromRoute] string convId, [FromQuery] int limit = 200)
+    {
+        if (!FriendsFeatureOn) return Ok(new { Messages = new List<object>() });
+        return Ok(new { Messages = _messagingService.GetConversationMessages(userId, convId, limit) });
+    }
+
+    [HttpPost("users/{userId}/conversations/{convId}/messages")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult SendConvMessage(
+        [FromRoute] string userId,
+        [FromRoute] string convId,
+        [FromBody] SendMessageRequest body)
+    {
+        if (!FriendsFeatureOn) return Ok(new { Success = false, Message = "Messaging disabled." });
+        var fromName = User.FindFirst("Jellyfin-User")?.Value
+                       ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                       ?? User.Identity?.Name
+                       ?? string.Empty;
+        var (ok, err, msg) = _messagingService.SendToConversation(userId, fromName, convId, body?.Text ?? string.Empty, body?.AttachmentId);
+        return Ok(new { Success = ok, Message = err, Sent = msg });
+    }
+
+    [HttpPost("users/{userId}/conversations")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult CreateGroup([FromRoute] string userId, [FromBody] CreateGroupRequest body)
+    {
+        if (!FriendsFeatureOn) return Ok(new { Success = false, Message = "Messaging disabled." });
+        var (ok, err, c) = _messagingService.CreateGroup(userId, body?.Title, body?.ParticipantIds ?? new List<string>());
+        return Ok(new { Success = ok, Message = err, Conversation = c });
+    }
+
+    [HttpPost("users/{userId}/conversations/{convId}/rename")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult RenameGroup([FromRoute] string userId, [FromRoute] string convId, [FromBody] RenameGroupRequest body)
+    {
+        var (ok, err) = _messagingService.RenameGroup(userId, convId, body?.Title);
+        return Ok(new { Success = ok, Message = err });
+    }
+
+    [HttpPost("users/{userId}/conversations/{convId}/members/{newUserId}")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult AddGroupMember([FromRoute] string userId, [FromRoute] string convId, [FromRoute] string newUserId)
+    {
+        var (ok, err) = _messagingService.AddGroupMember(userId, convId, newUserId);
+        return Ok(new { Success = ok, Message = err });
+    }
+
+    [HttpDelete("users/{userId}/conversations/{convId}/members/{targetUserId}")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult LeaveOrRemoveGroup([FromRoute] string userId, [FromRoute] string convId, [FromRoute] string targetUserId)
+    {
+        var (ok, err) = _messagingService.LeaveOrRemoveGroup(userId, convId, targetUserId);
+        return Ok(new { Success = ok, Message = err });
+    }
+
+    [HttpDelete("users/{userId}/conversations/{convId}/clear")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult ClearConv([FromRoute] string userId, [FromRoute] string convId)
+    {
+        var (ok, deleted) = _messagingService.ClearConversation(userId, convId);
+        return Ok(new { Success = ok, Deleted = deleted });
+    }
+
+    // ─── Attachments ────────────────────────────────────────────────── //
+
+    [HttpPost("users/{userId}/attachments")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult> UploadAttachment([FromRoute] string userId, [FromForm] IFormFile? file)
+    {
+        if (!FriendsFeatureOn) return Ok(new { Success = false, Message = "Messaging disabled." });
+        if (file == null || file.Length == 0) return Ok(new { Success = false, Message = "No file uploaded." });
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms).ConfigureAwait(false);
+        var (ok, err, att) = _messagingService.SaveAttachment(userId, file.FileName, file.ContentType, ms.ToArray(), null, null);
+        return Ok(new { Success = ok, Message = err, Attachment = att });
+    }
+
+    [HttpGet("attachments/{attachmentId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult GetAttachment([FromRoute] string attachmentId)
+    {
+        if (!FriendsFeatureOn) return NotFound();
+        var res = _messagingService.LoadAttachment(attachmentId);
+        if (res == null) return NotFound();
+        var (att, bytes) = res.Value;
+        Response.Headers["Cache-Control"] = "private, max-age=86400";
+        return File(bytes, att.MimeType, att.FileName);
     }
 
     // Block / unblock / list
