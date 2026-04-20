@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.8.6.0",
+        "changelog": "Bug fix: the floating Friends button was appearing on Jellyfin's login / server-picker / wizard pages. Added pre-auth URL checks (/login.html, #!/login, #!/addserver, #!/selectserver, #!/wizard, /quickconnect, body.classList.contains('loginPage')) plus an ApiClient-ready guard so the button only shows once there's an authenticated user. Also drops the drawer automatically if it was somehow open when the page becomes pre-auth.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.8.6/Jellyfin.Plugin.AchievementBadges_1.8.6.0.zip",
+        "checksum": "a45e539140f7f6b71462f403787d5aa2",
+        "timestamp": "2026-04-19T00:00:00Z"
+      },
+      {
         "version": "1.8.5.0",
         "changelog": "Small UX pass: New Group button now uses the same tab-button visual language (transparent with purple-blue hover gradient, matching border/radius) so it reads as part of the Friends/Messages tab row, sitting full-width right below the tabs instead of looking like an outlier chip. README updated with a proper Messaging section covering 1:1 + groups, attachments, read receipts, edit/delete, block, notifications, prefs, and storage details.",
         "targetAbi": "10.11.0.0",

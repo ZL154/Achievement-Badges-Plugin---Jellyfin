@@ -1015,6 +1015,22 @@
                 var hash = (window.location.hash || '').toLowerCase();
                 var pathname = (window.location.pathname || '').toLowerCase();
                 var combined = pathname + ' ' + hash;
+                // Login / server-pick / wizard / quick-connect — no auth = no sidebar
+                if (combined.indexOf('/login.html') >= 0) return true;
+                if (combined.indexOf('#!/login') >= 0) return true;
+                if (combined.indexOf('#/login') >= 0) return true;
+                if (combined.indexOf('#!/addserver') >= 0) return true;
+                if (combined.indexOf('#!/selectserver') >= 0) return true;
+                if (combined.indexOf('#!/wizard') >= 0) return true;
+                if (combined.indexOf('/quickconnect') >= 0) return true;
+                // Body-class fallback: Jellyfin web adds class 'loginPage'
+                // on the login view.
+                if (document.body && document.body.classList) {
+                    if (document.body.classList.contains('loginPage')) return true;
+                }
+                // If there's no ApiClient yet (pre-login), also hide — this
+                // catches brand-new sessions before the hash routes activate.
+                if (!(window.ApiClient && typeof window.ApiClient.getCurrentUserId === 'function' && window.ApiClient.getCurrentUserId())) return true;
                 // Admin / config panels — Jellyfin uses a mix of hash + pathname
                 // routes for these. Match any of them.
                 if (combined.indexOf('/dashboard') >= 0) return true;
