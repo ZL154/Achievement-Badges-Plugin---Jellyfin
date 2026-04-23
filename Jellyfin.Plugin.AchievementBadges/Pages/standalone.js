@@ -2343,6 +2343,8 @@
                             '<option value="legendary"' + (minRarity === 'legendary' ? ' selected' : '') + '>' + tr('settings.rarity_legendary_plus', 'Legendary+') + '</option>' +
                         '</select>' +
                     '</div>' +
+                    toggle('muteToastsDuringPlayback', tr('settings.mute_toasts_playback', 'Mute toasts while watching'), tr('settings.mute_toasts_playback_desc', 'Hide achievement unlock popups while a movie or episode is playing'), prefs.muteToastsDuringPlayback !== false && prefs.MuteToastsDuringPlayback !== false) +
+                    toggle('muteToastSoundDuringPlayback', tr('settings.mute_sound_playback', 'Mute sound while watching'), tr('settings.mute_sound_playback_desc', 'Suppress the unlock sound while a movie or episode is playing (visual still shows if toasts are enabled)'), prefs.muteToastSoundDuringPlayback !== false && prefs.MuteToastSoundDuringPlayback !== false) +
                 '</div>' +
             '</div>' +
             privacySectionHtml +

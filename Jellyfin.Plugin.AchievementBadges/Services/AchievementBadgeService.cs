@@ -831,9 +831,16 @@ public class AchievementBadgeService
         lock (_lock)
         {
             var count = 0;
-            // Use a timestamp from a few minutes ago so unlocks from the startup eval
-            // don't trigger toasts on any client that happens to be polling.
-            var stamp = DateTimeOffset.UtcNow.AddMinutes(-5);
+            // Startup unlocks get stamped to the Unix epoch (1970). Any client
+            // polling `/unlocks-since?since=<lastSeen>` will have a `since`
+            // cutoff far newer than 1970, so these backfill unlocks are
+            // *always* excluded from the toast stream. This prevents the
+            // update-cascade bug: on a plugin update, a newly-added badge
+            // definition whose counters already exceed its threshold legit
+            // unlocks, but we don't want every one of those to pop a toast
+            // at the user. They'll see the new state on the badges page;
+            // toasts are reserved for unlocks that happen *while playing*.
+            var stamp = DateTimeOffset.UnixEpoch;
             foreach (var profile in _userProfiles.Values.ToList())
             {
                 try

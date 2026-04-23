@@ -156,6 +156,14 @@ public class UserNotificationPreferences
     [JsonPropertyName("MuteMessageNotificationsDuringPlayback")]
     public bool MuteMessageNotificationsDuringPlayback { get; set; } = false;
 
+    /// <summary>Suppress achievement unlock TOASTS (the popup) while actively watching.</summary>
+    [JsonPropertyName("MuteToastsDuringPlayback")]
+    public bool MuteToastsDuringPlayback { get; set; } = true;
+
+    /// <summary>Suppress achievement unlock SOUND while actively watching.</summary>
+    [JsonPropertyName("MuteToastSoundDuringPlayback")]
+    public bool MuteToastSoundDuringPlayback { get; set; } = true;
+
     /// <summary>User IDs this user has blocked — no messages in either direction.</summary>
     [JsonPropertyName("BlockedUsers")]
     public List<string> BlockedUsers { get; set; } = new();

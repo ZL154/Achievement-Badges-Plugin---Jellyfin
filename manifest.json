@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.8.7.0",
+        "changelog": "Two community-requested fixes. (1) UPDATE CASCADE BUG FIXED: installing a new plugin version was replaying every unlocked achievement as a toast, sometimes dozens in a row. Root cause was the startup EvaluateAllProfiles pass stamping newly-unlocked badges with 'now minus 5 minutes' — if the client's last-seen timestamp was older than 5 minutes (normal for any user who wasn't actively polling), every one of those startup unlocks passed the since-cutoff and fired a toast. Fix: startup backfill now stamps with DateTimeOffset.UnixEpoch (1970), which is unconditionally older than any client's last-seen, so those unlocks never replay as toasts. Users still get the unlocked state on the badges page; toasts are reserved for unlocks that happen while playing. Also switched the per-browser SHOWN_IDS tracking from sessionStorage to localStorage (survives tab close + plugin update; capped at 400 entries with oldest-first eviction). (2) MUTE DURING PLAYBACK: two new user prefs added to the standalone settings panel — MuteToastsDuringPlayback (hides achievement popups while a video is playing) and MuteToastSoundDuringPlayback (suppresses the unlock sound during playback). Both default to TRUE so the sensible behavior kicks in automatically; users who love the popups can toggle them off. Detection uses body.playingVideo class + visible playing <video> element. The existing minimum-toast-rarity filter is unchanged and still discoverable in the Toast & Sound section.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.8.7/Jellyfin.Plugin.AchievementBadges_1.8.7.0.zip",
+        "checksum": "d4446c2fa3bc8013563adfbfa5aa0190",
+        "timestamp": "2026-04-20T00:00:00Z"
+      },
+      {
         "version": "1.8.6.0",
         "changelog": "Bug fix: the floating Friends button was appearing on Jellyfin's login / server-picker / wizard pages. Added pre-auth URL checks (/login.html, #!/login, #!/addserver, #!/selectserver, #!/wizard, /quickconnect, body.classList.contains('loginPage')) plus an ApiClient-ready guard so the button only shows once there's an authenticated user. Also drops the drawer automatically if it was somehow open when the page becomes pre-auth.",
         "targetAbi": "10.11.0.0",

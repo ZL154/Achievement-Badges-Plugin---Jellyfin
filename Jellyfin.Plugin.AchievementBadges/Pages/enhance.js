@@ -27,18 +27,56 @@
         } catch (e) { return false; }
     }
 
+    // Persist in localStorage (was sessionStorage — which cleared on every
+    // tab close, letting the next poll replay old unlocks as toasts). With
+    // localStorage the ids survive across refreshes and plugin updates, so
+    // once a toast has been shown it stays shown. We cap the map at 400
+    // entries, oldest-first, so it never grows unbounded.
+    var _SHOWN_CAP = 400;
     function getShownIds() {
         try {
-            var raw = sessionStorage.getItem(SHOWN_IDS_KEY);
-            return raw ? JSON.parse(raw) : {};
+            var raw = localStorage.getItem(SHOWN_IDS_KEY);
+            if (raw) return JSON.parse(raw);
+            // Migrate from pre-1.8.7 sessionStorage data, if any.
+            var legacy = sessionStorage.getItem(SHOWN_IDS_KEY);
+            if (legacy) {
+                try { localStorage.setItem(SHOWN_IDS_KEY, legacy); } catch (e) {}
+                return JSON.parse(legacy);
+            }
+            return {};
         } catch (e) { return {}; }
     }
     function markShown(id) {
         try {
             var map = getShownIds();
             map[id] = Date.now();
-            sessionStorage.setItem(SHOWN_IDS_KEY, JSON.stringify(map));
+            var keys = Object.keys(map);
+            if (keys.length > _SHOWN_CAP) {
+                // Drop oldest 20% by timestamp so we amortise the trim cost.
+                keys.sort(function(a,b){ return map[a] - map[b]; });
+                var drop = keys.slice(0, Math.floor(_SHOWN_CAP * 0.2));
+                drop.forEach(function(k){ delete map[k]; });
+            }
+            localStorage.setItem(SHOWN_IDS_KEY, JSON.stringify(map));
         } catch (e) {}
+    }
+
+    // Is Jellyfin currently playing a video? Used to gate toast + sound
+    // when the user has opted to suppress notifications during playback.
+    function isActivelyWatching() {
+        try {
+            if (document.body && document.body.classList) {
+                if (document.body.classList.contains('playingVideo')) return true;
+                if (document.body.classList.contains('transparentDocument')) return true;
+            }
+            var vids = document.getElementsByTagName('video');
+            for (var i = 0; i < vids.length; i++) {
+                var v = vids[i];
+                if (!v || v.offsetParent === null) continue;
+                if (!v.paused && !v.ended && v.readyState > 2) return true;
+            }
+        } catch (e) {}
+        return false;
     }
 
     function getApi() { return window.ApiClient || window.apiClient || null; }
@@ -138,6 +176,12 @@
     };
 
     function showToast(badge) {
+        // Per-user opt-out: while watching, suppress the toast entirely.
+        // The sound is checked separately further down (some users might
+        // want the visual off but still hear the chime, or vice versa).
+        if (isActivelyWatching() && userPrefs && userPrefs.MuteToastsDuringPlayback !== false) {
+            return;
+        }
         if (visibleToastCount >= MAX_VISIBLE_TOASTS) {
             toastQueue.push(badge);
             return;
@@ -191,8 +235,12 @@
             '</div>';
         c.appendChild(item);
 
-        // Play achievement sound (rare sound for rare/epic/legendary/mythic)
-        if (!userPrefs || userPrefs.EnableSound !== false) {
+        // Play achievement sound (rare sound for rare/epic/legendary/mythic).
+        // Suppressed when EnableSound=false OR (watching + MuteToastSoundDuringPlayback).
+        var _watching = isActivelyWatching();
+        var _soundOff = (userPrefs && userPrefs.EnableSound === false)
+            || (_watching && userPrefs && userPrefs.MuteToastSoundDuringPlayback !== false);
+        if (!_soundOff) {
             var _snd = isRare ? _abSoundRare : _abSoundRegular;
             if (_snd) { try { _snd.currentTime = 0; _snd.play().catch(function(){}); } catch(e) {} }
         }
