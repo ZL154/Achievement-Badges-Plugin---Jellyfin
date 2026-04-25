@@ -574,6 +574,24 @@ public class AchievementBadgesController : ControllerBase
         return Ok(new { Success = ok, Message = err });
     }
 
+    [HttpPost("users/{userId}/conversations/{convId}/admins/{targetUserId}")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult PromoteAdmin([FromRoute] string userId, [FromRoute] string convId, [FromRoute] string targetUserId)
+    {
+        var (ok, err) = _messagingService.PromoteToAdmin(userId, convId, targetUserId);
+        return Ok(new { Success = ok, Message = err });
+    }
+
+    [HttpDelete("users/{userId}/conversations/{convId}/admins/{targetUserId}")]
+    [EnableRateLimiting("user-60-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult DemoteAdmin([FromRoute] string userId, [FromRoute] string convId, [FromRoute] string targetUserId)
+    {
+        var (ok, err) = _messagingService.DemoteFromAdmin(userId, convId, targetUserId);
+        return Ok(new { Success = ok, Message = err });
+    }
+
     [HttpDelete("users/{userId}/conversations/{convId}/clear")]
     [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(StatusCodes.Status200OK)]

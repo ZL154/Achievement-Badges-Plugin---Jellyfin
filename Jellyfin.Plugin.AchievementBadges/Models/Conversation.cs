@@ -17,6 +17,12 @@ public class Conversation
     [JsonPropertyName("participantIds")]  public List<string> ParticipantIds { get; set; } = new();
     [JsonPropertyName("createdAt")]       public DateTime CreatedAt       { get; set; } = DateTime.UtcNow;
     [JsonPropertyName("createdByUserId")] public string   CreatedByUserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Group admins beyond the creator. Creator is always an implicit admin
+    /// and never appears in this list. Empty for DMs.
+    /// </summary>
+    [JsonPropertyName("adminIds")]        public List<string> AdminIds { get; set; } = new();
 }
 
 /// <summary>

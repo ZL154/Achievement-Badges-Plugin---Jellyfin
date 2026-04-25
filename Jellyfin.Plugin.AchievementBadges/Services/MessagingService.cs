@@ -152,6 +152,15 @@ public class MessagingService
         return (true, null);
     }
 
+    // Admin = creator (implicit) OR in AdminIds. Both ids must already be
+    // normalised by the caller — this helper is a pure check.
+    private static bool IsAdminInternal(Conversation conv, string normalizedUserId)
+    {
+        if (string.IsNullOrEmpty(normalizedUserId)) return false;
+        if (string.Equals(NormalizeId(conv.CreatedByUserId), normalizedUserId)) return true;
+        return conv.AdminIds.Any(a => NormalizeId(a) == normalizedUserId);
+    }
+
     public (bool ok, string? error) LeaveOrRemoveGroup(string callerId, string convId, string targetUserId)
     {
         callerId = NormalizeId(callerId);
@@ -161,15 +170,65 @@ public class MessagingService
             if (!_store.ConvMeta.TryGetValue(convId, out var conv)) return (false, "Conversation not found.");
             if (conv.Type != "group") return (false, "Can only modify group membership.");
             if (!conv.ParticipantIds.Any(p => NormalizeId(p) == callerId)) return (false, "You're not in this group.");
-            // Caller can leave (target=self) or if creator, remove anyone.
-            if (targetUserId != callerId && !string.Equals(NormalizeId(conv.CreatedByUserId), callerId))
-                return (false, "Only the group creator can remove others.");
+
+            // Self-leave is always allowed.
+            // Otherwise: only admins can kick, the creator can never be kicked,
+            // and a non-creator admin can't kick another admin (only the
+            // creator can demote/remove fellow admins).
+            if (targetUserId != callerId)
+            {
+                if (!IsAdminInternal(conv, callerId))
+                    return (false, "Only group admins can remove others.");
+                if (string.Equals(NormalizeId(conv.CreatedByUserId), targetUserId))
+                    return (false, "The group owner can't be removed.");
+                var targetIsAdmin = IsAdminInternal(conv, targetUserId);
+                var callerIsCreator = string.Equals(NormalizeId(conv.CreatedByUserId), callerId);
+                if (targetIsAdmin && !callerIsCreator)
+                    return (false, "Only the group owner can remove other admins.");
+            }
+
             conv.ParticipantIds.RemoveAll(p => NormalizeId(p) == targetUserId);
+            conv.AdminIds.RemoveAll(a => NormalizeId(a) == targetUserId);
             if (conv.ParticipantIds.Count < 2)
             {
                 _store.ConvMeta.Remove(conv.Id);
                 _store.Messages.Remove(conv.Id);
             }
+            Save();
+        }
+        return (true, null);
+    }
+
+    public (bool ok, string? error) PromoteToAdmin(string callerId, string convId, string targetUserId)
+    {
+        callerId = NormalizeId(callerId);
+        targetUserId = NormalizeId(targetUserId);
+        lock (_lock)
+        {
+            if (!_store.ConvMeta.TryGetValue(convId, out var conv)) return (false, "Conversation not found.");
+            if (conv.Type != "group") return (false, "Admins are only for group chats.");
+            if (!IsAdminInternal(conv, callerId)) return (false, "Only group admins can promote.");
+            if (!conv.ParticipantIds.Any(p => NormalizeId(p) == targetUserId)) return (false, "User isn't in this group.");
+            if (IsAdminInternal(conv, targetUserId)) return (true, null); // already admin
+            conv.AdminIds.Add(targetUserId);
+            Save();
+        }
+        return (true, null);
+    }
+
+    public (bool ok, string? error) DemoteFromAdmin(string callerId, string convId, string targetUserId)
+    {
+        callerId = NormalizeId(callerId);
+        targetUserId = NormalizeId(targetUserId);
+        lock (_lock)
+        {
+            if (!_store.ConvMeta.TryGetValue(convId, out var conv)) return (false, "Conversation not found.");
+            if (conv.Type != "group") return (false, "Admins are only for group chats.");
+            if (!string.Equals(NormalizeId(conv.CreatedByUserId), callerId))
+                return (false, "Only the group owner can demote admins.");
+            if (string.Equals(NormalizeId(conv.CreatedByUserId), targetUserId))
+                return (false, "The group owner can't be demoted.");
+            conv.AdminIds.RemoveAll(a => NormalizeId(a) == targetUserId);
             Save();
         }
         return (true, null);

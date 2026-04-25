@@ -845,12 +845,23 @@
                 '.ab-newgroup-row span{flex:1;color:#fff;font-size:0.88em;}' +
 
                 // Members modal — re-uses .ab-newgroup-box but rows are static
-                // (no checkbox) and show a "you"/"admin" pill on the right.
-                '.ab-members-row{display:flex;align-items:center;gap:0.7em;padding:0.5em 0.6em;border-radius:8px;}' +
-                '.ab-members-row .ab-fd-avatar{width:32px;height:32px;font-size:0.72em;}' +
-                '.ab-members-row .ab-members-name{flex:1;color:#fff;font-size:0.88em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
-                '.ab-members-pill{font-size:0.65em;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;padding:0.18em 0.55em;border-radius:999px;color:#c7d2fe;background:rgba(102,126,234,0.18);border:1px solid rgba(102,126,234,0.35);}' +
-                '.ab-members-pill.admin{color:#fcd34d;background:rgba(251,191,36,0.15);border-color:rgba(251,191,36,0.35);}' +
+                // (no checkbox) and show role pills + an admin action menu.
+                '.ab-members-row{position:relative;display:flex;align-items:center;gap:0.7em;padding:0.5em 0.6em;border-radius:8px;}' +
+                '.ab-members-row .ab-fd-avatar{width:32px;height:32px;font-size:0.72em;flex:0 0 auto;}' +
+                '.ab-members-row .ab-members-name{flex:1;color:#fff;font-size:0.88em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}' +
+                '.ab-members-pill{font-size:0.65em;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;padding:0.18em 0.55em;border-radius:999px;color:#c7d2fe;background:rgba(102,126,234,0.18);border:1px solid rgba(102,126,234,0.35);flex:0 0 auto;}' +
+                '.ab-members-pill.owner{color:#fcd34d;background:rgba(251,191,36,0.15);border-color:rgba(251,191,36,0.35);}' +
+                '.ab-members-pill.admin{color:#86efac;background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.35);}' +
+                '.ab-members-actbtn{flex:0 0 auto;background:transparent;border:none;color:rgba(255,255,255,0.5);width:28px;height:28px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s;font-family:inherit;}' +
+                '.ab-members-actbtn:hover{background:rgba(255,255,255,0.08);color:#fff;}' +
+                '.ab-members-actbtn .material-icons{font-size:1.05em;}' +
+                '.ab-members-actmenu{position:absolute;top:calc(100% - 4px);right:0.6em;background:#1a1f2e;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:0.3em;min-width:180px;display:none;flex-direction:column;gap:0.05em;z-index:10000003;box-shadow:0 12px 30px rgba(0,0,0,0.5);}' +
+                '.ab-members-actmenu.open{display:flex;}' +
+                '.ab-members-actmenu button{background:transparent;border:none;color:#fff;text-align:left;padding:0.55em 0.75em;border-radius:7px;cursor:pointer;font-size:0.84em;display:flex;align-items:center;gap:0.55em;font-family:inherit;}' +
+                '.ab-members-actmenu button:hover{background:rgba(255,255,255,0.06);}' +
+                '.ab-members-actmenu button.danger{color:#fca5a5;}' +
+                '.ab-members-actmenu button.danger:hover{background:rgba(239,68,68,0.12);color:#fff;}' +
+                '.ab-members-actmenu .material-icons{font-size:1em;}' +
                 '.ab-chat-peer-status.clickable{cursor:pointer;}' +
                 '.ab-chat-peer-status.clickable:hover{color:#c7d2fe;}' +
                 '.ab-confirm-btn.primary{background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:#fff;}' +
@@ -2061,74 +2072,107 @@
     }
 
     // ── Group members modal ───────────────────────────────────────────
-    // Shows the full participant list for the currently-open group chat.
-    // Hits GET /conversations/{convId} for fresh participantIds + creator,
-    // then maps unknown IDs via the friends list (and falls back to the
-    // bundled _chatParticipants names we already have for display).
+    // Shows the full participant list for the currently-open group chat,
+    // with promote/demote/kick controls if the caller is an admin.
+    //
+    // Auth (must mirror MessagingService):
+    //   - Owner = conv.createdByUserId. Always implicit admin. Untouchable.
+    //   - Admins = owner ∪ conv.adminIds.
+    //   - Any admin can promote a non-admin or kick a non-admin.
+    //   - Only the owner can demote an admin or kick another admin.
     function openMembersModal(){
         var uid = getUserId(); if (!uid || !_chatConvId) return;
+        var convId = _chatConvId;
         var meNorm = uid.toLowerCase().replace(/-/g,'');
 
-        Promise.all([
-            fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+_chatConvId),
-                { headers: authHeaders(), credentials: 'include' })
-                .then(function(r){ return r.ok ? r.json() : null; }),
-            fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/friends'),
-                { headers: authHeaders(), credentials: 'include' })
-                .then(function(r){ return r.ok ? r.json() : null; })
-        ]).then(function(results){
+        function refresh(){
+            return Promise.all([
+                fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+convId),
+                    { headers: authHeaders(), credentials: 'include' })
+                    .then(function(r){ return r.ok ? r.json() : null; }),
+                fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/friends'),
+                    { headers: authHeaders(), credentials: 'include' })
+                    .then(function(r){ return r.ok ? r.json() : null; })
+            ]);
+        }
+
+        function render(overlay, results){
             var convRes = results[0];
             var friendsRes = results[1];
             var conv = convRes && convRes.Conversation;
-            if (!conv) { showToast(tr('friends.members_load_failed','Could not load members.'),''); return; }
+            if (!conv) { showToast(tr('friends.members_load_failed','Could not load members.'),''); return false; }
 
             var friends = (friendsRes && friendsRes.Friends) || [];
             var participantNameById = {};
-            // Seed from in-memory chat state (other members)
             (_chatParticipants || []).forEach(function(p){
                 if (p && p.userId) participantNameById[p.userId.toLowerCase().replace(/-/g,'')] = p.userName || '';
             });
-            // Also seed from friends list (catches members not currently bundled)
             friends.forEach(function(f){
                 var k = (f.UserId||'').toLowerCase().replace(/-/g,'');
                 if (k && !participantNameById[k]) participantNameById[k] = f.UserName || '';
             });
 
-            var creatorNorm = (conv.createdByUserId||'').toLowerCase().replace(/-/g,'');
+            var ownerNorm = (conv.createdByUserId||'').toLowerCase().replace(/-/g,'');
+            var adminSet = {};
+            (conv.adminIds || []).forEach(function(a){ adminSet[(a||'').toLowerCase().replace(/-/g,'')] = true; });
+            var iAmOwner = meNorm === ownerNorm;
+            var iAmAdmin = iAmOwner || !!adminSet[meNorm];
+
             var rows = (conv.participantIds || []).map(function(pid){
                 var k = (pid||'').toLowerCase().replace(/-/g,'');
                 var isMe = k === meNorm;
-                var isAdmin = k === creatorNorm;
+                var isOwner = k === ownerNorm;
+                var isAdmin = isOwner || !!adminSet[k];
                 var name = isMe
                     ? tr('friends.you','You')
                     : (participantNameById[k] || tr('friends.unknown_user','Unknown user'));
                 var av = avatarStyle(pid);
                 var ih = av ? '' : escapeHtml(initials(name));
                 var pills = '';
-                if (isMe) pills += '<span class="ab-members-pill">' + escapeHtml(tr('friends.you_pill','You')) + '</span>';
-                if (isAdmin) pills += '<span class="ab-members-pill admin">' + escapeHtml(tr('friends.admin_pill','Admin')) + '</span>';
+                if (isMe)        pills += '<span class="ab-members-pill">' + escapeHtml(tr('friends.you_pill','You')) + '</span>';
+                if (isOwner)     pills += '<span class="ab-members-pill owner">' + escapeHtml(tr('friends.owner_pill','Owner')) + '</span>';
+                else if (isAdmin) pills += '<span class="ab-members-pill admin">' + escapeHtml(tr('friends.admin_pill','Admin')) + '</span>';
+
+                // Action button visibility:
+                //   never on self or owner; never if I'm not an admin.
+                var canShowActions = iAmAdmin && !isMe && !isOwner;
+                var canPromote   = canShowActions && !isAdmin;                       // any admin
+                var canDemote    = canShowActions && isAdmin && iAmOwner;            // owner only
+                var canKick      = canShowActions && (!isAdmin || iAmOwner);         // owner can kick anyone non-owner; admin can only kick non-admins
+
+                var menuHtml = '';
+                var btnHtml = '';
+                if (canPromote || canDemote || canKick) {
+                    var items = '';
+                    if (canPromote) items += '<button type="button" data-act="promote"><span class="material-icons">shield</span><span>' + escapeHtml(tr('friends.make_admin','Make admin')) + '</span></button>';
+                    if (canDemote)  items += '<button type="button" data-act="demote"><span class="material-icons">remove_moderator</span><span>' + escapeHtml(tr('friends.remove_admin','Remove admin')) + '</span></button>';
+                    if (canKick)    items += '<button type="button" class="danger" data-act="kick"><span class="material-icons">person_remove</span><span>' + escapeHtml(tr('friends.kick_member','Remove from group')) + '</span></button>';
+                    btnHtml = '<button type="button" class="ab-members-actbtn" data-act-toggle="' + escapeHtml(pid) + '" title="'+escapeHtml(tr('friends.member_actions','Member actions'))+'"><span class="material-icons">more_vert</span></button>';
+                    menuHtml = '<div class="ab-members-actmenu" data-act-menu="' + escapeHtml(pid) + '" data-name="' + escapeHtml(name) + '">' + items + '</div>';
+                }
+
                 return '<div class="ab-members-row">' +
                     '<div class="ab-fd-avatar" style="' + av + '">' + ih + '</div>' +
                     '<div class="ab-members-name">' + escapeHtml(name) + '</div>' +
                     pills +
+                    btnHtml +
+                    menuHtml +
                 '</div>';
             });
 
-            // Sort: me first, then admin, then alphabetical
-            // (build a parallel sort key list before joining)
+            // Sort: me, owner, other admins, regular members (each sub-group alphabetical)
             var pairs = (conv.participantIds || []).map(function(pid, i){
                 var k = (pid||'').toLowerCase().replace(/-/g,'');
                 var isMe = k === meNorm;
-                var isAdmin = k === creatorNorm;
+                var isOwner = k === ownerNorm;
+                var isAdmin = isOwner || !!adminSet[k];
                 var name = isMe ? '' : (participantNameById[k] || '~');
-                var rank = isMe ? '0' : (isAdmin ? '1' : '2');
+                var rank = isMe ? '0' : (isOwner ? '1' : (isAdmin ? '2' : '3'));
                 return { html: rows[i], key: rank + name.toLowerCase() };
             });
             pairs.sort(function(a,b){ return a.key < b.key ? -1 : a.key > b.key ? 1 : 0; });
             var listHtml = pairs.map(function(p){ return p.html; }).join('');
 
-            var overlay = document.createElement('div');
-            overlay.id = 'abNewGroupOverlay';
             overlay.innerHTML =
                 '<div class="ab-newgroup-box">' +
                     '<h3>' + escapeHtml(tr('friends.members_title','Group members')) + '</h3>' +
@@ -2140,12 +2184,112 @@
                         '<button type="button" class="ab-confirm-btn primary" id="abMembersClose">' + escapeHtml(tr('friends.close','Close')) + '</button>' +
                     '</div>' +
                 '</div>';
-            document.body.appendChild(overlay);
-            void overlay.offsetHeight;
-            overlay.classList.add('open');
-            var cleanup = function(){ if (overlay.parentNode) overlay.parentNode.removeChild(overlay); };
-            overlay.addEventListener('click', function(e){ if (e.target === overlay) cleanup(); });
-            overlay.querySelector('#abMembersClose').addEventListener('click', cleanup);
+
+            // Wire close + per-row action handlers
+            overlay.querySelector('#abMembersClose').addEventListener('click', function(){ cleanup(); });
+
+            function closeAllMenus(){
+                Array.prototype.forEach.call(overlay.querySelectorAll('.ab-members-actmenu.open'), function(m){ m.classList.remove('open'); });
+            }
+
+            Array.prototype.forEach.call(overlay.querySelectorAll('[data-act-toggle]'), function(btn){
+                btn.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    var pid = btn.getAttribute('data-act-toggle');
+                    var menu = overlay.querySelector('[data-act-menu="'+CSS.escape(pid)+'"]');
+                    var wasOpen = menu && menu.classList.contains('open');
+                    closeAllMenus();
+                    if (menu && !wasOpen) menu.classList.add('open');
+                });
+            });
+
+            Array.prototype.forEach.call(overlay.querySelectorAll('[data-act-menu]'), function(menu){
+                var pid = menu.getAttribute('data-act-menu');
+                var name = menu.getAttribute('data-name') || '';
+                Array.prototype.forEach.call(menu.querySelectorAll('button[data-act]'), function(b){
+                    b.addEventListener('click', function(e){
+                        e.stopPropagation();
+                        var act = b.getAttribute('data-act');
+                        closeAllMenus();
+                        runMemberAction(act, pid, name, overlay);
+                    });
+                });
+            });
+
+            // Click anywhere inside box (but not on a row's menu/button) closes any open menu
+            var box = overlay.querySelector('.ab-newgroup-box');
+            if (box) box.addEventListener('click', function(e){
+                if (!e.target.closest('[data-act-menu],[data-act-toggle]')) closeAllMenus();
+            });
+
+            return true;
+        }
+
+        function runMemberAction(act, pid, name, overlay){
+            if (act === 'promote') {
+                fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+convId+'/admins/'+pid),
+                    { method: 'POST', headers: authHeaders(), credentials: 'include' })
+                .then(function(r){ return r.ok ? r.json() : null; })
+                .then(function(res){
+                    if (!res || !res.Success) { showToast((res && res.Message) || tr('friends.action_failed','Action failed.'),''); return; }
+                    showToast(tr('friends.promoted_toast','Promoted to admin'),'');
+                    refresh().then(function(rr){ render(overlay, rr); });
+                });
+            } else if (act === 'demote') {
+                abConfirm(
+                    tr('friends.remove_admin','Remove admin'),
+                    (tr('friends.demote_body','Remove admin permissions from {name}?')).replace('{name}', name),
+                    tr('friends.remove_admin','Remove admin'),
+                    function(){
+                        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+convId+'/admins/'+pid),
+                            { method: 'DELETE', headers: authHeaders(), credentials: 'include' })
+                        .then(function(r){ return r.ok ? r.json() : null; })
+                        .then(function(res){
+                            if (!res || !res.Success) { showToast((res && res.Message) || tr('friends.action_failed','Action failed.'),''); return; }
+                            showToast(tr('friends.demoted_toast','Removed admin'),'');
+                            refresh().then(function(rr){ render(overlay, rr); });
+                        });
+                    }
+                );
+            } else if (act === 'kick') {
+                abConfirm(
+                    tr('friends.kick_title','Remove from group?'),
+                    (tr('friends.kick_body','{name} will be removed from this group and stop receiving messages from it.')).replace('{name}', name),
+                    tr('friends.kick_member','Remove from group'),
+                    function(){
+                        fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/conversations/'+convId+'/members/'+pid),
+                            { method: 'DELETE', headers: authHeaders(), credentials: 'include' })
+                        .then(function(r){ return r.ok ? r.json() : null; })
+                        .then(function(res){
+                            if (!res || !res.Success) { showToast((res && res.Message) || tr('friends.action_failed','Action failed.'),''); return; }
+                            showToast(tr('friends.kicked_toast','Removed from group'),'');
+                            // Update in-memory participant list so chat header reflects change
+                            _chatParticipants = (_chatParticipants || []).filter(function(p){
+                                return (p.userId||'').toLowerCase().replace(/-/g,'') !== (pid||'').toLowerCase().replace(/-/g,'');
+                            });
+                            var stEl = document.getElementById('abChatPeerStatus');
+                            if (stEl && _chatConvType === 'group') {
+                                stEl.textContent = (_chatParticipants.length + 1) + ' ' + tr('friends.members','members');
+                            }
+                            refresh().then(function(rr){
+                                if (!render(overlay, rr)) cleanup();
+                            });
+                        });
+                    }
+                );
+            }
+        }
+
+        var overlay = document.createElement('div');
+        overlay.id = 'abNewGroupOverlay';
+        document.body.appendChild(overlay);
+        void overlay.offsetHeight;
+        overlay.classList.add('open');
+        var cleanup = function(){ if (overlay.parentNode) overlay.parentNode.removeChild(overlay); };
+        overlay.addEventListener('click', function(e){ if (e.target === overlay) cleanup(); });
+
+        refresh().then(function(results){
+            if (!render(overlay, results)) cleanup();
         });
     }
 
