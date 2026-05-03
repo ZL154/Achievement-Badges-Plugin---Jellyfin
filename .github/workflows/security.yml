@@ -1,0 +1,88 @@
+name: Security
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Run weekly even when no PR opens — catches new CVEs disclosed against
+    # locked dependency versions.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Security regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        working-directory: Jellyfin.Plugin.AchievementBadges.Tests
+        run: dotnet restore
+
+      - name: Run security regression tests
+        working-directory: Jellyfin.Plugin.AchievementBadges.Tests
+        run: dotnet test --nologo --no-restore --verbosity normal
+
+  vulnerabilities:
+    name: Dependency vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore plugin
+        working-directory: Jellyfin.Plugin.AchievementBadges
+        run: dotnet restore
+
+      - name: Audit direct + transitive packages for known CVEs
+        working-directory: Jellyfin.Plugin.AchievementBadges
+        # `dotnet list package --vulnerable --include-transitive` returns 0
+        # whether or not vulnerabilities exist. Detect findings by grepping
+        # the output. Presence of "High" / "Critical" / "Moderate" in the
+        # severity column means at least one CVE was reported — fail.
+        run: |
+          set -euo pipefail
+          OUT=$(dotnet list package --vulnerable --include-transitive 2>&1 || true)
+          echo "$OUT"
+          if echo "$OUT" | grep -E "(High|Critical|Moderate)" > /dev/null; then
+            echo "::error::High/Critical/Moderate vulnerabilities detected. See output above."
+            exit 1
+          fi
+
+      - name: Audit deprecated packages
+        working-directory: Jellyfin.Plugin.AchievementBadges
+        # Deprecated isn't a hard fail — surface as a warning so the next
+        # release can swap them out, but don't block today.
+        run: |
+          OUT=$(dotnet list package --deprecated 2>&1 || true)
+          echo "$OUT"
+          if echo "$OUT" | grep -E "^\s*>\s*\S+\s+\S+" > /dev/null; then
+            echo "::warning::Deprecated packages detected. Consider updating before next release."
+          fi
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,8 +1,13 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Jellyfin.Data.Enums;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Session;
+using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.Querying;
 
 namespace Jellyfin.Plugin.AchievementBadges.Services;
 
@@ -21,12 +26,133 @@ public class FriendsService
     private readonly AchievementBadgeService _badgeService;
     private readonly ISessionManager _sessionManager;
     private readonly IUserManager _userManager;
+    private readonly ILibraryManager _libraryManager;
+    private readonly IUserDataManager _userDataManager;
 
-    public FriendsService(AchievementBadgeService badgeService, ISessionManager sessionManager, IUserManager userManager)
+    public FriendsService(
+        AchievementBadgeService badgeService,
+        ISessionManager sessionManager,
+        IUserManager userManager,
+        ILibraryManager libraryManager,
+        IUserDataManager userDataManager)
     {
         _badgeService = badgeService;
         _sessionManager = sessionManager;
         _userManager = userManager;
+        _libraryManager = libraryManager;
+        _userDataManager = userDataManager;
+    }
+
+    /// <summary>
+    /// v1.8.57: in-memory cache for LastWatched results. Without this, the
+    /// /users/{userId}/friends endpoint was running one 50-item library
+    /// query + 50 reflection-based UserData lookups per friend on every
+    /// call — N+1 per page-load, plus periodic re-fetches from sidebar.js.
+    /// 90s TTL is short enough that a freshly-played item shows up quickly
+    /// and long enough that repeated drawer opens / 30s badge polls don't
+    /// keep hitting the library.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Guid, (DateTime At, object? Value)> _lastWatchedCache = new();
+    private static readonly TimeSpan _lastWatchedTtl = TimeSpan.FromSeconds(90);
+
+    /// <summary>
+    /// Invalidate the cached LastWatched for a single user. Called from the
+    /// playback completion path (PlaybackCompletionService / Tracker) so a
+    /// fresh play immediately replaces the cached entry on next read.
+    /// Public + static so external services can invalidate without holding
+    /// a FriendsService reference.
+    /// </summary>
+    public static void InvalidateLastWatched(Guid userId)
+    {
+        _lastWatchedCache.TryRemove(userId, out _);
+    }
+
+    /// <summary>
+    /// v1.8.54: get the most recently played media item for a user. Used to
+    /// power the "Offline — &lt;last watched&gt;" line in the friends drawer
+    /// so offline rows mirror the "Watching X" treatment online rows get.
+    /// Avoids SortOrder enum (namespace shifts between Jellyfin minor
+    /// releases) by fetching a bounded batch of played items and sorting
+    /// in C# via the reflection-based GetUserData.LastPlayedDate pattern
+    /// already used by WatchHistoryBackfillService. Falls back to null on
+    /// any exception so one bad library never breaks a friends listing.
+    /// </summary>
+    private object? GetLastWatched(Guid userId)
+    {
+        // v1.8.57: serve from cache when fresh.
+        if (_lastWatchedCache.TryGetValue(userId, out var cached)
+            && (DateTime.UtcNow - cached.At) < _lastWatchedTtl)
+        {
+            return cached.Value;
+        }
+
+        var computed = ComputeLastWatched(userId);
+        _lastWatchedCache[userId] = (DateTime.UtcNow, computed);
+        return computed;
+    }
+
+    private object? ComputeLastWatched(Guid userId)
+    {
+        try
+        {
+            var user = _userManager.GetUserById(userId);
+            if (user is null) return null;
+            var query = new InternalItemsQuery(user)
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Episode },
+                IsPlayed = true,
+                Limit = 50,
+                Recursive = true,
+                EnableTotalRecordCount = false
+            };
+            var result = _libraryManager.GetItemsResult(query);
+            var items = result?.Items;
+            if (items is null || items.Count == 0) return null;
+
+            BaseItem? best = null;
+            DateTime bestPlayed = DateTime.MinValue;
+            foreach (var item in items)
+            {
+                var played = GetLastPlayed(user, item);
+                if (played > bestPlayed)
+                {
+                    bestPlayed = played;
+                    best = item;
+                }
+            }
+            if (best is null) return null;
+            return new
+            {
+                Id = best.Id.ToString("N"),
+                Name = best.Name,
+                Type = best.GetBaseItemKind().ToString(),
+                SeriesName = (best as MediaBrowser.Controller.Entities.TV.Episode)?.SeriesName,
+                SeasonName = (best as MediaBrowser.Controller.Entities.TV.Episode)?.SeasonName
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private DateTime GetLastPlayed(object user, BaseItem item)
+    {
+        try
+        {
+            var method = _userDataManager.GetType().GetMethod("GetUserData",
+                new[] { user.GetType(), typeof(BaseItem) });
+            if (method == null) return DateTime.MinValue;
+            var userData = method.Invoke(_userDataManager, new[] { user, item });
+            if (userData == null) return DateTime.MinValue;
+            var prop = userData.GetType().GetProperty("LastPlayedDate");
+            var val = prop?.GetValue(userData) as DateTime?;
+            return val ?? DateTime.MinValue;
+        }
+        catch
+        {
+            return DateTime.MinValue;
+        }
     }
 
     public object List(string userId)
@@ -146,6 +272,19 @@ public class FriendsService
                 SeasonName = item.SeasonName
             };
         }
+        // v1.8.54: surface the friend's most recently played item when they're
+        // offline — mirrors the online "Watching X" line. Suppressed entirely
+        // when AppearOffline / HideNowPlaying / HideLastWatched (v1.8.56) is
+        // set, same privacy contract as NowPlaying. Skipped when online too
+        // (NowPlaying takes precedence).
+        var hideLastWatched = fProfile?.Preferences?.HideLastWatched == true;
+        object? lastWatched = null;
+        if (!isOnline && !appearOffline && !hideNowPlaying && !hideLastWatched
+            && Guid.TryParseExact(fid, "N", out var fGuid))
+        {
+            lastWatched = GetLastWatched(fGuid);
+        }
+
         return new FriendRow
         {
             UserId = fid,
@@ -154,7 +293,8 @@ public class FriendsService
             // When the user appears offline, don't leak a LastSeen date either.
             LastSeen = appearOffline ? null : session?.LastActivityDate,
             Equipped = equipped,
-            NowPlaying = nowPlaying
+            NowPlaying = nowPlaying,
+            LastWatched = lastWatched
         };
     }
 
@@ -356,5 +496,7 @@ public class FriendsService
         public DateTime? LastSeen { get; set; }
         public List<object> Equipped { get; set; } = new();
         public object? NowPlaying { get; set; }
+        // v1.8.54: most recent played item when user is offline (privacy-gated).
+        public object? LastWatched { get; set; }
     }
 }

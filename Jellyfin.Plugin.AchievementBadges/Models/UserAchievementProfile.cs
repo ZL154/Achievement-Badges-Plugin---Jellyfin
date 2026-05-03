@@ -87,6 +87,12 @@ public class UserNotificationPreferences
     [JsonPropertyName("HideNowPlaying")]
     public bool HideNowPlaying { get; set; } = false;
 
+    // v1.8.56: hide the offline "last watched" line in the friends drawer.
+    // Distinct from HideNowPlaying (which only hides the live online watch
+    // status) — this controls the offline-state echo introduced in v1.8.54.
+    [JsonPropertyName("HideLastWatched")]
+    public bool HideLastWatched { get; set; } = false;
+
     // Corner for the global friends button: "bottom-left" (default),
     // "bottom-right", "top-left", "top-right". Anything else → bottom-left.
     [JsonPropertyName("FriendsButtonCorner")]

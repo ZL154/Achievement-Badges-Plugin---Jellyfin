@@ -27,6 +27,16 @@ public class PluginConfiguration : BasePluginConfiguration
     public string WebhookMessageTemplate { get; set; }
         = "🏆 **{user}** unlocked **{badge}** ({rarity}) — {description}";
 
+    // v1.8.59 (A+): HMAC-SHA256 signing secret for outbound webhook POSTs.
+    // When set, every webhook body is signed and the signature is sent in:
+    //   X-AchievementBadges-Signature: sha256=<hex>
+    //   X-AchievementBadges-Timestamp: <unix-seconds>
+    // Receivers can verify with HMAC(secret, "<timestamp>." + raw_body) to
+    // confirm the message wasn't forged by anyone who happened to grab the
+    // webhook URL. Same pattern as Stripe / GitHub. Empty = don't sign
+    // (preserves legacy behaviour for users who haven't generated one yet).
+    public string WebhookSigningSecret { get; set; } = string.Empty;
+
     public bool EnableUnlockToasts { get; set; } = true;
 
     public bool EnableHomeWidget { get; set; } = false;

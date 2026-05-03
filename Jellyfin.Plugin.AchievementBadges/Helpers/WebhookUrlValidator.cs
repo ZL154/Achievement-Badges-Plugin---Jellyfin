@@ -35,6 +35,14 @@ public static class WebhookUrlValidator
             {
                 addresses = Dns.GetHostAddresses(uri.Host);
             }
+            if (addresses.Length == 0)
+            {
+                // v1.8.58 security: fail-closed on empty resolution. Previously
+                // we let through "no addresses" so an attacker couldn't bypass
+                // validation by stalling DNS.
+                error = $"Webhook URL host '{uri.Host}' did not resolve to any address.";
+                return false;
+            }
             foreach (var ip in addresses)
             {
                 if (IsDisallowed(ip))
@@ -44,9 +52,16 @@ public static class WebhookUrlValidator
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // DNS failure — allow through; actual send will fail
+            // v1.8.58 security: fail-closed on DNS errors. Previously the
+            // catch-and-allow let an attacker register an admin URL that
+            // failed DNS at validation time but resolved to a private IP at
+            // send time (TOCTOU / DNS rebinding). WebhookNotifier still
+            // re-validates immediately before each send, but the admin save
+            // path needs to refuse unresolvable hosts up front.
+            error = $"Webhook URL host could not be resolved ({ex.GetType().Name}). Refusing to save.";
+            return false;
         }
         return true;
     }

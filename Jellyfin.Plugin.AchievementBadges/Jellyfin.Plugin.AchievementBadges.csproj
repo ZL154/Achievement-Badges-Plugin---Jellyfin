@@ -9,7 +9,7 @@
     <RootNamespace>Jellyfin.Plugin.AchievementBadges</RootNamespace>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
-    <Version>1.8.10</Version>
+    <Version>1.9.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,10 +25,13 @@
 
 
   <ItemGroup>
-    <!-- Microsoft.NET.Sdk.Web implicitly classifies JSON under Pages\ as
-         Content (via StaticWebAssets). Strip that first. -->
+    <!-- Microsoft.NET.Sdk.Web implicitly classifies JSON / CSS under Pages\ as
+         Content (via StaticWebAssets). Strip that first so the EmbeddedResource
+         glob below is the sole owner. -->
     <Content Remove="Pages\**\*.json" />
     <None Remove="Pages\**\*.json" />
+    <Content Remove="Pages\**\*.css" />
+    <None Remove="Pages\**\*.css" />
     <EmbeddedResource Include="Pages\**\*" />
     <EmbeddedResource Include="Configuration\configPage.html" />
   </ItemGroup>

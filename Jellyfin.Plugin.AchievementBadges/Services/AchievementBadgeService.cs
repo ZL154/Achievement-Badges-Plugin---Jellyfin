@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Jellyfin.Plugin.AchievementBadges.Models;
 using MediaBrowser.Common.Configuration;
@@ -19,7 +21,11 @@ public class AchievementBadgeService
     // file with an empty in-memory state (see v1.7.2 data-loss fix).
     private bool _loadFailed;
     private readonly object _lock = new();
-    private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
+    // v1.8.60: WriteIndented=false. The store file can grow to several MB on
+    // a busy server with many users; pretty-printing roughly doubles bytes
+    // and serialize time. JSON is still readable in any modern editor with
+    // format-on-paste, and admin export endpoints can pretty-print on demand.
+    private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = false };
     private readonly ILogger<AchievementBadgeService> _logger;
     private readonly IUserManager _userManager;
     private readonly WebhookNotifier? _webhookNotifier;
@@ -2650,7 +2656,75 @@ public class AchievementBadgeService
         _logger.LogInformation("Loaded achievement data for {UserCount} users.", _userProfiles.Count);
     }
 
+    // v1.8.57: debounce. Save() used to write the entire user store on every
+    // playback event — 27 call sites, frequently inside lock(_lock). With
+    // multiple users watching, that's a serialise-and-rename storm.
+    // The debouncer collapses back-to-back saves within DebounceMs into a
+    // single disk write. In-memory state is always current; the worst-case
+    // crash window shifts from instant to ~1.5s of unpersisted progress.
+    // Flush() is called from FlushPendingSave() at shutdown / on demand.
+    private const int DebounceMs = 1500;
+    private readonly object _saveLock = new();
+    private Timer? _saveTimer;
+    private bool _savePending;
+
     private void Save()
+    {
+        if (_loadFailed)
+        {
+            // Loaded into a quarantined state — write straight to .recovery
+            // immediately (no debounce) so manual recovery has the latest.
+            SaveImmediate();
+            return;
+        }
+        lock (_saveLock)
+        {
+            _savePending = true;
+            if (_saveTimer == null)
+            {
+                _saveTimer = new Timer(_ => FlushDebouncedSave(), null, DebounceMs, Timeout.Infinite);
+            }
+            else
+            {
+                _saveTimer.Change(DebounceMs, Timeout.Infinite);
+            }
+        }
+    }
+
+    private void FlushDebouncedSave()
+    {
+        bool shouldRun;
+        lock (_saveLock)
+        {
+            shouldRun = _savePending;
+            _savePending = false;
+        }
+        if (!shouldRun) return;
+        try
+        {
+            // SaveImmediate takes _lock to snapshot _userProfiles safely.
+            lock (_lock)
+            {
+                SaveImmediate();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[AchievementBadges] Debounced Save flush failed.");
+        }
+    }
+
+    /// <summary>
+    /// Flush any pending debounced save synchronously. Call before shutdown
+    /// or when the caller absolutely needs the disk to be current (e.g. an
+    /// admin export endpoint).
+    /// </summary>
+    public void FlushPendingSave()
+    {
+        FlushDebouncedSave();
+    }
+
+    private void SaveImmediate()
     {
         var store = new UserBadgeStore
         {

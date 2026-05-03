@@ -1,0 +1,4438 @@
+/* ==========================================================================
+   Achievement Badges — Revamp v1.8.25
+   ==========================================================================
+   Built from a fresh v1.8.10 baseline. Every rule below has been checked
+   against the rules in: impeccable, ui-ux-pro-max, design-taste-frontend,
+   high-end-visual-design, minimalist-ui, and stitch-design-taste.
+
+   Scene sentence: "Self-hosted media enthusiast (30s, design-conscious)
+   reviewing their Jellyfin achievements late evening on a 27" monitor in
+   dim ambient light. Mood: satisfied + curious + completionist."
+
+   Register: PRODUCT (admin app — design serves the function)
+   Color strategy: Restrained — tinted neutrals + ONE accent ≤10% surface
+   Typography: Cabinet Grotesk display + Geist body + Geist Mono numerics
+   Layout: Editorial Split hero + Asymmetric Bento dashboard row
+   Motion: cubic-bezier(0.16, 1, 0.3, 1), transform+opacity only
+
+   Banned: Inter, pure black, purple/neon glows, oversaturated accents,
+   3-equal-card grids, generic gray borders, gradient text headers,
+   emoji icons in chrome (badge content emoji are content, not chrome),
+   centered hero (variance > 4), rounded-full on large containers,
+   heavy drop shadows.
+
+   All selectors scoped to [data-ab-style="revamp"] on #AchievementBadgesPage
+   so the v1.8.10 classic theme is preserved byte-for-byte when toggled off.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* ============================================================================
+   1. DESIGN TOKENS
+   ============================================================================ */
+
+[data-ab-style="revamp"]#AchievementBadgesPage,
+[data-ab-style="revamp"] #AchievementBadgesPage {
+    /* --- surfaces (warm-tinted off-black, never #000) ---------------------- */
+    --rv-canvas:  oklch(13% 0.010 260);          /* page background */
+    --rv-surface: oklch(17% 0.012 260 / 0.55);   /* card/glass mid */
+    --rv-elevated: oklch(20% 0.014 260 / 0.78);  /* hero-grade card */
+    --rv-deeper: oklch(11% 0.010 260);           /* recessed wells */
+
+    --rv-edge:    oklch(36% 0.014 260 / 0.45);   /* hairline default */
+    --rv-edge-bright: oklch(48% 0.020 260 / 0.65); /* hover/focus edge */
+
+    /* --- type colors -------------------------------------------------------- */
+    --rv-text:        oklch(96% 0.005 260);
+    --rv-text-muted:  oklch(72% 0.010 260);
+    --rv-text-faint:  oklch(54% 0.012 260);
+    --rv-text-quiet:  oklch(40% 0.014 260);
+
+    /* --- single restrained accent (emerald, ≤10% surface) ------------------ */
+    --rv-accent:        oklch(72% 0.16 152);
+    --rv-accent-strong: oklch(78% 0.16 152);
+    --rv-accent-soft:   oklch(72% 0.16 152 / 0.16);
+    --rv-accent-ink:    oklch(15% 0.014 152);    /* text on accent fill */
+
+    /* --- rarity ladder (used ONLY on tier signals) ------------------------- */
+    --rv-r-common:    oklch(74% 0.018 260);
+    --rv-r-uncommon:  oklch(74% 0.16 152);
+    --rv-r-rare:      oklch(72% 0.16 230);
+    --rv-r-epic:      oklch(70% 0.20 295);
+    --rv-r-legendary: oklch(82% 0.16 78);
+    --rv-r-mythic:    oklch(68% 0.22 12);
+
+    /* --- spacing (4-pt scale) ---------------------------------------------- */
+    --rv-1: 4px;  --rv-2: 8px;  --rv-3: 12px;
+    --rv-4: 16px; --rv-5: 24px; --rv-6: 32px;
+    --rv-7: 48px; --rv-8: 64px;
+
+    /* --- radius (crisp, no rounded-full on big containers) ----------------- */
+    --rv-r-xs: 6px; --rv-r-sm: 10px; --rv-r-md: 14px;
+    --rv-r-lg: 20px; --rv-r-xl: 28px;
+
+    /* --- motion ------------------------------------------------------------ */
+    --rv-ease:       cubic-bezier(0.16, 1, 0.3, 1);     /* exponential ease-out */
+    --rv-ease-quick: cubic-bezier(0.32, 0.72, 0, 1);    /* quick utility */
+    --rv-fast: 180ms; --rv-base: 320ms; --rv-slow: 520ms;
+
+    /* --- type stacks ------------------------------------------------------- */
+    --rv-display: 'Space Grotesk', 'Geist', system-ui, sans-serif;
+    --rv-body:    'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --rv-mono:    'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ============================================================================
+   2. PAGE FOUNDATION
+   ============================================================================ */
+
+[data-ab-style="revamp"]#AchievementBadgesPage {
+    position: relative;
+    isolation: isolate;
+    color: var(--rv-text);
+    font-family: var(--rv-body);
+    font-feature-settings: 'ss01' on;
+    background:
+        radial-gradient(900px 480px at 8% -8%,  oklch(28% 0.12 152 / 0.18), transparent 60%),
+        radial-gradient(900px 480px at 96% 110%, oklch(26% 0.06 260 / 0.22), transparent 65%),
+        var(--rv-canvas);
+    min-height: 100vh;
+    /* viewport-math centring — symmetrical at any width */
+    padding-block: clamp(2rem, 4vw, 3.5rem) 5rem;
+    padding-inline: max(1.5rem, calc((100% - 1320px) / 2));
+}
+
+/* drift: slow ambient, very subtle, fixed pseudo-element only (per rules) */
+[data-ab-style="revamp"]#AchievementBadgesPage::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(640px 320px at 18% 22%, oklch(34% 0.14 152 / 0.10), transparent 60%);
+    animation: rv-drift 28s var(--rv-ease) infinite alternate;
+}
+@keyframes rv-drift {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(40px, 30px, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-ab-style="revamp"]#AchievementBadgesPage::before { animation: none; }
+}
+
+/* container override — let the inline max-width:1500px through but tighten */
+[data-ab-style="revamp"][data-ab-restructured="1"] .verticalSection > div[style*="max-width"] {
+    max-width: none !important;
+    margin: 0 !important;
+}
+
+/* hide the original bare h2 + tab strip while restructured */
+[data-ab-style="revamp"][data-ab-restructured="1"] h2.sectionTitle { display: none; }
+[data-ab-style="revamp"][data-ab-restructured="1"] .abTabs       { display: none !important; }
+
+/* ============================================================================
+   3. STYLE TOGGLE (always visible top-right; classic + revamp)
+   ============================================================================ */
+
+#abStyleToggleHost {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rv-1);
+    padding: 4px;
+    border-radius: 999px;
+    background: oklch(17% 0.012 260 / 0.6);
+    border: 1px solid var(--rv-edge);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+#abStyleToggleHost button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--rv-text-muted, #b0b6c2);
+    padding: 6px 14px;
+    font: 500 11px/1 var(--rv-mono, monospace);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color var(--rv-fast, 180ms) var(--rv-ease, ease),
+                background var(--rv-fast, 180ms) var(--rv-ease, ease);
+}
+#abStyleToggleHost button[aria-pressed="true"] {
+    color: var(--rv-accent-ink, #061a10);
+    background: var(--rv-accent, #34d399);
+}
+#abStyleToggleHost button:not([aria-pressed="true"]):hover {
+    color: var(--rv-text, #f0f2f8);
+    background: oklch(100% 0 0 / 0.04);
+}
+
+/* ============================================================================
+   4. EYEBROW (small uppercase pill before main content — per high-end skill)
+   ============================================================================ */
+
+[data-ab-style="revamp"] .abEyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--rv-edge);
+    background: oklch(17% 0.012 260 / 0.4);
+    color: var(--rv-text-muted);
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+}
+[data-ab-style="revamp"] .abEyebrow::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--rv-accent);
+    box-shadow: 0 0 0 3px var(--rv-accent-soft);
+}
+
+/* ============================================================================
+   5. HERO — editorial split (60/40 asymmetric, per anti-center-bias rule)
+   ============================================================================ */
+
+[data-ab-style="revamp"] #abHeroStrip {
+    margin-top: var(--rv-3);
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: var(--rv-5);
+    padding: var(--rv-6);
+    border-radius: var(--rv-r-xl);
+    background: linear-gradient(180deg, var(--rv-elevated), var(--rv-surface));
+    border: 1px solid var(--rv-edge);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    box-shadow:
+        0 1px 0 oklch(100% 0 0 / 0.04) inset,
+        0 24px 60px oklch(0% 0 0 / 0.28);
+    position: relative;
+    overflow: hidden;
+}
+/* doppelrand inner highlight */
+[data-ab-style="revamp"] #abHeroStrip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    padding: 1px;
+    background: linear-gradient(135deg,
+        oklch(100% 0 0 / 0.16),
+        oklch(100% 0 0 / 0) 35%,
+        oklch(72% 0.16 152 / 0.18));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+}
+
+/* --- left: identity + KPIs -------------------------------------------------- */
+[data-ab-style="revamp"] .abHeroLeft {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rv-4);
+    min-width: 0;
+}
+[data-ab-style="revamp"] .abHeroIdentity {
+    display: flex;
+    align-items: center;
+    gap: var(--rv-4);
+}
+[data-ab-style="revamp"] .abHeroAvatar {
+    width: 84px; height: 84px;
+    border-radius: var(--rv-r-lg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2em;
+    line-height: 1;
+    background:
+        radial-gradient(120% 120% at 30% 20%, oklch(100% 0 0 / 0.18), transparent 60%),
+        oklch(20% 0.014 260);
+    border: 1px solid var(--rv-edge-bright);
+    box-shadow: 0 1px 0 oklch(100% 0 0 / 0.10) inset;
+    flex-shrink: 0;
+}
+[data-ab-style="revamp"] .abHeroIdentText { min-width: 0; }
+[data-ab-style="revamp"] .abHeroEyebrow {
+    margin-bottom: 8px;
+}
+[data-ab-style="revamp"] .abHeroDisplayName {
+    font-family: var(--rv-display);
+    font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    color: var(--rv-text);
+    margin: 0;
+}
+[data-ab-style="revamp"] .abHeroSubtext {
+    margin-top: 6px;
+    font-size: 0.95em;
+    color: var(--rv-text-muted);
+    line-height: 1.4;
+}
+
+/* KPI row: 4 mono numbers with tiny uppercase labels — divider rules between */
+[data-ab-style="revamp"] .abHeroKpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: auto;
+    border-top: 1px solid var(--rv-edge);
+    padding-top: var(--rv-4);
+}
+[data-ab-style="revamp"] .abHeroKpi {
+    padding: 0 var(--rv-3);
+    border-left: 1px solid var(--rv-edge);
+}
+[data-ab-style="revamp"] .abHeroKpi:first-child {
+    padding-left: 0;
+    border-left: 0;
+}
+[data-ab-style="revamp"] .abHeroKpiLabel {
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--rv-text-faint);
+    margin-bottom: 6px;
+}
+[data-ab-style="revamp"] .abHeroKpiValue {
+    font-family: var(--rv-display);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 2vw, 1.8rem);
+    line-height: 1;
+    color: var(--rv-text);
+    font-feature-settings: 'tnum' on, 'lnum' on;
+    letter-spacing: -0.01em;
+}
+
+/* --- right: completion arc (SVG donut chart) ------------------------------- */
+[data-ab-style="revamp"] .abHeroArc {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rv-3);
+    padding: var(--rv-3);
+    border-radius: var(--rv-r-lg);
+    background: var(--rv-deeper);
+    border: 1px solid var(--rv-edge);
+}
+[data-ab-style="revamp"] .abHeroArcSvg {
+    width: 200px; height: 200px;
+    display: block;
+    overflow: visible;
+}
+[data-ab-style="revamp"] .abHeroArcTrack {
+    fill: none;
+    stroke: oklch(100% 0 0 / 0.06);
+    stroke-width: 12;
+}
+[data-ab-style="revamp"] .abHeroArcFill {
+    fill: none;
+    stroke: var(--rv-accent);
+    stroke-width: 12;
+    stroke-linecap: round;
+    transform-origin: center;
+    transform: rotate(-90deg);
+    transition: stroke-dashoffset var(--rv-slow) var(--rv-ease);
+    filter: drop-shadow(0 0 12px oklch(72% 0.16 152 / 0.30));
+}
+[data-ab-style="revamp"] .abHeroArcCenter {
+    text-align: center;
+}
+[data-ab-style="revamp"] .abHeroArcPct {
+    font-family: var(--rv-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 3vw, 2.6rem);
+    color: var(--rv-text);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-feature-settings: 'tnum' on;
+}
+[data-ab-style="revamp"] .abHeroArcCount {
+    margin-top: 4px;
+    font: 500 10px/1.2 var(--rv-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--rv-text-faint);
+}
+
+/* --- hero action row (top-right of hero) ----------------------------------- */
+[data-ab-style="revamp"] .abHeroActions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rv-2);
+    align-items: center;
+    margin-top: var(--rv-1);
+}
+/* [data-ab-style="revamp"] .abHero { display: contents; } -- consumed by .abHeroLeft */
+
+/* mobile collapse */
+@media (max-width: 920px) {
+    [data-ab-style="revamp"] #abHeroStrip { grid-template-columns: 1fr; }
+    [data-ab-style="revamp"] .abHeroArc { order: -1; }
+    [data-ab-style="revamp"] .abHeroKpis { grid-template-columns: repeat(2, 1fr); gap: var(--rv-3) 0; }
+    [data-ab-style="revamp"] .abHeroKpi:nth-child(3) { padding-left: 0; border-left: 0; }
+}
+
+/* ============================================================================
+   6. BENTO DASHBOARD ROW — asymmetric, three panels
+   ============================================================================ */
+
+[data-ab-style="revamp"] #abBentoRow {
+    margin-top: var(--rv-5);
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--rv-4);
+}
+@media (max-width: 1100px) {
+    [data-ab-style="revamp"] #abBentoRow { grid-template-columns: 1fr; }
+}
+
+[data-ab-style="revamp"] .abBentoCard {
+    padding: var(--rv-5);
+    border-radius: var(--rv-r-lg);
+    background: var(--rv-surface);
+    border: 1px solid var(--rv-edge);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 1px 0 oklch(100% 0 0 / 0.04) inset, 0 12px 28px oklch(0% 0 0 / 0.22);
+    display: flex;
+    flex-direction: column;
+    gap: var(--rv-3);
+    min-width: 0;
+}
+[data-ab-style="revamp"] .abBentoTitle {
+    font-family: var(--rv-display);
+    font-weight: 600;
+    font-size: 0.95em;
+    letter-spacing: 0.02em;
+    color: var(--rv-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rv-2);
+}
+[data-ab-style="revamp"] .abBentoSub {
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rv-text-faint);
+}
+
+/* --- recent activity timeline -------------------------------------------- */
+[data-ab-style="revamp"] .abActivityList {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+[data-ab-style="revamp"] .abActivityRow {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: var(--rv-3);
+    align-items: center;
+    padding: var(--rv-3) 0;
+    border-top: 1px solid var(--rv-edge);
+    position: relative;
+}
+[data-ab-style="revamp"] .abActivityRow:first-child { border-top: 0; padding-top: 0; }
+[data-ab-style="revamp"] .abActivityIcon {
+    width: 32px; height: 32px;
+    border-radius: var(--rv-r-xs);
+    background: var(--rv-deeper);
+    border: 1px solid var(--rv-edge);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+    line-height: 1;
+}
+[data-ab-style="revamp"] .abActivityName {
+    font-weight: 600;
+    color: var(--rv-text);
+    font-size: 0.9em;
+    line-height: 1.2;
+}
+[data-ab-style="revamp"] .abActivityTier {
+    margin-top: 3px;
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rv-text-faint);
+}
+[data-ab-style="revamp"] .abActivityTime {
+    font: 500 11px/1 var(--rv-mono);
+    color: var(--rv-text-faint);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+/* --- next milestones (progress bars) ------------------------------------- */
+[data-ab-style="revamp"] .abMilestoneList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rv-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+[data-ab-style="revamp"] .abMilestoneRow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+[data-ab-style="revamp"] .abMilestoneTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--rv-2);
+}
+[data-ab-style="revamp"] .abMilestoneName {
+    font-weight: 600;
+    color: var(--rv-text);
+    font-size: 0.88em;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+[data-ab-style="revamp"] .abMilestoneNum {
+    font: 500 11px/1 var(--rv-mono);
+    color: var(--rv-text-faint);
+    flex-shrink: 0;
+}
+[data-ab-style="revamp"] .abMilestoneTrack {
+    height: 4px;
+    border-radius: 999px;
+    background: oklch(100% 0 0 / 0.06);
+    overflow: hidden;
+}
+[data-ab-style="revamp"] .abMilestoneFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--rv-accent), var(--rv-accent-strong));
+    border-radius: inherit;
+    transform-origin: left;
+    transition: transform var(--rv-slow) var(--rv-ease);
+}
+
+/* --- tier breakdown (mini stacked bar per rarity) ------------------------ */
+[data-ab-style="revamp"] .abTierBreakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rv-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+[data-ab-style="revamp"] .abTierBreakdownRow {
+    display: grid;
+    grid-template-columns: 1fr 60px;
+    gap: var(--rv-3);
+    align-items: center;
+}
+[data-ab-style="revamp"] .abTierBreakdownLabel {
+    --r: var(--rv-r-common);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rv-text);
+}
+[data-ab-style="revamp"] .abTierBreakdownLabel::before {
+    content: "";
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--r);
+    flex-shrink: 0;
+}
+[data-ab-style="revamp"] .abTierBreakdownRow.t-mythic    .abTierBreakdownLabel { --r: var(--rv-r-mythic); }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-legendary .abTierBreakdownLabel { --r: var(--rv-r-legendary); }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-epic      .abTierBreakdownLabel { --r: var(--rv-r-epic); }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-rare      .abTierBreakdownLabel { --r: var(--rv-r-rare); }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-uncommon  .abTierBreakdownLabel { --r: var(--rv-r-uncommon); }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-common    .abTierBreakdownLabel { --r: var(--rv-r-common); }
+[data-ab-style="revamp"] .abTierBreakdownRow .abTierBreakdownTrack {
+    grid-column: 1 / -1;
+    height: 3px;
+    border-radius: 999px;
+    background: oklch(100% 0 0 / 0.05);
+    overflow: hidden;
+    margin-top: -2px;
+}
+[data-ab-style="revamp"] .abTierBreakdownFill {
+    --r: var(--rv-r-common);
+    height: 100%;
+    background: var(--r);
+    border-radius: inherit;
+    transition: transform var(--rv-slow) var(--rv-ease);
+    transform-origin: left;
+}
+[data-ab-style="revamp"] .abTierBreakdownRow.t-mythic    .abTierBreakdownFill { --r: var(--rv-r-mythic); }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-legendary .abTierBreakdownFill { --r: var(--rv-r-legendary); }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-epic      .abTierBreakdownFill { --r: var(--rv-r-epic); }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-rare      .abTierBreakdownFill { --r: var(--rv-r-rare); }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-uncommon  .abTierBreakdownFill { --r: var(--rv-r-uncommon); }
+[data-ab-style="revamp"] .abTierBreakdownNum {
+    font: 500 11px/1 var(--rv-mono);
+    color: var(--rv-text-faint);
+    text-align: right;
+}
+
+/* ============================================================================
+   7. FILTER STRIP — search + tier chips + sort
+   ============================================================================ */
+
+[data-ab-style="revamp"] #abFilterStrip {
+    margin-top: var(--rv-5);
+    display: flex;
+    align-items: center;
+    gap: var(--rv-3);
+    flex-wrap: wrap;
+    padding: var(--rv-3);
+    border-radius: var(--rv-r-md);
+    background: var(--rv-surface);
+    border: 1px solid var(--rv-edge);
+    backdrop-filter: blur(18px);
+}
+[data-ab-style="revamp"] .abFilterSearch {
+    position: relative;
+    min-width: 220px;
+    flex: 1 1 240px;
+}
+[data-ab-style="revamp"] .abFilterSearch input {
+    width: 100%;
+    height: 36px;
+    padding: 0 14px 0 36px;
+    background: var(--rv-deeper);
+    border: 1px solid var(--rv-edge);
+    border-radius: var(--rv-r-sm);
+    color: var(--rv-text);
+    font: 400 13px/1 var(--rv-body);
+    transition: border-color var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"] .abFilterSearch input::placeholder {
+    color: var(--rv-text-quiet);
+    font-family: var(--rv-mono);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+}
+[data-ab-style="revamp"] .abFilterSearch input:focus {
+    outline: none;
+    border-color: var(--rv-accent);
+    box-shadow: 0 0 0 3px var(--rv-accent-soft);
+}
+[data-ab-style="revamp"] .abFilterSearch::before {
+    content: "";
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px;
+    background: currentColor;
+    color: var(--rv-text-faint);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='5' fill='none' stroke='black' stroke-width='1.5'/><line x1='11' y1='11' x2='15' y2='15' stroke='black' stroke-width='1.5' stroke-linecap='round'/></svg>") no-repeat center / contain;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='7' cy='7' r='5' fill='none' stroke='black' stroke-width='1.5'/><line x1='11' y1='11' x2='15' y2='15' stroke='black' stroke-width='1.5' stroke-linecap='round'/></svg>") no-repeat center / contain;
+    pointer-events: none;
+}
+
+[data-ab-style="revamp"] .abFilterChips {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+[data-ab-style="revamp"] .abFilterChip {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--rv-edge);
+    color: var(--rv-text-muted);
+    padding: 6px 12px;
+    height: 30px;
+    border-radius: 999px;
+    font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease),
+                background var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"] .abFilterChip:hover {
+    color: var(--rv-text);
+    border-color: var(--rv-edge-bright);
+}
+[data-ab-style="revamp"] .abFilterChip[aria-pressed="true"] {
+    color: var(--rv-accent-ink);
+    background: var(--rv-accent);
+    border-color: var(--rv-accent);
+}
+[data-ab-style="revamp"] .abFilterChipCount {
+    font: 500 10px/1 var(--rv-mono);
+    color: inherit;
+    opacity: 0.7;
+}
+[data-ab-style="revamp"] .abFilterChip[aria-pressed="true"] .abFilterChipCount {
+    opacity: 0.85;
+}
+
+/* admin button lives in the filter strip too (right-aligned) */
+[data-ab-style="revamp"] #abAdminOpen {
+    appearance: none;
+    margin-left: auto;
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--rv-edge);
+    background: transparent;
+    color: var(--rv-text-muted);
+    font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: color var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"] #abAdminOpen:hover {
+    color: var(--rv-text);
+    border-color: var(--rv-edge-bright);
+}
+
+/* ============================================================================
+   8. RARITY TIER SECTIONS — type-led
+   ============================================================================ */
+
+[data-ab-style="revamp"] #abPanelBadges {
+    margin-top: var(--rv-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--rv-5);
+}
+[data-ab-style="revamp"] #abPanelBadges > h3 {
+    margin: 0;
+    font-family: var(--rv-display);
+    font-size: 0.92em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--rv-text);
+}
+
+[data-ab-style="revamp"] .abTierSection { display: flex; flex-direction: column; gap: var(--rv-4); }
+[data-ab-style="revamp"] .abTierHeader {
+    --r: var(--rv-r-common);
+    display: flex;
+    align-items: center;
+    gap: var(--rv-2);
+    padding-bottom: var(--rv-2);
+    border-bottom: 1px solid var(--rv-edge);
+}
+[data-ab-style="revamp"] .abTierHeader::before {
+    content: "";
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--r);
+    flex-shrink: 0;
+}
+[data-ab-style="revamp"] .abTier-mythic    .abTierHeader { --r: var(--rv-r-mythic); }
+[data-ab-style="revamp"] .abTier-legendary .abTierHeader { --r: var(--rv-r-legendary); }
+[data-ab-style="revamp"] .abTier-epic      .abTierHeader { --r: var(--rv-r-epic); }
+[data-ab-style="revamp"] .abTier-rare      .abTierHeader { --r: var(--rv-r-rare); }
+[data-ab-style="revamp"] .abTier-uncommon  .abTierHeader { --r: var(--rv-r-uncommon); }
+[data-ab-style="revamp"] .abTier-common    .abTierHeader { --r: var(--rv-r-common); }
+[data-ab-style="revamp"] .abTierLabel {
+    font-family: var(--rv-mono);
+    font-weight: 600;
+    font-size: 0.78em;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--rv-text);
+}
+[data-ab-style="revamp"] .abTierCount {
+    margin-left: auto;
+    font: 500 11px/1 var(--rv-mono);
+    color: var(--rv-text-faint);
+    letter-spacing: 0.04em;
+}
+[data-ab-style="revamp"] .abTierGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--rv-4);
+}
+
+[data-ab-style="revamp"][data-ab-restructured="1"] #abGrid { display: block; }
+
+/* ============================================================================
+   9. BADGE CARDS — clean, type-led, rarity tinted only on hairline border
+   ============================================================================ */
+
+[data-ab-style="revamp"] .abBadgeCard {
+    --r: var(--rv-r-common);
+    position: relative;
+    padding: var(--rv-5) var(--rv-5) var(--rv-4);
+    border-radius: var(--rv-r-lg);
+    background: var(--rv-surface);
+    border: 1px solid color-mix(in oklch, var(--r) 18%, var(--rv-edge));
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 1px 0 oklch(100% 0 0 / 0.04) inset, 0 8px 22px oklch(0% 0 0 / 0.22);
+    transition: transform var(--rv-base) var(--rv-ease),
+                border-color var(--rv-base) var(--rv-ease),
+                box-shadow var(--rv-base) var(--rv-ease);
+    animation: rv-card-in 520ms var(--rv-ease) backwards;
+}
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-uncommon)  { --r: var(--rv-r-uncommon); }
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-rare)      { --r: var(--rv-r-rare); }
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-epic)      { --r: var(--rv-r-epic); }
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-legendary) { --r: var(--rv-r-legendary); }
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-mythic)    { --r: var(--rv-r-mythic); }
+[data-ab-style="revamp"] .abBadgeCard:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklch, var(--r) 36%, var(--rv-edge-bright));
+    box-shadow: 0 1px 0 oklch(100% 0 0 / 0.06) inset, 0 14px 32px color-mix(in oklch, var(--r) 14%, oklch(0% 0 0 / 0.32));
+}
+@keyframes rv-card-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-ab-style="revamp"] .abBadgeCard { animation: none; }
+}
+/* stagger first 12 */
+[data-ab-style="revamp"] .abBadgeCard:nth-child(1)  { animation-delay: 30ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(2)  { animation-delay: 60ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(3)  { animation-delay: 90ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(4)  { animation-delay: 120ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(5)  { animation-delay: 150ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(6)  { animation-delay: 180ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(7)  { animation-delay: 210ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(8)  { animation-delay: 240ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(9)  { animation-delay: 270ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(10) { animation-delay: 300ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(11) { animation-delay: 330ms; }
+[data-ab-style="revamp"] .abBadgeCard:nth-child(12) { animation-delay: 360ms; }
+
+/* badge header */
+[data-ab-style="revamp"] .abBadgeHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--rv-3);
+    margin-bottom: var(--rv-2);
+}
+[data-ab-style="revamp"] .abBadgeIcon {
+    width: 44px; height: 44px;
+    border-radius: var(--rv-r-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4em;
+    line-height: 1;
+    background: var(--rv-deeper);
+    border: 1px solid var(--rv-edge);
+    box-shadow: 0 1px 0 oklch(100% 0 0 / 0.06) inset;
+    flex-shrink: 0;
+}
+[data-ab-style="revamp"] .abBadgeTitle {
+    font-family: var(--rv-display);
+    font-weight: 600;
+    font-size: 1em;
+    line-height: 1.2;
+    color: var(--rv-text);
+    overflow-wrap: anywhere;
+    letter-spacing: -0.005em;
+}
+[data-ab-style="revamp"] .abBadgeMeta {
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: color-mix(in oklch, var(--r) 75%, oklch(94% 0 0));
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+[data-ab-style="revamp"] .abBadgeMeta::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--r);
+    flex-shrink: 0;
+}
+[data-ab-style="revamp"] .abBadgeDescription {
+    color: var(--rv-text-muted);
+    font-size: 0.88em;
+    line-height: 1.55;
+    margin: var(--rv-2) 0 var(--rv-3);
+    max-width: 60ch;
+}
+[data-ab-style="revamp"] .abBadgeFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--rv-3);
+    border-top: 1px solid var(--rv-edge);
+    gap: var(--rv-3);
+}
+[data-ab-style="revamp"] .abUnlocked {
+    font: 600 10px/1 var(--rv-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rv-accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+[data-ab-style="revamp"] .abUnlocked::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--rv-accent);
+}
+[data-ab-style="revamp"] .abLocked {
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rv-text-faint);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+[data-ab-style="revamp"] .abLocked::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--rv-text-faint);
+}
+[data-ab-style="revamp"] .abBadgeFooter button {
+    appearance: none;
+    height: 28px;
+    padding: 0 12px;
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rv-text);
+    background: transparent;
+    border: 1px solid var(--rv-edge);
+    border-radius: var(--rv-r-xs);
+    cursor: pointer;
+    transition: all var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"] .abBadgeFooter button:hover {
+    border-color: var(--rv-accent);
+    color: var(--rv-accent);
+}
+
+/* card-level filter hide (search / tier chips) */
+[data-ab-style="revamp"] .abBadgeCard[data-hide="1"] { display: none; }
+[data-ab-style="revamp"] .abTierSection[data-empty="1"] { display: none; }
+
+/* ============================================================================
+   10. BUTTONS (HERO ACTIONS) — restrained, no halo, button-in-button optional
+   ============================================================================ */
+
+[data-ab-style="revamp"] .abHero .raised,
+[data-ab-style="revamp"] .abHero button.emby-button,
+[data-ab-style="revamp"] .abHero a.emby-button,
+[data-ab-style="revamp"] .abHeroActions button {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: var(--rv-r-sm);
+    font: 500 12px/1 var(--rv-body);
+    letter-spacing: 0.02em;
+    border: 1px solid var(--rv-edge);
+    background: transparent;
+    color: var(--rv-text);
+    transition: transform var(--rv-fast) var(--rv-ease),
+                background var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease);
+    cursor: pointer;
+}
+[data-ab-style="revamp"] .abHero .raised:hover,
+[data-ab-style="revamp"] .abHero button.emby-button:hover,
+[data-ab-style="revamp"] .abHeroActions button:hover {
+    background: oklch(100% 0 0 / 0.04);
+    border-color: var(--rv-edge-bright);
+}
+[data-ab-style="revamp"] .abHero .raised:active,
+[data-ab-style="revamp"] .abHeroActions button:active { transform: translateY(-0px) scale(0.98); }
+
+/* primary submit = single accent fill */
+[data-ab-style="revamp"] .abHero .button-submit {
+    background: var(--rv-accent);
+    color: var(--rv-accent-ink);
+    border-color: transparent;
+}
+[data-ab-style="revamp"] .abHero .button-submit:hover {
+    background: var(--rv-accent-strong);
+}
+
+/* ============================================================================
+   11. LEADERBOARD + STATS PANELS (when tab switches)
+   ============================================================================ */
+
+[data-ab-style="revamp"] #abLeaderboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rv-2);
+}
+[data-ab-style="revamp"] .abLeaderboardRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--rv-3) var(--rv-4);
+    background: var(--rv-surface);
+    border: 1px solid var(--rv-edge);
+    border-radius: var(--rv-r-md);
+    font-feature-settings: 'tnum' on;
+    transition: transform var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"] .abLeaderboardRow:hover {
+    transform: translateX(2px);
+    border-color: var(--rv-edge-bright);
+}
+
+/* ============================================================================
+   12. ADMIN DRAWER — slide from right
+   ============================================================================ */
+
+[data-ab-style="revamp"] #abAdminDrawer {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--rv-base) var(--rv-ease);
+}
+[data-ab-style="revamp"] #abAdminDrawer[aria-hidden="false"] {
+    opacity: 1;
+    pointer-events: auto;
+}
+[data-ab-style="revamp"] .abDrawerScrim {
+    position: absolute;
+    inset: 0;
+    background: oklch(8% 0.010 260 / 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+[data-ab-style="revamp"] .abDrawerPanel {
+    position: absolute;
+    top: 0; right: 0;
+    height: 100%;
+    width: min(560px, 92vw);
+    background: linear-gradient(180deg,
+        oklch(18% 0.014 260 / 0.96),
+        oklch(13% 0.010 260 / 0.96));
+    border-left: 1px solid var(--rv-edge-bright);
+    box-shadow: -24px 0 60px oklch(0% 0 0 / 0.5);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform var(--rv-base) var(--rv-ease);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+[data-ab-style="revamp"] #abAdminDrawer[aria-hidden="false"] .abDrawerPanel {
+    transform: translateX(0);
+}
+[data-ab-style="revamp"] .abDrawerHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--rv-4) var(--rv-5);
+    border-bottom: 1px solid var(--rv-edge);
+}
+[data-ab-style="revamp"] .abDrawerHead h3 {
+    margin: 0;
+    font-family: var(--rv-display);
+    font-weight: 700;
+    font-size: 1.1em;
+    color: var(--rv-text);
+    letter-spacing: -0.01em;
+}
+[data-ab-style="revamp"] .abDrawerClose {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--rv-edge);
+    color: var(--rv-text-muted);
+    width: 32px; height: 32px;
+    border-radius: var(--rv-r-xs);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"] .abDrawerClose:hover {
+    color: var(--rv-text);
+    border-color: var(--rv-edge-bright);
+}
+[data-ab-style="revamp"] .abDrawerBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--rv-4) var(--rv-5);
+}
+[data-ab-style="revamp"] .abDrawerBody > details {
+    background: oklch(100% 0 0 / 0.03);
+    border: 1px solid var(--rv-edge);
+    border-radius: var(--rv-r-md);
+    margin-top: var(--rv-2) !important;
+    padding: var(--rv-3) var(--rv-4);
+}
+[data-ab-style="revamp"] .abDrawerBody > details:first-child { margin-top: 0 !important; }
+[data-ab-style="revamp"] .abDrawerBody > details > summary {
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--rv-display);
+    font-weight: 600;
+    font-size: 0.95em;
+    color: var(--rv-text);
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+[data-ab-style="revamp"] .abDrawerBody > details > summary::-webkit-details-marker { display: none; }
+[data-ab-style="revamp"] .abDrawerBody > details > summary::before {
+    content: "+";
+    width: 18px; height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: var(--rv-accent-soft);
+    color: var(--rv-accent-strong);
+    font-family: var(--rv-mono);
+    font-weight: 700;
+    transition: transform var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"] .abDrawerBody > details[open] > summary::before {
+    content: "−";
+    transform: rotate(180deg);
+}
+
+/* ============================================================================
+   13. INPUTS (forms inside drawer, etc.)
+   ============================================================================ */
+
+[data-ab-style="revamp"] input[type="text"],
+[data-ab-style="revamp"] input[type="number"],
+[data-ab-style="revamp"] input[type="email"],
+[data-ab-style="revamp"] textarea,
+[data-ab-style="revamp"] select {
+    background: var(--rv-deeper);
+    color: var(--rv-text);
+    border: 1px solid var(--rv-edge);
+    border-radius: var(--rv-r-sm);
+    padding: 8px 12px;
+    font: 400 13px/1.4 var(--rv-body);
+    transition: border-color var(--rv-fast) var(--rv-ease),
+                box-shadow var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"] input:focus,
+[data-ab-style="revamp"] textarea:focus,
+[data-ab-style="revamp"] select:focus {
+    outline: none;
+    border-color: var(--rv-accent);
+    box-shadow: 0 0 0 3px var(--rv-accent-soft);
+}
+
+/* custom checkbox */
+[data-ab-style="revamp"] input[type="checkbox"] {
+    appearance: none;
+    width: 20px; height: 20px;
+    border-radius: var(--rv-r-xs);
+    border: 1.5px solid var(--rv-edge-bright);
+    background: var(--rv-deeper);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    vertical-align: middle;
+    transition: all var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"] input[type="checkbox"]:hover { border-color: var(--rv-accent); }
+[data-ab-style="revamp"] input[type="checkbox"]:checked {
+    background: var(--rv-accent);
+    border-color: var(--rv-accent);
+}
+[data-ab-style="revamp"] input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    width: 5px; height: 9px;
+    left: 6px; top: 2px;
+    border-right: 2px solid var(--rv-accent-ink);
+    border-bottom: 2px solid var(--rv-accent-ink);
+    transform: rotate(40deg);
+}
+
+/* ============================================================================
+   14. SHOWCASE STRIP (inside hero) — restored
+   ============================================================================ */
+
+/* Showcase only renders inside the hero in the v1.8.10 markup. We collapse it
+   inside the new hero's left column. */
+[data-ab-style="revamp"][data-ab-restructured="1"] .abHero {
+    /* hidden — superseded by #abHeroStrip */
+    display: none !important;
+}
+
+/* ============================================================================
+   15. SELECTION + FOCUS + UTILITIES
+   ============================================================================ */
+
+[data-ab-style="revamp"] ::selection {
+    background: var(--rv-accent-soft);
+    color: oklch(98% 0 0);
+}
+[data-ab-style="revamp"] :focus-visible {
+    outline: 2px solid var(--rv-accent);
+    outline-offset: 2px;
+}
+
+/* ============================================================================
+   v1.8.26 — admin-first reorganisation
+   ============================================================================
+   Plugin admin tools become PRIMARY content. The 13 admin <details>
+   sections are exposed as inline cards inside 4 thematic groups,
+   never hidden behind a button. The operator's personal achievement
+   view becomes a clearly demoted secondary section at the bottom.
+   ============================================================================ */
+
+/* Plugin admin overview hero (replaces the personal-hero #abHeroStrip). */
+[data-ab-style="revamp"] #abPluginHero {
+    margin-top: var(--rv-3);
+    padding: var(--rv-6);
+    border-radius: var(--rv-r-xl);
+    background: linear-gradient(180deg, var(--rv-elevated), var(--rv-surface));
+    border: 1px solid var(--rv-edge);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    box-shadow: 0 1px 0 oklch(100% 0 0 / 0.04) inset, 0 24px 60px oklch(0% 0 0 / 0.28);
+    position: relative;
+    overflow: hidden;
+}
+[data-ab-style="revamp"] #abPluginHero::before {
+    content: "";
+    position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+    background: linear-gradient(135deg,
+        oklch(100% 0 0 / 0.16),
+        oklch(100% 0 0 / 0) 35%,
+        oklch(72% 0.16 152 / 0.18));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+}
+[data-ab-style="revamp"] .abPluginHeroHead {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: var(--rv-4); margin-bottom: var(--rv-5); flex-wrap: wrap;
+}
+[data-ab-style="revamp"] .abPluginHeroIdent { min-width: 0; }
+[data-ab-style="revamp"] .abPluginHeroTitle {
+    font-family: var(--rv-display);
+    font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+    font-weight: 700; letter-spacing: -0.02em; line-height: 1.05;
+    color: var(--rv-text); margin: 8px 0 6px;
+}
+[data-ab-style="revamp"] .abPluginHeroMeta {
+    font: 500 12px/1.4 var(--rv-mono);
+    letter-spacing: 0.04em;
+    color: var(--rv-text-muted);
+    display: flex; flex-wrap: wrap; gap: var(--rv-3); align-items: center;
+}
+[data-ab-style="revamp"] .abPluginHeroMeta > span {
+    display: inline-flex; align-items: center; gap: 6px;
+}
+[data-ab-style="revamp"] .abStatusDot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--rv-accent);
+    box-shadow: 0 0 0 4px var(--rv-accent-soft);
+    animation: rv-pulse 2.4s var(--rv-ease) infinite;
+}
+@keyframes rv-pulse {
+    0%, 100% { box-shadow: 0 0 0 4px var(--rv-accent-soft); }
+    50%      { box-shadow: 0 0 0 7px oklch(72% 0.16 152 / 0.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-ab-style="revamp"] .abStatusDot { animation: none; }
+}
+
+[data-ab-style="revamp"] .abPluginHeroKpis {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--rv-edge); padding-top: var(--rv-5);
+}
+[data-ab-style="revamp"] .abPluginHeroKpi {
+    padding: 0 var(--rv-4); border-left: 1px solid var(--rv-edge);
+}
+[data-ab-style="revamp"] .abPluginHeroKpi:first-child { padding-left: 0; border-left: 0; }
+[data-ab-style="revamp"] .abPluginHeroKpiLabel {
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--rv-text-faint); margin-bottom: 8px;
+}
+[data-ab-style="revamp"] .abPluginHeroKpiValue {
+    font-family: var(--rv-display); font-weight: 700;
+    font-size: clamp(1.6rem, 2.4vw, 2rem); line-height: 1;
+    color: var(--rv-text);
+    font-feature-settings: 'tnum' on, 'lnum' on;
+    letter-spacing: -0.01em;
+    display: flex; align-items: baseline; gap: 8px;
+}
+[data-ab-style="revamp"] .abPluginHeroKpiSub {
+    font: 500 10px/1 var(--rv-mono);
+    letter-spacing: 0.10em; text-transform: uppercase;
+    color: var(--rv-text-faint);
+}
+@media (max-width: 920px) {
+    [data-ab-style="revamp"] .abPluginHeroKpis { grid-template-columns: repeat(2, 1fr); gap: var(--rv-3) 0; }
+    [data-ab-style="revamp"] .abPluginHeroKpi:nth-child(3) { padding-left: 0; border-left: 0; }
+}
+
+/* ----- ADMIN GROUPS ------------------------------------------------------- */
+[data-ab-style="revamp"] #abAdminGroups {
+    margin-top: var(--rv-6);
+    display: flex; flex-direction: column; gap: var(--rv-7);
+}
+[data-ab-style="revamp"] .abAdminGroup {
+    display: flex; flex-direction: column; gap: var(--rv-4);
+}
+[data-ab-style="revamp"] .abAdminGroupHead {
+    display: flex; align-items: baseline; gap: var(--rv-3);
+    padding-bottom: var(--rv-2); border-bottom: 1px solid var(--rv-edge);
+}
+[data-ab-style="revamp"] .abAdminGroupNum {
+    font: 500 10px/1 var(--rv-mono); letter-spacing: 0.18em; color: var(--rv-text-faint);
+}
+[data-ab-style="revamp"] .abAdminGroupTitle {
+    font-family: var(--rv-display); font-weight: 600; font-size: 1.05em;
+    letter-spacing: -0.005em; color: var(--rv-text); margin: 0;
+}
+[data-ab-style="revamp"] .abAdminGroupSub {
+    margin-left: auto; font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.10em; color: var(--rv-text-faint);
+}
+[data-ab-style="revamp"] .abAdminGroupBody { display: grid; gap: var(--rv-4); }
+[data-ab-style="revamp"] .abAdminGroupBody.cols-3 { grid-template-columns: repeat(3, 1fr); }
+[data-ab-style="revamp"] .abAdminGroupBody.cols-2 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 1100px) {
+    [data-ab-style="revamp"] .abAdminGroupBody.cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+    [data-ab-style="revamp"] .abAdminGroupBody.cols-3,
+    [data-ab-style="revamp"] .abAdminGroupBody.cols-2 { grid-template-columns: 1fr; }
+}
+
+/* ----- ADMIN PANELS (the existing <details>, restyled inline) ------------ */
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced {
+    margin: 0 !important; padding: 0 !important;
+    border-radius: var(--rv-r-lg);
+    background: var(--rv-surface);
+    border: 1px solid var(--rv-edge);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 1px 0 oklch(100% 0 0 / 0.04) inset, 0 8px 22px oklch(0% 0 0 / 0.20);
+    transition: border-color var(--rv-fast) var(--rv-ease);
+    overflow: hidden;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection:hover,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced:hover {
+    border-color: var(--rv-edge-bright);
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection[open],
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced[open] {
+    border-color: color-mix(in oklch, var(--rv-accent) 22%, var(--rv-edge-bright));
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection > summary,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced > summary {
+    list-style: none !important;
+    cursor: pointer;
+    padding: var(--rv-4) var(--rv-5) !important;
+    display: flex; align-items: center; gap: var(--rv-3);
+    font-family: var(--rv-display) !important;
+    font-weight: 600 !important;
+    font-size: 0.98em !important;
+    letter-spacing: -0.005em;
+    color: var(--rv-text) !important;
+    margin: 0 !important;
+    transition: background var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection > summary:hover,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced > summary:hover {
+    background: oklch(100% 0 0 / 0.02);
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection > summary::-webkit-details-marker,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced > summary::-webkit-details-marker {
+    display: none !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection > summary::before,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced > summary::before {
+    content: attr(data-glyph) !important;
+    width: 30px; height: 30px;
+    display: inline-flex !important;
+    align-items: center; justify-content: center;
+    border-radius: var(--rv-r-xs);
+    background: var(--rv-deeper);
+    border: 1px solid var(--rv-edge);
+    font-size: 0.95em;
+    font-family: var(--rv-mono) !important;
+    font-weight: 600;
+    color: var(--rv-accent);
+    background-image: none !important;
+    transform: none !important;
+    transition: none !important;
+    flex-shrink: 0;
+    line-height: 1;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection > summary::after,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced > summary::after {
+    content: "";
+    margin-left: auto;
+    width: 8px; height: 8px;
+    border-right: 1.5px solid var(--rv-text-faint);
+    border-bottom: 1.5px solid var(--rv-text-faint);
+    transform: rotate(45deg);
+    transition: transform var(--rv-fast) var(--rv-ease);
+    flex-shrink: 0;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection[open] > summary::after,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced[open] > summary::after {
+    transform: rotate(225deg);
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection > div,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced > *:not(summary) {
+    padding: var(--rv-4) var(--rv-5) var(--rv-5) !important;
+    margin-top: 0 !important;
+    border-top: 1px solid var(--rv-edge);
+    background: oklch(13% 0.010 260 / 0.4);
+}
+
+/* form controls inside admin panels */
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection input[type="text"],
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection input[type="url"],
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection input[type="number"],
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection select,
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection textarea,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced input[type="text"],
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced input[type="number"] {
+    background: var(--rv-deeper) !important;
+    color: var(--rv-text) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: var(--rv-r-sm) !important;
+    padding: 8px 12px !important;
+    font: 400 13px/1.4 var(--rv-body) !important;
+    transition: border-color var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details input:focus,
+[data-ab-style="revamp"][data-ab-restructured="1"] details textarea:focus,
+[data-ab-style="revamp"][data-ab-restructured="1"] details select:focus {
+    outline: none !important;
+    border-color: var(--rv-accent) !important;
+    box-shadow: 0 0 0 3px var(--rv-accent-soft) !important;
+}
+
+/* admin panel buttons */
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection button,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced button,
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection .raised,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced .raised {
+    appearance: none;
+    height: 34px;
+    padding: 0 14px !important;
+    border-radius: var(--rv-r-sm) !important;
+    font: 500 12px/1 var(--rv-body) !important;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--rv-edge) !important;
+    background: oklch(100% 0 0 / 0.03) !important;
+    color: var(--rv-text) !important;
+    cursor: pointer;
+    box-shadow: none !important;
+    transition: background var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease);
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection button:hover,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced button:hover {
+    background: oklch(100% 0 0 / 0.06) !important;
+    border-color: var(--rv-edge-bright) !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection .button-submit,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced .button-submit {
+    background: var(--rv-accent) !important;
+    color: var(--rv-accent-ink) !important;
+    border-color: transparent !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection .button-submit:hover {
+    background: var(--rv-accent-strong) !important;
+}
+
+/* ----- DEMOTED PERSONAL SECTION ------------------------------------------ */
+[data-ab-style="revamp"] #abPersonalSection {
+    margin-top: var(--rv-8);
+    padding-top: var(--rv-6);
+    border-top: 1px solid var(--rv-edge);
+    display: flex; flex-direction: column; gap: var(--rv-5);
+}
+[data-ab-style="revamp"] .abPersonalEyebrow {
+    display: flex; align-items: baseline; gap: var(--rv-3);
+    margin-bottom: var(--rv-2);
+}
+[data-ab-style="revamp"] .abPersonalEyebrowNum {
+    font: 500 10px/1 var(--rv-mono); letter-spacing: 0.18em; color: var(--rv-text-faint);
+}
+[data-ab-style="revamp"] .abPersonalEyebrowTitle {
+    font-family: var(--rv-display); font-weight: 600; font-size: 1.05em;
+    color: var(--rv-text); margin: 0;
+}
+[data-ab-style="revamp"] .abPersonalEyebrowSub {
+    margin-left: auto; font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.10em; color: var(--rv-text-faint);
+}
+
+[data-ab-style="revamp"] #abPersonalHero {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: var(--rv-4);
+    padding: var(--rv-5);
+    border-radius: var(--rv-r-lg);
+    background: var(--rv-surface);
+    border: 1px solid var(--rv-edge);
+}
+[data-ab-style="revamp"] .abPersonalLeft {
+    display: flex; flex-direction: column; gap: var(--rv-3); min-width: 0;
+}
+[data-ab-style="revamp"] .abPersonalIdent {
+    display: flex; align-items: center; gap: var(--rv-3);
+}
+[data-ab-style="revamp"] .abPersonalAvatar {
+    width: 56px; height: 56px;
+    border-radius: var(--rv-r-md);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.6em; line-height: 1;
+    background: var(--rv-deeper);
+    border: 1px solid var(--rv-edge-bright);
+    flex-shrink: 0;
+}
+[data-ab-style="revamp"] .abPersonalName {
+    font-family: var(--rv-display); font-size: 1.15em; font-weight: 700;
+    letter-spacing: -0.01em; line-height: 1.2; color: var(--rv-text);
+}
+[data-ab-style="revamp"] .abPersonalSub {
+    font: 500 11px/1.3 var(--rv-mono);
+    letter-spacing: 0.04em;
+    color: var(--rv-text-muted);
+    margin-top: 2px;
+}
+[data-ab-style="revamp"] .abPersonalKpis {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--rv-edge);
+    padding-top: var(--rv-3);
+    margin-top: auto;
+}
+[data-ab-style="revamp"] .abPersonalKpi {
+    padding: 0 var(--rv-3); border-left: 1px solid var(--rv-edge);
+}
+[data-ab-style="revamp"] .abPersonalKpi:first-child { padding-left: 0; border-left: 0; }
+[data-ab-style="revamp"] .abPersonalKpiLabel {
+    font: 500 9px/1 var(--rv-mono); letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--rv-text-faint);
+    margin-bottom: 4px;
+}
+[data-ab-style="revamp"] .abPersonalKpiValue {
+    font-family: var(--rv-display); font-weight: 700;
+    font-size: 1.2em; color: var(--rv-text); letter-spacing: -0.01em;
+}
+
+[data-ab-style="revamp"] .abPersonalArc {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; padding: var(--rv-3);
+    border-radius: var(--rv-r-md);
+    background: var(--rv-deeper);
+    border: 1px solid var(--rv-edge);
+}
+[data-ab-style="revamp"] .abPersonalArcSvg {
+    width: 120px; height: 120px; display: block; overflow: visible;
+}
+[data-ab-style="revamp"] .abPersonalArcTrack {
+    /* v1.8.55: brighter track so the donut reads as a complete ring even
+       before the fill is drawn. Was 6% white — bumped to 12% with a slight
+       hairline border feel. */
+    fill: none; stroke: oklch(100% 0 0 / 0.12); stroke-width: 10;
+}
+[data-ab-style="revamp"] .abPersonalArcFill {
+    /* v1.8.55: emerald (matches the personal section's tier accent), thicker
+       stroke (10px), tighter glow. Reads as a clear progress ring instead of
+       a thin barely-visible line. */
+    fill: none;
+    stroke: var(--rv-emerald, oklch(72% 0.16 152));
+    stroke-width: 10;
+    stroke-linecap: round;
+    transform-origin: center;
+    transform: rotate(-90deg);
+    filter: drop-shadow(0 0 6px oklch(72% 0.16 152 / 0.55));
+}
+[data-ab-style="revamp"] .abPersonalArcCenter { text-align: center; }
+[data-ab-style="revamp"] .abPersonalArcPct {
+    font-family: var(--rv-display); font-weight: 700; font-size: 1.4em;
+    color: var(--rv-text); letter-spacing: -0.02em; line-height: 1;
+}
+@media (max-width: 720px) {
+    [data-ab-style="revamp"] #abPersonalHero { grid-template-columns: 1fr; }
+}
+
+/* v1.8.26 supersedes v1.8.25 personal-first hero + bento — hide them. */
+[data-ab-style="revamp"][data-ab-restructured="1"] #abHeroStrip { display: none; }
+[data-ab-style="revamp"][data-ab-restructured="1"] #abBentoRow  { display: none; }
+
+[data-ab-style="revamp"] #abPersonalSection #abFilterStrip { margin-top: 0; }
+[data-ab-style="revamp"] #abPersonalSection #abPanelBadges { margin-top: 0; }
+
+/* ============================================================================
+   v1.8.27 — colour zoning, fix row-expand, real SVG icons, richer hero
+   ============================================================================
+   - Each admin group gets its own semantic accent (per impeccable's
+     "Full palette" strategy: 4 named roles, each used deliberately as
+     zone identity). Plugin essentials = emerald (action), Notifications
+     = amber (alert), Badge management = purple (epic / catalogue),
+     Maintenance = blue (info). The accent ONLY tints group chrome —
+     icon background, group num, panel-open border, top accent strip.
+   - align-items: start on the grid so opening one panel does not
+     stretch the rest of the row.
+   - Letter-in-a-box glyphs replaced with inline SVG icons (1.5 stroke,
+     Phosphor-style). The bootstrap script injects them directly into
+     each summary so CSS doesn't need data-glyph anymore.
+   - Page bg gets a subtle terminal grid + mesh-orb for gaming energy.
+   ============================================================================ */
+
+/* --- per-group accent tokens ------------------------------------------- */
+[data-ab-style="revamp"] .abAdminGroup[data-group="1"] {
+    --rv-group-accent:        oklch(72% 0.16 152);   /* emerald */
+    --rv-group-accent-soft:   oklch(72% 0.16 152 / 0.16);
+    --rv-group-accent-glow:   oklch(72% 0.16 152 / 0.30);
+    --rv-group-accent-tinted: oklch(72% 0.16 152 / 0.08);
+}
+[data-ab-style="revamp"] .abAdminGroup[data-group="2"] {
+    --rv-group-accent:        oklch(80% 0.16 78);    /* amber */
+    --rv-group-accent-soft:   oklch(80% 0.16 78 / 0.16);
+    --rv-group-accent-glow:   oklch(80% 0.16 78 / 0.30);
+    --rv-group-accent-tinted: oklch(80% 0.16 78 / 0.08);
+}
+[data-ab-style="revamp"] .abAdminGroup[data-group="3"] {
+    --rv-group-accent:        oklch(72% 0.20 295);   /* purple */
+    --rv-group-accent-soft:   oklch(72% 0.20 295 / 0.16);
+    --rv-group-accent-glow:   oklch(72% 0.20 295 / 0.30);
+    --rv-group-accent-tinted: oklch(72% 0.20 295 / 0.08);
+}
+[data-ab-style="revamp"] .abAdminGroup[data-group="4"] {
+    --rv-group-accent:        oklch(72% 0.16 230);   /* blue */
+    --rv-group-accent-soft:   oklch(72% 0.16 230 / 0.16);
+    --rv-group-accent-glow:   oklch(72% 0.16 230 / 0.30);
+    --rv-group-accent-tinted: oklch(72% 0.16 230 / 0.08);
+}
+
+/* group head picks up the group's accent */
+[data-ab-style="revamp"] .abAdminGroup[data-group] .abAdminGroupNum {
+    color: var(--rv-group-accent);
+    text-shadow: 0 0 12px var(--rv-group-accent-glow);
+}
+[data-ab-style="revamp"] .abAdminGroup[data-group] .abAdminGroupHead {
+    border-bottom-color: color-mix(in oklch, var(--rv-group-accent) 18%, var(--rv-edge));
+    position: relative;
+}
+[data-ab-style="revamp"] .abAdminGroup[data-group] .abAdminGroupHead::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: -1px;
+    width: 64px; height: 1px;
+    background: var(--rv-group-accent);
+    box-shadow: 0 0 12px var(--rv-group-accent-glow);
+}
+
+/* --- fix row expand: each panel sized by its own content ------------- */
+[data-ab-style="revamp"] .abAdminGroupBody {
+    align-items: start;
+}
+
+/* --- panel: group accent on chrome ------------------------------------ */
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details.abAdminSection,
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details#abAdvanced {
+    /* baseline border from v1.8.26 stays — group adds a subtle tint */
+    background:
+        linear-gradient(180deg,
+            var(--rv-group-accent-tinted) 0,
+            transparent 60px),
+        var(--rv-surface);
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details.abAdminSection[open],
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details#abAdvanced[open] {
+    border-color: color-mix(in oklch, var(--rv-group-accent) 35%, var(--rv-edge-bright));
+    box-shadow:
+        0 1px 0 oklch(100% 0 0 / 0.05) inset,
+        0 0 0 1px color-mix(in oklch, var(--rv-group-accent) 18%, transparent),
+        0 12px 28px color-mix(in oklch, var(--rv-group-accent) 14%, oklch(0% 0 0 / 0.28));
+}
+
+/* SVG icon container — replaces the letter glyph ------------------------ */
+[data-ab-style="revamp"][data-ab-restructured="1"] details summary > .abPanelGlyph {
+    width: 32px; height: 32px;
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    background: var(--rv-deeper);
+    border: 1px solid color-mix(in oklch, var(--rv-group-accent, var(--rv-accent)) 22%, var(--rv-edge));
+    color: var(--rv-group-accent, var(--rv-accent));
+    transition: border-color var(--rv-fast) var(--rv-ease),
+                background var(--rv-fast) var(--rv-ease);
+    position: relative;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details[open] summary > .abPanelGlyph {
+    background: color-mix(in oklch, var(--rv-group-accent, var(--rv-accent)) 18%, var(--rv-deeper));
+    border-color: var(--rv-group-accent, var(--rv-accent));
+    box-shadow: 0 0 12px var(--rv-group-accent-glow, var(--rv-accent-soft));
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details summary > .abPanelGlyph svg {
+    width: 16px; height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: block;
+}
+
+/* hide the old letter-in-a-box ::before that was based on data-glyph */
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection > summary::before,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced > summary::before {
+    content: none !important;
+    display: none !important;
+}
+
+/* --- group accent on summary buttons ---------------------------------- */
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details .button-submit {
+    background: var(--rv-group-accent) !important;
+    color: oklch(15% 0.014 260) !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details .button-submit:hover {
+    filter: brightness(1.06);
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details input:focus,
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details textarea:focus,
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details select:focus {
+    border-color: var(--rv-group-accent) !important;
+    box-shadow: 0 0 0 3px var(--rv-group-accent-soft) !important;
+}
+
+/* --- richer page background: terminal grid + softer orbs --------------- */
+[data-ab-style="revamp"]#AchievementBadgesPage::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.4;
+    background-image:
+        linear-gradient(to right,  oklch(100% 0 0 / 0.018) 1px, transparent 1px),
+        linear-gradient(to bottom, oklch(100% 0 0 / 0.018) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 100%);
+}
+
+/* --- hero gets richer chrome ------------------------------------------ */
+[data-ab-style="revamp"] #abPluginHero {
+    background:
+        radial-gradient(420px 200px at 88% -20%, oklch(72% 0.16 152 / 0.16), transparent 70%),
+        radial-gradient(360px 180px at 0% 110%, oklch(72% 0.20 295 / 0.10), transparent 70%),
+        linear-gradient(180deg, var(--rv-elevated), var(--rv-surface));
+}
+[data-ab-style="revamp"] .abPluginHeroTitle {
+    /* Mild monochrome glow to give the title weight without gradient text */
+    text-shadow: 0 0 24px oklch(72% 0.16 152 / 0.15);
+}
+
+/* KPI value gets a small accent dot */
+[data-ab-style="revamp"] .abPluginHeroKpiValue::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--rv-accent);
+    align-self: center;
+    flex-shrink: 0;
+    margin-right: 10px;
+    box-shadow: 0 0 8px var(--rv-accent-soft);
+}
+
+/* --- subtle entrance animation per group --- */
+@keyframes rv-group-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+[data-ab-style="revamp"] .abAdminGroup {
+    animation: rv-group-in 520ms var(--rv-ease) backwards;
+}
+[data-ab-style="revamp"] .abAdminGroup[data-group="1"] { animation-delay: 60ms; }
+[data-ab-style="revamp"] .abAdminGroup[data-group="2"] { animation-delay: 120ms; }
+[data-ab-style="revamp"] .abAdminGroup[data-group="3"] { animation-delay: 180ms; }
+[data-ab-style="revamp"] .abAdminGroup[data-group="4"] { animation-delay: 240ms; }
+@media (prefers-reduced-motion: reduce) {
+    [data-ab-style="revamp"] .abAdminGroup { animation: none; }
+}
+
+/* ============================================================================
+   v1.8.28 — rarity-coloured test-toast buttons + bulletproof toast z-index
+   ============================================================================ */
+
+/* The Test Unlock Toast row has 6 .ab-test-btn buttons with data-rarity
+   attributes. The v1.8.27 generic button override (with !important) was
+   stripping their inline rarity styling. Restore per-rarity colours
+   using the design system's rarity tokens. */
+
+[data-ab-style="revamp"][data-ab-restructured="1"] details .ab-test-btn {
+    height: 36px !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    font: 600 11px/1 var(--rv-mono) !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform var(--rv-fast) var(--rv-ease),
+                background var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease),
+                box-shadow var(--rv-fast) var(--rv-ease);
+}
+
+/* per-rarity tint — uses the design system rarity ladder, with a subtle
+   outer ring on hover so it reads as actionable. */
+[data-ab-style="revamp"][data-ab-restructured="1"] details .ab-test-btn[data-rarity="common"] {
+    --r: var(--rv-r-common);
+    background: color-mix(in oklch, var(--r) 14%, transparent) !important;
+    border: 1px solid color-mix(in oklch, var(--r) 45%, transparent) !important;
+    color: color-mix(in oklch, var(--r) 75%, oklch(94% 0 0)) !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details .ab-test-btn[data-rarity="uncommon"] {
+    --r: var(--rv-r-uncommon);
+    background: color-mix(in oklch, var(--r) 16%, transparent) !important;
+    border: 1px solid color-mix(in oklch, var(--r) 50%, transparent) !important;
+    color: color-mix(in oklch, var(--r) 80%, oklch(94% 0 0)) !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details .ab-test-btn[data-rarity="rare"] {
+    --r: var(--rv-r-rare);
+    background: color-mix(in oklch, var(--r) 16%, transparent) !important;
+    border: 1px solid color-mix(in oklch, var(--r) 50%, transparent) !important;
+    color: color-mix(in oklch, var(--r) 80%, oklch(94% 0 0)) !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details .ab-test-btn[data-rarity="epic"] {
+    --r: var(--rv-r-epic);
+    background: color-mix(in oklch, var(--r) 16%, transparent) !important;
+    border: 1px solid color-mix(in oklch, var(--r) 50%, transparent) !important;
+    color: color-mix(in oklch, var(--r) 82%, oklch(94% 0 0)) !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details .ab-test-btn[data-rarity="legendary"] {
+    --r: var(--rv-r-legendary);
+    background: color-mix(in oklch, var(--r) 18%, transparent) !important;
+    border: 1px solid color-mix(in oklch, var(--r) 55%, transparent) !important;
+    color: color-mix(in oklch, var(--r) 85%, oklch(94% 0 0)) !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details .ab-test-btn[data-rarity="mythic"] {
+    --r: var(--rv-r-mythic);
+    background: color-mix(in oklch, var(--r) 18%, transparent) !important;
+    border: 1px solid color-mix(in oklch, var(--r) 55%, transparent) !important;
+    color: color-mix(in oklch, var(--r) 85%, oklch(94% 0 0)) !important;
+}
+
+/* hover: amplify the rarity glow */
+[data-ab-style="revamp"][data-ab-restructured="1"] details .ab-test-btn:hover {
+    transform: translateY(-1px);
+    background: color-mix(in oklch, var(--r) 28%, transparent) !important;
+    border-color: var(--r) !important;
+    color: oklch(98% 0 0) !important;
+    box-shadow:
+        0 0 0 1px color-mix(in oklch, var(--r) 25%, transparent),
+        0 8px 22px color-mix(in oklch, var(--r) 35%, oklch(0% 0 0 / 0.20)) !important;
+}
+[data-ab-style="revamp"][data-ab-restructured="1"] details .ab-test-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* ----------------------------------------------------------------------- */
+/* Bulletproof toast container: anchor to viewport, top of stack.
+   The toast is appended to document.body by enhance.js with inline
+   z-index: 99999. v1.8.28 makes that explicit + immune to any
+   ancestor stacking context. */
+
+#ab-toast-container {
+    position: fixed !important;
+    bottom: 24px !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 2147483000 !important;     /* well above any conceivable page chrome */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 14px !important;
+    pointer-events: none !important;
+    /* defeat any inherited transform / will-change / contain that could
+       trap the fixed-position child in a parent stacking context */
+    contain: none !important;
+    transform: none !important;
+    will-change: auto !important;
+}
+#ab-toast-container > * { pointer-events: auto; }
+
+/* Drop the page-level isolation: isolate. It was needed for the
+   ::before/::after pseudo-elements but the toast container is now
+   the only fixed-position element above content, and isolating the
+   page can trap it on some Jellyfin web layouts. The negative-z
+   pseudos are already z-index:-1 which keeps them behind content
+   without needing isolation. */
+[data-ab-style="revamp"]#AchievementBadgesPage {
+    isolation: auto;
+}
+
+/* ============================================================================
+   v1.8.29 — opaque badge cards, strong rarity outline + top accent strip,
+              page top alignment fix
+   ============================================================================ */
+
+/* Root cause of "different colours on different sides": the v1.8.25 badge
+   card had a 0.55-alpha background AND a 0.45-alpha edge in the border
+   color-mix, with a backdrop-filter blur. Each side of the card sat over a
+   different region of the page's mesh-orb gradients, so the alpha-composited
+   border read with different hue per side. Fix: opaque background +
+   opaque edge color in the mix + drop the backdrop-blur on the card. */
+
+[data-ab-style="revamp"] .abBadgeCard {
+    background: oklch(18% 0.012 260) !important;     /* opaque surface */
+    border: 1px solid color-mix(in oklch,
+        var(--r) 38%,
+        oklch(36% 0.014 260)) !important;            /* opaque edge, ~38% rarity */
+    backdrop-filter: none !important;                /* no blur — was alpha-composing weirdly */
+    -webkit-backdrop-filter: none !important;
+}
+[data-ab-style="revamp"] .abBadgeCard:hover {
+    border-color: color-mix(in oklch,
+        var(--r) 60%,
+        oklch(48% 0.020 260)) !important;
+    box-shadow:
+        0 1px 0 oklch(100% 0 0 / 0.06) inset,
+        0 14px 32px color-mix(in oklch, var(--r) 22%, oklch(0% 0 0 / 0.32)) !important;
+}
+
+/* Top rarity accent strip — single rarity-coloured line at the top edge
+   so the rarity reads at-a-glance even before the meta pill. Subtle on
+   common/uncommon, brighter on epic+. */
+[data-ab-style="revamp"] .abBadgeCard {
+    overflow: hidden;
+}
+[data-ab-style="revamp"] .abBadgeCard::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    inset: 0 0 auto 0 !important;
+    height: 2px !important;
+    background: linear-gradient(90deg,
+        transparent,
+        var(--r),
+        transparent) !important;
+    opacity: 0.55;
+    pointer-events: none;
+}
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-epic)::before,
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-legendary)::before,
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-mythic)::before {
+    opacity: 0.85;
+    height: 3px !important;
+    background: linear-gradient(90deg,
+        transparent,
+        var(--r) 30%,
+        var(--r) 70%,
+        transparent) !important;
+}
+
+/* Same fix to the small showcase pills inside the (now demoted) personal
+   section — they were doing the same alpha-composite. */
+[data-ab-style="revamp"] .abShowcaseCard {
+    background: oklch(18% 0.012 260) !important;
+    border: 1px solid var(--rv-edge-bright) !important;
+    backdrop-filter: none !important;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Page top alignment fix.
+
+   The original markup is:
+     <div flex space-between>
+       <h2 class="sectionTitle">Achievements</h2>   <-- hidden in revamp
+       <div id="abStyleToggleHost"></div>
+     </div>
+   In v1.8.26 we hid the h2 with display:none. flex space-between with one
+   child collapses the child to the start (left) — that's why the toggle was
+   showing top-LEFT instead of top-right and the page felt off-centred at
+   the top. Force flex-end so the toggle anchors top-right, and tighten the
+   row's bottom margin so the plugin hero starts higher on the page. */
+[data-ab-style="revamp"][data-ab-restructured="1"] .verticalSection > div[style*="max-width"] > div:first-child {
+    justify-content: flex-end !important;
+    margin-bottom: 0 !important;
+    min-height: 36px;
+}
+
+/* If revamp is on but no toggle host exists yet (early frame before mount),
+   prevent the empty flex row from taking visual space. */
+[data-ab-style="revamp"] #abStyleToggleHost:empty {
+    display: none;
+}
+
+/* Tighten the page's top padding — was clamping up to 3.5rem which felt
+   floaty over the orb gradients. */
+[data-ab-style="revamp"]#AchievementBadgesPage {
+    padding-block: clamp(1.25rem, 2.5vw, 2rem) 5rem;
+}
+[data-ab-style="revamp"] #abPluginHero {
+    margin-top: 16px;
+}
+
+/* ============================================================================
+   v1.8.30 — uniform top strip, drop hero sheen, centring via max-width
+   ============================================================================ */
+
+/* The top accent strip was a gradient transparent → rarity → transparent —
+   that's why the top edge of each card visually "changed colour" left-to-
+   right while the side borders stayed solid. Switch to a flat solid line
+   matching the side border colour exactly. Border + top strip now read as
+   one continuous outline. */
+
+[data-ab-style="revamp"] .abBadgeCard::before {
+    background: color-mix(in oklch,
+        var(--r) 38%,
+        oklch(36% 0.014 260)) !important;
+    opacity: 1 !important;
+    height: 1px !important;
+}
+
+/* Epic / Legendary / Mythic kept slightly stronger for tier read, but still
+   solid (no gradient). 2px instead of 1px. */
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-epic)::before,
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-legendary)::before,
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-mythic)::before {
+    background: color-mix(in oklch,
+        var(--r) 60%,
+        oklch(36% 0.014 260)) !important;
+    height: 2px !important;
+    opacity: 1 !important;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Drop the bright inset sheen on the personal hero ("highlight" the user
+   didn't like). The card was getting:
+     box-shadow: 0 1px 0 oklch(100% 0 0 / 0.05) inset;
+   That 1px inset white line at the top reads as a glossy highlight strip.
+   Kill it — keep just the border + a light outer drop shadow. */
+[data-ab-style="revamp"] #abPersonalHero {
+    box-shadow: 0 8px 22px oklch(0% 0 0 / 0.20) !important;
+    background: oklch(18% 0.012 260) !important;     /* opaque, no orb bleed */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Same treatment on the plugin hero — kill the inset sheen, but keep its
+   ambient orbs since they're the page's main visual hook. */
+[data-ab-style="revamp"] #abPluginHero {
+    box-shadow:
+        0 18px 48px oklch(0% 0 0 / 0.32) !important;
+}
+[data-ab-style="revamp"] #abPluginHero::before {
+    /* the previous doppelrand 1px gradient ring was reading as a halo —
+       reduce to a hairline single-colour edge */
+    background: linear-gradient(180deg,
+        oklch(100% 0 0 / 0.06),
+        transparent 40%) !important;
+}
+
+/* Same on bento cards if they're visible (they're not in admin-first
+   layout but defensively): no inset sheen. */
+[data-ab-style="revamp"] .abBentoCard {
+    box-shadow: 0 12px 28px oklch(0% 0 0 / 0.22) !important;
+}
+
+/* ----------------------------------------------------------------------- */
+/* CENTRING fix — Jellyfin's plugin page container adds its own left
+   padding on top of any viewport-math padding I apply at the page root.
+   That made `padding-inline: max(1.5rem, calc((100% - 1320px) / 2))` over-
+   pad the left side. Switch to a fixed small page padding + max-width +
+   margin: auto on the INNER wrapper, which centres correctly within
+   whatever horizontal space Jellyfin actually gives the page.            */
+
+[data-ab-style="revamp"]#AchievementBadgesPage {
+    padding-inline: 1.5rem !important;
+}
+
+[data-ab-style="revamp"][data-ab-restructured="1"] .verticalSection > div[style*="max-width"] {
+    max-width: 1320px !important;
+    margin-inline: auto !important;
+    width: 100%;
+}
+
+/* ============================================================================
+   v1.8.31 — flat background, real centring
+   ============================================================================ */
+
+/* THE colour change the user keeps pointing at is the two radial-gradient
+   "mesh orbs" on the page background. They were intended as soft mood
+   lighting but read as a visible horizontal seam where the orbs fade out.
+   Replace with a single flat near-black surface so the background is
+   uniform and content reads against a stable canvas. */
+[data-ab-style="revamp"]#AchievementBadgesPage {
+    background: oklch(13% 0.010 260) !important;
+}
+[data-ab-style="revamp"]#AchievementBadgesPage::before {
+    /* drop the moving orb behind the page entirely */
+    display: none !important;
+}
+[data-ab-style="revamp"]#AchievementBadgesPage::after {
+    /* drop the terminal grid pattern too — it was decorative, not load-
+       bearing, and against a flat background it can look stripey */
+    display: none !important;
+}
+
+/* Same flat treatment for the plugin hero — no internal orbs either, just
+   a slightly elevated solid surface above the page background. */
+[data-ab-style="revamp"] #abPluginHero {
+    background: oklch(17% 0.014 260) !important;
+}
+
+/* ----------------------------------------------------------------------- */
+/* CENTRING — Jellyfin's plugin-page chrome is wrapping the page in
+   `.dashboardSections` / `.content-primary` / `.verticalSection` that all
+   carry their own left padding from the Jellyfin admin shell. Override
+   them so the content area starts flush left, then the inner wrapper
+   centres with max-width + margin auto. */
+
+/* Jellyfin's chrome wrappers — make them transparent for layout via
+   `display: contents`. Their children become direct children of the page
+   root for layout purposes, bypassing any padding/margin those wrappers
+   carry from the admin shell. This is the only reliable way to defeat
+   parent-container padding I can't enumerate. */
+[data-ab-style="revamp"][data-ab-restructured="1"] [data-role="content"],
+[data-ab-style="revamp"][data-ab-restructured="1"] .content-primary,
+[data-ab-style="revamp"][data-ab-restructured="1"] .verticalSection {
+    display: contents !important;
+}
+
+/* The actual culprit: Jellyfin's `.padded-left` class. It's defined as
+       .padded-left { padding-left: max(env(safe-area-inset-left), 3.3%); padding-right: 3.3%; }
+   and gets applied to multiple nested wrapper containers around plugin
+   admin pages, compounding to ~280 px of left padding the user could see.
+   Plus `.libraryPage { padding-top: 7em !important; }` adds the empty top
+   gap. Neutralise both whenever revamp is active. */
+body:has(#AchievementBadgesPage[data-ab-style="revamp"]) .padded-left,
+body:has(#AchievementBadgesPage[data-ab-style="revamp"]) .libraryPage {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+}
+/* Belt-and-braces in case `:has()` isn't available — also override on
+   any ancestor of #AchievementBadgesPage. */
+[data-ab-style="revamp"]#AchievementBadgesPage.libraryPage,
+[data-ab-style="revamp"]#AchievementBadgesPage.padded-left {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* THE ACTUAL CULPRIT (v1.8.35).
+   Jellyfin's main wrapper is `.skinBody` and it has the rule:
+       .skinBody { left: 20em; }
+   When the admin drawer is open (the default on admin pages), this pushes
+   .skinBody 320 px right of the viewport's left edge while keeping its
+   right edge at viewport-right — making the available content area
+   structurally asymmetric. My content was correctly centring WITHIN that
+   available area, but visually it read as 280 px shifted right because
+   the drawer ate the left side.
+
+   When revamp is active, override .skinBody to span the full viewport so
+   my plugin page becomes the only thing on screen. The drawer still
+   exists (the toggle handle stays clickable on the left edge); we just
+   don't reserve permanent space for it. The Classic toggle reverts
+   .skinBody back to its original 20em offset. */
+body:has(#AchievementBadgesPage[data-ab-style="revamp"]) .skinBody {
+    left: 0 !important;
+    right: 0 !important;
+}
+
+/* Same protection if Jellyfin uses the older `.mainAnimatedPages` */
+body:has(#AchievementBadgesPage[data-ab-style="revamp"]) .mainAnimatedPages {
+    left: 0 !important;
+    right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* v1.8.36: belt-and-braces backup that doesn't depend on `:has()` —
+   the bootstrap script adds class `.ab-revamp-fullwidth` to <body> when
+   revamp is active, which lets older Chromium / any browser without
+   `:has()` support pick up the override. Specificity 0,2,1 beats
+   Jellyfin's `.dashboardDocument .skinBody` (0,2,0). */
+body.ab-revamp-fullwidth .skinBody,
+body.ab-revamp-fullwidth .mainAnimatedPages {
+    left: 0 !important;
+    right: 0 !important;
+}
+body.ab-revamp-fullwidth .libraryPage,
+body.ab-revamp-fullwidth .padded-left {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Page root carries the only horizontal padding now. */
+[data-ab-style="revamp"]#AchievementBadgesPage {
+    padding-inline: 24px !important;
+}
+
+/* Inner wrapper is now a direct flex/block child of the page root.
+   max-width + margin auto centres it. */
+[data-ab-style="revamp"][data-ab-restructured="1"] .verticalSection > div[style*="max-width"] {
+    max-width: 1280px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+}
+
+/* ============================================================================
+   v1.8.38 — colour uniformity + centring belt-and-braces
+   ============================================================================ */
+
+/* THE COLOUR DISCREPANCY: my v1.8.27 added a per-group tinted gradient at
+   the TOP of each admin panel:
+       background: linear-gradient(180deg, var(--rv-group-accent-tinted) 0,
+                                   transparent 60px), var(--rv-surface);
+   Each group (essentials/notifications/badges/maintenance) had a different
+   accent, so the top 60 px of every panel was tinted differently from the
+   bottom — visible "colour change" on every panel. Strip it. */
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details.abAdminSection,
+[data-ab-style="revamp"][data-ab-restructured="1"] .abAdminGroup[data-group] details#abAdvanced,
+[data-ab-style="revamp"][data-ab-restructured="1"] details.abAdminSection,
+[data-ab-style="revamp"][data-ab-restructured="1"] details#abAdvanced {
+    background: oklch(15% 0.012 260) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Force ALL surfaces to the same opaque shade for true uniformity. */
+[data-ab-style="revamp"]#AchievementBadgesPage {
+    background: oklch(11% 0.008 260) !important;
+}
+[data-ab-style="revamp"] #abPluginHero,
+[data-ab-style="revamp"] #abPersonalHero,
+[data-ab-style="revamp"] .abBentoCard,
+[data-ab-style="revamp"] .abBadgeCard,
+[data-ab-style="revamp"] .abShowcaseCard {
+    background: oklch(15% 0.012 260) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+[data-ab-style="revamp"] #abPluginHero::before {
+    display: none !important;
+}
+
+/* ----------------------------------------------------------------------- */
+/* CENTRING extra belt-and-braces — also strip horizontal padding from
+   .dashboardSection / .dashboardSections / .pageContainer / .scrollSlider
+   in case Jellyfin is wrapping with any of those. */
+[data-ab-style="revamp"]#AchievementBadgesPage {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: auto !important;
+}
+body.ab-revamp-fullwidth .dashboardSections,
+body.ab-revamp-fullwidth .dashboardSection,
+body.ab-revamp-fullwidth .pageContainer,
+body.ab-revamp-fullwidth .dashboardWrapper,
+body.ab-revamp-fullwidth .scrollSlider,
+body.ab-revamp-fullwidth .pageWithAbsoluteTabs {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* ============================================================================
+   v1.8.39 — kill the body/drawer seam
+   ============================================================================
+   Even with .skinBody forced to left:0, Jellyfin's `.mainDrawer` is
+   positioned absolute at left:0, width:20em with its own dark-grey fill
+   — so the leftmost 320 px shows the DRAWER's background, not my page's.
+   That's the visible seam in the screenshot. Make the body the same
+   colour as the page so anything my page doesn't cover still matches,
+   and hide the drawer entirely when revamp is active. */
+
+html:has(#AchievementBadgesPage[data-ab-style="revamp"]),
+body:has(#AchievementBadgesPage[data-ab-style="revamp"]),
+body.ab-revamp-fullwidth {
+    background: oklch(11% 0.008 260) !important;
+}
+
+body.ab-revamp-fullwidth .mainDrawer,
+body.ab-revamp-fullwidth .adminDrawerLogo,
+body.ab-revamp-fullwidth .mainDrawer-scrollContainer {
+    display: none !important;
+}
+
+body.ab-revamp-fullwidth .skinHeader {
+    background: oklch(11% 0.008 260) !important;
+}
+
+/* ============================================================================
+   v1.8.41 — nuclear centring: page becomes its own viewport
+   ============================================================================
+   After 40 iterations chasing Jellyfin's layout chain, the simplest +
+   most reliable fix: take `#AchievementBadgesPage` out of normal flow
+   entirely with `position: fixed; inset: 0`. The page covers the full
+   viewport, ignores ALL parent positioning/padding/skinBody/drawer.
+   Content centres within the page using the existing max-width + auto
+   margins. No more fighting Jellyfin's chrome.
+
+   The page becomes the only thing visible while revamp is on. Classic
+   toggle removes the body class and the page snaps back into normal
+   flow inside Jellyfin's chrome. */
+
+body.ab-revamp-fullwidth #AchievementBadgesPage {
+    position: fixed !important;
+    inset: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    z-index: 100 !important;
+    margin: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: oklch(11% 0.008 260) !important;
+    box-sizing: border-box !important;
+}
+
+/* ============================================================================
+   v1.8.42 — tier-section breathing room + promoted tier dividers + polish
+   ============================================================================
+   - Tier headers were clipping into adjacent badges (24 px margin-top
+     + 16 px internal gap was too tight).
+   - Tier headers were tiny labels — promote to real section dividers
+     with proper scale, an accent line, and a count chip.
+   - Add staggered fade-up entrance per tier so the page reveals as you
+     scroll, instead of all-at-once.
+   - Refine badge card hover with a tier-coloured edge glow that
+     actually reads as a hover state.                                       */
+
+/* Breathing room — generous vertical rhythm between tiers. */
+[data-ab-style="revamp"] .abTierSection {
+    margin-top: 56px !important;     /* was 24px — big visible gap */
+    gap: 24px !important;            /* internal gap header→grid */
+    padding-top: 8px;
+}
+[data-ab-style="revamp"] .abTierSection:first-child {
+    margin-top: 24px !important;
+}
+
+/* Promote the tier header — make it feel like a section, not a label. */
+[data-ab-style="revamp"] .abTierHeader {
+    --r: var(--rv-r-common);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 0 14px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid color-mix(in oklch, var(--r) 22%, oklch(36% 0.014 260));
+    position: relative;
+}
+/* Accent flare on the underline — short, tier-coloured, glowing */
+[data-ab-style="revamp"] .abTierHeader::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 80px;
+    height: 1px;
+    background: var(--r);
+    box-shadow: 0 0 14px color-mix(in oklch, var(--r) 50%, transparent);
+}
+
+/* Tier dot becomes more prominent. */
+[data-ab-style="revamp"] .abTierHeader::before {
+    content: "";
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--r);
+    box-shadow: 0 0 0 4px color-mix(in oklch, var(--r) 16%, transparent);
+    flex-shrink: 0;
+}
+
+/* Tier label — bigger + chunkier */
+[data-ab-style="revamp"] .abTierLabel {
+    font-family: var(--rv-display) !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    color: var(--rv-text) !important;
+    line-height: 1 !important;
+}
+
+/* Count chip — pill-shaped, mono numerals, subtle */
+[data-ab-style="revamp"] .abTierCount {
+    margin-left: auto !important;
+    padding: 5px 12px !important;
+    border: 1px solid color-mix(in oklch, var(--r) 30%, oklch(36% 0.014 260)) !important;
+    border-radius: 999px !important;
+    background: color-mix(in oklch, var(--r) 8%, transparent) !important;
+    font: 500 11px/1 var(--rv-mono) !important;
+    letter-spacing: 0.10em !important;
+    color: color-mix(in oklch, var(--r) 70%, oklch(94% 0 0)) !important;
+}
+
+/* Staggered fade-up per tier so the page reveals instead of pop-loading. */
+@keyframes rv-tier-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+[data-ab-style="revamp"] .abTierSection {
+    animation: rv-tier-in 600ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+[data-ab-style="revamp"] .abTier-mythic    { animation-delay: 40ms; }
+[data-ab-style="revamp"] .abTier-legendary { animation-delay: 100ms; }
+[data-ab-style="revamp"] .abTier-epic      { animation-delay: 160ms; }
+[data-ab-style="revamp"] .abTier-rare      { animation-delay: 220ms; }
+[data-ab-style="revamp"] .abTier-uncommon  { animation-delay: 280ms; }
+[data-ab-style="revamp"] .abTier-common    { animation-delay: 340ms; }
+
+@media (prefers-reduced-motion: reduce) {
+    [data-ab-style="revamp"] .abTierSection { animation: none; }
+}
+
+/* Refined badge card hover — tier-coloured edge glow that reads. */
+[data-ab-style="revamp"] .abBadgeCard {
+    transition:
+        transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+[data-ab-style="revamp"] .abBadgeCard:hover {
+    transform: translateY(-3px) !important;
+    border-color: color-mix(in oklch, var(--r) 60%, oklch(48% 0.020 260)) !important;
+    box-shadow:
+        0 1px 0 color-mix(in oklch, var(--r) 30%, oklch(100% 0 0 / 0.06)) inset,
+        0 16px 38px color-mix(in oklch, var(--r) 18%, oklch(0% 0 0 / 0.36)),
+        0 0 0 1px color-mix(in oklch, var(--r) 22%, transparent) !important;
+}
+
+/* Badge grid columns get slightly tighter on the page so cards read with
+   more breathing room horizontally. */
+[data-ab-style="revamp"] .abTierGrid {
+    gap: 18px !important;
+}
+
+/* ============================================================================
+   v1.8.46 — Motion polish layer
+   --------------------------------------------------------------------------
+   v1.8.45 settled the geometry, colour zoning, and information density. This
+   layer pushes craft on the things you feel rather than read:
+
+     1. Personal-hero arc fills from empty to its target on mount.
+     2. Milestone + tier breakdown bars sweep up from scaleX(0) — the bars
+        are now driven by --rv-target instead of an inline transform value,
+        so the JS just emits the target and CSS owns the timing curve.
+     3. Mythic / Legendary cards carry a slow conic-gradient rim sheen so
+        they read as "more alive" than the lower tiers without resorting to
+        scanlines or particle effects.
+     4. Tactile :active microinteractions on chips, admin buttons, the
+        mode toggle, and badge cards.
+     5. Properly bright :focus-visible rings (emerald accent) on every
+        interactive surface.
+     6. KPI numerals get tabular figures so the count-up animator (in
+        index.html) doesn't reflow horizontally as digits change.
+   ============================================================================ */
+
+/* --- Personal hero arc — animate from empty to target -------------------- */
+/* The SVG circle ships with stroke-dashoffset = circumference (empty ring)
+   and a CSS variable --rv-final-off carrying the real target. The keyframe
+   below resolves the variable as a static `to` value, so the browser
+   interpolates between the SVG attribute (full) and the variable (target). */
+[data-ab-style="revamp"] .abPersonalArcFill {
+    /* v1.8.54: switch fill-mode to `both`. `backwards` only applies the
+       from-state during the delay, but reverts to the SVG attribute (= full
+       circumference, empty ring) once the animation ends — that's why the
+       donut snapped back to empty after ~1.4s. `both` keeps the to-state. */
+    animation: rv-arc-fill 1100ms cubic-bezier(0.16, 1, 0.3, 1) 250ms both;
+}
+@keyframes rv-arc-fill {
+    from { stroke-dashoffset: var(--rv-arc-c, 314.16); }
+    to   { stroke-dashoffset: var(--rv-arc-off, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-ab-style="revamp"] .abPersonalArcFill {
+        animation: none;
+        stroke-dashoffset: var(--rv-arc-off, 0);
+    }
+}
+
+/* --- Milestone + tier breakdown bars — sweep from 0 ----------------------- */
+/* The JS now emits style="--rv-target:<n>" instead of a baked transform.
+   CSS owns the from-zero animation here. */
+[data-ab-style="revamp"] .abMilestoneFill,
+[data-ab-style="revamp"] .abTierBreakdownFill {
+    transform-origin: left center;
+    transform: scaleX(0);
+    animation: rv-bar-fill 900ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards;
+}
+@keyframes rv-bar-fill {
+    to { transform: scaleX(var(--rv-target, 0)); }
+}
+[data-ab-style="revamp"] .abTier-mythic    .abTierBreakdownFill { animation-delay: 220ms; }
+[data-ab-style="revamp"] .abTier-legendary .abTierBreakdownFill,
+[data-ab-style="revamp"] .abTierBreakdownRow.t-legendary .abTierBreakdownFill { animation-delay: 280ms; }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-epic      .abTierBreakdownFill { animation-delay: 340ms; }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-rare      .abTierBreakdownFill { animation-delay: 400ms; }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-uncommon  .abTierBreakdownFill { animation-delay: 460ms; }
+[data-ab-style="revamp"] .abTierBreakdownRow.t-common    .abTierBreakdownFill { animation-delay: 520ms; }
+@media (prefers-reduced-motion: reduce) {
+    [data-ab-style="revamp"] .abMilestoneFill,
+    [data-ab-style="revamp"] .abTierBreakdownFill {
+        transform: scaleX(var(--rv-target, 0));
+        animation: none;
+    }
+}
+
+/* --- Mythic & Legendary rim sheen ---------------------------------------- */
+/* A conic gradient on a dedicated ::after layer, masked to the border ring,
+   slowly rotates so the rarest tiers carry continuous motion. The base
+   border, hover state, and ::before top strip are untouched — this is purely
+   a foreground edge effect that sits on top of the existing border. */
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-legendary),
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-mythic) {
+    position: relative;
+    isolation: isolate;
+}
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-legendary)::after,
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-mythic)::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        color-mix(in oklch, var(--r) 75%, transparent) 60deg,
+        color-mix(in oklch, var(--r) 35%, transparent) 110deg,
+        transparent 160deg,
+        transparent 360deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.55;
+    animation: rv-rim-rotate 9s linear infinite;
+    z-index: 0;
+}
+[data-ab-style="revamp"] .abBadgeCard:has(.rarity-mythic)::after {
+    animation-duration: 7s;
+    opacity: 0.70;
+}
+@keyframes rv-rim-rotate {
+    to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-ab-style="revamp"] .abBadgeCard:has(.rarity-legendary)::after,
+    [data-ab-style="revamp"] .abBadgeCard:has(.rarity-mythic)::after {
+        animation: none;
+        opacity: 0.35;
+    }
+}
+
+/* The badge card content needs to sit above the rim layer. */
+[data-ab-style="revamp"] .abBadgeCard > * { position: relative; z-index: 1; }
+
+/* --- :active microinteractions ------------------------------------------- */
+/* Tactile feedback on every primary interactive — a 1px push for chips,
+   2% scale-down for badge cards. Keeps the dashboard physical without
+   overdoing the gamey feedback loop. */
+[data-ab-style="revamp"] .abFilterChip:active,
+[data-ab-style="revamp"] #abAdminOpen:active,
+[data-ab-style="revamp"] #abStyleToggleBtn:active,
+[data-ab-style="revamp"] .abPersonalCta:active {
+    transform: translateY(1px);
+    transition: transform 80ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-ab-style="revamp"] .abBadgeCard:active {
+    transform: translateY(-1px) scale(0.985) !important;
+    transition:
+        transform 90ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* --- :focus-visible rings ------------------------------------------------ */
+/* A consistent emerald accent ring across every focusable surface, sized so
+   it reads at a glance without crowding the existing border. The ring is
+   double-layered: a 1px inset for the immediate edge and a 3px outer halo
+   so it doesn't blend into tier-coloured borders. */
+[data-ab-style="revamp"] .abFilterChip:focus-visible,
+[data-ab-style="revamp"] #abAdminOpen:focus-visible,
+[data-ab-style="revamp"] #abStyleToggleBtn:focus-visible,
+[data-ab-style="revamp"] .abBadgeCard:focus-visible,
+[data-ab-style="revamp"] .abPersonalCta:focus-visible,
+[data-ab-style="revamp"] .abAdminGroup details > summary:focus-visible {
+    outline: none !important;
+    box-shadow:
+        0 0 0 2px oklch(11% 0.008 260),
+        0 0 0 4px var(--rv-accent),
+        0 0 0 5px oklch(72% 0.16 152 / 0.35) !important;
+}
+
+/* --- KPI numerals — tabular figures for clean count-up ------------------- */
+/* The count-up animator in index.html replaces the inner text every frame
+   while the value rises. Without tabular numerals, "9 → 10 → 11 → …" causes
+   horizontal jitter as different glyph widths flow through. */
+[data-ab-style="revamp"] .abPluginHeroKpiValue,
+[data-ab-style="revamp"] .abPersonalKpiValue,
+[data-ab-style="revamp"] .abPersonalArcPct,
+[data-ab-style="revamp"] .abMilestoneNum,
+[data-ab-style="revamp"] .abTierBreakdownNum,
+[data-ab-style="revamp"] .abTierCount {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+/* --- KPI count-up entry animation --------------------------------------- */
+/* The numbers themselves are animated by JS (count-up). The label + sub
+   ring still benefit from a soft fade-in so the hero feels staged
+   rather than popping in fully formed. */
+@keyframes rv-kpi-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+[data-ab-style="revamp"] .abPluginHeroKpi {
+    animation: rv-kpi-in 600ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+[data-ab-style="revamp"] .abPluginHeroKpi:nth-child(1) { animation-delay:  60ms; }
+[data-ab-style="revamp"] .abPluginHeroKpi:nth-child(2) { animation-delay: 140ms; }
+[data-ab-style="revamp"] .abPluginHeroKpi:nth-child(3) { animation-delay: 220ms; }
+[data-ab-style="revamp"] .abPluginHeroKpi:nth-child(4) { animation-delay: 300ms; }
+@media (prefers-reduced-motion: reduce) {
+    [data-ab-style="revamp"] .abPluginHeroKpi { animation: none; }
+}
+
+/* --- Personal hero CTA refinement (if present) -------------------------- */
+/* Make sure the personal hero shoutbox button matches the chip vocabulary
+   so the visual rhythm reads as one system. */
+[data-ab-style="revamp"] .abPersonalCta {
+    transition:
+        background var(--rv-fast) var(--rv-ease),
+        border-color var(--rv-fast) var(--rv-ease),
+        color var(--rv-fast) var(--rv-ease),
+        transform 80ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================================
+   v1.8.47 — HUD identity layer: corner brackets, section numbering, grain.
+   --------------------------------------------------------------------------
+   The Revamp aesthetic was edging toward "control panel" without committing.
+   This layer plants the gamey-but-clinical signature: 1px L-brackets at the
+   four corners of the two hero surfaces, an editorial mono section number
+   above the plugin hero ("00 / PLUGIN OVERVIEW"), and a fixed full-viewport
+   film grain overlay at very low opacity for warmth on the dark canvas.
+   ============================================================================ */
+
+/* --- Plugin hero section-number marker ---------------------------------- */
+[data-ab-style="revamp"] #abPluginHero {
+    position: relative;
+    padding-top: 32px !important;
+}
+[data-ab-style="revamp"] .abPluginHeroSectionNum {
+    position: absolute;
+    top: 14px;
+    left: 24px;
+    font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.18em;
+    color: var(--rv-text-faint);
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+/* --- HUD corner brackets ------------------------------------------------- */
+/* Eight thin background gradients on a dedicated ::after layer give us four
+   1px L-brackets at the corners of each hero surface. The brackets pick up
+   the accent colour, so the plugin hero gets indigo-neutral and the
+   personal hero gets emerald (matches its arc). */
+[data-ab-style="revamp"] #abPluginHero,
+[data-ab-style="revamp"] #abPersonalHero {
+    --rv-bracket-color: color-mix(in oklch, var(--rv-accent) 60%, oklch(60% 0.014 260));
+    --rv-bracket-len: 18px;
+    --rv-bracket-thick: 1px;
+    --rv-bracket-pad: 8px;
+    position: relative;
+}
+[data-ab-style="revamp"] #abPluginHero::after,
+[data-ab-style="revamp"] #abPersonalHero::after {
+    content: "";
+    position: absolute;
+    inset: var(--rv-bracket-pad);
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+        linear-gradient(to right,  var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) top    left  / var(--rv-bracket-len) var(--rv-bracket-thick) no-repeat,
+        linear-gradient(to bottom, var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) top    left  / var(--rv-bracket-thick) var(--rv-bracket-len) no-repeat,
+        linear-gradient(to left,   var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) top    right / var(--rv-bracket-len) var(--rv-bracket-thick) no-repeat,
+        linear-gradient(to bottom, var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) top    right / var(--rv-bracket-thick) var(--rv-bracket-len) no-repeat,
+        linear-gradient(to right,  var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) bottom left  / var(--rv-bracket-len) var(--rv-bracket-thick) no-repeat,
+        linear-gradient(to top,    var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) bottom left  / var(--rv-bracket-thick) var(--rv-bracket-len) no-repeat,
+        linear-gradient(to left,   var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) bottom right / var(--rv-bracket-len) var(--rv-bracket-thick) no-repeat,
+        linear-gradient(to top,    var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) bottom right / var(--rv-bracket-thick) var(--rv-bracket-len) no-repeat;
+    opacity: 0.85;
+    z-index: 2;
+}
+[data-ab-style="revamp"] #abPersonalHero {
+    --rv-bracket-color: color-mix(in oklch, oklch(72% 0.16 152) 70%, oklch(60% 0.014 260));
+}
+
+/* --- Film grain overlay -------------------------------------------------- */
+body.ab-revamp-fullwidth::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+}
+@media (prefers-reduced-motion: reduce) {
+    body.ab-revamp-fullwidth::after { opacity: 0.025; }
+}
+#abStyleToggleHost { z-index: 9999; position: relative; }
+
+/* ============================================================================
+   v1.8.47 — Standalone main-page Revamp layer
+   --------------------------------------------------------------------------
+   The user-facing /achievements page (standalone.js) was previously a
+   separate visual world from the admin Revamp. This layer applies the same
+   token system — Geist display + JetBrains mono, OKLCH neutrals, indigo
+   accent, hairline edges, tabular numerals, focus rings — to the existing
+   standalone DOM without rewriting any structure or JS.
+
+   Scope: every rule is gated on
+       #achievementBadgesStandaloneRoot[data-ab-style="revamp"]
+   so Classic users see no change, and the toggle in the topbar is the only
+   switch. Same `ab-style-pref` localStorage key as admin = one decision
+   across both surfaces.
+   ============================================================================ */
+
+/* --- Tokens (re-declared locally so the standalone page is self-contained
+       even if the admin tokens haven't been initialised on this route) ---- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] {
+    --rv-bg:           oklch(11% 0.008 260);
+    --rv-surface:      oklch(15% 0.012 260);
+    --rv-surface-2:    oklch(18% 0.012 260);
+    --rv-edge:         oklch(36% 0.014 260 / 0.42);
+    --rv-edge-bright:  oklch(48% 0.020 260 / 0.62);
+    --rv-text:         oklch(94% 0 0);
+    --rv-text-muted:   oklch(76% 0.010 260);
+    --rv-text-faint:   oklch(60% 0.014 260);
+    --rv-accent:       oklch(72% 0.16 270);          /* indigo */
+    --rv-accent-strong:oklch(64% 0.20 270);
+    --rv-accent-ink:   oklch(99% 0 0);
+    --rv-emerald:      oklch(72% 0.16 152);
+    --rv-display:      'Geist','Inter','Segoe UI',system-ui,sans-serif;
+    --rv-mono:         'JetBrains Mono','Geist Mono',ui-monospace,monospace;
+    --rv-fast:         180ms;
+    --rv-slow:         420ms;
+    --rv-ease:         cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Tier colours — same scale as admin so badge rarity reads consistently. */
+    --rv-r-common:     oklch(80% 0.020 260);
+    --rv-r-uncommon:   oklch(72% 0.18 145);
+    --rv-r-rare:       oklch(72% 0.16 230);
+    --rv-r-epic:       oklch(70% 0.22 305);
+    --rv-r-legendary:  oklch(80% 0.18 75);
+    --rv-r-mythic:     oklch(70% 0.22 5);
+}
+
+/* --- Root canvas + typography ------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] {
+    background: var(--rv-bg) !important;
+    color: var(--rv-text) !important;
+    font-family: var(--rv-display) !important;
+    color-scheme: dark;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] *,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] *::before,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] *::after {
+    box-sizing: border-box;
+}
+
+/* --- Topbar ------------------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--rv-edge);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar h2 {
+    font-family: var(--rv-display);
+    font-weight: 700;
+    font-size: 1.4em;
+    letter-spacing: -0.01em;
+    color: var(--rv-text);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-back {
+    font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--rv-text-muted) !important;
+    border: 1px solid var(--rv-edge);
+    padding: 8px 14px;
+    border-radius: 999px;
+    text-decoration: none !important;
+    transition: color var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-back:hover {
+    color: var(--rv-text) !important;
+    border-color: var(--rv-edge-bright);
+}
+
+/* --- Style toggle button (works in both modes) -------------------------- */
+#achievementBadgesStandaloneRoot .abSaStyleToggleBtn {
+    appearance: none;
+    margin-left: auto;
+    padding: 6px 12px;
+    height: 30px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(20,24,32,0.85);
+    color: rgba(255,255,255,0.85);
+    border-radius: 999px;
+    font: 500 11px/1 'JetBrains Mono','Geist Mono',ui-monospace,monospace;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 180ms cubic-bezier(0.16,1,0.3,1),
+                border-color 180ms cubic-bezier(0.16,1,0.3,1),
+                background 180ms cubic-bezier(0.16,1,0.3,1);
+}
+#achievementBadgesStandaloneRoot .abSaStyleToggleBtn:hover {
+    border-color: rgba(255,255,255,0.32);
+    color: #fff;
+}
+#achievementBadgesStandaloneRoot .abSaStyleToggleBtn:active {
+    transform: translateY(1px);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .abSaStyleToggleBtn[aria-pressed="true"] {
+    background: var(--rv-accent);
+    border-color: var(--rv-accent);
+    color: var(--rv-accent-ink);
+}
+
+/* --- Hero card ---------------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero {
+    position: relative;
+    background: var(--rv-surface);
+    border: 1px solid var(--rv-edge);
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 18px 48px oklch(0% 0 0 / 0.32);
+}
+/* Section number marker, matching admin "00 / PLUGIN OVERVIEW" treatment. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero::before {
+    content: "01 / YOUR ACHIEVEMENTS";
+    position: absolute;
+    top: 14px; left: 24px;
+    font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.18em;
+    color: var(--rv-text-faint);
+    text-transform: uppercase;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero {
+    padding-top: 40px;
+}
+/* HUD corner brackets — same recipe as admin heroes. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero {
+    --rv-bracket-color: color-mix(in oklch, var(--rv-emerald) 70%, oklch(60% 0.014 260));
+    --rv-bracket-len: 18px;
+    --rv-bracket-thick: 1px;
+    --rv-bracket-pad: 8px;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero::after {
+    content: "";
+    position: absolute;
+    inset: var(--rv-bracket-pad);
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+        linear-gradient(to right,  var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) top    left  / var(--rv-bracket-len) var(--rv-bracket-thick) no-repeat,
+        linear-gradient(to bottom, var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) top    left  / var(--rv-bracket-thick) var(--rv-bracket-len) no-repeat,
+        linear-gradient(to left,   var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) top    right / var(--rv-bracket-len) var(--rv-bracket-thick) no-repeat,
+        linear-gradient(to bottom, var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) top    right / var(--rv-bracket-thick) var(--rv-bracket-len) no-repeat,
+        linear-gradient(to right,  var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) bottom left  / var(--rv-bracket-len) var(--rv-bracket-thick) no-repeat,
+        linear-gradient(to top,    var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) bottom left  / var(--rv-bracket-thick) var(--rv-bracket-len) no-repeat,
+        linear-gradient(to left,   var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) bottom right / var(--rv-bracket-len) var(--rv-bracket-thick) no-repeat,
+        linear-gradient(to top,    var(--rv-bracket-color) var(--rv-bracket-len), transparent var(--rv-bracket-len)) bottom right / var(--rv-bracket-thick) var(--rv-bracket-len) no-repeat;
+    opacity: 0.85;
+    z-index: 2;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero-title {
+    font-family: var(--rv-display);
+    font-weight: 700;
+    font-size: 1.8em;
+    letter-spacing: -0.015em;
+    color: var(--rv-text);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero-sub,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-eyebrow {
+    color: var(--rv-text-muted);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-eyebrow {
+    font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--rv-text-faint);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaRankBarTrack {
+    background: oklch(100% 0 0 / 0.06) !important;
+    height: 6px !important;
+    border-radius: 999px !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaRankBarFill {
+    background: linear-gradient(90deg, var(--rv-accent), var(--rv-accent-strong)) !important;
+}
+
+/* --- Stats bento -------------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stats {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 14px !important;
+    margin: 20px 0 !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stat {
+    background: var(--rv-surface) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 14px !important;
+    padding: 18px 20px !important;
+    box-shadow: none !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stat-t {
+    font: 500 10px/1 var(--rv-mono) !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+    color: var(--rv-text-faint) !important;
+    margin-bottom: 8px !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stat-v {
+    font-family: var(--rv-display) !important;
+    font-weight: 700 !important;
+    font-size: 1.6em !important;
+    letter-spacing: -0.015em !important;
+    color: var(--rv-text) !important;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+@media (max-width: 720px) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* --- Tab strip ---------------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tabs {
+    display: flex !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    padding: 0 !important;
+    margin: 18px 0 !important;
+    border-bottom: 1px solid var(--rv-edge) !important;
+    padding-bottom: 14px !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab {
+    appearance: none !important;
+    background: transparent !important;
+    border: 1px solid var(--rv-edge) !important;
+    color: var(--rv-text-muted) !important;
+    padding: 8px 16px !important;
+    height: 34px !important;
+    border-radius: 999px !important;
+    font: 500 11px/1 var(--rv-mono) !important;
+    letter-spacing: 0.10em !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    transition: color var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease),
+                background var(--rv-fast) var(--rv-ease) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab:hover {
+    color: var(--rv-text) !important;
+    border-color: var(--rv-edge-bright) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab.active {
+    color: var(--rv-accent-ink) !important;
+    background: var(--rv-accent) !important;
+    border-color: var(--rv-accent) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab:active {
+    transform: translateY(1px);
+}
+
+/* --- Filter row inputs -------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-input,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-select {
+    background: var(--rv-surface) !important;
+    border: 1px solid var(--rv-edge) !important;
+    color: var(--rv-text) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    font: 500 13px/1.2 var(--rv-display) !important;
+    transition: border-color var(--rv-fast) var(--rv-ease),
+                box-shadow var(--rv-fast) var(--rv-ease) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-input:focus,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-select:focus {
+    outline: none !important;
+    border-color: var(--rv-accent) !important;
+    box-shadow: 0 0 0 3px oklch(72% 0.16 270 / 0.20) !important;
+}
+
+/* --- Badge cards -------------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-badge,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card {
+    background: var(--rv-surface) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
+    transition:
+        transform var(--rv-fast) var(--rv-ease),
+        border-color var(--rv-fast) var(--rv-ease),
+        box-shadow var(--rv-fast) var(--rv-ease) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-badge:hover,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--rv-edge-bright) !important;
+    box-shadow: 0 12px 28px oklch(0% 0 0 / 0.32) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-badge:active,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card:active {
+    transform: translateY(-1px) scale(0.985);
+}
+
+/* --- Focus rings -------------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] :focus-visible {
+    outline: none !important;
+    box-shadow:
+        0 0 0 2px oklch(11% 0.008 260),
+        0 0 0 4px var(--rv-accent),
+        0 0 0 5px oklch(72% 0.16 152 / 0.35) !important;
+    border-radius: 8px;
+}
+
+/* --- Welcome banner ----------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-welcome-banner {
+    background: var(--rv-surface) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 12px !important;
+    color: var(--rv-text) !important;
+}
+
+/* --- Showcase strip ----------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-showcase {
+    display: flex !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    margin-top: 8px !important;
+}
+
+/* --- Error inline ------------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-error {
+    background: oklch(40% 0.18 22 / 0.10) !important;
+    border: 1px solid oklch(60% 0.18 22 / 0.40) !important;
+    color: oklch(85% 0.10 22) !important;
+    border-radius: 10px !important;
+    padding: 12px 16px !important;
+    font: 500 13px/1.4 var(--rv-display) !important;
+}
+
+/* ============================================================================
+   v1.8.49 — Standalone polish: bracket fix + tier-coloured badge cards
+   --------------------------------------------------------------------------
+   Two issues from v1.8.48:
+     1. Hero corner brackets sat 8px inside the rounded border, reading as
+        dotted artifacts touching the card edge instead of deliberate HUD
+        brackets. Pulled to inset:-2px (just outside), longer arms (22px),
+        2px stroke, and brightened so they read as intentional control-panel
+        pips bracketing the card.
+     2. Badge cards in Revamp lost the per-tier coloured borders that Classic
+        used (the v1.8.47 layer painted a flat hairline that overrode the
+        Classic ab-r-*-border rules). This layer re-applies tier colour via
+        the same `--r` variable system as admin: hairline tinted border, top
+        accent strip, and a slow conic rim sheen for Mythic + Legendary so
+        the rarest cards visibly hum.
+   ============================================================================ */
+
+/* --- Hero corner brackets — pull outside, beef up ----------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero {
+    --rv-bracket-len: 22px;
+    --rv-bracket-thick: 2px;
+    --rv-bracket-pad: -2px;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero::after {
+    /* `inset:-2px` puts the bracket arms slightly outside the rounded border
+       so they read as deliberate HUD pips, not partial fragments inside.
+       Bumping border-radius to a consistent value to match. */
+    border-radius: 20px;
+    opacity: 0.95;
+    --rv-bracket-color: color-mix(in oklch, var(--rv-emerald) 80%, oklch(70% 0.014 260));
+}
+
+/* --- Badge card per-tier theming --------------------------------------- */
+/* Standalone badge cards already carry an `ab-r-{rarity}-border` class
+   attached in JS (rarityClass + '-border'). Map each to the same OKLCH
+   tier colour scale used by admin so the visual vocabulary is identical
+   across both surfaces. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card {
+    --r: var(--rv-r-common);
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid color-mix(in oklch, var(--r) 32%, var(--rv-edge)) !important;
+    background: var(--rv-surface) !important;
+    box-shadow: none !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-common-border    { --r: var(--rv-r-common); }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-uncommon-border  { --r: var(--rv-r-uncommon); }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-rare-border      { --r: var(--rv-r-rare); }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-epic-border      { --r: var(--rv-r-epic); }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-legendary-border { --r: var(--rv-r-legendary); }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-mythic-border    { --r: var(--rv-r-mythic); }
+
+/* Top accent strip (1-2px solid line, brighter for higher tiers). */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: color-mix(in oklch, var(--r) 45%, oklch(36% 0.014 260));
+    z-index: 1;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-epic-border::before,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-legendary-border::before,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-mythic-border::before {
+    height: 2px;
+    background: color-mix(in oklch, var(--r) 65%, oklch(36% 0.014 260));
+}
+
+/* Mythic + Legendary slow conic rim sheen — same recipe as admin. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-legendary-border::after,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-mythic-border::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        color-mix(in oklch, var(--r) 75%, transparent) 60deg,
+        color-mix(in oklch, var(--r) 35%, transparent) 110deg,
+        transparent 160deg,
+        transparent 360deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.55;
+    animation: rv-rim-rotate 9s linear infinite;
+    z-index: 0;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-mythic-border::after {
+    animation-duration: 7s;
+    opacity: 0.70;
+}
+@media (prefers-reduced-motion: reduce) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-legendary-border::after,
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card.ab-r-mythic-border::after {
+        animation: none;
+        opacity: 0.35;
+    }
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Hover lift — tier-coloured edge glow. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card {
+    transition:
+        transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card:hover {
+    transform: translateY(-3px) !important;
+    border-color: color-mix(in oklch, var(--r) 65%, var(--rv-edge-bright)) !important;
+    box-shadow:
+        0 1px 0 color-mix(in oklch, var(--r) 30%, oklch(100% 0 0 / 0.06)) inset,
+        0 16px 38px color-mix(in oklch, var(--r) 18%, oklch(0% 0 0 / 0.36)),
+        0 0 0 1px color-mix(in oklch, var(--r) 22%, transparent) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card:active {
+    transform: translateY(-1px) scale(0.985) !important;
+}
+
+/* Mythic + Legendary text colour inside cards — keep the existing class
+   colour, but ensure adequate contrast against the dark surface. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-r-mythic    { color: oklch(70% 0.22 5)   !important; }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-r-legendary { color: oklch(80% 0.18 75)  !important; }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-r-epic      { color: oklch(70% 0.22 305) !important; }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-r-rare      { color: oklch(72% 0.16 230) !important; }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-r-uncommon  { color: oklch(72% 0.18 145) !important; }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-r-common    { color: oklch(80% 0.020 260) !important; }
+
+/* The +pts pill — keep its identity but match the indigo accent. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-badge-pts {
+    background: color-mix(in oklch, var(--rv-accent) 22%, transparent) !important;
+    border: 1px solid color-mix(in oklch, var(--rv-accent) 50%, transparent) !important;
+    color: oklch(94% 0.04 270) !important;
+    box-shadow: none !important;
+    font-family: var(--rv-mono) !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.06em !important;
+}
+
+/* ============================================================================
+   v1.8.50 — Editorial overhaul of the standalone main page
+   --------------------------------------------------------------------------
+   Previous v1.8.47-49 layers themed colours/borders but kept the same
+   information geometry as Classic, which made Revamp feel like "dark mode"
+   rather than a different design language. This layer commits:
+
+     1. Canvas — fixed ambient blur orb (slow drift, emerald-indigo blend)
+        + film grain overlay. Adds spatial depth to the dark canvas.
+     2. Hero — kill the contained-card visual. Full-bleed magazine spread:
+        massive Geist 700 rank name (clamp 36-72px), eyebrow 01 / ACHIEVEMENT
+        PROFILE above, rank progress as a thick HUD strip at the bottom.
+        Profile icon becomes a tier-tinted disc with conic ring.
+     3. Stats — asymmetric editorial grid (2fr 1fr 1fr 1fr). The first stat
+        is dominant; the rest are supporting metrics.
+     4. Tabs — chapter strip. Each tab carries a small mono section number
+        (01, 02, 03, ...) above the label. Active tab gets a thick emerald
+        underline + brighter type, not a fill.
+     5. Filter strip — control-panel treatment with mono labels above each
+        input ("SEARCH", "CATEGORY", "FILTER", "SORT").
+     6. Showcase — slow horizontal shimmer pass on equipped badge tiles
+        marks them as "active".
+     7. Badge cards — icon tiles get tier-tinted backgrounds; pts pill +
+        subtitle dot reinforce rarity colour without neon.
+
+   Every override is gated on `[data-ab-style="revamp"]` so Classic is
+   untouched.
+   ============================================================================ */
+
+/* --- Canvas: ambient orb + grain ---------------------------------------- */
+/* The standalone root is `position:fixed; inset:0` so the orb has to live
+   inside it (not on body) to avoid getting clipped. Single drifting blob,
+   60s loop, very low opacity — provides ambient warmth without scanlines. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] {
+    background:
+        radial-gradient(ellipse 60% 70% at 80% -10%, oklch(72% 0.16 270 / 0.10), transparent 60%),
+        radial-gradient(ellipse 50% 60% at -10% 80%, oklch(72% 0.16 152 / 0.06), transparent 60%),
+        var(--rv-bg) !important;
+    background-attachment: fixed, fixed, fixed;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"]::before {
+    content: "";
+    position: fixed;
+    top: 10vh;
+    left: -8vw;
+    width: 50vw;
+    height: 50vw;
+    max-width: 700px; max-height: 700px;
+    pointer-events: none;
+    background: radial-gradient(circle at center, oklch(72% 0.16 270 / 0.18), transparent 70%);
+    filter: blur(80px);
+    z-index: 0;
+    animation: rv-orb-drift 60s ease-in-out infinite alternate;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"]::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+}
+@keyframes rv-orb-drift {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(20vw, 10vh) scale(1.15); }
+    100% { transform: translate(-10vw, 20vh) scale(0.95); }
+}
+@media (prefers-reduced-motion: reduce) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"]::before { animation: none; }
+}
+/* Page content sits above the orb, centered with breathing room. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;     /* v1.8.51: centre the wrap on wide viewports */
+    padding: 0 16px;    /* small inner gutter so content doesn't kiss the edge */
+}
+
+/* --- Hero — magazine spread -------------------------------------------- */
+/* Drop the contained-card visual entirely. Use a CSS grid that places the
+   text block on the left and the conic-ring icon on the right. No border,
+   no fill, no rounded corners — let the type carry the page. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    column-gap: 48px !important;
+    align-items: start !important;
+    margin-bottom: 56px !important;
+    position: relative;
+}
+/* Kill the v1.8.47 hero corner brackets — they were nice when the hero
+   was a contained card, but in the magazine spread there's no card to
+   bracket. Hide them. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero::after {
+    display: none !important;
+}
+/* Section number sits at the very top, above the name. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero::before {
+    content: "01 / ACHIEVEMENT PROFILE";
+    position: static;
+    top: auto; left: auto;
+    grid-column: 1 / -1;
+    font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.20em;
+    color: var(--rv-text-faint);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    background: none !important;
+    width: auto;
+    height: auto;
+    pointer-events: none;
+}
+
+/* Hero left block — name, rank, sub, streak, progress, showcase. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero > div:first-of-type {
+    flex: none !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 24px !important;
+}
+
+/* Top of left block: icon + name area. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 24px !important;
+}
+/* Profile rank icon — 96px disc with a faint conic ring around it. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero-icon {
+    width: 96px !important;
+    height: 96px !important;
+    background: var(--rv-surface) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 999px !important;
+    font-size: 2.4em !important;
+    position: relative;
+    flex-shrink: 0 !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero-icon::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    background: conic-gradient(
+        from 0deg,
+        var(--rv-accent) 0deg,
+        var(--rv-accent) 220deg,
+        oklch(20% 0.012 260) 220deg,
+        oklch(20% 0.012 260) 360deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    padding: 2px;
+    pointer-events: none;
+    animation: rv-rim-rotate 14s linear infinite;
+    opacity: 0.85;
+}
+
+/* Page title becomes a mono eyebrow (subordinate to the rank name). */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero-title {
+    font-family: var(--rv-mono) !important;
+    font-weight: 500 !important;
+    font-size: 11px !important;
+    letter-spacing: 0.20em !important;
+    text-transform: uppercase !important;
+    color: var(--rv-text-faint) !important;
+    margin: 0 0 8px 0 !important;
+}
+
+/* Rank label ("Binger") becomes the dominant headline. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaRankLabel {
+    font-family: var(--rv-display) !important;
+    font-weight: 700 !important;
+    font-size: clamp(36px, 6vw, 72px) !important;
+    letter-spacing: -0.025em !important;
+    line-height: 0.95 !important;
+    color: var(--rv-text) !important;
+    margin: 0 !important;
+    opacity: 1 !important;
+    text-transform: none !important;
+}
+
+/* Subtitle (completion / score line) — quiet, mono, with rule. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaSub {
+    font-family: var(--rv-mono) !important;
+    font-size: 12px !important;
+    letter-spacing: 0.10em !important;
+    color: var(--rv-text-muted) !important;
+    margin-top: 12px !important;
+    opacity: 1 !important;
+    text-transform: uppercase !important;
+}
+
+/* Title display (special unlocked title) — emerald, smaller, decorative. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-title-display {
+    font-family: var(--rv-mono) !important;
+    font-size: 11px !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    color: var(--rv-emerald) !important;
+    margin-top: 8px !important;
+}
+
+/* Streak badge — mini orange pill, sharper. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero-streak {
+    background: oklch(65% 0.18 35 / 0.12) !important;
+    border: 1px solid oklch(70% 0.16 35 / 0.45) !important;
+    color: oklch(85% 0.10 35) !important;
+    font-family: var(--rv-mono) !important;
+    font-size: 11px !important;
+    letter-spacing: 0.10em !important;
+    text-transform: uppercase !important;
+    border-radius: 999px !important;
+    padding: 5px 12px !important;
+}
+
+/* Rank progress strip — much thicker, HUD-style, with mono caption. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaRankBarText {
+    font: 500 11px/1 var(--rv-mono) !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+    color: var(--rv-text-faint) !important;
+    margin-bottom: 8px !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaRankBarTrack {
+    height: 8px !important;
+    background: oklch(20% 0.010 260) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    position: relative;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaRankBarFill {
+    background: linear-gradient(90deg, var(--rv-accent), var(--rv-emerald)) !important;
+    box-shadow: 0 0 16px color-mix(in oklch, var(--rv-accent) 50%, transparent) !important;
+    height: 100% !important;
+    transition: width 1200ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Showcase eyebrow — tracked-out, with hairline rule. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcaseWrap {
+    margin-top: 8px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid var(--rv-edge);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcaseWrap .ab-eyebrow {
+    margin-bottom: 12px !important;
+}
+
+/* --- Asymmetric stat grid ---------------------------------------------- */
+/* First stat dominant (2fr), three supporting (1fr each). Mono labels +
+   massive display numerals. Deliberate hierarchy, not a flat 4-tile bento. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stats {
+    display: grid !important;
+    grid-template-columns: 2fr 1fr 1fr 1fr !important;
+    gap: 1px !important;
+    background: var(--rv-edge) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 0 !important;
+    margin: 0 0 48px 0 !important;
+    overflow: hidden;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stat {
+    background: var(--rv-bg) !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 28px !important;
+    box-shadow: none !important;
+    position: relative;
+}
+/* First stat dominant — bigger numeral, accent rule */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stat:first-child {
+    padding: 32px !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stat:first-child .ab-stat-v {
+    font-size: 3em !important;
+    color: var(--rv-text) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stat:first-child::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 32px; height: 1px;
+    background: var(--rv-accent);
+    box-shadow: 0 0 12px color-mix(in oklch, var(--rv-accent) 60%, transparent);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stat-t {
+    font: 500 10px/1 var(--rv-mono) !important;
+    letter-spacing: 0.20em !important;
+    text-transform: uppercase !important;
+    color: var(--rv-text-faint) !important;
+    margin-bottom: 16px !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stat-v {
+    font-family: var(--rv-display) !important;
+    font-weight: 700 !important;
+    font-size: 2em !important;
+    letter-spacing: -0.02em !important;
+    color: var(--rv-text) !important;
+    line-height: 1 !important;
+    font-variant-numeric: tabular-nums !important;
+    font-feature-settings: "tnum" 1 !important;
+}
+@media (max-width: 720px) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* --- Tabs — chapter strip --------------------------------------------- */
+/* Drop the rounded pill treatment. Tabs become editorial chapter markers
+   with section numbers above each label, separated by hairlines. The
+   active tab gets a thick emerald underline at the bottom. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tabs {
+    display: flex !important;
+    gap: 0 !important;
+    flex-wrap: wrap !important;
+    padding: 0 !important;
+    margin: 0 0 32px 0 !important;
+    border-top: 1px solid var(--rv-edge) !important;
+    border-bottom: 1px solid var(--rv-edge) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab {
+    appearance: none !important;
+    background: transparent !important;
+    border: none !important;
+    border-right: 1px solid var(--rv-edge) !important;
+    color: var(--rv-text-muted) !important;
+    padding: 18px 24px 16px !important;
+    height: auto !important;
+    border-radius: 0 !important;
+    font: 500 11px/1.4 var(--rv-mono) !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    position: relative;
+    transition: color 180ms cubic-bezier(0.16,1,0.3,1),
+                background 180ms cubic-bezier(0.16,1,0.3,1) !important;
+}
+/* Section number prefix on each tab — counter-style. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tabs {
+    counter-reset: rv-chapter;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab::before {
+    counter-increment: rv-chapter;
+    content: counter(rv-chapter, decimal-leading-zero);
+    display: block;
+    font-size: 9px;
+    color: var(--rv-text-faint);
+    margin-bottom: 6px;
+    letter-spacing: 0.20em;
+    opacity: 0.7;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab:hover {
+    color: var(--rv-text) !important;
+    background: oklch(20% 0.012 260 / 0.4) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab.active {
+    color: var(--rv-text) !important;
+    background: transparent !important;
+    border-color: var(--rv-edge) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab.active::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--rv-accent), var(--rv-emerald));
+    box-shadow: 0 0 12px color-mix(in oklch, var(--rv-accent) 50%, transparent);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab.active::before {
+    color: var(--rv-accent) !important;
+    opacity: 1 !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tab:active {
+    transform: translateY(1px);
+}
+
+/* --- Filter row — refined control surface (v1.8.57) ------------------- */
+/* The v1.8.50 hairline-grid filter row read like a confused half-table.
+   v1.8.57 redesigns it as a proper bordered card: each control is its own
+   rounded-rect field with a hairline separator between, native HTML select
+   chevrons restored (custom SVG bg), and the reduced-motion checkbox docked
+   to the right end as a pill instead of a stretched cell. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px !important;
+    background: var(--rv-surface) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 14px !important;
+    margin-bottom: 32px !important;
+}
+/* Each input + select sits as its own rounded field — no more cramped hairline grid. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > .ab-input,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > .ab-select {
+    background: var(--rv-bg) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 10px !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+    padding: 12px 16px !important;
+    height: 44px !important;
+    font: 500 13px/1.2 var(--rv-display) !important;
+    color: var(--rv-text) !important;
+    transition: border-color var(--rv-fast) var(--rv-ease),
+                background var(--rv-fast) var(--rv-ease),
+                box-shadow var(--rv-fast) var(--rv-ease) !important;
+}
+/* Search input dominates — flex-grows to fill available width. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > input.ab-input[type="search"] {
+    flex: 1 1 280px !important;
+}
+/* Selects flex evenly to fill the rest. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > .ab-select {
+    flex: 0 1 180px !important;
+    /* Restore the dropdown chevron — Classic styling injected one inline; my
+       previous override removed it because the rule lives in standalone.js's
+       injectStyles() which hardcodes #fff fill. Re-inject the same chevron
+       in mono-mid colour that matches the Revamp typography. */
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a8b8' d='M2 4l4 4 4-4'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 14px center !important;
+    background-size: 12px !important;
+    padding-right: 36px !important;
+    cursor: pointer !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > .ab-input:hover,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > .ab-select:hover {
+    border-color: var(--rv-edge-bright) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > .ab-input:focus,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > .ab-select:focus {
+    outline: none !important;
+    border-color: var(--rv-accent) !important;
+    box-shadow: 0 0 0 3px oklch(72% 0.16 270 / 0.20) !important;
+}
+/* Search icon prefix — small magnifier mono before the placeholder. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > input.ab-input[type="search"] {
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0a8b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: 14px center !important;
+    background-size: 14px !important;
+    padding-left: 38px !important;
+}
+/* Reduced-motion checkbox — pinned to the right as a self-contained pill. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > label {
+    background: var(--rv-bg) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 10px !important;
+    padding: 0 16px !important;
+    margin: 0 0 0 auto !important;
+    height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    font: 500 11px/1 var(--rv-mono) !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase !important;
+    color: var(--rv-text-muted) !important;
+    cursor: pointer !important;
+    transition: color var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease) !important;
+    flex: 0 0 auto !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > label:hover {
+    color: var(--rv-text) !important;
+    border-color: var(--rv-edge-bright) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > label > input[type="checkbox"] {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 14px !important;
+    height: 14px !important;
+    border: 1.5px solid var(--rv-text-faint) !important;
+    border-radius: 4px !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    transition: background var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease) !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > label > input[type="checkbox"]:checked {
+    background: var(--rv-accent) !important;
+    border-color: var(--rv-accent) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > label > input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 4px; height: 8px;
+    border: solid oklch(99% 0 0);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+@media (max-width: 720px) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > .ab-input,
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > .ab-select,
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-filter-row > label {
+        flex: 1 1 100% !important;
+    }
+}
+
+/* --- Showcase strip — slow shimmer pass ------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcase {
+    display: flex !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    position: relative;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcase > * {
+    position: relative;
+    overflow: hidden;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcase > *:not(.ab-muted)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        100deg,
+        transparent 30%,
+        oklch(100% 0 0 / 0.06) 50%,
+        transparent 70%
+    );
+    transform: translateX(-100%);
+    animation: rv-showcase-shimmer 6s linear infinite;
+    pointer-events: none;
+}
+@keyframes rv-showcase-shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcase > *::after { animation: none; }
+}
+
+/* --- Badge card refinements ------------------------------------------- */
+/* Icon tile gets a tier-tinted background. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card .ab-card-icon {
+    background: color-mix(in oklch, var(--r) 18%, var(--rv-surface-2)) !important;
+    border: 1px solid color-mix(in oklch, var(--r) 32%, var(--rv-edge)) !important;
+    border-radius: 12px !important;
+}
+/* Title gets a small tier-coloured dot before it. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card .ab-card-title {
+    font-family: var(--rv-display) !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.005em !important;
+}
+/* Card meta line — make rarity dot more pronounced. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card .ab-card-meta {
+    font: 500 11px/1.4 var(--rv-mono) !important;
+    letter-spacing: 0.10em !important;
+    text-transform: uppercase !important;
+}
+/* Progress bar inside cards — match the hero rank-bar treatment. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card .ab-prog-bar {
+    height: 6px !important;
+    background: oklch(20% 0.010 260) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 999px !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card .ab-prog-fill {
+    background: linear-gradient(90deg,
+        color-mix(in oklch, var(--r) 70%, var(--rv-accent)),
+        color-mix(in oklch, var(--r) 90%, var(--rv-emerald))) !important;
+}
+/* Footer buttons in cards — tighten + match chip vocabulary. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card .ab-btn {
+    background: transparent !important;
+    border: 1px solid var(--rv-edge) !important;
+    color: var(--rv-text-muted) !important;
+    border-radius: 999px !important;
+    padding: 6px 12px !important;
+    font: 500 10px/1 var(--rv-mono) !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    transition: color var(--rv-fast) var(--rv-ease),
+                border-color var(--rv-fast) var(--rv-ease) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-card .ab-btn:hover {
+    color: var(--rv-text) !important;
+    border-color: var(--rv-edge-bright) !important;
+}
+/* Unlocked / locked status text — refine. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-unlocked {
+    color: var(--rv-emerald) !important;
+    font-family: var(--rv-mono) !important;
+    font-size: 11px !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-locked {
+    color: oklch(70% 0.18 22) !important;
+    font-family: var(--rv-mono) !important;
+    font-size: 11px !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+}
+
+/* --- Welcome banner refinement ---------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-welcome-banner {
+    background: var(--rv-surface) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-left: 3px solid var(--rv-accent) !important;
+    border-radius: 0 !important;
+    padding: 16px 20px !important;
+    margin-bottom: 24px !important;
+}
+
+/* --- Topbar: section number above title ------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar {
+    margin-bottom: 56px !important;
+    padding-bottom: 20px !important;
+    align-items: baseline !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar h2 {
+    font-size: 1.1em !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.005em !important;
+    color: var(--rv-text-muted) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar h2::before {
+    content: "00 / ";
+    font: 500 11px/1 var(--rv-mono);
+    letter-spacing: 0.20em;
+    color: var(--rv-text-faint);
+    margin-right: 12px;
+    text-transform: uppercase;
+}
+
+/* ============================================================================
+   v1.8.52 — Snazz pass: hero arc, count-up, entrance cascade, micro-motion
+   --------------------------------------------------------------------------
+   Pushes the standalone Revamp from "good editorial" toward "actually
+   striking." Adds:
+     1. Hero arc — a 200px conic-stroke donut on the right side of the hero
+        showing actual completion %, with the same fill animation as admin's
+        personal arc (stroke-dashoffset interpolates on mount).
+     2. Page entrance cascade — staggered fade-up on hero, stats, tabs, panel
+        so the page reveals as a sequence rather than popping in at once.
+     3. Showcase tile hover — tier-coloured glow + lift on each equipped tile.
+     4. Day streak pulse — slow flame-orange opacity pulse on the streak chip.
+     5. Rank bar tick marks — three vertical hairlines at 25/50/75 so progress
+        reads against structure, not as a free-floating fill.
+     6. Hero name shimmer — subtle one-shot light sweep across the rank name
+        on first load.
+   ============================================================================ */
+
+/* --- Hero arc donut --------------------------------------------------- */
+/* The hero is a 2-column grid (text 1fr | arc 220px). The arc <div> is
+   added FIRST in source order (before the text container) by standalone.js
+   to avoid touching the existing inner geometry — so we place it explicitly
+   into column 2 via `grid-column`, and pin the text container into column 1.
+   The ::before section number spans both columns (grid-column: 1 / -1). */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero {
+    grid-template-columns: minmax(0, 1fr) 220px !important;
+    grid-template-rows: auto auto !important;
+    align-items: start !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero > .abSaHeroArc {
+    grid-column: 2;
+    grid-row: 2;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero > div:not(.abSaHeroArc) {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+}
+@media (max-width: 920px) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto auto !important;
+    }
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero > div:not(.abSaHeroArc) {
+        grid-column: 1;
+        grid-row: 2;
+    }
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero > .abSaHeroArc {
+        grid-column: 1;
+        grid-row: 3;
+        justify-self: center !important;
+    }
+}
+
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .abSaHeroArc {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 220px;
+    height: 220px;
+    position: relative;
+    justify-self: end;
+    align-self: start;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .abSaHeroArcSvg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    transform: rotate(-90deg);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .abSaHeroArcTrack {
+    fill: none;
+    stroke: oklch(100% 0 0 / 0.06);
+    stroke-width: 8;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .abSaHeroArcFill {
+    fill: none;
+    stroke: var(--rv-accent);
+    stroke-width: 8;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 12px oklch(72% 0.16 270 / 0.40));
+    /* v1.8.54: same fill-mode fix as admin — `both` keeps the to-state. */
+    animation: rv-arc-fill 1100ms cubic-bezier(0.16, 1, 0.3, 1) 250ms both;
+}
+@media (prefers-reduced-motion: reduce) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .abSaHeroArcFill { animation: none; }
+}
+
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .abSaHeroArcCenter {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .abSaHeroArcEyebrow {
+    font: 500 9px/1 var(--rv-mono);
+    letter-spacing: 0.24em;
+    color: var(--rv-text-faint);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .abSaHeroArcPct {
+    font-family: var(--rv-display);
+    font-weight: 700;
+    font-size: 2.4em;
+    letter-spacing: -0.02em;
+    color: var(--rv-text);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+/* --- Rank bar tick marks ---------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaRankBarTrack {
+    background-image: linear-gradient(
+        to right,
+        transparent 0,
+        transparent calc(25% - 1px),
+        var(--rv-edge-bright) calc(25% - 1px),
+        var(--rv-edge-bright) 25%,
+        transparent 25%,
+        transparent calc(50% - 1px),
+        var(--rv-edge-bright) calc(50% - 1px),
+        var(--rv-edge-bright) 50%,
+        transparent 50%,
+        transparent calc(75% - 1px),
+        var(--rv-edge-bright) calc(75% - 1px),
+        var(--rv-edge-bright) 75%,
+        transparent 75%
+    ),
+    linear-gradient(to bottom, oklch(20% 0.010 260), oklch(20% 0.010 260)) !important;
+    background-blend-mode: normal;
+}
+
+/* --- Day streak pulse ------------------------------------------------- */
+@keyframes rv-streak-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 oklch(70% 0.16 35 / 0);
+        border-color: oklch(70% 0.16 35 / 0.45);
+    }
+    50% {
+        box-shadow: 0 0 16px 2px oklch(70% 0.16 35 / 0.30);
+        border-color: oklch(75% 0.18 35 / 0.70);
+    }
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero-streak {
+    animation: rv-streak-pulse 3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero-streak { animation: none; }
+}
+
+/* --- Page entrance cascade -------------------------------------------- */
+@keyframes rv-page-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stats,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tabs,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaPanelBadges {
+    animation: rv-page-in 700ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar       { animation-delay:   0ms; }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero         { animation-delay:  90ms; }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stats        { animation-delay: 180ms; }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tabs         { animation-delay: 260ms; }
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaPanelBadges { animation-delay: 340ms; }
+@media (prefers-reduced-motion: reduce) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar,
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero,
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-stats,
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-tabs,
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaPanelBadges {
+        animation: none;
+    }
+}
+
+/* --- Showcase tile hover lift ----------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcase > *:not(.ab-muted) {
+    background: var(--rv-surface) !important;
+    border: 1px solid var(--rv-edge) !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    transition:
+        transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+    cursor: pointer;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcase > *:not(.ab-muted):hover {
+    transform: translateY(-3px);
+    border-color: var(--rv-edge-bright) !important;
+    box-shadow: 0 16px 32px oklch(0% 0 0 / 0.32),
+                0 0 0 1px var(--rv-accent);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcase > *:active {
+    transform: translateY(-1px) scale(0.985);
+}
+/* Showcase icon (typography sigil) — make it a small tier-tinted disc. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcase .ab-sc-icon,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaShowcase .ab-card-icon {
+    width: 32px !important;
+    height: 32px !important;
+    background: var(--rv-surface-2) !important;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-right: 10px !important;
+    border: 1px solid var(--rv-edge) !important;
+}
+
+/* --- Hero rank-name shimmer (one-shot on load) ------------------------- */
+@keyframes rv-name-sweep {
+    from { background-position: -200% 0; }
+    to   { background-position: 200% 0; }
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaRankLabel {
+    background: linear-gradient(
+        100deg,
+        var(--rv-text) 0%,
+        var(--rv-text) 35%,
+        oklch(94% 0 0 / 0.6) 50%,
+        var(--rv-text) 65%,
+        var(--rv-text) 100%
+    ) !important;
+    background-size: 200% 100% !important;
+    -webkit-background-clip: text !important;
+            background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+            color: transparent !important;
+    animation: rv-name-sweep 2200ms cubic-bezier(0.16, 1, 0.3, 1) 400ms 1 backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+    #achievementBadgesStandaloneRoot[data-ab-style="revamp"] #abSaRankLabel {
+        animation: none;
+        background: none !important;
+        -webkit-text-fill-color: var(--rv-text) !important;
+                color: var(--rv-text) !important;
+    }
+}
+
+/* --- Topbar HUD frame ------------------------------------------------- */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar {
+    position: relative;
+    padding: 18px 0 20px !important;
+    border-top: 1px solid var(--rv-edge);
+    border-bottom: 1px solid var(--rv-edge);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar::before,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar::before {
+    top: -1px; left: -1px;
+    border-top: 2px solid var(--rv-accent);
+    border-left: 2px solid var(--rv-accent);
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-topbar::after {
+    bottom: -1px; right: -1px;
+    border-bottom: 2px solid var(--rv-accent);
+    border-right: 2px solid var(--rv-accent);
+}
+
+/* ============================================================================
+   v1.8.54 — Friends drawer Revamp layer
+   --------------------------------------------------------------------------
+   The friends drawer mounts on document.body globally (not under the
+   standalone root), so its Revamp styles are scoped to
+   `body[data-ab-style="revamp"]` instead of the standalone root selector.
+   Body attribute is set by:
+     - standalone.js applyStylePref() when the user toggles on /achievements
+     - sidebar.js bootstrap on every page load (reads localStorage pref)
+
+   Treatment matches the rest of the Revamp system: dark canvas, OKLCH
+   neutrals, indigo accent, hairline edges, JetBrains Mono labels, tactile
+   :active microinteractions. Tokens declared locally so the drawer is
+   self-contained even if the standalone root tokens haven't initialised.
+   ============================================================================ */
+
+body[data-ab-style="revamp"] {
+    --rv-bg-fr:        oklch(11% 0.008 260);
+    --rv-surface-fr:   oklch(15% 0.012 260);
+    --rv-surface-2-fr: oklch(18% 0.012 260);
+    --rv-edge-fr:      oklch(36% 0.014 260 / 0.42);
+    --rv-edge-bri-fr:  oklch(48% 0.020 260 / 0.62);
+    --rv-text-fr:      oklch(94% 0 0);
+    --rv-text-mu-fr:   oklch(76% 0.010 260);
+    --rv-text-fa-fr:   oklch(60% 0.014 260);
+    --rv-accent-fr:    oklch(72% 0.16 270);
+    --rv-emerald-fr:   oklch(72% 0.16 152);
+    --rv-mono-fr:      'JetBrains Mono','Geist Mono',ui-monospace,monospace;
+    --rv-disp-fr:      'Geist','Inter','Segoe UI',system-ui,sans-serif;
+}
+
+/* --- Friends button (FAB) --------------------------------------------- */
+body[data-ab-style="revamp"] #abFriendsBtn {
+    background: var(--rv-surface-fr) !important;
+    border: 1px solid var(--rv-edge-fr) !important;
+    border-radius: 14px !important;
+    color: var(--rv-text-fr) !important;
+    box-shadow: 0 12px 28px oklch(0% 0 0 / 0.35),
+                inset 0 1px 0 oklch(100% 0 0 / 0.04) !important;
+    transition: transform 180ms cubic-bezier(0.16,1,0.3,1),
+                border-color 180ms cubic-bezier(0.16,1,0.3,1),
+                background 180ms cubic-bezier(0.16,1,0.3,1) !important;
+}
+body[data-ab-style="revamp"] #abFriendsBtn:hover {
+    border-color: var(--rv-accent-fr) !important;
+    background: var(--rv-surface-2-fr) !important;
+    transform: translateY(-2px);
+}
+body[data-ab-style="revamp"] #abFriendsBtn:active {
+    transform: translateY(0);
+}
+body[data-ab-style="revamp"] #abFriendsBadge {
+    background: var(--rv-accent-fr) !important;
+    box-shadow: 0 0 0 2px var(--rv-bg-fr) !important;
+    font-family: var(--rv-mono-fr) !important;
+    font-weight: 600 !important;
+}
+
+/* --- Friends drawer ---------------------------------------------------- */
+body[data-ab-style="revamp"] #abFriendsDrawer {
+    background: var(--rv-bg-fr) !important;
+    border-right: 1px solid var(--rv-edge-fr) !important;
+    box-shadow: 10px 0 50px oklch(0% 0 0 / 0.55) !important;
+    color: var(--rv-text-fr) !important;
+}
+body[data-ab-style="revamp"] #abFriendsBackdrop {
+    background: oklch(0% 0 0 / 0.6) !important;
+}
+
+/* Drawer header — rebuild as a clean editorial bar with mono section number. */
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-head,
+body[data-ab-style="revamp"] #abFriendsDrawer > div:first-child {
+    background: transparent !important;
+    border-bottom: 1px solid var(--rv-edge-fr) !important;
+    padding: 22px 20px 14px !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-title {
+    font-family: var(--rv-disp-fr) !important;
+    font-weight: 700 !important;
+    font-size: 1.2em !important;
+    letter-spacing: -0.01em !important;
+    color: var(--rv-text-fr) !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-title::before {
+    content: "00 / ";
+    font: 500 11px/1 var(--rv-mono-fr);
+    letter-spacing: 0.20em;
+    color: var(--rv-text-fa-fr);
+    margin-right: 10px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-close {
+    background: transparent !important;
+    border: 1px solid var(--rv-edge-fr) !important;
+    color: var(--rv-text-mu-fr) !important;
+    border-radius: 999px !important;
+    width: 32px !important; height: 32px !important;
+    transition: color 180ms ease, border-color 180ms ease !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-close:hover {
+    color: var(--rv-text-fr) !important;
+    border-color: var(--rv-edge-bri-fr) !important;
+}
+
+/* Tab strip — chapter style, no rounded pills. */
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-tabs {
+    display: flex !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-bottom: 1px solid var(--rv-edge-fr) !important;
+    background: transparent !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-tab {
+    appearance: none !important;
+    background: transparent !important;
+    border: none !important;
+    border-right: 1px solid var(--rv-edge-fr) !important;
+    color: var(--rv-text-mu-fr) !important;
+    padding: 14px 16px !important;
+    font: 500 11px/1 var(--rv-mono-fr) !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    position: relative;
+    flex: 1 1 0 !important;
+    border-radius: 0 !important;
+    transition: color 180ms ease, background 180ms ease !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-tab:last-child {
+    border-right: none !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-tab:hover {
+    color: var(--rv-text-fr) !important;
+    background: oklch(20% 0.012 260 / 0.4) !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-tab.active {
+    color: var(--rv-text-fr) !important;
+    background: transparent !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-tab.active::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--rv-accent-fr), var(--rv-emerald-fr));
+    box-shadow: 0 0 12px color-mix(in oklch, var(--rv-accent-fr) 50%, transparent);
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-tab:active {
+    transform: translateY(1px);
+}
+
+/* Friend rows. */
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-row {
+    background: var(--rv-surface-fr) !important;
+    border: 1px solid var(--rv-edge-fr) !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    margin-bottom: 8px !important;
+    transition: transform 180ms cubic-bezier(0.16,1,0.3,1),
+                border-color 180ms cubic-bezier(0.16,1,0.3,1),
+                box-shadow 180ms cubic-bezier(0.16,1,0.3,1) !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-row:hover {
+    transform: translateY(-2px);
+    border-color: var(--rv-edge-bri-fr) !important;
+    box-shadow: 0 12px 24px oklch(0% 0 0 / 0.32) !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-name,
+body[data-ab-style="revamp"] #abFriendsDrawer [class*="ab-fd-name"] {
+    font-family: var(--rv-disp-fr) !important;
+    font-weight: 600 !important;
+    color: var(--rv-text-fr) !important;
+    letter-spacing: -0.005em !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-status,
+body[data-ab-style="revamp"] #abFriendsDrawer [class*="ab-fd-status"] {
+    color: var(--rv-text-mu-fr) !important;
+    font-size: 0.85em !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-status strong {
+    color: var(--rv-emerald-fr) !important;
+    font-weight: 600 !important;
+}
+
+/* Avatar bubbles — tier-tinted ring.
+   v1.8.55: use background-color (NOT shorthand) so the inline
+   `background-image: url(...)` set by avatarStyle() in sidebar.js
+   still wins. Previously `background:` reset it and avatars vanished. */
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-avatar {
+    border: 1px solid var(--rv-edge-fr) !important;
+    background-color: var(--rv-surface-2-fr) !important;
+}
+
+/* Action buttons (chat, dm). */
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-act {
+    background: transparent !important;
+    border: 1px solid var(--rv-edge-fr) !important;
+    color: var(--rv-text-mu-fr) !important;
+    border-radius: 999px !important;
+    transition: color 180ms ease, border-color 180ms ease, background 180ms ease !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-act:hover {
+    color: var(--rv-text-fr) !important;
+    border-color: var(--rv-accent-fr) !important;
+    background: oklch(20% 0.012 260 / 0.6) !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-act:active {
+    transform: translateY(1px);
+}
+
+/* Empty state. */
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-empty {
+    color: var(--rv-text-fa-fr) !important;
+    border: 1px dashed var(--rv-edge-fr) !important;
+    background: transparent !important;
+    border-radius: 12px !important;
+    padding: 28px 18px !important;
+    font: 500 12px/1.5 var(--rv-disp-fr) !important;
+}
+
+/* Search input. */
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-search,
+body[data-ab-style="revamp"] #abFriendsDrawer input[type="search"],
+body[data-ab-style="revamp"] #abFriendsDrawer input[type="text"] {
+    background: var(--rv-surface-fr) !important;
+    border: 1px solid var(--rv-edge-fr) !important;
+    color: var(--rv-text-fr) !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    font: 500 13px/1.2 var(--rv-disp-fr) !important;
+    transition: border-color 180ms ease, box-shadow 180ms ease !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-search:focus,
+body[data-ab-style="revamp"] #abFriendsDrawer input:focus {
+    outline: none !important;
+    border-color: var(--rv-accent-fr) !important;
+    box-shadow: 0 0 0 3px oklch(72% 0.16 270 / 0.20) !important;
+}
+
+/* Chat pane. */
+body[data-ab-style="revamp"] #abFriendsChatPane {
+    background: var(--rv-bg-fr) !important;
+}
+
+/* Chat input. */
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-chat-input,
+body[data-ab-style="revamp"] #abFriendsDrawer textarea {
+    background: var(--rv-surface-fr) !important;
+    border: 1px solid var(--rv-edge-fr) !important;
+    color: var(--rv-text-fr) !important;
+    border-radius: 10px !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer textarea:focus {
+    outline: none !important;
+    border-color: var(--rv-accent-fr) !important;
+    box-shadow: 0 0 0 3px oklch(72% 0.16 270 / 0.20) !important;
+}
+
+/* Message bubbles. */
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-msg-mine {
+    background: var(--rv-accent-fr) !important;
+    color: oklch(99% 0 0) !important;
+    border-radius: 14px 14px 4px 14px !important;
+}
+body[data-ab-style="revamp"] #abFriendsDrawer .ab-fd-msg-them {
+    background: var(--rv-surface-fr) !important;
+    border: 1px solid var(--rv-edge-fr) !important;
+    color: var(--rv-text-fr) !important;
+    border-radius: 14px 14px 14px 4px !important;
+}
+
+/* Focus rings — same emerald halo as the rest of Revamp. */
+body[data-ab-style="revamp"] #abFriendsDrawer :focus-visible,
+body[data-ab-style="revamp"] #abFriendsBtn:focus-visible {
+    outline: none !important;
+    box-shadow:
+        0 0 0 2px oklch(11% 0.008 260),
+        0 0 0 4px var(--rv-accent-fr),
+        0 0 0 5px oklch(72% 0.16 152 / 0.35) !important;
+}

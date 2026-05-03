@@ -17,6 +17,12 @@ namespace Jellyfin.Plugin.AchievementBadges.Api;
 [Authorize]
 [Route("Plugins/AchievementBadges")]
 [ServiceFilter(typeof(UserOwnershipFilter))]
+[ServiceFilter(typeof(AdminAuditLogFilter))]
+// v1.8.59 (A+): default rate-limiting policy applies to every route in this
+// controller. Routes that need stricter policies (prestige-cooldown,
+// recompute-cooldown, ip-30-per-min) keep their explicit method-level
+// [EnableRateLimiting] which OVERRIDES this default per ASP.NET semantics.
+[EnableRateLimiting("user-60-per-min")]
 public class AchievementBadgesController : ControllerBase
 {
     private readonly AchievementBadgeService _badgeService;
@@ -98,6 +104,15 @@ public class AchievementBadgesController : ControllerBase
 
     [HttpGet("client-script/{name}")]
     [AllowAnonymous]
+    // v1.8.60: opt out of the class-level user-60-per-min default for static
+    // asset fetches. The route serves CSS/JS/JSON/PNG/MP3/SVG that the web
+    // client requests several at a time on every page load. With class-level
+    // rate limiting active, multiple users behind a shared NAT (households,
+    // small offices) could collectively exhaust 60/min/IP and have asset
+    // requests rejected. Path traversal protection (character whitelist
+    // + embedded-resource lookup) is the same; only the per-IP request-rate
+    // gate is removed for this single route.
+    [DisableRateLimiting]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult GetClientScript([FromRoute] string name)
@@ -110,17 +125,21 @@ public class AchievementBadgesController : ControllerBase
             }
         }
 
-        // Mint a short-lived cache policy so browsers re-fetch on every
-        // plugin upgrade — the old sidebar.js / enhance.js / standalone.js
-        // used to stick around for hours after a version bump, which was
-        // the root cause of users reporting "fix X STILL doesn't work"
-        // after an update. `no-cache` tells the browser to revalidate
-        // (etag match); we don't set etags so the server always sends
-        // 200 with fresh content.
-        Response.Headers["Cache-Control"] = "no-cache, must-revalidate";
+        // v1.9.0: long-lived cache. Plugin updates bust caches via the
+        // version query (?v=1.9.0) embedded in every script/css URL by the
+        // bootstrap pages — so a fresh URL on update == fresh fetch, but
+        // repeat visitors during a release window pay 0 bytes over the wire.
+        // `immutable` tells caches that the body for this URL never changes
+        // (since the version query identifies the body), so the browser
+        // skips even conditional-GET round trips.
+        Response.Headers["Cache-Control"] = "public, max-age=86400, immutable";
 
-        // Try JS first
-        var content = ResourceReader.ReadEmbeddedText(
+        // v1.9.0: serve embedded text from a static cache. Reading the
+        // assembly resource stream + decoding UTF-8 used to happen on every
+        // request; with rate-limiting on this route disabled in v1.8.60 the
+        // path is genuinely hot, so memoise to a ConcurrentDictionary keyed
+        // by resource name.
+        var content = GetCachedEmbeddedText(
             "Jellyfin.Plugin.AchievementBadges.Pages." + name + ".js");
 
         if (content is not null)
@@ -130,30 +149,63 @@ public class AchievementBadgesController : ControllerBase
 
         // Try JSON (e.g. translation files live under Pages/translations, but
         // clients can also fetch them via the flat client-script route).
-        var jsonContent = ResourceReader.ReadEmbeddedText(
+        var jsonContent = GetCachedEmbeddedText(
             "Jellyfin.Plugin.AchievementBadges.Pages." + name + ".json");
         if (jsonContent is not null)
         {
             return Content(jsonContent, "application/json");
         }
 
-        // Try binary assets (PNG for spritesheet, etc.)
-        var assembly = typeof(AchievementBadgesController).Assembly;
+        // Try CSS (the revamp stylesheet ships as a separate file so users
+        // can toggle between the v1.8.10 classic look and the new design.)
+        var cssContent = GetCachedEmbeddedText(
+            "Jellyfin.Plugin.AchievementBadges.Pages." + name + ".css");
+        if (cssContent is not null)
+        {
+            return Content(cssContent, "text/css");
+        }
+
+        // Try binary assets (PNG for spritesheet, etc.) — also cached.
         string[] extensions = { ".png", ".mp3", ".svg" };
         string[] mimeTypes = { "image/png", "audio/mpeg", "image/svg+xml" };
         for (int i = 0; i < extensions.Length; i++)
         {
             var resourceName = "Jellyfin.Plugin.AchievementBadges.Pages." + name + extensions[i];
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream != null)
+            var bytes = GetCachedEmbeddedBytes(resourceName);
+            if (bytes != null)
             {
-                var bytes = new byte[stream.Length];
-                stream.Read(bytes, 0, bytes.Length);
                 return File(bytes, mimeTypes[i]);
             }
         }
 
         return NotFound();
+    }
+
+    // v1.9.0: in-process cache for embedded assets. Resources are immutable
+    // for the lifetime of the loaded plugin DLL, so a one-time read is safe
+    // and re-deploys load a fresh DLL anyway. Negative results (asset name
+    // doesn't match any extension) are NOT cached — the caller's character
+    // whitelist makes the unbounded-key problem moot, but we still avoid
+    // adding noise.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string?> _embeddedTextCache = new();
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte[]?> _embeddedBytesCache = new();
+
+    private static string? GetCachedEmbeddedText(string resourceName)
+    {
+        return _embeddedTextCache.GetOrAdd(resourceName, key => ResourceReader.ReadEmbeddedText(key));
+    }
+
+    private static byte[]? GetCachedEmbeddedBytes(string resourceName)
+    {
+        return _embeddedBytesCache.GetOrAdd(resourceName, key =>
+        {
+            var assembly = typeof(AchievementBadgesController).Assembly;
+            using var stream = assembly.GetManifestResourceStream(key);
+            if (stream == null) return null;
+            using var ms = new System.IO.MemoryStream();
+            stream.CopyTo(ms);
+            return ms.ToArray();
+        });
     }
 
     // ---------- i18n: translations -----------------------------------------
@@ -436,6 +488,9 @@ public class AchievementBadgesController : ControllerBase
         [FromQuery] int limit = 200)
     {
         if (!FriendsFeatureOn) return Ok(new { Messages = new List<object>() });
+        // v1.8.58 security: clamp `limit` so an authenticated user can't
+        // request an unbounded message dump.
+        limit = Math.Clamp(limit, 1, 500);
         var conv = _messagingService.GetOrCreateDm(userId, otherUserId);
         var msgs = _messagingService.GetConversationMessages(userId, conv.Id, limit);
         return Ok(new { Messages = msgs, ConversationId = conv.Id });
@@ -517,6 +572,8 @@ public class AchievementBadgesController : ControllerBase
     public ActionResult GetConvMessages([FromRoute] string userId, [FromRoute] string convId, [FromQuery] int limit = 200)
     {
         if (!FriendsFeatureOn) return Ok(new { Messages = new List<object>() });
+        // v1.8.58 security: clamp `limit` (matches GetMessageThread).
+        limit = Math.Clamp(limit, 1, 500);
         return Ok(new { Messages = _messagingService.GetConversationMessages(userId, convId, limit) });
     }
 
@@ -1042,6 +1099,11 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetActivityFeed([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? userId = null)
     {
+        // v1.8.58 security: clamp inputs. Without bounds an authenticated user
+        // could pass pageSize=999999 and force a huge in-memory list allocation
+        // (DoS via memory pressure on the badge service's activity feed).
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
         var requestingUserId = User.FindFirst("Jellyfin-UserId")?.Value;
         return Ok(_badgeService.GetActivityFeed(page, pageSize, userId, requestingUserId));
     }
@@ -1199,6 +1261,26 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public ActionResult GetProfileCard([FromRoute] string userId)
     {
+        // v1.8.59 (A+): security headers on the only anonymous HTML endpoint.
+        // CSP locks the page to its own origin (no remote scripts), nosniff
+        // prevents content-type confusion, X-Frame-Options restricts framing
+        // to same-origin (Jellyfin embeds the card in /web/), Referrer-Policy
+        // strips outbound referrers from any external links the user adds.
+        Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline'; " +
+            "style-src 'self' 'unsafe-inline'; " +
+            "img-src 'self' data: https:; " +
+            "font-src 'self' data:; " +
+            "connect-src 'self'; " +
+            "frame-ancestors 'self'; " +
+            "base-uri 'self'; " +
+            "form-action 'self'";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+        Response.Headers["Referrer-Policy"] = "same-origin";
+        Response.Headers["Permissions-Policy"] = "interest-cohort=()";
+
         // Unified "unavailable" response for all failure modes so the caller
         // can't use 200 vs 404 to enumerate which Jellyfin user GUIDs exist
         // on the server. Respond with a generic HTML page for every failure.

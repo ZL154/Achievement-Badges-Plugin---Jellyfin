@@ -56,9 +56,14 @@ public class AuditLogService
                 Redacted = redact
             });
 
+            // v1.8.61: in-place trim instead of `Skip+ToList`. The previous
+            // implementation allocated a brand-new List<Entry> on every log
+            // call once we hit MaxEntries, copying ~5000 references each time.
+            // RemoveRange shifts in place — one buffer reuse instead of one
+            // allocation per log call.
             if (_entries.Count > MaxEntries)
             {
-                _entries = _entries.Skip(_entries.Count - MaxEntries).ToList();
+                _entries.RemoveRange(0, _entries.Count - MaxEntries);
             }
 
             Save();
@@ -69,11 +74,20 @@ public class AuditLogService
     {
         lock (_lock)
         {
-            return _entries
-                .OrderByDescending(e => e.At)
-                .Take(limit)
-                .Select(e => e.Redacted
-                    ? new Entry
+            // v1.8.61: drop OrderByDescending. _entries is already sorted by
+            // chronological append order (Log() always appends; trim is FIFO),
+            // so the latest `limit` entries are the last `limit` of the list.
+            // Walk backwards from the end — O(limit) instead of O(n log n)
+            // for sort + O(n) for the Take/Select pipeline.
+            var count = _entries.Count;
+            var take = Math.Min(limit, count);
+            var result = new List<Entry>(take);
+            for (var i = count - 1; i >= count - take; i--)
+            {
+                var e = _entries[i];
+                if (e.Redacted)
+                {
+                    result.Add(new Entry
                     {
                         At = e.At,
                         UserId = e.UserId,
@@ -81,9 +95,14 @@ public class AuditLogService
                         Type = e.Type,
                         Details = e.Details,
                         Redacted = true
-                    }
-                    : e)
-                .ToList();
+                    });
+                }
+                else
+                {
+                    result.Add(e);
+                }
+            }
+            return result;
         }
     }
 
