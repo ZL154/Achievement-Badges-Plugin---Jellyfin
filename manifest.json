@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.9.0.0",
+        "changelog": "v1.9.0 - UI Revamp + Security A+ + plugin-wide efficiency overhaul. Cumulative release covering all work since v1.8.10. New features: full Revamp UI for the standalone /achievements page (magazine hero, conic donut, asymmetric stats grid, chapter tabs, control-panel filter strip, ambient orb + film grain), Friends drawer Revamp following the same Classic/Revamp toggle, Offline - last watched X line on offline friends, HideLastWatched privacy preference, HMAC-SHA256 webhook signing for receiver-side authenticity verification. Backend efficiency: debounced Save in AchievementBadgeService and MessagingService, FriendsService LastWatched cache with 90s TTL and play-event invalidation, AuditLogService in-place trim and tail-walk read, WriteIndented disabled on production stores, embedded resource caching, Cache-Control public max-age 86400 immutable on assets with version-only cache busting (browsers now actually cache between page loads), middleware marker fast-path. Security A+: default class-level rate limit, AdminAuditLogFilter capturing every elevation action, CSP and security headers on the anonymous profile-card endpoint, 34 xUnit security regression tests, GitHub Actions CI runs tests + dotnet vulnerability scan + gitleaks on every push, expanded SECURITY.md with full threat model. Three medium audit findings fixed: input clamps on GetActivityFeed/GetMessageThread/GetConvMessages, WebhookUrlValidator fails closed on DNS errors.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.9.0/Jellyfin.Plugin.AchievementBadges_1.9.0.0.zip",
+        "checksum": "185ab557350bca7398e705d523194b25",
+        "timestamp": "2026-05-03T00:00:00Z"
+      },
+      {
         "version": "1.8.10.0",
         "changelog": "Group chat moderation: PROMOTE/DEMOTE ADMINS + KICK MEMBERS. Adds an Owner role (the original creator, gold pill) plus zero-or-more Admins (green pill, stored as adminIds[] on the Conversation model). In the View members modal, admins now see a kebab on each non-self/non-owner row with applicable actions: 'Make admin' (any admin), 'Remove admin' (owner only), 'Remove from group' (any admin can remove non-admins; only the owner can remove other admins). New backend endpoints POST /admins/{id} and DELETE /admins/{id} mirror the auth: owner-or-admin can promote, owner-only can demote, kick rules match. Backward compatible: existing groups deserialize with empty adminIds[] so the owner is the only admin until they explicitly promote someone.",
         "targetAbi": "10.11.0.0",
