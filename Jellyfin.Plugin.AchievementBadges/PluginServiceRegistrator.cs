@@ -15,6 +15,7 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
         serviceCollection.AddScoped<UserOwnershipFilter>();
+        serviceCollection.AddScoped<AdminAuditLogFilter>();
 
         serviceCollection.AddSingleton<WebhookNotifier>();
         serviceCollection.AddSingleton<AuditLogService>();

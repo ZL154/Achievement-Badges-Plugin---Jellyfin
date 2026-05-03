@@ -5,6 +5,41 @@
     var SHOWCASE_ID='ab-sidebar-showcase';
     var HEADER_ID='ab-header-badges';
 
+    /* v1.8.54: propagate the user's Classic/Revamp preference globally so the
+       Friends drawer (mounted on body, on every Jellyfin page) follows the
+       same toggle the standalone /achievements page exposes. Reads
+       `ab-style-pref` from localStorage on every page load and:
+         (1) sets body[data-ab-style="revamp"]
+         (2) injects the Revamp stylesheet link if not already present
+       Same `<link id="abSaRevampCss">` ID the standalone uses, so we don't
+       double-inject when the user navigates from /achievements to another
+       Jellyfin page. */
+    try {
+        var __abPref = null;
+        try { __abPref = localStorage.getItem('ab-style-pref'); } catch (e) {}
+        if (__abPref === 'revamp') {
+            try { document.body.setAttribute('data-ab-style', 'revamp'); } catch (e) {
+                /* body not yet ready — retry once DOM loads */
+                document.addEventListener('DOMContentLoaded', function () {
+                    try { document.body.setAttribute('data-ab-style', 'revamp'); } catch (_) {}
+                });
+            }
+            if (!document.getElementById('abSaRevampCss')) {
+                // v1.9.0: version-only cache bust (see index.html).
+                var __abCssBust = 'v=1.9.0';
+                var __abApi = window.ApiClient || window.apiClient;
+                var __abUrl = (__abApi && typeof __abApi.getUrl === 'function')
+                    ? __abApi.getUrl('Plugins/AchievementBadges/client-script/styles-revamp')
+                    : '/Plugins/AchievementBadges/client-script/styles-revamp';
+                var __abLink = document.createElement('link');
+                __abLink.id = 'abSaRevampCss';
+                __abLink.rel = 'stylesheet';
+                __abLink.href = __abUrl + (__abUrl.indexOf('?') >= 0 ? '&' : '?') + __abCssBust;
+                (document.head || document.documentElement).appendChild(__abLink);
+            }
+        }
+    } catch (e) {}
+
     // Inject a style rule to hide the header badge row on narrow screens.
     // 5 equipped badges at 30px each eat ~170px of horizontal space, which
     // on phones pushes the hamburger menu and profile icon off the right
@@ -169,8 +204,10 @@
     function installShowcaseWatchdog(){
         if (_showcaseWatchdogInstalled) return;
         _showcaseWatchdogInstalled = true;
-        // Aggressive sweep every 250ms — cheap (just two getElementById).
-        setInterval(function(){ if (_showcaseEnabled === false) removeShowcaseDom(); }, 250);
+        // v1.8.57: relaxed from 250ms → 1500ms. The MutationObserver below
+        // catches insertions immediately; this interval only matters as a
+        // belt-and-braces sweep, so 4× rarer is plenty.
+        setInterval(function(){ if (_showcaseEnabled === false) removeShowcaseDom(); }, 1500);
         // Also a MutationObserver so we react immediately when something
         // adds either element, not just on the next tick.
         try {
@@ -380,8 +417,22 @@
     // gated on the resolve completing, so a slow server response could
     // leave the showcase visible on refresh until the next hashchange.
     installShowcaseWatchdog();
-    // Tighter poll: 5s instead of 15s for faster admin-flip propagation.
-    setInterval(forceResolveShowcase, 5000);
+    // v1.8.60: back off the poll once the page has been alive for 60s and
+    // the flag has resolved at least once. The hashchange + visibilitychange
+    // listeners below cover all common admin-flip propagation cases (user
+    // navigates to/from achievements page, or returns to the tab); the
+    // 30s steady-state poll catches the remaining edge case (user has the
+    // tab open and idle while admin flips the flag) at a 6x lower CPU cost.
+    var __abShowcasePollMs = 5000;
+    var __abShowcasePollHandle = setInterval(function tick(){
+        forceResolveShowcase();
+        if (__abShowcasePollMs === 5000 && _showcaseEnabled !== null && performance.now() > 60000) {
+            // Promote to slower steady-state cadence.
+            clearInterval(__abShowcasePollHandle);
+            __abShowcasePollMs = 30000;
+            __abShowcasePollHandle = setInterval(forceResolveShowcase, __abShowcasePollMs);
+        }
+    }, __abShowcasePollMs);
     try {
         window.addEventListener('hashchange', forceResolveShowcase);
         document.addEventListener('visibilitychange', function(){
@@ -1096,9 +1147,11 @@
         // Expose for the admin-reconcile loop above so it can re-sync
         // visibility after a FriendsEnabled flip without duplicating logic.
         window.__abSyncFriendsBtnVisibility = syncFriendsBtnVisibility;
-        // Run on hash change + every 500ms for playback state changes.
+        // v1.8.57: relaxed from 500ms → 2000ms. Hashchange covers nav events
+        // immediately; the interval is just a fallback for engine-driven
+        // playback state changes that don't bubble through history.
         try { window.addEventListener('hashchange', syncFriendsBtnVisibility); } catch(e) {}
-        setInterval(syncFriendsBtnVisibility, 500);
+        setInterval(syncFriendsBtnVisibility, 2000);
         syncFriendsBtnVisibility();
     }
 
@@ -1167,11 +1220,23 @@
                     fBox.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">people_outline</span><div>' + emptyMsg + '</div></div>';
                 } else {
                     fBox.innerHTML = friends.map(function(f){
+                        // v1.8.54: when offline, show "Offline — last watched <X>"
+                        // mirroring the online "Watching X" treatment. Falls
+                        // back to "Last seen <date>" then "Offline" when
+                        // LastWatched isn't available (privacy-suppressed,
+                        // never played anything, or library access blocked).
+                        var lastWatchedTitle = (f.LastWatched && f.LastWatched.Name)
+                            ? (f.LastWatched.SeriesName
+                                ? (f.LastWatched.SeriesName + (f.LastWatched.Name ? ' — ' + f.LastWatched.Name : ''))
+                                : f.LastWatched.Name)
+                            : null;
                         var status = f.Online
                             ? (f.NowPlaying && f.NowPlaying.Name
                                 ? tr('friends.watching_prefix', 'Watching') + ' <strong>' + escapeHtml(f.NowPlaying.SeriesName ? (f.NowPlaying.SeriesName + (f.NowPlaying.Name ? ' — ' + f.NowPlaying.Name : '')) : f.NowPlaying.Name) + '</strong>'
                                 : tr('friends.online', 'Online'))
-                            : (f.LastSeen ? tr('friends.last_seen', 'Last seen') + ' ' + new Date(f.LastSeen).toLocaleString() : tr('friends.offline', 'Offline'));
+                            : (lastWatchedTitle
+                                ? tr('friends.offline', 'Offline') + ' — ' + tr('friends.last_watched_prefix', 'last watched') + ' <strong>' + escapeHtml(lastWatchedTitle) + '</strong>'
+                                : (f.LastSeen ? tr('friends.last_seen', 'Last seen') + ' ' + new Date(f.LastSeen).toLocaleString() : tr('friends.offline', 'Offline')));
                         var av = avatarStyle(f.UserId);
                         var initialsHtml = av ? '' : escapeHtml(initials(f.UserName));
                         // In simple mode there's no friendship to remove —

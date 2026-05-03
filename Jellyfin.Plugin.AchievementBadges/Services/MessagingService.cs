@@ -779,7 +779,65 @@ public class MessagingService
         Save();
     }
 
+    // v1.8.61: debounce, mirroring v1.8.57's AchievementBadgeService fix.
+    // 11 callers fire Save() (every send / edit / delete / read-receipt).
+    // Coalesce back-to-back writes into one disk flush within 1.5s. Crash
+    // window grows by ~1.5s; messages stay in memory and are correct for
+    // every concurrent reader.
+    private const int MessagingDebounceMs = 1500;
+    private readonly object _saveLock = new();
+    private Timer? _saveTimer;
+    private bool _savePending;
+
     private void Save()
+    {
+        lock (_saveLock)
+        {
+            _savePending = true;
+            if (_saveTimer == null)
+            {
+                _saveTimer = new Timer(_ => FlushDebouncedSave(), null, MessagingDebounceMs, Timeout.Infinite);
+            }
+            else
+            {
+                _saveTimer.Change(MessagingDebounceMs, Timeout.Infinite);
+            }
+        }
+    }
+
+    private void FlushDebouncedSave()
+    {
+        bool shouldRun;
+        lock (_saveLock)
+        {
+            shouldRun = _savePending;
+            _savePending = false;
+        }
+        if (!shouldRun) return;
+        try
+        {
+            // Take the regular _lock so we serialise a consistent snapshot.
+            lock (_lock)
+            {
+                SaveImmediate();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AB] MessagingService: debounced save flush failed");
+        }
+    }
+
+    /// <summary>
+    /// Flush any pending debounced save synchronously. Call before clean
+    /// shutdown if you need the disk to be current.
+    /// </summary>
+    public void FlushPendingSave()
+    {
+        FlushDebouncedSave();
+    }
+
+    private void SaveImmediate()
     {
         try
         {

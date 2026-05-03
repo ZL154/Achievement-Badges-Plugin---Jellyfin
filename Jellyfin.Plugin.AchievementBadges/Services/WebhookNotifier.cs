@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -69,6 +70,8 @@ public class WebhookNotifier
             payload = new { content };
         }
 
+        var signingSecret = config.WebhookSigningSecret ?? string.Empty;
+
         _ = Task.Run(async () =>
         {
             try
@@ -78,6 +81,21 @@ public class WebhookNotifier
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
+
+                // v1.8.59 (A+): HMAC-SHA256 signature over `<timestamp>.<body>`
+                // when the admin has configured a signing secret. Receivers
+                // verify with HMAC(secret, timestamp + "." + raw_body) and
+                // can reject stale timestamps to prevent replay. Same envelope
+                // shape as Stripe / GitHub webhooks. No-op when the secret
+                // is empty (legacy behaviour preserved).
+                if (!string.IsNullOrEmpty(signingSecret))
+                {
+                    var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    var sig = ComputeSignature(signingSecret, timestamp, json);
+                    req.Headers.TryAddWithoutValidation("X-AchievementBadges-Signature", "sha256=" + sig);
+                    req.Headers.TryAddWithoutValidation("X-AchievementBadges-Timestamp", timestamp);
+                }
+
                 using var res = await _http.SendAsync(req).ConfigureAwait(false);
                 if (!res.IsSuccessStatusCode)
                 {
@@ -89,6 +107,21 @@ public class WebhookNotifier
                 _logger.LogWarning(ex, "[AchievementBadges] Webhook POST failed.");
             }
         });
+    }
+
+    /// <summary>
+    /// HMAC-SHA256 of "<paramref name="timestamp"/>.<paramref name="body"/>"
+    /// using <paramref name="secret"/> as the key. Returns lowercase hex.
+    /// </summary>
+    private static string ComputeSignature(string secret, string timestamp, string body)
+    {
+        var keyBytes = Encoding.UTF8.GetBytes(secret);
+        var msgBytes = Encoding.UTF8.GetBytes(timestamp + "." + body);
+        using var hmac = new HMACSHA256(keyBytes);
+        var hash = hmac.ComputeHash(msgBytes);
+        var sb = new StringBuilder(hash.Length * 2);
+        foreach (var b in hash) sb.Append(b.ToString("x2", System.Globalization.CultureInfo.InvariantCulture));
+        return sb.ToString();
     }
 
     private static string Sanitize(string? s)

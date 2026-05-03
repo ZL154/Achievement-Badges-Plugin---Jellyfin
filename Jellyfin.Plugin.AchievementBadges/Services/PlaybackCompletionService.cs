@@ -14,7 +14,8 @@ public class PlaybackCompletionService
     private readonly AchievementBadgeService _achievementBadgeService;
     private readonly string _dataFilePath;
     private readonly object _lock = new();
-    private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
+    // v1.8.60: WriteIndented=false. See AchievementBadgeService for rationale.
+    private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = false };
 
     private Dictionary<string, UserPlaybackState> _playbackStates = new();
     // itemId -> list of (userId, completedAt) for co-watch detection (last hour)
@@ -118,6 +119,15 @@ public class PlaybackCompletionService
 
         context.IsRewatch = isRewatch;
         _achievementBadgeService.RecordPlayback(context);
+
+        // v1.8.57: invalidate the LastWatched cache for this user — a fresh
+        // play just landed, so the next friends-list call should reflect it
+        // immediately instead of waiting for the 90s TTL to expire.
+        if (!string.IsNullOrWhiteSpace(context.UserId)
+            && Guid.TryParse(context.UserId, out var watchedUserGuid))
+        {
+            FriendsService.InvalidateLastWatched(watchedUserGuid);
+        }
 
         // Co-watch detection: if another user completed the same item within the last hour,
         // award a bonus to both.

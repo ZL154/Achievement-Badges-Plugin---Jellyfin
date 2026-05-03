@@ -75,10 +75,20 @@ public class SidebarInjectionMiddleware
                 using var reader = new StreamReader(buffer, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
                 var html = await reader.ReadToEndAsync();
 
-                // Idempotency: if WebInjectionService has already patched
-                // index.html on disk, the marker is present and we must not
-                // inject again, otherwise we'd load the scripts twice.
-                if (html.Contains("achievementbadges-bootstrap", StringComparison.Ordinal))
+                // v1.9.0: marker fast-path. The injection marker
+                // <!-- achievementbadges-bootstrap --> is always emitted
+                // immediately before </body>, so on a typical Jellyfin SPA
+                // index (~80KB) we'd previously scan the whole document
+                // string on every page request to look for it. Sample only
+                // the last 4KB — the entire end-of-body region — and fall
+                // through to "not injected yet" if it's not there. Safe
+                // because: (a) the marker only appears at the bottom of the
+                // document by construction, (b) if the marker is somehow
+                // present mid-document via an unrelated injection, double-
+                // injecting near </body> is harmless (scripts are idempotent).
+                var tailLen = Math.Min(4096, html.Length);
+                var tail = tailLen == html.Length ? html : html.Substring(html.Length - tailLen);
+                if (tail.Contains("achievementbadges-bootstrap", StringComparison.Ordinal))
                 {
                     buffer.Seek(0, SeekOrigin.Begin);
                     context.Response.Body = originalBody;
@@ -98,7 +108,13 @@ public class SidebarInjectionMiddleware
                     context.Response.Body = originalBody;
                     await context.Response.Body.WriteAsync(bytes);
 
-                    _logger.LogInformation("[AchievementBadges] Injected scripts into {Path} ({Bytes} bytes).", context.Request.Path.Value, bytes.Length);
+                    // v1.8.61: drop from Information to Debug. This middleware
+                    // fires on every Jellyfin web-page request (including
+                    // periodic background heartbeats), so at INF level it
+                    // dominated docker logs at ~one line per minute per
+                    // active client. Debug keeps it available for
+                    // troubleshooting without flooding production logs.
+                    _logger.LogDebug("[AchievementBadges] Injected scripts into {Path} ({Bytes} bytes).", context.Request.Path.Value, bytes.Length);
                     return;
                 }
             }

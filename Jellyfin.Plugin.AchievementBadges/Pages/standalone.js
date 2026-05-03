@@ -274,6 +274,17 @@
         var s = document.createElement('style');
         s.id = 'ab-standalone-css';
         s.textContent = '#' + ROOT_ID + '{position:fixed;inset:0;z-index:999999;overflow-y:auto;padding:2em;background:var(--theme-body-background,#181818);color:#fff;font-family:inherit;color-scheme:dark;}' +
+            /* v1.8.48: Classic-mode styling for the Classic/Revamp toggle button.
+               Lives in standalone's own injectStyles so the button looks correct
+               even when styles-revamp.css isn't loaded. */
+            '#' + ROOT_ID + ' .ab-topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}' +
+            '#' + ROOT_ID + ' .abSaStyleToggleBtn{appearance:none;margin-left:auto;padding:6px 14px;height:32px;border:1px solid rgba(255,255,255,0.18);background:rgba(20,24,32,0.7);color:rgba(255,255,255,0.85);border-radius:999px;font:500 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:0.10em;text-transform:uppercase;cursor:pointer;transition:color 180ms ease,border-color 180ms ease,background 180ms ease;}' +
+            '#' + ROOT_ID + ' .abSaStyleToggleBtn:hover{border-color:rgba(255,255,255,0.4);color:#fff;background:rgba(40,48,64,0.7);}' +
+            '#' + ROOT_ID + ' .abSaStyleToggleBtn:active{transform:translateY(1px);}' +
+            '#' + ROOT_ID + ' .abSaStyleToggleBtn[aria-pressed="true"]{background:#5e6ad2;border-color:#5e6ad2;color:#fff;}' +
+            /* v1.8.52: hide the Revamp-only hero arc by default. Revamp CSS
+               sets display:flex when [data-ab-style="revamp"] is on the root. */
+            '#' + ROOT_ID + ' .abSaHeroArc{display:none;}' +
             '#' + ROOT_ID + ' .ab-input,#' + ROOT_ID + ' .ab-select{padding:0.6em 0.9em;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(20,24,32,0.85);color:#fff;font-size:0.92em;font-family:inherit;appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:pointer;}' +
             '#' + ROOT_ID + ' .ab-select{background-image:url(\'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 16 16%22><path fill=%22%23fff%22 d=%22M4 6l4 4 4-4z%22/></svg>\');background-repeat:no-repeat;background-position:right 0.7em center;padding-right:2em;}' +
             '#' + ROOT_ID + ' .ab-select option{background:#181b24;color:#fff;}' +
@@ -850,9 +861,29 @@
                 '<div id="abSaWelcomeBanner" class="ab-welcome-banner" style="display:none;"></div>' +
                 '<div class="ab-topbar">' +
                     '<h2 style="margin:0;" data-i18n="achievements.title">Achievements</h2>' +
+                    /* v1.8.47: Classic/Revamp toggle \u2014 mirrors the admin-page
+                       toggle. Persists via the same `ab-style-pref` localStorage
+                       key so the user's choice is shared across both surfaces. */
+                    '<button type="button" id="abSaStyleToggleBtn" class="abSaStyleToggleBtn" aria-pressed="false" title="Toggle Revamp / Classic UI">UI: Classic</button>' +
                     '<a class="ab-back" href="/web/index.html#!/home">\u2190 <span data-i18n="achievements.back_home">Back Home</span></a>' +
                 '</div>' +
                 '<div class="ab-hero">' +
+                    /* v1.8.52: hero arc donut on the right side. Hidden in Classic
+                       via CSS display:none. SVG ships with stroke-dashoffset =
+                       circumference (empty ring); JS updates --rv-arc-off + offset
+                       to the target value once the completion % loads. */
+                    '<div class="abSaHeroArc" aria-hidden="true">' +
+                        '<svg class="abSaHeroArcSvg" viewBox="0 0 200 200">' +
+                            '<circle class="abSaHeroArcTrack" cx="100" cy="100" r="86"></circle>' +
+                            '<circle class="abSaHeroArcFill"  cx="100" cy="100" r="86"' +
+                                ' stroke-dasharray="540.35" stroke-dashoffset="540.35"' +
+                                ' style="--rv-arc-c:540.35;--rv-arc-off:540.35"></circle>' +
+                        '</svg>' +
+                        '<div class="abSaHeroArcCenter">' +
+                            '<div class="abSaHeroArcEyebrow">COMPLETION</div>' +
+                            '<div id="abSaHeroArcPct" class="abSaHeroArcPct">0%</div>' +
+                        '</div>' +
+                    '</div>' +
                     '<div style="flex:1;min-width:280px;">' +
                         '<div class="ab-hero-left">' +
                             '<div id="abSaRankIcon" class="ab-hero-icon">\ud83c\udfc5</div>' +
@@ -2304,6 +2335,10 @@
                         // Friends-specific privacy toggles (v1.7.9+)
                         toggle('appearOffline', tr('settings.appear_offline', 'Appear offline to friends'), tr('settings.appear_offline_desc', 'Your friends will always see you as offline, even while you\'re browsing Jellyfin'), prefs.appearOffline === true || prefs.AppearOffline === true) +
                         toggle('hideNowPlaying', tr('settings.hide_now_playing', 'Hide what I\'m watching'), tr('settings.hide_now_playing_desc', 'Friends can still see you as online, but not the series or episode you\'re watching'), prefs.hideNowPlaying === true || prefs.HideNowPlaying === true) +
+                        /* v1.8.56: hide the "Offline — last watched X" line that appears below
+                           a friend's name when they're offline. Independent of the live
+                           Now Playing toggle above. */
+                        toggle('hideLastWatched', tr('settings.hide_last_watched', 'Hide my last watched when offline'), tr('settings.hide_last_watched_desc', 'Friends won\'t see what you watched most recently when you\'re offline'), prefs.hideLastWatched === true || prefs.HideLastWatched === true) +
                     '</div>' +
                 '</div>';
         }
@@ -2831,6 +2866,12 @@
             var p = el('abSaPct'); if (p) p.textContent = (summary && typeof summary.Percentage === 'number' ? summary.Percentage.toFixed(1) : '0') + '%';
             var sc = el('abSaScore'); if (sc) sc.textContent = summary ? (summary.Score || 0) : 0;
 
+            /* v1.8.52: drive the Revamp hero arc + count-up KPIs.
+               Only effective when Revamp is active (the arc is display:none in
+               Classic and the count-up is purely cosmetic). */
+            try { updateHeroArc(summary); } catch (e) {}
+            try { countUpStandaloneStats(); } catch (e) {}
+
             if (rank && rank.Tier) {
                 applyThemeForTier(rank.Tier.Name);
                 var lbl = el('abSaRankLabel');
@@ -2921,6 +2962,127 @@
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped/' + badgeId, 'DELETE').then(function () { return loadAll(); }).catch(function (e) { showError(tr('error.unequip_failed', 'Failed to unequip.') + ' ' + e.message); });
     }
 
+    /* v1.8.47: Classic/Revamp wiring for the standalone main page.
+       Reads / writes the same `ab-style-pref` localStorage key as the admin
+       page so a single toggle decision propagates everywhere.
+       When `revamp` is active we inject styles-revamp.css into <head> and
+       mark the root with `data-ab-style="revamp"`; in `classic` we strip
+       both. The button label + aria-pressed reflect current state. */
+    var STYLE_PREF_KEY = 'ab-style-pref';
+    var REVAMP_LINK_ID = 'abSaRevampCss';
+    // v1.9.0: version-only cache bust (see index.html for full rationale).
+    var REVAMP_CSS_BUST = 'v=1.9.0';
+    function getStylePref() {
+        try { return localStorage.getItem(STYLE_PREF_KEY) === 'revamp' ? 'revamp' : 'classic'; }
+        catch (e) { return 'classic'; }
+    }
+    function setStylePref(p) {
+        try { localStorage.setItem(STYLE_PREF_KEY, p); } catch (e) { /* private mode etc. */ }
+    }
+    function ensureRevampCss() {
+        if (document.getElementById(REVAMP_LINK_ID)) return;
+        var l = document.createElement('link');
+        l.id = REVAMP_LINK_ID;
+        l.rel = 'stylesheet';
+        /* v1.8.48 fix: use buildUrl() so the URL resolves against the
+           Jellyfin API root (e.g. https://server/Plugins/...) regardless
+           of the current page route. The previous relative URL resolved
+           against /web/index.html and 404'd silently. */
+        l.href = buildUrl('Plugins/AchievementBadges/client-script/styles-revamp') + '?' + REVAMP_CSS_BUST;
+        document.head.appendChild(l);
+    }
+    function removeRevampCss() {
+        var l = document.getElementById(REVAMP_LINK_ID);
+        if (l && l.parentNode) l.parentNode.removeChild(l);
+    }
+    /* v1.8.52: drive the Revamp hero arc.
+       The SVG ships with stroke-dashoffset=circumference (empty ring) and a
+       CSS variable --rv-arc-off carrying the eventual target. The CSS animation
+       in styles-revamp.css interpolates from the SVG attribute (full) to the
+       variable (target) over ~1.1s with cubic ease-out. */
+    function updateHeroArc(summary) {
+        if (!root) return;
+        var pctVal = (summary && typeof summary.Percentage === 'number') ? summary.Percentage : 0;
+        var fill = root.querySelector('.abSaHeroArcFill');
+        if (fill) {
+            var c = 540.35; // 2π × 86
+            var off = c - (c * pctVal / 100);
+            fill.style.setProperty('--rv-arc-off', off.toFixed(2));
+            fill.setAttribute('stroke-dashoffset', off.toFixed(2));
+        }
+        var lbl = root.querySelector('#abSaHeroArcPct');
+        if (lbl) lbl.textContent = pctVal.toFixed(1).replace(/\.0$/, '') + '%';
+    }
+
+    /* v1.8.52: count-up animator for the four stat numerals on the standalone
+       page. Mirrors the admin v1.8.46 animator. easeOutCubic over 700ms;
+       skipped on prefers-reduced-motion; cancels in-flight tweens via dataset. */
+    function countUpStandaloneStats() {
+        if (!root) return;
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var cells = [
+            { id: 'abSaUnlocked', suffix: '' },
+            { id: 'abSaTotal',    suffix: '' },
+            { id: 'abSaPct',      suffix: '%' },
+            { id: 'abSaScore',    suffix: '' }
+        ];
+        cells.forEach(function (cell) {
+            var elNode = el(cell.id);
+            if (!elNode) return;
+            var raw = (elNode.textContent || '').replace(/%$/, '').trim();
+            var target = parseFloat(raw);
+            if (!isFinite(target)) return;
+            var prev = elNode.dataset.abAnim;
+            if (prev) cancelAnimationFrame(parseInt(prev, 10));
+            if (reduce) { elNode.textContent = (Number.isInteger(target) ? String(target) : target.toFixed(1)) + cell.suffix; return; }
+            var isInt = Number.isInteger(target);
+            var dur = 700;
+            var begin = null;
+            function step(t) {
+                if (begin === null) begin = t;
+                var p = Math.min(1, (t - begin) / dur);
+                var eased = 1 - Math.pow(1 - p, 3);
+                var v = target * eased;
+                elNode.textContent = (isInt ? String(Math.round(v)) : v.toFixed(1)) + cell.suffix;
+                if (p < 1) {
+                    elNode.dataset.abAnim = String(requestAnimationFrame(step));
+                } else {
+                    elNode.textContent = (isInt ? String(target) : target.toFixed(1)) + cell.suffix;
+                    delete elNode.dataset.abAnim;
+                }
+            }
+            elNode.textContent = '0' + cell.suffix;
+            elNode.dataset.abAnim = String(requestAnimationFrame(step));
+        });
+    }
+
+    function applyStylePref(pref) {
+        if (!root) return;
+        if (pref === 'revamp') {
+            root.setAttribute('data-ab-style', 'revamp');
+            ensureRevampCss();
+        } else {
+            root.removeAttribute('data-ab-style');
+            removeRevampCss();
+        }
+        /* v1.8.54: also propagate the pref to <body> so global widgets
+           mounted outside the standalone root (the Friends drawer in
+           sidebar.js, the floating toggle button, etc.) can scope their
+           own Revamp styles via body[data-ab-style="revamp"]. */
+        try {
+            if (pref === 'revamp') {
+                document.body.setAttribute('data-ab-style', 'revamp');
+            } else {
+                document.body.removeAttribute('data-ab-style');
+            }
+        } catch (e) { /* document.body unavailable extremely early — ignore */ }
+        var btn = el('abSaStyleToggleBtn');
+        if (btn) {
+            btn.textContent = pref === 'revamp' ? 'UI: Revamp' : 'UI: Classic';
+            btn.setAttribute('aria-pressed', pref === 'revamp' ? 'true' : 'false');
+        }
+    }
+
     function mountRoute() {
         injectStyles();
         root = document.getElementById(ROOT_ID);
@@ -2931,6 +3093,17 @@
             root = createRoot();
         }
         root.style.display = 'block';
+
+        /* v1.8.47: apply the persisted Classic/Revamp preference + wire toggle. */
+        applyStylePref(getStylePref());
+        var styleBtn = el('abSaStyleToggleBtn');
+        if (styleBtn) {
+            styleBtn.addEventListener('click', function () {
+                var next = getStylePref() === 'revamp' ? 'classic' : 'revamp';
+                setStylePref(next);
+                applyStylePref(next);
+            });
+        }
 
         el('abSaTabBadges').addEventListener('click', function () { setTab('badges'); });
         el('abSaTabQuests').addEventListener('click', function () { setTab('quests'); });

@@ -398,7 +398,1011 @@ padding:0.1em 0.4em;
 border-radius:4px;
 font-size:0.88em;
 }
+
+/* =========================================================================
+   v1.8.43 base styles — apply in BOTH classic and revamp.
+   - Hide any revamp-only wrapper / tier-section DOM if it leaks into
+     Classic (defensive: revertRestructure should clean these up, but if
+     anything survives, this nukes the visual).
+   - Style the toggle so it looks decent in BOTH modes.
+   ========================================================================= */
+
+/* Defensive: hide leftover revamp-only structures whenever the page is
+   NOT in revamp mode. data-ab-style="revamp" is the discriminator. */
+#AchievementBadgesPage:not([data-ab-style="revamp"]) #abPluginHero,
+#AchievementBadgesPage:not([data-ab-style="revamp"]) #abAdminGroups,
+#AchievementBadgesPage:not([data-ab-style="revamp"]) #abPersonalSection,
+#AchievementBadgesPage:not([data-ab-style="revamp"]) #abHeroStrip,
+#AchievementBadgesPage:not([data-ab-style="revamp"]) #abBentoRow,
+#AchievementBadgesPage:not([data-ab-style="revamp"]) #abFilterStrip,
+#AchievementBadgesPage:not([data-ab-style="revamp"]) #abAdminDrawer,
+#AchievementBadgesPage:not([data-ab-style="revamp"]) .abTierSection,
+#AchievementBadgesPage:not([data-ab-style="revamp"]) .abTierHeader,
+#AchievementBadgesPage:not([data-ab-style="revamp"]) .abTierGrid {
+    display: none !important;
+}
+#AchievementBadgesPage:not([data-ab-style="revamp"]) summary > .abPanelGlyph {
+    display: none !important;
+}
+
+/* (v1.8.43 had a `display: revert !important` block here that was
+   accidentally overriding v1.8.10's `display: grid` on .abStats and
+   `display: flex` on .abTabs — making them stack as plain blocks in
+   Classic mode. The originals were never hidden in Classic anyway,
+   so the whole block was unnecessary. Removed in v1.8.44.) */
+
+/* Toggle host styling that works in both modes (lives outside the
+   revamp-scoped CSS so Classic gets it too).
+   v1.8.45: add breathing room at the top so the toggle isn't crammed
+   against the page-chrome border. */
+#abStyleToggleHost{
+    display:inline-flex;
+    align-items:center;
+    gap:2px;
+    padding:3px;
+    margin-top:0.5em;
+    border-radius:999px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.12);
+}
+/* Push the whole title-row down a touch so the toggle (and the page
+   title in classic) breathe below Jellyfin's top chrome. */
+#AchievementBadgesPage > div[data-role="content"] > div.content-primary > div.verticalSection > div[style*="max-width"] > div:first-child{
+    padding-top:0.75em;
+    margin-bottom:0.5em;
+}
+#abStyleToggleHost button{
+    appearance:none;
+    background:transparent;
+    border:0;
+    color:rgba(255,255,255,0.6);
+    padding:6px 14px;
+    font:600 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    border-radius:999px;
+    cursor:pointer;
+    transition:color 180ms ease, background 180ms ease;
+}
+#abStyleToggleHost button:hover{
+    color:rgba(255,255,255,0.9);
+    background:rgba(255,255,255,0.04);
+}
+#abStyleToggleHost button[aria-pressed="true"]{
+    color:#0c1611;
+    background:#34d399;
+}
 </style>
+
+<script>
+/* =============================================================================
+   v1.8.25 revamp bootstrap
+   =============================================================================
+   - Loads styles-revamp.css conditionally based on localStorage.
+   - Restructures the DOM into the new editorial-split + bento layout.
+   - Generates the completion arc (SVG donut), recent-activity timeline,
+     next-milestones progress bars, and tier-breakdown chart from live data.
+   - Wraps the existing <details> admin sections into a slide-in drawer.
+   - Wires a search box + tier filter chips on the badge grid.
+   - Reversible: toggling back to Classic restores the v1.8.10 DOM exactly.
+   ============================================================================= */
+(function () {
+    var STORE_KEY = 'ab-style-pref';
+    var pref;
+    try { pref = localStorage.getItem(STORE_KEY) || 'classic'; }
+    catch (_) { pref = 'classic'; }
+
+    function getApi() {
+        return window.ApiClient || (window.parent && window.parent.ApiClient) || null;
+    }
+    /* Cache-bust the CSS URL on every page render. Jellyfin's service
+       worker caches static plugin assets, so even with `Cache-Control:
+       no-cache` on the response the SW can hold onto an old copy. A
+       query param + Date.now() forces the SW to bypass cache and fetch
+       fresh on every reload. */
+    // v1.9.0: version-only cache bust (no `t=Date.now()`). Combined with the
+    // controller's `Cache-Control: public, max-age=86400, immutable`, browsers
+    // now cache assets across page loads. Plugin updates change the v= and
+    // produce a fresh URL, naturally busting the cache.
+    var CSS_BUST = 'v=1.9.0';
+    function cssUrl() {
+        var ac = getApi();
+        var base;
+        if (ac && typeof ac.getUrl === 'function') {
+            base = ac.getUrl('Plugins/AchievementBadges/client-script/styles-revamp');
+        } else {
+            base = '/Plugins/AchievementBadges/client-script/styles-revamp';
+        }
+        return base + (base.indexOf('?') >= 0 ? '&' : '?') + CSS_BUST;
+    }
+    function ensureCss() {
+        if (document.getElementById('abRevampCss')) return;
+        var l = document.createElement('link');
+        l.id = 'abRevampCss'; l.rel = 'stylesheet'; l.href = cssUrl();
+        document.head.appendChild(l);
+    }
+
+    function applyPref(next) {
+        var page = document.getElementById('AchievementBadgesPage');
+        if (next === 'revamp') {
+            ensureCss();
+            if (page) page.setAttribute('data-ab-style', 'revamp');
+            try { bootRestructure(); } catch (_) {}
+        } else {
+            try { revertRestructure(); } catch (_) {}
+            if (page) page.removeAttribute('data-ab-style');
+            var ex = document.getElementById('abRevampCss');
+            if (ex) ex.parentNode.removeChild(ex);
+        }
+        try { localStorage.setItem(STORE_KEY, next); } catch (_) {}
+        var host = document.getElementById('abStyleToggleHost');
+        if (host) host.querySelectorAll('button[data-style]').forEach(function (b) {
+            b.setAttribute('aria-pressed', b.getAttribute('data-style') === next ? 'true' : 'false');
+        });
+    }
+    applyPref(pref);
+
+    function mountToggle() {
+        var host = document.getElementById('abStyleToggleHost');
+        if (!host || host.dataset.abMounted === '1') return;
+        host.dataset.abMounted = '1';
+        host.innerHTML =
+            '<button type="button" data-style="classic" aria-pressed="' + (pref === 'classic' ? 'true' : 'false') + '">Classic</button>' +
+            '<button type="button" data-style="revamp"  aria-pressed="' + (pref === 'revamp'  ? 'true' : 'false') + '">Revamp</button>';
+        host.addEventListener('click', function (ev) {
+            var btn = ev.target.closest('button[data-style]');
+            if (!btn) return;
+            var next = btn.getAttribute('data-style');
+            pref = next;
+            applyPref(next);
+        });
+    }
+
+    /* --- restructure -------------------------------------------------------- */
+
+    function safeText(id, fallback) {
+        var el = document.getElementById(id);
+        return el ? (el.textContent || '').trim() : (fallback || '');
+    }
+    function safeNumber(id, fallback) {
+        var t = safeText(id, '');
+        var n = parseFloat(t.replace(/[^0-9.\-]/g, ''));
+        return isFinite(n) ? n : (fallback != null ? fallback : 0);
+    }
+    function pluck(card, sel) {
+        var el = card.querySelector(sel);
+        return el ? el.textContent.trim() : '';
+    }
+    function rarityOf(card) {
+        var tiers = ['mythic','legendary','epic','rare','uncommon','common'];
+        for (var i = 0; i < tiers.length; i++) {
+            if (card.querySelector('.rarity-' + tiers[i])) return tiers[i];
+        }
+        return 'common';
+    }
+    var TIER_ORDER = ['mythic','legendary','epic','rare','uncommon','common'];
+    var TIER_LABEL = {mythic:'Mythic', legendary:'Legendary', epic:'Epic', rare:'Rare', uncommon:'Uncommon', common:'Common'};
+
+    /* completion arc — pure SVG donut */
+    function makeArc(percent) {
+        var size = 200, stroke = 12, r = (size - stroke) / 2;
+        var cx = size / 2, cy = size / 2;
+        var c = 2 * Math.PI * r;
+        var pct = Math.max(0, Math.min(100, percent || 0));
+        var off = c - (c * pct / 100);
+        return [
+            '<svg class="abHeroArcSvg" viewBox="0 0 ', size, ' ', size, '" aria-hidden="true">',
+            '<circle class="abHeroArcTrack" cx="', cx, '" cy="', cy, '" r="', r, '"></circle>',
+            '<circle class="abHeroArcFill"  cx="', cx, '" cy="', cy, '" r="', r, '"',
+                ' stroke-dasharray="', c.toFixed(2), '" stroke-dashoffset="', off.toFixed(2), '"></circle>',
+            '</svg>'
+        ].join('');
+    }
+
+    function buildHero(stats) {
+        var pctVal = stats.total > 0 ? (stats.unlocked / stats.total * 100) : 0;
+        var pctText = pctVal.toFixed(1).replace(/\.0$/, '') + '%';
+        return '' +
+            '<aside class="abHeroLeft">' +
+                '<div class="abHeroIdentity">' +
+                    '<div class="abHeroAvatar">' + (stats.avatar || '🏆') + '</div>' +
+                    '<div class="abHeroIdentText">' +
+                        '<span class="abEyebrow abHeroEyebrow">Achievements</span>' +
+                        '<h1 class="abHeroDisplayName">' + escapeHtml(stats.name || 'Profile') + '</h1>' +
+                        '<div class="abHeroSubtext">' + escapeHtml(stats.subtitle || '') + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="abHeroKpis">' +
+                    kpi('Unlocked', stats.unlocked) +
+                    kpi('Total', stats.total) +
+                    kpi('Equipped', stats.equipped) +
+                    kpi('Completion', pctText) +
+                '</div>' +
+            '</aside>' +
+            '<div class="abHeroArc">' +
+                makeArc(pctVal) +
+                '<div class="abHeroArcCenter">' +
+                    '<div class="abHeroArcPct">' + pctText + '</div>' +
+                    '<div class="abHeroArcCount">' + stats.unlocked + ' / ' + stats.total + ' unlocked</div>' +
+                '</div>' +
+            '</div>';
+    }
+    function kpi(label, value) {
+        return '<div class="abHeroKpi">' +
+            '<div class="abHeroKpiLabel">' + label + '</div>' +
+            '<div class="abHeroKpiValue">' + escapeHtml(String(value)) + '</div>' +
+        '</div>';
+    }
+    function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+    /* v1.8.46: count-up animator for KPI numerals.
+       Walks every .abPluginHeroKpiValue / .abPersonalKpiValue inside the
+       given root, parses the numeric portion, and animates from 0 → target
+       over ~700ms with a cubic ease-out curve. Non-numeric values
+       (e.g. "Active", "—") are left untouched. Each rebuild starts a fresh
+       animation; in-flight ones are cancelled via dataset bookkeeping so we
+       never double-tween. Respects prefers-reduced-motion. */
+    function countUpKpis(root) {
+        if (!root) return;
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var nodes = root.querySelectorAll('.abPluginHeroKpiValue, .abPersonalKpiValue');
+        Array.prototype.forEach.call(nodes, function (el) {
+            var raw = (el.textContent || '').trim();
+            // Only animate if it's a plain integer / decimal number.
+            if (!/^-?\d+(?:\.\d+)?$/.test(raw)) return;
+            var target = parseFloat(raw);
+            if (!isFinite(target)) return;
+            // Cancel any in-flight tween on this node.
+            var prev = el.dataset.abAnim;
+            if (prev) cancelAnimationFrame(parseInt(prev, 10));
+            if (reduce) { el.textContent = String(target); return; }
+            var isInt = Number.isInteger(target);
+            var dur = 700;
+            var begin = null;
+            function step(t) {
+                if (begin === null) begin = t;
+                var p = Math.min(1, (t - begin) / dur);
+                /* easeOutCubic */
+                var eased = 1 - Math.pow(1 - p, 3);
+                var v = target * eased;
+                el.textContent = isInt ? String(Math.round(v)) : v.toFixed(1);
+                if (p < 1) {
+                    el.dataset.abAnim = String(requestAnimationFrame(step));
+                } else {
+                    el.textContent = String(target);
+                    delete el.dataset.abAnim;
+                }
+            }
+            el.textContent = '0';
+            el.dataset.abAnim = String(requestAnimationFrame(step));
+        });
+    }
+
+    function buildBento(cards) {
+        // Recent activity: pull last 5 unlocked cards by reading existing data.
+        var activity = cards.filter(function (c) { return c.querySelector('.abUnlocked'); }).slice(0, 5);
+        // Next milestones: pull 3 locked cards (we don't know progress, so use placeholders).
+        var next = cards.filter(function (c) { return !c.querySelector('.abUnlocked'); }).slice(0, 3);
+        // Tier counts.
+        var counts = { mythic:0, legendary:0, epic:0, rare:0, uncommon:0, common:0 };
+        var unlocked = { mythic:0, legendary:0, epic:0, rare:0, uncommon:0, common:0 };
+        cards.forEach(function (c) {
+            var t = rarityOf(c);
+            counts[t]++;
+            if (c.querySelector('.abUnlocked')) unlocked[t]++;
+        });
+
+        return '' +
+            '<section class="abBentoCard">' +
+                '<h3 class="abBentoTitle">Recent activity<span class="abBentoSub">Last unlocks</span></h3>' +
+                '<ul class="abActivityList">' +
+                    (activity.length ? activity.map(function (c) {
+                        var icon = pluck(c, '.abBadgeIcon') || '◆';
+                        return '<li class="abActivityRow">' +
+                            '<div class="abActivityIcon">' + icon + '</div>' +
+                            '<div>' +
+                                '<div class="abActivityName">' + escapeHtml(pluck(c, '.abBadgeTitle')) + '</div>' +
+                                '<div class="abActivityTier">' + escapeHtml(rarityOf(c)) + '</div>' +
+                            '</div>' +
+                            '<div class="abActivityTime">recent</div>' +
+                        '</li>';
+                    }).join('') : '<li class="abActivityRow"><div></div><div class="abActivityName" style="opacity:.6">No unlocks yet — start watching.</div><div></div></li>') +
+                '</ul>' +
+            '</section>' +
+            '<section class="abBentoCard">' +
+                '<h3 class="abBentoTitle">Next up<span class="abBentoSub">Closest to unlock</span></h3>' +
+                '<ul class="abMilestoneList">' +
+                    (next.length ? next.map(function (c, i) {
+                        var pct = [78, 54, 32][i] || 30;  // visual placeholder; real progress wire later
+                        return '<li class="abMilestoneRow">' +
+                            '<div class="abMilestoneTop">' +
+                                '<span class="abMilestoneName">' + escapeHtml(pluck(c, '.abBadgeTitle')) + '</span>' +
+                                '<span class="abMilestoneNum">' + pct + '%</span>' +
+                            '</div>' +
+                            '<div class="abMilestoneTrack"><div class="abMilestoneFill" style="--rv-target:' + (pct / 100) + '"></div></div>' +
+                        '</li>';
+                    }).join('') : '<li class="abMilestoneRow"><span class="abMilestoneName" style="opacity:.6">All caught up.</span></li>') +
+                '</ul>' +
+            '</section>' +
+            '<section class="abBentoCard">' +
+                '<h3 class="abBentoTitle">Tier breakdown<span class="abBentoSub">By rarity</span></h3>' +
+                '<ul class="abTierBreakdown">' +
+                    TIER_ORDER.map(function (t) {
+                        var total = counts[t]; if (!total) return '';
+                        var got = unlocked[t]; var pct = total > 0 ? got / total : 0;
+                        return '<li class="abTierBreakdownRow t-' + t + '">' +
+                            '<div class="abTierBreakdownLabel">' + TIER_LABEL[t] + '</div>' +
+                            '<div class="abTierBreakdownNum">' + got + ' / ' + total + '</div>' +
+                            '<div class="abTierBreakdownTrack"><div class="abTierBreakdownFill" style="--rv-target:' + pct + '"></div></div>' +
+                        '</li>';
+                    }).join('') +
+                '</ul>' +
+            '</section>';
+    }
+
+    function buildFilters(counts) {
+        var totalAll = TIER_ORDER.reduce(function (a, t) { return a + (counts[t] || 0); }, 0);
+        return '' +
+            '<div class="abFilterSearch"><input type="search" id="abFilterInput" placeholder="Search badges..." aria-label="Search badges" /></div>' +
+            '<div class="abFilterChips" role="group" aria-label="Filter by rarity">' +
+                '<button type="button" class="abFilterChip" data-tier="all" aria-pressed="true">All<span class="abFilterChipCount">' + totalAll + '</span></button>' +
+                TIER_ORDER.map(function (t) {
+                    if (!counts[t]) return '';
+                    return '<button type="button" class="abFilterChip" data-tier="' + t + '" aria-pressed="false">' + TIER_LABEL[t] + '<span class="abFilterChipCount">' + counts[t] + '</span></button>';
+                }).join('') +
+            '</div>' +
+            '<button type="button" id="abAdminOpen">Admin</button>';
+    }
+
+    /* main restructure */
+    /* v1.8.26: ADMIN-FIRST restructure.
+       Plugin admin tools become PRIMARY content. The 13 admin <details>
+       are exposed as inline cards in 4 thematic groups. The personal
+       achievement view is a clearly demoted secondary section below. */
+
+    /* Phosphor-style 1.5-stroke 24-viewBox SVG icons. Each icon is the
+       inner content of an <svg viewBox="0 0 24 24"> — strokes inherit
+       currentColor so the panel's group accent flows through. */
+    var ADMIN_ICONS = {
+        gear:    '<path d="M12 8v0m0 8v0M9.4 9.4l-1.5-1.5M16.1 16.1l-1.5-1.5M9.4 14.6l-1.5 1.5M16.1 7.9l-1.5 1.5M8 12H6m12 0h-2"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
+        toggle:  '<rect x="3" y="8" width="18" height="8" rx="4"/><circle cx="16" cy="12" r="2.5"/>',
+        monitor: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M9 21h6M12 17v4"/>',
+        link:    '<path d="M10.5 13.5a4 4 0 0 0 5.66 0l3-3a4 4 0 1 0-5.66-5.66l-1 1"/><path d="M13.5 10.5a4 4 0 0 0-5.66 0l-3 3a4 4 0 1 0 5.66 5.66l1-1"/>',
+        bell:    '<path d="M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9Z"/><path d="M10 21a2 2 0 0 0 4 0"/>',
+        palette: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2 0-1.5-1-1.5-1-3 0-1 1-2 2-2h2a4 4 0 0 0 4-4 9 9 0 0 0-9-7Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="11" cy="7" r="1.2"/><circle cx="16" cy="9" r="1.2"/>',
+        plus:    '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/>',
+        sliders: '<path d="M4 6h12M20 6h0M4 12h6M14 12h6M4 18h12M20 18h0"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+        list:    '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m4 5.5 1 1 2-2M4 11.5l1 1 2-2M4 17.5l1 1 2-2"/>',
+        calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+        map:     '<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+        file:    '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+        sync:    '<path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 4v4h-4"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 20v-4h4"/>'
+    };
+    function iconSvg(name) {
+        return '<span class="abPanelGlyph"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+               (ADMIN_ICONS[name] || ADMIN_ICONS.gear) + '</svg></span>';
+    }
+
+    var ADMIN_MAP = {
+        'admin.section_advanced':            { group: 1, icon: 'sliders' },
+        'admin.section_feature_controls':    { group: 1, icon: 'toggle' },
+        'admin.section_ui_features':         { group: 1, icon: 'monitor' },
+        'admin.section_webhook':             { group: 2, icon: 'link' },
+        'admin.section_test_toast':          { group: 2, icon: 'bell' },
+        'admin.section_visual_badge_editor': { group: 3, icon: 'palette' },
+        'admin.section_custom_badges':       { group: 3, icon: 'plus' },
+        'admin.section_enable_disable_badges':{ group: 3, icon: 'toggle' },
+        'admin.section_challenge_templates': { group: 3, icon: 'list' },
+        'admin.section_seasonal_challenges': { group: 3, icon: 'calendar' },
+        'admin.section_quests':              { group: 3, icon: 'map' },
+        'admin.section_audit_log':           { group: 4, icon: 'file' },
+        'admin.section_inject_progress':     { group: 4, icon: 'sync' }
+    };
+    var ADMIN_GROUPS = [
+        null,
+        { num: '01', title: 'Plugin essentials',     sub: 'core configuration',                 cols: 'cols-3' },
+        { num: '02', title: 'Notifications & test',  sub: 'webhooks, toasts',                    cols: 'cols-2' },
+        { num: '03', title: 'Badge management',      sub: 'definitions, quests, challenges',     cols: 'cols-3' },
+        { num: '04', title: 'Maintenance',           sub: 'audit, history',                      cols: 'cols-2' }
+    ];
+
+    function buildPluginHero(plugin) {
+        var s = plugin || {};
+        return '' +
+            /* v1.8.47: section number marker — unifies the editorial mono
+               numbering already used on admin groups (01-04) and personal (05). */
+            '<span class="abPluginHeroSectionNum">00 / PLUGIN OVERVIEW</span>' +
+            '<div class="abPluginHeroHead">' +
+                '<div class="abPluginHeroIdent">' +
+                    '<span class="abEyebrow">Plugin admin</span>' +
+                    '<h1 class="abPluginHeroTitle">Achievement Badges</h1>' +
+                    '<div class="abPluginHeroMeta">' +
+                        '<span><span class="abStatusDot"></span>' + escapeHtml(s.statusLabel || 'Active') + '</span>' +
+                        '<span>v' + escapeHtml(s.version || '1.8.26') + '</span>' +
+                        '<span>Jellyfin ABI ' + escapeHtml(s.targetAbi || '10.11.0.0') + '</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="abPluginHeroKpis">' +
+                pluginKpi('Users tracked',  s.users    == null ? '—' : s.users,    'profiles') +
+                pluginKpi('Badges defined', s.badges   == null ? '—' : s.badges,   'configured') +
+                pluginKpi('Unlocks',        s.unlocks  == null ? '—' : s.unlocks,  'recent') +
+                pluginKpi('Plugin status',  s.statusLabel || 'Active', 'live') +
+            '</div>';
+    }
+    function pluginKpi(label, value, sub) {
+        return '<div class="abPluginHeroKpi">' +
+            '<div class="abPluginHeroKpiLabel">' + label + '</div>' +
+            '<div class="abPluginHeroKpiValue">' + escapeHtml(String(value)) + '</div>' +
+            (sub ? '<div class="abPluginHeroKpiSub">' + sub + '</div>' : '') +
+        '</div>';
+    }
+
+    function buildPersonalHero(stats) {
+        var pctVal = stats.total > 0 ? (stats.unlocked / stats.total * 100) : 0;
+        var pctText = pctVal.toFixed(1).replace(/\.0$/, '') + '%';
+        var size = 120, sw = 8, r = (size - sw) / 2;
+        var c = 2 * Math.PI * r;
+        var off = c - (c * pctVal / 100);
+        return '' +
+            '<div class="abPersonalLeft">' +
+                '<div class="abPersonalIdent">' +
+                    '<div class="abPersonalAvatar">🏆</div>' +
+                    '<div>' +
+                        '<div class="abPersonalName">' + escapeHtml(stats.name || 'Profile') + '</div>' +
+                        '<div class="abPersonalSub">' + escapeHtml(stats.subtitle || '') + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="abPersonalKpis">' +
+                    '<div class="abPersonalKpi"><div class="abPersonalKpiLabel">Unlocked</div><div class="abPersonalKpiValue">' + stats.unlocked + '</div></div>' +
+                    '<div class="abPersonalKpi"><div class="abPersonalKpiLabel">Total</div><div class="abPersonalKpiValue">' + stats.total + '</div></div>' +
+                    '<div class="abPersonalKpi"><div class="abPersonalKpiLabel">Equipped</div><div class="abPersonalKpiValue">' + stats.equipped + '</div></div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="abPersonalArc">' +
+                '<svg class="abPersonalArcSvg" viewBox="0 0 ' + size + ' ' + size + '">' +
+                    '<circle class="abPersonalArcTrack" cx="' + size/2 + '" cy="' + size/2 + '" r="' + r + '"></circle>' +
+                    /* v1.8.46: ship the ring "empty" (offset = circumference) and let the
+                       CSS keyframe interpolate to the real target via --rv-arc-off. */
+                    '<circle class="abPersonalArcFill"  cx="' + size/2 + '" cy="' + size/2 + '" r="' + r + '"' +
+                        ' stroke-dasharray="' + c.toFixed(2) + '" stroke-dashoffset="' + c.toFixed(2) + '"' +
+                        ' style="--rv-arc-c:' + c.toFixed(2) + ';--rv-arc-off:' + off.toFixed(2) + '"></circle>' +
+                '</svg>' +
+                '<div class="abPersonalArcCenter">' +
+                    '<div class="abPersonalArcPct">' + pctText + '</div>' +
+                '</div>' +
+            '</div>';
+    }
+
+    function restructureDom() {
+        var page = document.getElementById('AchievementBadgesPage');
+        if (!page) return;
+        if (page.getAttribute('data-ab-style') !== 'revamp') return;
+        if (page.getAttribute('data-ab-restructured') === '1') return;
+        var container = page.querySelector('.verticalSection > div[style*="max-width"]');
+        if (!container) return;
+
+        var moved = []; page._abMoved = moved;
+        function trackMove(el, target) {
+            moved.push({ el: el, parent: el.parentNode, next: el.nextSibling });
+            target.appendChild(el);
+        }
+
+        var detailsList = Array.prototype.slice.call(container.children).filter(function (n) {
+            return n.tagName === 'DETAILS';
+        });
+
+        var personalStats = {
+            avatar: '🏆',
+            name: safeText('abProfileTitle', 'Achievements'),
+            subtitle: safeText('abProfileSubtitle', 'Loading…'),
+            unlocked: safeNumber('abUnlocked', 0),
+            equipped: safeNumber('abEquippedCount', 0),
+            total: 0
+        };
+
+        // 1. Plugin admin overview hero.
+        var pluginHero = document.createElement('section');
+        pluginHero.id = 'abPluginHero';
+        pluginHero.innerHTML = buildPluginHero({
+            version: '1.9.0', targetAbi: '10.11.0.0', statusLabel: 'Active'
+        });
+
+        // 2. Admin groups (4 thematic sections, each carries its own
+        //    semantic accent via data-group). The 13 admin <details>
+        //    are distributed by data-i18n key.
+        var adminWrap = document.createElement('div');
+        adminWrap.id = 'abAdminGroups';
+        var groupBodies = [null];
+        for (var gi = 1; gi <= 4; gi++) {
+            var meta = ADMIN_GROUPS[gi];
+            var groupEl = document.createElement('section');
+            groupEl.className = 'abAdminGroup';
+            groupEl.setAttribute('data-group', String(gi));
+            groupEl.innerHTML =
+                '<header class="abAdminGroupHead">' +
+                    '<span class="abAdminGroupNum">' + meta.num + '</span>' +
+                    '<h2 class="abAdminGroupTitle">' + meta.title + '</h2>' +
+                    '<span class="abAdminGroupSub">' + meta.sub + '</span>' +
+                '</header>' +
+                '<div class="abAdminGroupBody ' + meta.cols + '"></div>';
+            adminWrap.appendChild(groupEl);
+            groupBodies[gi] = groupEl.querySelector('.abAdminGroupBody');
+        }
+        detailsList.forEach(function (d) {
+            var summary = d.querySelector('summary');
+            var key = summary && summary.getAttribute('data-i18n');
+            var meta = key ? ADMIN_MAP[key] : null;
+            if (summary && !summary.querySelector('.abPanelGlyph')) {
+                /* Inject the SVG icon at the start of the summary content,
+                   preserving the existing label text + i18n attribute. */
+                summary.insertAdjacentHTML('afterbegin',
+                    iconSvg(meta ? meta.icon : 'gear'));
+            }
+            if (meta) {
+                trackMove(d, groupBodies[meta.group]);
+            } else {
+                trackMove(d, groupBodies[4]);
+            }
+        });
+
+        // 3. Personal section (DEMOTED, at the bottom).
+        var personalSection = document.createElement('section');
+        personalSection.id = 'abPersonalSection';
+        var personalEyebrow = document.createElement('header');
+        personalEyebrow.className = 'abPersonalEyebrow';
+        personalEyebrow.innerHTML =
+            '<span class="abPersonalEyebrowNum">05</span>' +
+            '<h2 class="abPersonalEyebrowTitle">Your achievements</h2>' +
+            '<span class="abPersonalEyebrowSub">admin operator view</span>';
+        personalSection.appendChild(personalEyebrow);
+
+        var personalHero = document.createElement('div');
+        personalHero.id = 'abPersonalHero';
+        personalHero.innerHTML = buildPersonalHero(personalStats);
+        personalSection.appendChild(personalHero);
+
+        var filterStrip = document.createElement('div');
+        filterStrip.id = 'abFilterStrip';
+        filterStrip.innerHTML = buildFilters({});
+        personalSection.appendChild(filterStrip);
+
+        // 4. Insert the new structure into the page.
+        var heroOriginal  = container.querySelector('#abProfileHero');
+        var statsOriginal = container.querySelector('.abStats');
+        var anchor = heroOriginal || container.firstChild;
+        if (anchor && anchor.parentNode === container) {
+            container.insertBefore(pluginHero,       anchor);
+            container.insertBefore(adminWrap,        anchor);
+            container.insertBefore(personalSection,  anchor);
+        } else {
+            container.appendChild(pluginHero);
+            container.appendChild(adminWrap);
+            container.appendChild(personalSection);
+        }
+
+        // 5. Move tab panels (#abPanelBadges/Leaderboard/Stats) into personalSection.
+        ['#abPanelBadges', '#abPanelLeaderboard', '#abPanelStats'].forEach(function (sel) {
+            var el = container.querySelector(sel);
+            if (el) trackMove(el, personalSection);
+        });
+
+        // 6. Hide the original hero + stats grid (they hold ids the page JS reads).
+        function hide(el) {
+            if (!el) return;
+            moved.push({ el: el, parent: el.parentNode, next: el.nextSibling });
+            el.style.display = 'none';
+            el.dataset.abHidden = '1';
+        }
+        hide(heroOriginal);
+        hide(statsOriginal);
+
+        // 7. Wire interactions (filters only — drawer is gone in v1.8.26).
+        wireFilters(filterStrip);
+
+        // 8. Group + filter the grid as cards land. Re-render personal hero
+        //    + plugin KPIs as numbers become available.
+        var gridEl = document.getElementById('abGrid');
+        if (gridEl) {
+            var groupTimer;
+            function rebuild() {
+                clearTimeout(groupTimer);
+                groupTimer = setTimeout(function () {
+                    if (gridEl.dataset.abGrouping === '1') return;
+                    var cards = collectAllCards(gridEl);
+                    var counts = countByTier(cards);
+                    personalStats.total = cards.length;
+                    personalStats.unlocked = cards.filter(function (c) { return c.querySelector('.abUnlocked'); }).length;
+                    personalStats.equipped = safeNumber('abEquippedCount', personalStats.equipped);
+                    personalStats.name = safeText('abProfileTitle', personalStats.name);
+                    personalStats.subtitle = safeText('abProfileSubtitle', personalStats.subtitle);
+                    personalHero.innerHTML = buildPersonalHero(personalStats);
+                    // refresh plugin KPIs with what we know now
+                    pluginHero.innerHTML = buildPluginHero({
+                        version: '1.9.0', targetAbi: '10.11.0.0', statusLabel: 'Active',
+                        badges: cards.length || '—',
+                        unlocks: personalStats.unlocked || '—'
+                    });
+                    /* v1.8.46: animate KPI numerals from 0 → target. Skipped
+                       for non-numeric values like "Active" or em dashes. */
+                    countUpKpis(pluginHero);
+                    countUpKpis(personalHero);
+                    filterStrip.innerHTML = buildFilters(counts);
+                    wireFilters(filterStrip);
+                    groupGrid(gridEl, cards);
+                    applyFilter(gridEl, currentFilter, currentSearch);
+                }, 80);
+            }
+            var moGrid = new MutationObserver(function (muts) {
+                if (gridEl.dataset.abGrouping === '1') return;
+                for (var i = 0; i < muts.length; i++) {
+                    if (muts[i].target === gridEl) { rebuild(); return; }
+                }
+            });
+            moGrid.observe(gridEl, { childList: true });
+            rebuild();
+        }
+
+        page.setAttribute('data-ab-restructured', '1');
+    }
+
+    function collectAllCards(grid) {
+        var out = [];
+        var direct = Array.prototype.slice.call(grid.children).filter(function (n) {
+            return n.classList && n.classList.contains('abBadgeCard');
+        });
+        out = out.concat(direct);
+        var nested = grid.querySelectorAll('.abTierGrid > .abBadgeCard');
+        Array.prototype.forEach.call(nested, function (c) { out.push(c); });
+        return out;
+    }
+    function countByTier(cards) {
+        var c = { mythic:0, legendary:0, epic:0, rare:0, uncommon:0, common:0 };
+        cards.forEach(function (card) { c[rarityOf(card)]++; });
+        return c;
+    }
+
+    function groupGrid(grid, cards) {
+        if (!cards.length) return;
+        var byTier = { mythic:[], legendary:[], epic:[], rare:[], uncommon:[], common:[] };
+        cards.forEach(function (c) { byTier[rarityOf(c)].push(c); });
+        grid.dataset.abGrouping = '1';
+        try {
+            grid.innerHTML = '';
+            TIER_ORDER.forEach(function (t) {
+                var arr = byTier[t]; if (!arr.length) return;
+                var section = document.createElement('section');
+                section.className = 'abTierSection abTier-' + t;
+                section.dataset.tier = t;
+                section.innerHTML =
+                    '<header class="abTierHeader">' +
+                        '<span class="abTierLabel">' + TIER_LABEL[t] + '</span>' +
+                        '<span class="abTierCount">' + arr.length + ' of ' + cards.length + '</span>' +
+                    '</header>';
+                var inner = document.createElement('div');
+                inner.className = 'abTierGrid';
+                arr.forEach(function (c) { inner.appendChild(c); });
+                section.appendChild(inner);
+                grid.appendChild(section);
+            });
+        } finally {
+            setTimeout(function () { grid.dataset.abGrouping = ''; }, 0);
+        }
+    }
+
+    /* filter state */
+    var currentFilter = 'all';
+    var currentSearch = '';
+    function wireFilters(strip) {
+        var input = strip.querySelector('#abFilterInput');
+        if (input) {
+            input.value = currentSearch;
+            input.addEventListener('input', function () {
+                currentSearch = (input.value || '').trim().toLowerCase();
+                applyFilter(document.getElementById('abGrid'), currentFilter, currentSearch);
+            });
+        }
+        strip.querySelectorAll('.abFilterChip').forEach(function (c) {
+            c.setAttribute('aria-pressed', c.getAttribute('data-tier') === currentFilter ? 'true' : 'false');
+            c.addEventListener('click', function () {
+                currentFilter = c.getAttribute('data-tier');
+                strip.querySelectorAll('.abFilterChip').forEach(function (b) {
+                    b.setAttribute('aria-pressed', b === c ? 'true' : 'false');
+                });
+                applyFilter(document.getElementById('abGrid'), currentFilter, currentSearch);
+            });
+        });
+        var openBtn = strip.querySelector('#abAdminOpen');
+        if (openBtn) openBtn.addEventListener('click', function () {
+            var dr = document.getElementById('abAdminDrawer');
+            if (dr) dr.setAttribute('aria-hidden', 'false');
+        });
+    }
+    function applyFilter(grid, tier, q) {
+        if (!grid) return;
+        Array.prototype.forEach.call(grid.querySelectorAll('.abBadgeCard'), function (c) {
+            var matchTier = tier === 'all' || rarityOf(c) === tier;
+            var matchQ = !q || (c.textContent || '').toLowerCase().indexOf(q) >= 0;
+            c.dataset.hide = (matchTier && matchQ) ? '' : '1';
+        });
+        Array.prototype.forEach.call(grid.querySelectorAll('.abTierSection'), function (s) {
+            var visible = s.querySelectorAll('.abBadgeCard:not([data-hide="1"])').length;
+            s.dataset.empty = visible ? '' : '1';
+        });
+    }
+
+    function wireDrawer(drawer) {
+        drawer.addEventListener('click', function (ev) {
+            var t = ev.target;
+            if (t && t.dataset && t.dataset.abClose === '1') drawer.setAttribute('aria-hidden', 'true');
+        });
+        document.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Escape' && drawer.getAttribute('aria-hidden') === 'false') drawer.setAttribute('aria-hidden', 'true');
+        });
+    }
+
+    /* revert (classic toggle) */
+    function revertRestructure() {
+        var page = document.getElementById('AchievementBadgesPage');
+        if (!page) return;
+        if (page.getAttribute('data-ab-restructured') !== '1') return;
+
+        // Flatten rarity-grouped grid back to flat cards.
+        var grid = document.getElementById('abGrid');
+        if (grid) {
+            grid.dataset.abGrouping = '1';
+            var cards = collectAllCards(grid);
+            grid.innerHTML = '';
+            cards.forEach(function (c) {
+                c.dataset.hide = '';
+                grid.appendChild(c);
+            });
+            grid.dataset.abGrouping = '';
+        }
+
+        // Restore moved elements.
+        (page._abMoved || []).forEach(function (rec) {
+            if (!rec.parent || !rec.el) return;
+            if (rec.el.dataset && rec.el.dataset.abHidden === '1') {
+                rec.el.style.display = '';
+                delete rec.el.dataset.abHidden;
+            }
+            if (rec.next && rec.next.parentNode === rec.parent) {
+                rec.parent.insertBefore(rec.el, rec.next);
+            } else {
+                rec.parent.appendChild(rec.el);
+            }
+        });
+        page._abMoved = null;
+
+        ['abPluginHero', 'abAdminGroups', 'abPersonalSection',
+         'abHeroStrip', 'abBentoRow', 'abFilterStrip', 'abAdminDrawer'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+        });
+        /* v1.8.43: belt-and-braces — also kill any stray .abTierSection
+           anywhere in the document (in case a Mutation Observer / async
+           rebuild rebuilt them after our flatten-the-grid step). */
+        document.querySelectorAll('.abTierSection').forEach(function (s) {
+            if (s.parentNode) s.parentNode.removeChild(s);
+        });
+        // Clear data-glyph attrs (legacy) AND the injected SVG icons
+        document.querySelectorAll('summary[data-glyph]').forEach(function (s) {
+            s.removeAttribute('data-glyph');
+        });
+        document.querySelectorAll('summary > .abPanelGlyph').forEach(function (g) {
+            g.parentNode.removeChild(g);
+        });
+        currentFilter = 'all'; currentSearch = '';
+        page.removeAttribute('data-ab-restructured');
+        try { restoreParentPadding(); } catch (_) {}
+        try { removeBodyClassAndUnwatch(); } catch (_) {}
+    }
+
+    /* v1.8.33: walk every ancestor of #AchievementBadgesPage up to <body>
+       and zero out horizontal padding/margin/max-width. This defeats any
+       Jellyfin admin-shell wrapper that's adding left padding regardless
+       of what class it uses, since I don't need to enumerate them.
+       Originals are saved on each element so revertRestructure can put
+       them back when the user toggles to Classic. */
+    function defeatParentPadding() {
+        var el = document.getElementById('AchievementBadgesPage');
+        if (!el) return;
+        if (el.getAttribute('data-ab-style') !== 'revamp') return;
+
+        /* v1.8.34: Jellyfin uses .padded-left and .libraryPage for the
+           horizontal/top padding around plugin admin pages. We strip the
+           padding directly on those classes wherever they appear, plus
+           walk every ancestor up to <body> to neutralize any other
+           wrapper that adds horizontal space. */
+        var paddedTargets = [];
+        /* v1.8.38: also include other Jellyfin wrappers that may carry
+           horizontal padding around plugin admin pages. */
+        Array.prototype.forEach.call(
+            document.querySelectorAll(
+                '.padded-left, .libraryPage, .dashboardSection, .dashboardSections, ' +
+                '.pageContainer, .dashboardWrapper, .scrollSlider, .pageWithAbsoluteTabs'
+            ),
+            function (n) { paddedTargets.push(n); }
+        );
+        if (el.classList.contains('padded-left') || el.classList.contains('libraryPage')) {
+            paddedTargets.push(el);
+        }
+
+        /* v1.8.35: also reset .skinBody (Jellyfin's main wrapper) which has
+           `left: 20em` in their stylesheet when the drawer is open. We
+           override left/right via `style.setProperty(...important)` so my
+           content can centre across the full viewport. */
+        Array.prototype.forEach.call(
+            document.querySelectorAll('.skinBody, .mainAnimatedPages'),
+            function (sb) {
+                if (sb.dataset._abOrigLeft === undefined) {
+                    sb.dataset._abOrigLeft = sb.style.left || '';
+                    sb.dataset._abOrigRight = sb.style.right || '';
+                }
+                sb.style.setProperty('left',  '0', 'important');
+                sb.style.setProperty('right', '0', 'important');
+            }
+        );
+
+        var p = el.parentElement;
+        while (p && p !== document.body && p !== document.documentElement) {
+            paddedTargets.push(p);
+            p = p.parentElement;
+        }
+
+        paddedTargets.forEach(function (n) {
+            if (n.dataset._abOrigPl === undefined) {
+                n.dataset._abOrigPl = n.style.paddingLeft || '';
+                n.dataset._abOrigPr = n.style.paddingRight || '';
+                n.dataset._abOrigPt = n.style.paddingTop || '';
+                n.dataset._abOrigMl = n.style.marginLeft || '';
+                n.dataset._abOrigMr = n.style.marginRight || '';
+                n.dataset._abOrigMw = n.style.maxWidth || '';
+            }
+            n.style.setProperty('padding-left',  '0',    'important');
+            n.style.setProperty('padding-right', '0',    'important');
+            n.style.setProperty('padding-top',   '0',    'important');
+            n.style.setProperty('margin-left',   '0',    'important');
+            n.style.setProperty('margin-right',  '0',    'important');
+            n.style.setProperty('max-width',     'none', 'important');
+        });
+    }
+    function restoreParentPadding() {
+        document.querySelectorAll('[data-_ab-orig-pl]').forEach(function (p) {
+            p.style.paddingLeft  = p.dataset._abOrigPl || '';
+            p.style.paddingRight = p.dataset._abOrigPr || '';
+            p.style.paddingTop   = p.dataset._abOrigPt || '';
+            p.style.marginLeft   = p.dataset._abOrigMl || '';
+            p.style.marginRight  = p.dataset._abOrigMr || '';
+            p.style.maxWidth     = p.dataset._abOrigMw || '';
+            delete p.dataset._abOrigPl;
+            delete p.dataset._abOrigPr;
+            delete p.dataset._abOrigPt;
+            delete p.dataset._abOrigMl;
+            delete p.dataset._abOrigMr;
+            delete p.dataset._abOrigMw;
+        });
+        document.querySelectorAll('[data-_ab-orig-left]').forEach(function (sb) {
+            sb.style.left  = sb.dataset._abOrigLeft  || '';
+            sb.style.right = sb.dataset._abOrigRight || '';
+            delete sb.dataset._abOrigLeft;
+            delete sb.dataset._abOrigRight;
+        });
+    }
+
+    /* v1.8.40: aggressive JS-based overrides. Direct
+       style.setProperty(..., 'important') wins over any Jellyfin CSS
+       rule and works regardless of `:has()` support, service worker
+       freshness, or selector specificity. Originals saved per-element
+       so removeBodyClassAndUnwatch can fully restore Classic. */
+    var skinObserver = null;
+    var hiddenDrawers = [];
+    var bgSavedBody = null, bgSavedHtml = null;
+    var PAGE_BG = 'oklch(11% 0.008 260)';
+
+    function applyBodyClassAndWatch() {
+        if (document.body) document.body.classList.add('ab-revamp-fullwidth');
+
+        if (bgSavedBody === null && document.body) {
+            bgSavedBody = document.body.style.background || '';
+            document.body.style.setProperty('background', PAGE_BG, 'important');
+        }
+        if (bgSavedHtml === null && document.documentElement) {
+            bgSavedHtml = document.documentElement.style.background || '';
+            document.documentElement.style.setProperty('background', PAGE_BG, 'important');
+        }
+
+        ['.mainDrawer', '.adminDrawerLogo', '.mainDrawer-scrollContainer'].forEach(function (sel) {
+            Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) {
+                if (el.dataset._abOrigDisplay === undefined) {
+                    el.dataset._abOrigDisplay = el.style.display || '';
+                }
+                el.style.setProperty('display', 'none', 'important');
+                hiddenDrawers.push(el);
+            });
+        });
+
+        Array.prototype.forEach.call(
+            document.querySelectorAll('.skinBody, .mainAnimatedPages'),
+            function (sb) {
+                if (sb.dataset._abOrigSkinLeft === undefined) {
+                    sb.dataset._abOrigSkinLeft = sb.style.left || '';
+                    sb.dataset._abOrigSkinRight = sb.style.right || '';
+                }
+                sb.style.setProperty('left',  '0', 'important');
+                sb.style.setProperty('right', '0', 'important');
+            }
+        );
+
+        Array.prototype.forEach.call(document.querySelectorAll('.skinHeader'), function (h) {
+            if (h.dataset._abOrigHeaderBg === undefined) {
+                h.dataset._abOrigHeaderBg = h.style.background || '';
+            }
+            h.style.setProperty('background', PAGE_BG, 'important');
+        });
+
+        if (skinObserver) return;
+        var sb = document.querySelector('.skinBody');
+        if (!sb) return;
+        function enforce() {
+            if (sb.style.left !== '0px') sb.style.setProperty('left', '0', 'important');
+            if (sb.style.right !== '0px') sb.style.setProperty('right', '0', 'important');
+        }
+        enforce();
+        skinObserver = new MutationObserver(enforce);
+        skinObserver.observe(sb, { attributes: true, attributeFilter: ['style', 'class'] });
+    }
+
+    function removeBodyClassAndUnwatch() {
+        if (document.body) document.body.classList.remove('ab-revamp-fullwidth');
+        if (bgSavedBody !== null && document.body) {
+            document.body.style.background = bgSavedBody; bgSavedBody = null;
+        }
+        if (bgSavedHtml !== null && document.documentElement) {
+            document.documentElement.style.background = bgSavedHtml; bgSavedHtml = null;
+        }
+        hiddenDrawers.forEach(function (el) {
+            el.style.display = el.dataset._abOrigDisplay || '';
+            delete el.dataset._abOrigDisplay;
+        });
+        hiddenDrawers = [];
+        document.querySelectorAll('[data-_ab-orig-skin-left]').forEach(function (sb) {
+            sb.style.left  = sb.dataset._abOrigSkinLeft  || '';
+            sb.style.right = sb.dataset._abOrigSkinRight || '';
+            delete sb.dataset._abOrigSkinLeft;
+            delete sb.dataset._abOrigSkinRight;
+        });
+        document.querySelectorAll('[data-_ab-orig-header-bg]').forEach(function (h) {
+            h.style.background = h.dataset._abOrigHeaderBg || '';
+            delete h.dataset._abOrigHeaderBg;
+        });
+        if (skinObserver) { skinObserver.disconnect(); skinObserver = null; }
+    }
+
+    function bootRestructure() {
+        if (pref === 'revamp') {
+            restructureDom();
+            defeatParentPadding();
+            applyBodyClassAndWatch();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { mountToggle(); bootRestructure(); });
+    } else {
+        mountToggle();
+        bootRestructure();
+    }
+    var pageEl = document.getElementById('AchievementBadgesPage');
+    if (pageEl && pageEl.addEventListener) {
+        pageEl.addEventListener('pageshow', function () {
+            applyPref(pref);
+            mountToggle();
+        });
+    }
+})();
+</script>
 
 <div data-role="content">
     <div class="content-primary">
@@ -407,6 +1411,7 @@ font-size:0.88em;
 
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:1em;flex-wrap:wrap;">
                     <h2 class="sectionTitle" style="margin:0;" data-i18n="admin.page_title">Achievements</h2>
+                    <div id="abStyleToggleHost" role="group" aria-label="Visual style"></div>
                 </div>
 
                 <div id="abProfileHero" class="abHero">
