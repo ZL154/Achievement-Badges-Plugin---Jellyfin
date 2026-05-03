@@ -26,7 +26,7 @@
             }
             if (!document.getElementById('abSaRevampCss')) {
                 // v1.9.0: version-only cache bust (see index.html).
-                var __abCssBust = 'v=1.9.1';
+                var __abCssBust = 'v=1.9.2';
                 var __abApi = window.ApiClient || window.apiClient;
                 var __abUrl = (__abApi && typeof __abApi.getUrl === 'function')
                     ? __abApi.getUrl('Plugins/AchievementBadges/client-script/styles-revamp')

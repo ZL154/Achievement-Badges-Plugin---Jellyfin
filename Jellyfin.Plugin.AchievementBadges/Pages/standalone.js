@@ -2971,7 +2971,7 @@
     var STYLE_PREF_KEY = 'ab-style-pref';
     var REVAMP_LINK_ID = 'abSaRevampCss';
     // v1.9.0: version-only cache bust (see index.html for full rationale).
-    var REVAMP_CSS_BUST = 'v=1.9.1';
+    var REVAMP_CSS_BUST = 'v=1.9.2';
     function getStylePref() {
         try { return localStorage.getItem(STYLE_PREF_KEY) === 'revamp' ? 'revamp' : 'classic'; }
         catch (e) { return 'classic'; }
