@@ -97,11 +97,19 @@ public class FriendsService
         {
             var user = _userManager.GetUserById(userId);
             if (user is null) return null;
+            // v1.9.2: bump Limit to 500 (was 50). Without an OrderBy we get
+            // whatever 500 played items the underlying query returns; the
+            // C# pass below picks the highest LastPlayedDate among them.
+            // 50 was too small for users with thousands of plays — the
+            // "most recent of arbitrary 50" was not actually the most
+            // recently played item. With the 90s LastWatched cache one
+            // call per friend per 90s, the higher Limit costs nothing
+            // observable in practice.
             var query = new InternalItemsQuery(user)
             {
                 IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Episode },
                 IsPlayed = true,
-                Limit = 50,
+                Limit = 500,
                 Recursive = true,
                 EnableTotalRecordCount = false
             };

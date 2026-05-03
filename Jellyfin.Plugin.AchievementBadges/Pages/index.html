@@ -504,7 +504,7 @@ font-size:0.88em;
     // controller's `Cache-Control: public, max-age=86400, immutable`, browsers
     // now cache assets across page loads. Plugin updates change the v= and
     // produce a fresh URL, naturally busting the cache.
-    var CSS_BUST = 'v=1.9.1';
+    var CSS_BUST = 'v=1.9.2';
     function cssUrl() {
         var ac = getApi();
         var base;
@@ -534,6 +534,19 @@ font-size:0.88em;
             var ex = document.getElementById('abRevampCss');
             if (ex) ex.parentNode.removeChild(ex);
         }
+        /* v1.9.2: also sync body[data-ab-style] so Revamp CSS scoped to
+           ancestor selectors (the friends drawer, page-level rules) doesn't
+           leak from a prior /achievements Revamp visit into Classic admin.
+           Without this, toggling Classic on admin still left body with
+           data-ab-style="revamp" from earlier — Revamp rules kept matching
+           via the body ancestor and hid the badge grid. */
+        try {
+            if (next === 'revamp') {
+                document.body.setAttribute('data-ab-style', 'revamp');
+            } else {
+                document.body.removeAttribute('data-ab-style');
+            }
+        } catch (_) {}
         try { localStorage.setItem(STORE_KEY, next); } catch (_) {}
         var host = document.getElementById('abStyleToggleHost');
         if (host) host.querySelectorAll('button[data-style]').forEach(function (b) {
@@ -905,7 +918,7 @@ font-size:0.88em;
         var pluginHero = document.createElement('section');
         pluginHero.id = 'abPluginHero';
         pluginHero.innerHTML = buildPluginHero({
-            version: '1.9.1', targetAbi: '10.11.0.0', statusLabel: 'Active'
+            version: '1.9.2', targetAbi: '10.11.0.0', statusLabel: 'Active'
         });
 
         // 2. Admin groups (4 thematic sections, each carries its own
@@ -1019,7 +1032,7 @@ font-size:0.88em;
                     personalHero.innerHTML = buildPersonalHero(personalStats);
                     // refresh plugin KPIs with what we know now
                     pluginHero.innerHTML = buildPluginHero({
-                        version: '1.9.1', targetAbi: '10.11.0.0', statusLabel: 'Active',
+                        version: '1.9.2', targetAbi: '10.11.0.0', statusLabel: 'Active',
                         badges: cards.length || '—',
                         unlocks: personalStats.unlocked || '—'
                     });
