@@ -504,7 +504,7 @@ font-size:0.88em;
     // controller's `Cache-Control: public, max-age=86400, immutable`, browsers
     // now cache assets across page loads. Plugin updates change the v= and
     // produce a fresh URL, naturally busting the cache.
-    var CSS_BUST = 'v=1.9.0';
+    var CSS_BUST = 'v=1.9.1';
     function cssUrl() {
         var ac = getApi();
         var base;
@@ -905,7 +905,7 @@ font-size:0.88em;
         var pluginHero = document.createElement('section');
         pluginHero.id = 'abPluginHero';
         pluginHero.innerHTML = buildPluginHero({
-            version: '1.9.0', targetAbi: '10.11.0.0', statusLabel: 'Active'
+            version: '1.9.1', targetAbi: '10.11.0.0', statusLabel: 'Active'
         });
 
         // 2. Admin groups (4 thematic sections, each carries its own
@@ -1019,7 +1019,7 @@ font-size:0.88em;
                     personalHero.innerHTML = buildPersonalHero(personalStats);
                     // refresh plugin KPIs with what we know now
                     pluginHero.innerHTML = buildPluginHero({
-                        version: '1.9.0', targetAbi: '10.11.0.0', statusLabel: 'Active',
+                        version: '1.9.1', targetAbi: '10.11.0.0', statusLabel: 'Active',
                         badges: cards.length || '—',
                         unlocks: personalStats.unlocked || '—'
                     });

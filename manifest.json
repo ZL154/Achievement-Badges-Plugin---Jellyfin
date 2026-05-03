@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.9.1.0",
+        "changelog": "v1.9.1 - Friends drawer surface tier lightened in Revamp (was too dark). Bumped L* of the drawer canvas, friend rows, and FAB button by ~5pp each (16/22/26 instead of 11/15/18) so each tier reads distinctly against the next. README updated with full v1.9.0 features section.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.9.1/Jellyfin.Plugin.AchievementBadges_1.9.1.0.zip",
+        "checksum": "f3679aeb322c437636d7a0f27e4574df",
+        "timestamp": "2026-05-03T00:00:00Z"
+      },
+      {
         "version": "1.9.0.0",
         "changelog": "v1.9.0 - UI Revamp + Security A+ + plugin-wide efficiency overhaul. Cumulative release covering all work since v1.8.10. New features: full Revamp UI for the standalone /achievements page (magazine hero, conic donut, asymmetric stats grid, chapter tabs, control-panel filter strip, ambient orb + film grain), Friends drawer Revamp following the same Classic/Revamp toggle, Offline - last watched X line on offline friends, HideLastWatched privacy preference, HMAC-SHA256 webhook signing for receiver-side authenticity verification. Backend efficiency: debounced Save in AchievementBadgeService and MessagingService, FriendsService LastWatched cache with 90s TTL and play-event invalidation, AuditLogService in-place trim and tail-walk read, WriteIndented disabled on production stores, embedded resource caching, Cache-Control public max-age 86400 immutable on assets with version-only cache busting (browsers now actually cache between page loads), middleware marker fast-path. Security A+: default class-level rate limit, AdminAuditLogFilter capturing every elevation action, CSP and security headers on the anonymous profile-card endpoint, 34 xUnit security regression tests, GitHub Actions CI runs tests + dotnet vulnerability scan + gitleaks on every push, expanded SECURITY.md with full threat model. Three medium audit findings fixed: input clamps on GetActivityFeed/GetMessageThread/GetConvMessages, WebhookUrlValidator fails closed on DNS errors.",
         "targetAbi": "10.11.0.0",

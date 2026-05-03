@@ -4171,11 +4171,16 @@ body.ab-revamp-fullwidth::after {
    ============================================================================ */
 
 body[data-ab-style="revamp"] {
-    --rv-bg-fr:        oklch(11% 0.008 260);
-    --rv-surface-fr:   oklch(15% 0.012 260);
-    --rv-surface-2-fr: oklch(18% 0.012 260);
-    --rv-edge-fr:      oklch(36% 0.014 260 / 0.42);
-    --rv-edge-bri-fr:  oklch(48% 0.020 260 / 0.62);
+    /* v1.9.1: lighten the Friends drawer surface tier by ~5pp of L*. The
+       original 11/15/18 L* triple was too close to pure black — friend
+       rows blended into the drawer canvas and the FAB looked dead.
+       16/22/26 keeps the dark aesthetic but each tier reads distinctly
+       against the next, especially against avatars with photo backgrounds. */
+    --rv-bg-fr:        oklch(16% 0.010 260);
+    --rv-surface-fr:   oklch(22% 0.014 260);
+    --rv-surface-2-fr: oklch(26% 0.016 260);
+    --rv-edge-fr:      oklch(42% 0.016 260 / 0.50);
+    --rv-edge-bri-fr:  oklch(54% 0.022 260 / 0.65);
     --rv-text-fr:      oklch(94% 0 0);
     --rv-text-mu-fr:   oklch(76% 0.010 260);
     --rv-text-fa-fr:   oklch(60% 0.014 260);

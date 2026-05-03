@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Jellyfin-10.11%2B-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
   <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
-  <img src="https://img.shields.io/badge/Version-1.8.10-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/Version-1.9.0-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/License-MIT-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
 </p>
 
@@ -23,13 +23,14 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd, built natively into your media server.
 
-> **Status:** Active development — **v1.8.x** turns the Friends drawer into a full **messaging suite** (Xbox-style 1:1 chat + group chats, image attachments, read receipts, edit/delete, block, browser notifications, message sound, per-peer mute). Prior highlights from v1.7.x: Friends drawer, admin quest customization, public equipped-badge previews, rarity percentage chip, hand-translated **French by [@frenchyx24](https://github.com/frenchyx24)** (all 171 badges), full **security audit** pass, and a **3-layer data-loss recovery chain**.
+> **Status:** Active development — **v1.9.0** is a major release covering everything since v1.8.10. New: full **Revamp UI** for the user-facing achievements page (magazine hero, conic completion donut, asymmetric stat grid, chapter tabs, control-panel filter strip), **Friends drawer Revamp** following the same Classic/Revamp toggle, **"Offline — last watched X"** line on offline friends, **HMAC-SHA256 webhook signing** for receiver-side authenticity verification, and a `HideLastWatched` privacy preference. Plus a security posture upgrade from B+ to **A+** (default rate-limiting, admin audit-log filter, CSP headers, **34 xUnit security regression tests**, **GitHub Actions CI** running the tests + dotnet vulnerability scan + gitleaks on every push) and a plugin-wide efficiency overhaul (debounced saves, friends-bar cache, in-place trims, browser-side asset caching). Prior highlights from v1.8.x: full **messaging suite** (Xbox-style 1:1 + group chats, attachments, read receipts, edit/delete, block, notifications). v1.7.x: Friends drawer foundation, hand-translated **French by [@frenchyx24](https://github.com/frenchyx24)**.
 
 ---
 
 ## 📑 Table of contents
 
 - [Overview](#-overview)
+- [What's new in v1.9.0](#-whats-new-in-v190) — Revamp UI, Friends drawer Revamp, last-watched, HMAC signing, A+ security
 - [Core features](#-core-features) — badges, ranks, score, prestige, quests, stats, UI, preferences, admin
 - [Messaging (new in v1.8)](#-messaging-new-in-v18) — 1:1 + groups, attachments, read receipts, edit/delete, block
 - [Installation](#️-installation)
@@ -47,6 +48,54 @@ A full progression, gamification and achievement system for Jellyfin that reward
 Over **170 built-in achievements** across 30+ categories, a 10-tier rank ladder from Rookie to Immortal, a score economy with combos, prestige, and daily/weekly quests, plus admin power features like custom badges, seasonal challenges, webhook notifications and a full audit log.
 
 Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin, ElegantFin, or StarTrack.
+
+---
+
+## 🚀 What's new in v1.9.0
+
+### 🎨 Revamp UI (toggle anytime)
+
+Every screen the plugin renders now has a Classic/Revamp toggle. Classic stays the v1.8.10 look you know; Revamp is the new design.
+
+- **Achievements page** — magazine-spread hero with massive Geist 700 rank name, **220px conic completion donut** that fills from empty to your real percentage on mount, **asymmetric stats grid** (1 dominant + 3 supporting), **chapter-numbered tabs** (`01 / MY BADGES`, `02 / QUESTS`, `03 / RECAP`…), control-panel filter strip with proper labels and chevrons, ambient drift orb behind the page, film grain overlay, day-streak pulse, rank-name shimmer, full page entrance cascade (topbar → hero → stats → tabs → panel)
+- **Admin page** — HUD corner brackets at the four corners of the plugin and personal hero cards, conic rim sheen on Mythic and Legendary badge cards, animated KPI count-up, tier-staggered reveal on badge sections
+- **Friends drawer** follows the same Classic/Revamp toggle — sets `body[data-ab-style="revamp"]` so the same tokens apply globally
+- One toggle, one preference (`ab-style-pref` localStorage) — flip it in the admin or `/achievements` page settings
+
+### 👥 Friends drawer upgrades
+
+- **Offline — last watched X** — offline friends now show what they watched most recently (mirrors the online "Watching X" treatment). Backed by `IUserDataManager` with reflection-based `LastPlayedDate` lookup
+- **`HideLastWatched` privacy preference** — opt out per user, same contract as `AppearOffline` and `HideNowPlaying` (suppressed entirely server-side; never leaks)
+
+### 🔐 Webhook authenticity
+
+- **HMAC-SHA256 signing** — when admin sets `WebhookSigningSecret`, every outbound POST carries:
+  ```
+  X-AchievementBadges-Signature: sha256=<hex>
+  X-AchievementBadges-Timestamp: <unix>
+  ```
+  Receivers verify with `HMAC(secret, timestamp + "." + raw_body)` and reject stale timestamps to prevent replay. Same envelope as Stripe and GitHub.
+- Empty secret = legacy unsigned behaviour (backward compatible).
+
+### 🛡️ Security A+
+
+- **Default class-level rate limit** (`user-60-per-min`) on every controller route, with stricter overrides preserved on cooldown routes
+- **`AdminAuditLogFilter`** writes an entry on every `RequiresElevation` action — answer "who unlocked X for whom last Tuesday" without grepping runtime logs
+- **CSP** + `X-Content-Type-Options` + `X-Frame-Options` + `Referrer-Policy` + `Permissions-Policy` on the anonymous profile-card endpoint
+- **34 xUnit security regression tests** — SSRF, IPv6 SSRF, scheme rejection, malformed URL rejection, dangerous SVG element rejection, on-event-handler rejection, external DTD rejection, oversized payload rejection, external `<use href>` rejection
+- **GitHub Actions CI** runs the tests + `dotnet list package --vulnerable` + `gitleaks` on every push, every PR, and weekly cron
+- **`SECURITY.md`** expanded with full threat model, trust boundaries, defences-in-place inventory, continuous verification matrix, disclosure SLA, and safe-harbour for researchers
+- Three medium audit findings fixed: `GetActivityFeed` / `GetMessageThread` / `GetConvMessages` clamp `page`/`limit`; `WebhookUrlValidator` now fails closed on DNS errors
+
+### ⚡ Plugin-wide efficiency
+
+- **Debounced `Save()`** in `AchievementBadgeService` and `MessagingService` — coalesces back-to-back disk writes from playback and messaging hot paths into one flush per 1.5s
+- **`FriendsService.LastWatched` cache** — 90s TTL, invalidated on play, eliminates per-friend 50-item DB query on every friends-list call
+- **In-place audit log trim** + tail-walk read (no more `OrderByDescending` on every admin viewer load)
+- **`WriteIndented = false`** on production stores (~50% smaller `badges.json`)
+- **Embedded resource cache** in `client-script` route — one read per process
+- **`Cache-Control: public, max-age=86400, immutable`** on assets with version-only cache busting (browsers actually cache between page loads now)
+- Middleware marker fast-path (last-4KB scan instead of full body)
 
 ---
 
