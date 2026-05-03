@@ -77,21 +77,19 @@ Every screen the plugin renders now has a Classic/Revamp toggle. Classic stays t
   Receivers verify with `HMAC(secret, timestamp + "." + raw_body)` and reject stale timestamps to prevent replay. Same envelope as Stripe and GitHub.
 - Empty secret = legacy unsigned behaviour (backward compatible).
 
-### 🛡️ Security A+
+### 🛡️ Security
 
 - **Default class-level rate limit** (`user-60-per-min`) on every controller route, with stricter overrides preserved on cooldown routes
 - **`AdminAuditLogFilter`** writes an entry on every `RequiresElevation` action — answer "who unlocked X for whom last Tuesday" without grepping runtime logs
 - **CSP** + `X-Content-Type-Options` + `X-Frame-Options` + `Referrer-Policy` + `Permissions-Policy` on the anonymous profile-card endpoint
-- **34 xUnit security regression tests** — SSRF, IPv6 SSRF, scheme rejection, malformed URL rejection, dangerous SVG element rejection, on-event-handler rejection, external DTD rejection, oversized payload rejection, external `<use href>` rejection
+- **Unit security regression tests** — SSRF, IPv6 SSRF, scheme rejection, malformed URL rejection, dangerous SVG element rejection, on-event-handler rejection, external DTD rejection, oversized payload rejection, external `<use href>` rejection
 - **GitHub Actions CI** runs the tests + `dotnet list package --vulnerable` + `gitleaks` on every push, every PR, and weekly cron
 - **`SECURITY.md`** expanded with full threat model, trust boundaries, defences-in-place inventory, continuous verification matrix, disclosure SLA, and safe-harbour for researchers
-- Three medium audit findings fixed: `GetActivityFeed` / `GetMessageThread` / `GetConvMessages` clamp `page`/`limit`; `WebhookUrlValidator` now fails closed on DNS errors
 
 ### ⚡ Plugin-wide efficiency
 
 - **Debounced `Save()`** in `AchievementBadgeService` and `MessagingService` — coalesces back-to-back disk writes from playback and messaging hot paths into one flush per 1.5s
 - **`FriendsService.LastWatched` cache** — 90s TTL, invalidated on play, eliminates per-friend 50-item DB query on every friends-list call
-- **In-place audit log trim** + tail-walk read (no more `OrderByDescending` on every admin viewer load)
 - **`WriteIndented = false`** on production stores (~50% smaller `badges.json`)
 - **Embedded resource cache** in `client-script` route — one read per process
 - **`Cache-Control: public, max-age=86400, immutable`** on assets with version-only cache busting (browsers actually cache between page loads now)
