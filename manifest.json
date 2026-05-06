@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.9.4.0",
+        "changelog": "v1.9.4 - 32 new badges + full 8-language translation coverage + Revamp admin UI fix. New badges: 5 Afternoon (12-17h) tiers, 5 Prime Time (19-22h) tiers, 10 holiday one-shots (Valentine's, Easter, Lunar New Year, Diwali, US Thanksgiving, Independence Day, Bonfire Night, Boxing Day, Mother's, Father's), Anime tier (5/15/50/200/500), Studio specialists (Studio Ghibli, A24, HBO, Netflix, BBC, Disney via BaseItem.Studios), and Pilot vs Completer pair tracking S1E1-only watchers vs binge-past-pilot. All 32 translated into en/fr/es/de/it/pt/zh/ja with hand-tailored cultural references. Revamp UI fix: Use my account / Refresh / Simulate playback buttons + live status/error banner now sit at the top of the personal section in Revamp (previously hidden along with the Classic hero). Long-running ops like Scan all users now visibly pulse with status text. Existing badges.json round-trips cleanly; new fields default to 0/false/empty.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.9.4/Jellyfin.Plugin.AchievementBadges_1.9.4.0.zip",
+        "checksum": "0dbb6c84992a239a99f1ceae3cf784e4",
+        "timestamp": "2026-05-06T00:00:00Z"
+      },
+      {
         "version": "1.9.2.0",
         "changelog": "v1.9.2 - Two fixes for v1.9.x: (1) Admin Classic toggle was broken because body[data-ab-style=revamp] persisted from prior /achievements visits and leaked Revamp CSS via ancestor selectors, hiding the badge grid. Admin's applyPref now syncs body[data-ab-style] alongside #AchievementBadgesPage. (2) Friends drawer last-watched was inaccurate for users with thousands of plays. Bumped the LastWatched query Limit from 50 to 500 so we actually find the most recently played item. With the existing 90s cache, the higher Limit costs nothing in practice.",
         "targetAbi": "10.11.0.0",

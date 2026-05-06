@@ -1000,6 +1000,26 @@ font-size:0.88em;
             if (el) trackMove(el, personalSection);
         });
 
+        // 5b. v1.9.4 — Surface admin operator actions + status/error in
+        // Revamp. The Classic hero card holds Use my account / Refresh /
+        // Simulate playback inside .abHeroActions; #abStatus + #abError sit
+        // far below all sections. When Revamp hides #abProfileHero, the
+        // action buttons disappear with it and the status text falls
+        // off-screen. Move the live DOM (so existing listeners stay wired)
+        // into a new strip at the top of personalSection, ABOVE the hero
+        // we just built so it's the first thing the operator sees.
+        var actionStrip = document.createElement('div');
+        actionStrip.id = 'abActionStrip';
+        actionStrip.className = 'abActionStrip';
+        // Insert the strip between the eyebrow and the personal hero.
+        personalSection.insertBefore(actionStrip, personalHero);
+        var heroActions = container.querySelector('#abProfileHero .abHeroActions');
+        if (heroActions) trackMove(heroActions, actionStrip);
+        var statusEl = container.querySelector('#abStatus');
+        var errorEl  = container.querySelector('#abError');
+        if (statusEl) trackMove(statusEl, actionStrip);
+        if (errorEl)  trackMove(errorEl,  actionStrip);
+
         // 6. Hide the original hero + stats grid (they hold ids the page JS reads).
         function hide(el) {
             if (!el) return;

@@ -140,7 +140,14 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
                 Genres = item.Genres,
                 RunTimeTicks = item.RunTimeTicks,
                 Directors = directors,
-                Actors = actors
+                Actors = actors,
+                // v1.9.3 — populate studio + series-position fields so the
+                // achievement service can credit Studio specialists and
+                // pilot/completer behavior badges.
+                Studios = item.Studios,
+                SeriesId = isEpisode ? GetSeriesIdString(item) : null,
+                SeasonNumber = isEpisode ? item.ParentIndexNumber : null,
+                EpisodeNumber = isEpisode ? item.IndexNumber : null
             };
 
             var success = _playbackCompletionService.RecordCompletion(context, completionPercent, out var message);
@@ -247,6 +254,27 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             _logger.LogDebug(ex, "[AchievementBadges] Failed to resolve collection folder for item {ItemId}.", item.Id);
             return null;
         }
+    }
+
+    // v1.9.3 — Read Episode.SeriesId via reflection to stay version-agnostic
+    // (the property has been a stable Guid on Jellyfin's Episode type since
+    // 10.7 but reflection avoids a hard cast that could break across abi
+    // changes). Returns the canonical "D" format, e.g. 0a1b2c3d-...-...-... .
+    private static string? GetSeriesIdString(BaseItem item)
+    {
+        try
+        {
+            var prop = item.GetType().GetProperty("SeriesId");
+            if (prop?.GetValue(item) is Guid g && g != Guid.Empty)
+            {
+                return g.ToString("D");
+            }
+        }
+        catch
+        {
+            // best-effort — pilot/completer credit just won't fire
+        }
+        return null;
     }
 
     public void Dispose()
