@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Jellyfin-10.11%2B-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
   <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
-  <img src="https://img.shields.io/badge/Version-1.9.0-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/Version-1.9.4-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/License-MIT-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
 </p>
 
@@ -23,13 +23,14 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd, built natively into your media server.
 
-> **Status:** Active development — **v1.9.0** is a major release covering everything since v1.8.10. New: full **Revamp UI** for the user-facing achievements page (magazine hero, conic completion donut, asymmetric stat grid, chapter tabs, control-panel filter strip), **Friends drawer Revamp** following the same Classic/Revamp toggle, **"Offline — last watched X"** line on offline friends, **HMAC-SHA256 webhook signing** for receiver-side authenticity verification, and a `HideLastWatched` privacy preference. Plus a security upgrade (default rate-limiting, admin audit-log filter, CSP headers, **GitHub Actions CI** running the tests + dotnet vulnerability scan + gitleaks on every push) and a plugin-wide efficiency overhaul (debounced saves, friends-bar cache, in-place trims, browser-side asset caching). Prior highlights from v1.8.x: full **messaging suite** (Xbox-style 1:1 + group chats, attachments, read receipts, edit/delete, block, notifications). v1.7.x: Friends drawer foundation, hand-translated **French by [@frenchyx24](https://github.com/frenchyx24)**.
+> **Status:** Active development — **v1.9.4** adds 32 new badges across afternoon + prime-time time-of-day, 10 expanded holidays (Valentine's, Easter, Lunar NY, Diwali, US Thanksgiving, Independence Day, Bonfire Night, Boxing Day, Mother's, Father's), an Anime tier, Studio specialists (Studio Ghibli, A24, HBO, Netflix, BBC, Disney), and a Pilot vs Completer behavior pair. All 32 are translated into all 8 supported languages. Also fixes the Revamp admin UI: Simulate playback button + live status banner now sit at the top of the page (previously hidden along with the Classic hero). **v1.9.0** is a major release covering everything since v1.8.10. New: full **Revamp UI** for the user-facing achievements page (magazine hero, conic completion donut, asymmetric stat grid, chapter tabs, control-panel filter strip), **Friends drawer Revamp** following the same Classic/Revamp toggle, **"Offline — last watched X"** line on offline friends, **HMAC-SHA256 webhook signing** for receiver-side authenticity verification, and a `HideLastWatched` privacy preference. Plus a security upgrade (default rate-limiting, admin audit-log filter, CSP headers, **GitHub Actions CI** running the tests + dotnet vulnerability scan + gitleaks on every push) and a plugin-wide efficiency overhaul (debounced saves, friends-bar cache, in-place trims, browser-side asset caching). Prior highlights from v1.8.x: full **messaging suite** (Xbox-style 1:1 + group chats, attachments, read receipts, edit/delete, block, notifications). v1.7.x: Friends drawer foundation, hand-translated **French by [@frenchyx24](https://github.com/frenchyx24)**.
 
 ---
 
 ## 📑 Table of contents
 
 - [Overview](#-overview)
+- [What's new in v1.9.4](#-whats-new-in-v194) — 32 new badges (afternoon, prime time, holidays, anime, studios, pilot/completer), 8-language translations, Revamp admin UI fix
 - [What's new in v1.9.0](#-whats-new-in-v190) — Revamp UI, Friends drawer Revamp, last-watched, HMAC signing, A+ security
 - [Core features](#-core-features) — badges, ranks, score, prestige, quests, stats, UI, preferences, admin
 - [Messaging (new in v1.8)](#-messaging-new-in-v18) — 1:1 + groups, attachments, read receipts, edit/delete, block
@@ -45,9 +46,78 @@ A full progression, gamification and achievement system for Jellyfin that reward
 
 ## ✨ Overview
 
-Over **170 built-in achievements** across 30+ categories, a 10-tier rank ladder from Rookie to Immortal, a score economy with combos, prestige, and daily/weekly quests, plus admin power features like custom badges, seasonal challenges, webhook notifications and a full audit log.
+Over **200 built-in achievements** across 35+ categories, a 10-tier rank ladder from Rookie to Immortal, a score economy with combos, prestige, and daily/weekly quests, plus admin power features like custom badges, seasonal challenges, webhook notifications and a full audit log.
 
 Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin, ElegantFin, or StarTrack.
+
+---
+
+## 🚀 What's new in v1.9.4
+
+32 new badges + full 8-language translation coverage + a Revamp admin UI fix. No breaking changes. Existing `badges.json` round-trips cleanly — new fields default to 0 / false / empty so legacy profiles deserialize without any migration.
+
+### 🕒 Time-of-day fillers (10 badges)
+
+The 9am–5pm and 7pm–10pm windows previously had no badge surface. Now they do.
+
+- **Afternoon Watching** (12–17h) — *Afternoon Tea / Lunchtime Lurker / Daylight Devotee / Permanent Vacation / Sun-Drunk* at 1 / 10 / 50 / 200 / 500 sessions.
+- **Prime Time** (19–22h) — *Prime Time / Couch Critic / Sofa Sage / Living Room Legend / Channel Sovereign* at 1 / 10 / 50 / 200 / 500 sessions.
+
+### 🎉 Holidays expansion (10 badges)
+
+One-shot badges for ten more holidays. Variable-date events use the anonymous-Gregorian algorithm (Easter), embedded 2020–2035 lookup tables (Lunar New Year, Diwali), or closed-form formulas (Thanksgiving = 4th Thursday Nov, Mother's = 2nd Sun May, Father's = 3rd Sun Jun).
+
+| Badge | Trigger |
+|---|---|
+| Hopeless Romantic | Watch on Feb 14 |
+| Easter Sunday | Watch on Easter Sunday |
+| Lunar New Year | Watch on Lunar New Year (Chinese calendar) |
+| Festival of Lights | Watch on Diwali |
+| Thanks for Watching | Watch on US Thanksgiving |
+| Independence Day | Watch on Jul 4 |
+| Remember Remember | Watch on Bonfire Night (Nov 5) |
+| Boxing Day | Watch on Dec 26 |
+| Mother's Day | Watch on the 2nd Sunday of May |
+| Father's Day | Watch on the 3rd Sunday of June |
+
+### 🎌 Anime tier (5 badges)
+
+Genre-tag detection (any genre containing `"anime"`, case-insensitive). *Anime Curious / Anime Fan / Otaku / Anime Veteran / All-Otaku* at 5 / 15 / 50 / 200 / 500 anime items.
+
+### 🎬 Studio specialists (6 badges)
+
+Letterboxd-style "I watch a lot of A24" badges, parameterised by `BaseItem.Studios`.
+
+| Badge | Studio | Threshold |
+|---|---|---|
+| Spirited Away | Studio Ghibli | 5 |
+| A24 Acolyte | A24 | 15 |
+| It's Not TV | HBO | 25 |
+| Netflix and Watch | Netflix | 50 |
+| Auntie Beeb | BBC | 25 |
+| House of Mouse | Disney | 50 |
+
+### 🎟️ Pilot vs Completer (6 badges)
+
+New behavior tracking: every series whose S1E1 you watch is added to a per-user "pilots watched" set. If any other episode of that series follows, the series graduates into "continued past pilot". Two derived metrics drive the new badges.
+
+- **Pilot Tester / Window Shopper / Commitment Issues** — sample 5 / 20 / 50 series and bail after the pilot.
+- **Hooked / Sticks the Landing / Always In** — continue past the pilot on 5 / 20 / 50 series.
+
+> **Backfill credits these too** — the watch-history backfill task now passes `Studios`, `SeriesId`, `SeasonNumber`, `EpisodeNumber` through to the achievement service, so historical episodes credit anime / studio / pilot badges. Time-of-day buckets only count NEW sessions (no historical hour-of-day to backfill against).
+
+### 🌍 8-language translations for all 32 new badges
+
+Every new badge has hand-tailored titles + descriptions in **English, Français, Español, Deutsch, Italiano, Português, 中文 (简体), 日本語**. Local cultural references where it fits — the *Spirited Away* badge is *Le Voyage de Chihiro* / *El Viaje de Chihiro* / *Chihiros Reise* / *La Città Incantata* / *A Viagem de Chihiro* / *千与千寻* / *千と千尋*. Holiday descriptions include the date hint (e.g. *"2nd Sunday of May"*) so users without context still know what triggered them.
+
+### 🛠️ Revamp admin UI — operator action strip
+
+Surfaces three live action buttons + status feedback that v1.9.0's Revamp restructure was hiding along with the Classic hero card:
+
+- **Use my account / Refresh / Simulate playback** — moved (live DOM, listeners intact) into a new `#abActionStrip` at the top of the personal section in Revamp mode. First thing operators see when they scroll past the admin groups.
+- **Live status / error banner** — `#abStatus` and `#abError` now render emerald-tinted (with a soft pulse) while a long op is running, red-tinted on failure. Long-running ops like *Scan all users* now visibly indicate progress instead of writing far below the fold.
+
+Classic mode is unchanged.
 
 ---
 
@@ -100,7 +170,7 @@ Every screen the plugin renders now has a Classic/Revamp toggle. Classic stays t
 ## 🧩 Core features
 
 ### 🏅 Badge system
-- **170+ built-in achievements** across Films, Series, Binge, Night Watching, Morning, Weekend, Exploration, Streaks, Episode/Film Marathons, Eras, World, Languages, Genres, Runtime, Total Time, Holidays (Christmas, New Year, Halloween, Eid), Library Completion, Loyalty, People, Rewatch, and Hidden categories
+- **200+ built-in achievements** across Films, Series, Binge, Night Watching, Morning, **Afternoon Watching, Prime Time** *(new 1.9.4)*, Weekend, Exploration, Streaks, Episode/Film Marathons, Eras, World, Languages, Genres, Runtime, Total Time, Holidays (Christmas, New Year, Halloween, Eid, **+10 more in 1.9.4**), Library Completion, Loyalty, People, Rewatch, **Anime, Studio Specialist, Pilot vs Completer** *(new 1.9.4)*, and Hidden categories
 - **6 rarity tiers** — Common, Uncommon, Rare, Epic, Legendary, Mythic
 - **Hidden/secret badges** displayed as `???` until unlocked
 - **Library completion milestones** that auto-scale to any library structure
@@ -221,7 +291,7 @@ A gear icon on the achievements page opens a full settings panel with auto-save:
 ### 🌍 Languages
 - **8 languages** — English, Français, Español, Deutsch, Italiano, Português, 中文 (简体), 日本語
 - **659 UI keys** translated across every tab (achievements profile, stats, heatmap, streak calendar, prestige leaderboard, notification prefs, server stats, compare, leaderboards, recap, quests, admin page)
-- **All 171 built-in badges** translated — titles + descriptions per language
+- **All 203 built-in badges** translated — titles + descriptions per language
 - **Badge categories + rarities** also localised ("Binge" → "Marathon", "Legendary" → "Légendaire", etc.)
 - **Per-user language picker** in preferences; admin can set a server-wide default
 - Translations loaded client-side + server-side (`BadgeLocalizer`) so both UI chrome and badge titles on the leaderboard / showcase localise together
@@ -423,7 +493,7 @@ The full profile view, shown in the Jellyfin sidebar. Rank progress bar, day str
 </p>
 
 ### Badge grid
-171 badges across 30+ categories, each with live progress bars and an Equip button. Unlocked badges show in color with a green status tag; locked badges dim. Rarity-colored borders let you scan the grid visually.
+200+ badges across 35+ categories, each with live progress bars and an Equip button. Unlocked badges show in color with a green status tag; locked badges dim. Rarity-colored borders let you scan the grid visually.
 
 <p align="center">
   <img alt="Badge grid overview" src="assets/screenshots/badges-overview.png" />

@@ -119,6 +119,8 @@ public class WatchHistoryBackfillService
                     RunTimeTicks = movie.RunTimeTicks,
                     Directors = moviesDirectors,
                     Actors = moviesActors,
+                    // v1.9.3 — Studio specialists (Studio Ghibli, A24, etc).
+                    Studios = movie.Studios,
                     Silent = true
                 });
             }
@@ -165,6 +167,11 @@ public class WatchHistoryBackfillService
                     RunTimeTicks = episode.RunTimeTicks,
                     Directors = epDirectors,
                     Actors = epActors,
+                    // v1.9.3 — Studio specialists + pilot/completer tracking.
+                    Studios = episode.Studios,
+                    SeriesId = seriesId != Guid.Empty ? seriesId.ToString("D") : null,
+                    SeasonNumber = episode.ParentIndexNumber,
+                    EpisodeNumber = episode.IndexNumber,
                     Silent = true
                 });
 

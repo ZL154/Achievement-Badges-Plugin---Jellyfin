@@ -44,5 +44,26 @@ public enum AchievementMetric
     DecadeItemsWatched,
     DayOfWeekItemsWatched,
     MaxLibraryItemCount,
-    MaxMinutesInSingleDay
+    MaxMinutesInSingleDay,
+    // v1.9.3 — Time of day fillers for the 9–17 / 19–22 windows.
+    AfternoonSessions,
+    PrimeTimeSessions,
+    // v1.9.3 — Holidays expansion.
+    WatchedOnValentines,
+    WatchedOnEaster,
+    WatchedOnLunarNewYear,
+    WatchedOnDiwali,
+    WatchedOnThanksgiving,
+    WatchedOnIndependenceDayUS,
+    WatchedOnBonfireNight,
+    WatchedOnBoxingDay,
+    WatchedOnMothersDay,
+    WatchedOnFathersDay,
+    // v1.9.3 — Anime tier (genre/tag detection).
+    AnimeItemsWatched,
+    // v1.9.3 — Studio specialists (MetricParameter = studio name).
+    StudioItemsWatched,
+    // v1.9.3 — Pilot vs completer behavior.
+    SeriesSampledOnly,
+    SeriesBingedAfterPilot
 }

@@ -1624,6 +1624,59 @@ public class AchievementBadgeService
                 counters.WatchedOnEid = true;
             }
 
+            // v1.9.3 — Holiday expansion. Each is a one-shot bool like the
+            // four above. Variable-date holidays use small lookup tables /
+            // a closed-form formula — see helpers further down the file.
+            if (timestamp.Month == 2 && timestamp.Day == 14)
+            {
+                counters.WatchedOnValentines = true;
+            }
+
+            if (IsEaster(timestamp))
+            {
+                counters.WatchedOnEaster = true;
+            }
+
+            if (IsLunarNewYear(timestamp))
+            {
+                counters.WatchedOnLunarNewYear = true;
+            }
+
+            if (IsDiwali(timestamp))
+            {
+                counters.WatchedOnDiwali = true;
+            }
+
+            if (IsUsThanksgiving(timestamp))
+            {
+                counters.WatchedOnThanksgiving = true;
+            }
+
+            if (timestamp.Month == 7 && timestamp.Day == 4)
+            {
+                counters.WatchedOnIndependenceDayUS = true;
+            }
+
+            if (timestamp.Month == 11 && timestamp.Day == 5)
+            {
+                counters.WatchedOnBonfireNight = true;
+            }
+
+            if (timestamp.Month == 12 && timestamp.Day == 26)
+            {
+                counters.WatchedOnBoxingDay = true;
+            }
+
+            if (IsMothersDayUS(timestamp))
+            {
+                counters.WatchedOnMothersDay = true;
+            }
+
+            if (IsFathersDay(timestamp))
+            {
+                counters.WatchedOnFathersDay = true;
+            }
+
             var hour = timestamp.Hour;
 
             if (hour >= 23 || hour < 5)
@@ -1636,9 +1689,74 @@ public class AchievementBadgeService
                 counters.EarlyMorningSessions++;
             }
 
+            // v1.9.3 — fillers for the 12–17 and 19–22 windows that
+            // previously had no time-of-day badge surface.
+            if (hour >= 12 && hour < 17)
+            {
+                counters.AfternoonSessions++;
+            }
+
+            if (hour >= 19 && hour < 22)
+            {
+                counters.PrimeTimeSessions++;
+            }
+
             if (timestamp.DayOfWeek == DayOfWeek.Saturday || timestamp.DayOfWeek == DayOfWeek.Sunday)
             {
                 counters.WeekendSessions++;
+            }
+
+            // v1.9.3 — Anime detection: any genre containing "anime"
+            // (case-insensitive). Mirrors the StarTrack plugin's classifier.
+            if (context.Genres is { Count: > 0 })
+            {
+                foreach (var g in context.Genres)
+                {
+                    if (!string.IsNullOrWhiteSpace(g) && g.IndexOf("anime", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        counters.AnimeItemsWatched++;
+                        break;
+                    }
+                }
+            }
+
+            // v1.9.3 — Studio specialists. Bumps a per-studio counter so
+            // GetMetricValue(StudioItemsWatched, parameter) can answer.
+            if (context.Studios is { Count: > 0 })
+            {
+                foreach (var s in context.Studios)
+                {
+                    if (string.IsNullOrWhiteSpace(s)) continue;
+                    var key = s.Trim();
+                    counters.StudioItemCounts.TryGetValue(key, out var sc);
+                    counters.StudioItemCounts[key] = sc + 1;
+                }
+
+                if (counters.StudioItemCounts.Count > 200)
+                {
+                    counters.StudioItemCounts = counters.StudioItemCounts
+                        .OrderByDescending(kvp => kvp.Value)
+                        .Take(100)
+                        .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                }
+            }
+
+            // v1.9.3 — Pilot vs completer. Episodes only. If S1E1, mark the
+            // series as "pilot watched". If any other episode of a series
+            // whose pilot has already been watched plays, graduate the series
+            // into "ContinuedPastPilot".
+            if (context.IsEpisode && !string.IsNullOrWhiteSpace(context.SeriesId))
+            {
+                var sid = context.SeriesId!;
+                var isPilot = context.SeasonNumber == 1 && context.EpisodeNumber == 1;
+                if (isPilot)
+                {
+                    counters.SeriesPilotsWatched.Add(sid);
+                }
+                else if (counters.SeriesPilotsWatched.Contains(sid))
+                {
+                    counters.SeriesContinuedPastPilot.Add(sid);
+                }
             }
 
             // Combo multiplier: if watched within 15 minutes of last playback, extend the combo
@@ -2246,6 +2364,14 @@ public class AchievementBadgeService
             return counters.GenreItemCounts.TryGetValue(parameter, out var g) ? g : 0;
         }
 
+        // v1.9.3 — Studio specialists. Parameter is the studio name as it
+        // appears in BaseItem.Studios (case-sensitive match against the
+        // counter dictionary keys, which were Trim()'d on insert).
+        if (metric == AchievementMetric.StudioItemsWatched && !string.IsNullOrWhiteSpace(parameter))
+        {
+            return counters.StudioItemCounts.TryGetValue(parameter, out var s) ? s : 0;
+        }
+
         if (metric == AchievementMetric.PersonItemsWatched && !string.IsNullOrWhiteSpace(parameter))
         {
             if (counters.DirectorItemCounts.TryGetValue(parameter, out var d)) return d;
@@ -2300,6 +2426,23 @@ public class AchievementBadgeService
             AchievementMetric.BestLoginStreak => counters.BestLoginStreak,
             AchievementMetric.TopDirectorCount => counters.TopDirectorCount,
             AchievementMetric.TopActorCount => counters.TopActorCount,
+            // v1.9.3 — new bucket counters and one-shot holiday flags.
+            AchievementMetric.AfternoonSessions => counters.AfternoonSessions,
+            AchievementMetric.PrimeTimeSessions => counters.PrimeTimeSessions,
+            AchievementMetric.WatchedOnValentines => counters.WatchedOnValentines ? 1 : 0,
+            AchievementMetric.WatchedOnEaster => counters.WatchedOnEaster ? 1 : 0,
+            AchievementMetric.WatchedOnLunarNewYear => counters.WatchedOnLunarNewYear ? 1 : 0,
+            AchievementMetric.WatchedOnDiwali => counters.WatchedOnDiwali ? 1 : 0,
+            AchievementMetric.WatchedOnThanksgiving => counters.WatchedOnThanksgiving ? 1 : 0,
+            AchievementMetric.WatchedOnIndependenceDayUS => counters.WatchedOnIndependenceDayUS ? 1 : 0,
+            AchievementMetric.WatchedOnBonfireNight => counters.WatchedOnBonfireNight ? 1 : 0,
+            AchievementMetric.WatchedOnBoxingDay => counters.WatchedOnBoxingDay ? 1 : 0,
+            AchievementMetric.WatchedOnMothersDay => counters.WatchedOnMothersDay ? 1 : 0,
+            AchievementMetric.WatchedOnFathersDay => counters.WatchedOnFathersDay ? 1 : 0,
+            // v1.9.3 — Anime + pilot/completer.
+            AchievementMetric.AnimeItemsWatched => counters.AnimeItemsWatched,
+            AchievementMetric.SeriesSampledOnly => counters.SeriesSampledOnlyCount,
+            AchievementMetric.SeriesBingedAfterPilot => counters.SeriesBingedAfterPilotCount,
             _ => 0
         };
     }
@@ -2339,6 +2482,96 @@ public class AchievementBadgeService
             2035 => _eidAnchorsByYear2035,
             _ => Array.Empty<(int, int)>()
         };
+    }
+
+    // ── v1.9.3 holiday helpers ──────────────────────────────────────────
+    // Anonymous Gregorian algorithm for Western Easter Sunday.
+    private static DateTime ComputeEaster(int year)
+    {
+        int a = year % 19;
+        int b = year / 100;
+        int c = year % 100;
+        int d = b / 4;
+        int e = b % 4;
+        int f = (b + 8) / 25;
+        int g = (b - f + 1) / 3;
+        int h = (19 * a + b - d - g + 15) % 30;
+        int i = c / 4;
+        int k = c % 4;
+        int l = (32 + 2 * e + 2 * i - h - k) % 7;
+        int m = (a + 11 * h + 22 * l) / 451;
+        int month = (h + l - 7 * m + 114) / 31;
+        int day = ((h + l - 7 * m + 114) % 31) + 1;
+        return new DateTime(year, month, day);
+    }
+
+    private static bool IsEaster(DateTimeOffset timestamp)
+    {
+        var d = ComputeEaster(timestamp.Year);
+        return timestamp.Month == d.Month && timestamp.Day == d.Day;
+    }
+
+    // Lunar New Year (Chinese) — table-based since the date depends on the
+    // lunar calendar. Covers 2020–2035; outside that returns false (badge
+    // simply won't unlock). Extend annually.
+    private static readonly Dictionary<int, (int Month, int Day)> _lunarNewYearByYear = new()
+    {
+        { 2020, (1, 25) }, { 2021, (2, 12) }, { 2022, (2, 1) },  { 2023, (1, 22) },
+        { 2024, (2, 10) }, { 2025, (1, 29) }, { 2026, (2, 17) }, { 2027, (2, 6) },
+        { 2028, (1, 26) }, { 2029, (2, 13) }, { 2030, (2, 3) },  { 2031, (1, 23) },
+        { 2032, (2, 11) }, { 2033, (1, 31) }, { 2034, (2, 19) }, { 2035, (2, 8) }
+    };
+
+    private static bool IsLunarNewYear(DateTimeOffset timestamp)
+    {
+        return _lunarNewYearByYear.TryGetValue(timestamp.Year, out var d)
+            && timestamp.Month == d.Month && timestamp.Day == d.Day;
+    }
+
+    // Diwali (varies — usually Oct/Nov). Table covers 2020–2035.
+    private static readonly Dictionary<int, (int Month, int Day)> _diwaliByYear = new()
+    {
+        { 2020, (11, 14) }, { 2021, (11, 4) },  { 2022, (10, 24) }, { 2023, (11, 12) },
+        { 2024, (11, 1) },  { 2025, (10, 20) }, { 2026, (11, 8) },  { 2027, (10, 29) },
+        { 2028, (11, 17) }, { 2029, (11, 5) },  { 2030, (10, 26) }, { 2031, (11, 14) },
+        { 2032, (11, 2) },  { 2033, (10, 22) }, { 2034, (11, 10) }, { 2035, (10, 30) }
+    };
+
+    private static bool IsDiwali(DateTimeOffset timestamp)
+    {
+        return _diwaliByYear.TryGetValue(timestamp.Year, out var d)
+            && timestamp.Month == d.Month && timestamp.Day == d.Day;
+    }
+
+    // US Thanksgiving — 4th Thursday of November.
+    private static bool IsUsThanksgiving(DateTimeOffset timestamp)
+    {
+        if (timestamp.Month != 11) return false;
+        var firstOfMonth = new DateTime(timestamp.Year, 11, 1);
+        // Days until first Thursday
+        int offset = ((int)DayOfWeek.Thursday - (int)firstOfMonth.DayOfWeek + 7) % 7;
+        var fourthThursday = firstOfMonth.AddDays(offset + 21);
+        return timestamp.Day == fourthThursday.Day;
+    }
+
+    // Mother's Day (US convention) — 2nd Sunday of May.
+    private static bool IsMothersDayUS(DateTimeOffset timestamp)
+    {
+        if (timestamp.Month != 5) return false;
+        var firstOfMay = new DateTime(timestamp.Year, 5, 1);
+        int offset = ((int)DayOfWeek.Sunday - (int)firstOfMay.DayOfWeek + 7) % 7;
+        var secondSunday = firstOfMay.AddDays(offset + 7);
+        return timestamp.Day == secondSunday.Day;
+    }
+
+    // Father's Day — 3rd Sunday of June (US/UK/most countries).
+    private static bool IsFathersDay(DateTimeOffset timestamp)
+    {
+        if (timestamp.Month != 6) return false;
+        var firstOfJune = new DateTime(timestamp.Year, 6, 1);
+        int offset = ((int)DayOfWeek.Sunday - (int)firstOfJune.DayOfWeek + 7) % 7;
+        var thirdSunday = firstOfJune.AddDays(offset + 14);
+        return timestamp.Day == thirdSunday.Day;
     }
 
     private static bool IsEidWindow(DateTimeOffset timestamp)

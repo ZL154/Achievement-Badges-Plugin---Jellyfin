@@ -4441,3 +4441,57 @@ body[data-ab-style="revamp"] #abFriendsBtn:focus-visible {
         0 0 0 4px var(--rv-accent-fr),
         0 0 0 5px oklch(72% 0.16 152 / 0.35) !important;
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   v1.9.4 — Operator action strip in Revamp.
+   Holds Use my account / Refresh / Simulate playback (moved out of the
+   hidden classic hero) and the live #abStatus / #abError surfaces so
+   long-running ops like "Scan all users" actually show feedback.
+   ───────────────────────────────────────────────────────────────────── */
+#AchievementBadgesPage[data-ab-style="revamp"] #abActionStrip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em 0.75em;
+    align-items: center;
+    margin: 0.75em 0 1em;
+    padding: 0.85em 1em;
+    background: oklch(14% 0.01 260 / 0.55);
+    border: 1px solid oklch(28% 0.012 260 / 0.65);
+    border-radius: 14px;
+    backdrop-filter: blur(6px);
+}
+#AchievementBadgesPage[data-ab-style="revamp"] #abActionStrip .abHeroActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin: 0;
+}
+#AchievementBadgesPage[data-ab-style="revamp"] #abActionStrip #abStatus,
+#AchievementBadgesPage[data-ab-style="revamp"] #abActionStrip #abError {
+    flex: 1 1 100%;
+    margin: 0;
+    padding: 0;
+    font-size: 0.92em;
+    font-variant-numeric: tabular-nums;
+}
+/* Status: emerald-tinted while a long op is running (text non-empty). */
+#AchievementBadgesPage[data-ab-style="revamp"] #abActionStrip #abStatus:not(:empty) {
+    padding: 0.5em 0.75em;
+    background: oklch(28% 0.06 152 / 0.18);
+    border: 1px solid oklch(72% 0.16 152 / 0.45);
+    border-radius: 8px;
+    color: oklch(92% 0.05 152);
+    animation: ab-status-pulse 1.4s ease-in-out infinite alternate;
+}
+@keyframes ab-status-pulse {
+    from { box-shadow: 0 0 0 0 oklch(72% 0.16 152 / 0.0); }
+    to   { box-shadow: 0 0 0 4px oklch(72% 0.16 152 / 0.18); }
+}
+/* Error: red-tinted, no animation. */
+#AchievementBadgesPage[data-ab-style="revamp"] #abActionStrip #abError:not(:empty) {
+    padding: 0.5em 0.75em;
+    background: oklch(28% 0.08 25 / 0.22);
+    border: 1px solid oklch(70% 0.18 25 / 0.5);
+    border-radius: 8px;
+    color: oklch(88% 0.08 25);
+}
