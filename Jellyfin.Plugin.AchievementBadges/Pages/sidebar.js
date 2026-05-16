@@ -477,6 +477,9 @@
     var _chatMsgsPollTimer = null;  // messages-tab poll while that tab is active
     var _chatLastRenderHash = '';   // to suppress flicker if nothing changed
     var _chatPendingAttachment = null; // { Id, FileName, MimeType, ... } before send
+    var _chatPendingPreviewUrl = null;
+    var _chatAttachmentUrls = {};    // attachmentId -> authenticated blob URL
+    var _chatAttachmentOrder = [];
     var _activeFdTab = 'friends';   // track which fd-tab is visible
     // Before mounting, check the admin master switch + user's corner pref.
     // If the admin has turned the friends feature off entirely, we simply
@@ -617,7 +620,7 @@
     // Stamp our build id on every DOM node we create, so a newer version
     // loaded alongside an older cached copy can detect and clean up the
     // stale artifacts before mounting fresh.
-    var AB_SIDEBAR_VER = '1.7.16';
+    var AB_SIDEBAR_VER = '1.7.17';
     function _destroyStaleFriendsDom(){
         ['abFriendsBtn', 'abFriendsDrawer', 'abFriendsBackdrop'].forEach(function(id){
             var n = document.getElementById(id);
@@ -859,6 +862,8 @@
                 // Attachments in bubbles
                 '.ab-chat-attachment{margin:0 -0.25em;margin-bottom:0.3em;border-radius:12px;overflow:hidden;max-width:260px;cursor:pointer;}' +
                 '.ab-chat-attachment img{display:block;width:100%;height:auto;max-height:300px;object-fit:cover;}' +
+                '.ab-chat-attachment img:not([src]){min-width:120px;min-height:76px;background:rgba(255,255,255,0.06);}' +
+                '.ab-chat-attachment img.ab-chat-attachment-error{min-width:160px;min-height:88px;background:rgba(239,68,68,0.14);}' +
                 '.ab-chat-msg.img-only{background:transparent!important;box-shadow:none!important;padding:0!important;}' +
                 '.ab-chat-msg.img-only .ab-chat-time{padding-top:0.25em;padding-left:0.25em;}' +
                 // Attachment button + preview row above input
@@ -1452,7 +1457,7 @@
                 : '';
             var attachmentHtml = '';
             if (m.attachmentId) {
-                attachmentHtml = '<div class="ab-chat-attachment"><img src="' + escapeHtml(buildUrl('Plugins/AchievementBadges/attachments/' + m.attachmentId)) + '" loading="lazy" alt="attachment" /></div>';
+                attachmentHtml = '<div class="ab-chat-attachment"><img data-ab-attachment-id="' + escapeHtml(m.attachmentId) + '" loading="lazy" alt="attachment" /></div>';
             }
             var textHtml = m.text ? escapeHtml(m.text).replace(/\n/g, '<br>') : '';
             html += '<div class="ab-chat-msg ' + (fromMe ? 'me' : 'them') + (attachmentHtml && !textHtml ? ' img-only' : '') + '" data-msg-id="'+escapeHtml(m.id)+'">' +
@@ -1503,14 +1508,19 @@
                 }
             });
         }
+        resolveChatAttachmentImages(scroll);
         scroll.querySelectorAll('.ab-chat-attachment img').forEach(function(img){
-            img.addEventListener('click', function(){ openLightbox(img.getAttribute('src')); });
+            img.addEventListener('click', function(){
+                var src = img.getAttribute('src');
+                if (src) openLightbox(src);
+            });
         });
         if (wasNearBottom) scroll.scrollTop = scroll.scrollHeight;
     }
 
     // Fullscreen image preview
     function openLightbox(src){
+        if (!src) return;
         var lb = document.createElement('div');
         lb.id = 'abImgLightbox';
         lb.innerHTML = '<img src="' + escapeHtml(src) + '" />';
@@ -1797,13 +1807,72 @@
 
     function clearAttachmentPreview(){
         _chatPendingAttachment = null;
+        if (_chatPendingPreviewUrl) {
+            try { URL.revokeObjectURL(_chatPendingPreviewUrl); } catch (e) {}
+            _chatPendingPreviewUrl = null;
+        }
         var row = document.getElementById('abChatAttachPreview');
         if (row) row.style.display = 'none';
+        var img = document.getElementById('abChatAttachPreviewImg');
+        if (img) img.removeAttribute('src');
         var send = document.getElementById('abChatSend');
         if (send) {
             var input = document.getElementById('abChatInput');
             send.disabled = !(input && input.value.trim());
         }
+    }
+
+    function attachmentFetchHeaders(){
+        var h = authHeaders();
+        Object.keys(h || {}).forEach(function(k){
+            if (k.toLowerCase() === 'content-type') delete h[k];
+        });
+        return h;
+    }
+
+    function rememberAttachmentUrl(id, url){
+        if (!_chatAttachmentUrls[id]) _chatAttachmentOrder.push(id);
+        _chatAttachmentUrls[id] = url;
+        while (_chatAttachmentOrder.length > 80) {
+            var old = _chatAttachmentOrder.shift();
+            if (old && _chatAttachmentUrls[old]) {
+                try { URL.revokeObjectURL(_chatAttachmentUrls[old]); } catch (e) {}
+                delete _chatAttachmentUrls[old];
+            }
+        }
+        return url;
+    }
+
+    function fetchAttachmentUrl(id){
+        if (!id) return Promise.reject(new Error('Missing attachment id'));
+        if (_chatAttachmentUrls[id]) return Promise.resolve(_chatAttachmentUrls[id]);
+        return fetch(buildUrl('Plugins/AchievementBadges/attachments/' + encodeURIComponent(id)), {
+            headers: attachmentFetchHeaders(),
+            credentials: 'include'
+        })
+        .then(function(r){
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.blob();
+        })
+        .then(function(blob){
+            return rememberAttachmentUrl(id, URL.createObjectURL(blob));
+        });
+    }
+
+    function resolveChatAttachmentImages(root){
+        if (!root) return;
+        root.querySelectorAll('img[data-ab-attachment-id]').forEach(function(img){
+            var id = img.getAttribute('data-ab-attachment-id');
+            if (!id || img.dataset.abLoaded === id) return;
+            img.dataset.abLoaded = id;
+            fetchAttachmentUrl(id).then(function(url){
+                img.src = url;
+                img.classList.remove('ab-chat-attachment-error');
+            }).catch(function(){
+                img.classList.add('ab-chat-attachment-error');
+                img.alt = tr('friends.attachment_load_failed', 'Attachment failed to load');
+            });
+        });
     }
 
     function beginAttachmentUpload(file){
@@ -1824,7 +1893,11 @@
         var preview = document.getElementById('abChatAttachPreview');
         var img = document.getElementById('abChatAttachPreviewImg');
         if (img && preview) {
-            img.src = URL.createObjectURL(file);
+            if (_chatPendingPreviewUrl) {
+                try { URL.revokeObjectURL(_chatPendingPreviewUrl); } catch (e) {}
+            }
+            _chatPendingPreviewUrl = URL.createObjectURL(file);
+            img.src = _chatPendingPreviewUrl;
             preview.style.display = 'flex';
         }
         // Strip Content-Type — let the browser set it with the multipart

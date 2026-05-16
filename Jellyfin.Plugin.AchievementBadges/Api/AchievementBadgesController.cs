@@ -304,6 +304,7 @@ public class AchievementBadgesController : ControllerBase
     }
 
     [HttpPost("users/{userId}/record-completion")]
+    [Authorize(Policy = "RequiresElevation")]
     [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(typeof(List<AchievementBadge>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
@@ -685,10 +686,15 @@ public class AchievementBadgesController : ControllerBase
     [HttpGet("attachments/{attachmentId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult GetAttachment([FromRoute] string attachmentId)
+    public async Task<ActionResult> GetAttachment([FromRoute] string attachmentId)
     {
         if (!FriendsFeatureOn) return NotFound();
-        var res = _messagingService.LoadAttachment(attachmentId);
+        var callerId = User.FindFirst("Jellyfin-UserId")?.Value
+                       ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(callerId)) return Unauthorized();
+
+        var adminAuth = await _authService.AuthorizeAsync(User, null, "RequiresElevation").ConfigureAwait(false);
+        var res = _messagingService.LoadAttachmentForUser(callerId, attachmentId, adminAuth.Succeeded);
         if (res == null) return NotFound();
         var (att, bytes) = res.Value;
         Response.Headers["Cache-Control"] = "private, max-age=86400";
@@ -1052,6 +1058,7 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetSmartGoals([FromRoute] string userId, [FromQuery] int limit = 5)
     {
+        limit = Math.Clamp(limit, 1, 50);
         return Ok(_badgeService.GetSmartGoals(userId, limit));
     }
 
@@ -1137,7 +1144,8 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetYearlyWrapped([FromRoute] string userId, [FromQuery] int? year = null)
     {
-        return Ok(_badgeService.GetYearlyWrapped(userId, year ?? DateTime.Today.Year));
+        var requestedYear = Math.Clamp(year ?? DateTime.Today.Year, 1900, DateTime.Today.Year + 1);
+        return Ok(_badgeService.GetYearlyWrapped(userId, requestedYear));
     }
 
     [HttpGet("users/{userId}/records")]
@@ -1166,6 +1174,7 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetRecentUnlocksV2([FromRoute] string userId, [FromQuery] int limit = 20)
     {
+        limit = Math.Clamp(limit, 1, 100);
         return Ok(_badgeService.GetRecentUnlocks(userId, limit));
     }
 
@@ -1209,6 +1218,7 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetWatchCalendar([FromRoute] string userId, [FromQuery] int days = 90)
     {
+        days = Math.Clamp(days, 1, 3650);
         return Ok(new { Days = days, Counts = _badgeService.GetWatchCalendar(userId, days) });
     }
 
@@ -1380,6 +1390,7 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetCategoryLeaderboard([FromRoute] string category, [FromQuery] int limit = 10)
     {
+        limit = Math.Clamp(limit, 1, 200);
         return Ok(_badgeService.GetLeaderboardByCategory(category, limit));
     }
 
@@ -1704,6 +1715,7 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult ChaseBadge([FromRoute] string userId, [FromRoute] string badgeId, [FromQuery] int limit = 10)
     {
+        limit = Math.Clamp(limit, 1, 50);
         return Ok(_recommendationService.ChaseBadge(userId, badgeId, limit));
     }
 
@@ -1711,6 +1723,7 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetRecommendations([FromRoute] string userId, [FromQuery] int limit = 10)
     {
+        limit = Math.Clamp(limit, 1, 50);
         return Ok(_recommendationService.GetRecommendations(userId, limit));
     }
 
@@ -1728,7 +1741,9 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult ImportProfile([FromRoute] string userId, [FromBody] UserAchievementProfile profile)
     {
-        if (profile != null && profile.Badges != null)
+        if (profile is null) return BadRequest(new { Message = "Profile payload required." });
+
+        if (profile.Badges != null)
         {
             profile.Badges = profile.Badges
                 .Where(b => b != null && !string.IsNullOrWhiteSpace(b.Id))

@@ -27,6 +27,11 @@ public class SecurityTests
     [InlineData("http://192.168.1.1/hook")]         // RFC1918 class C
     [InlineData("http://169.254.169.254/latest/")]  // AWS instance metadata
     [InlineData("http://0.0.0.0/hook")]             // unspecified
+    [InlineData("http://100.64.0.1/hook")]          // CGNAT
+    [InlineData("http://192.0.2.1/hook")]           // TEST-NET-1
+    [InlineData("http://198.18.0.1/hook")]          // benchmarking network
+    [InlineData("http://224.0.0.1/hook")]           // multicast
+    [InlineData("http://255.255.255.255/hook")]     // broadcast
     public void WebhookUrlValidator_RejectsPrivateAndLoopbackIPv4(string url)
     {
         var ok = WebhookUrlValidator.TryValidate(url, out var error);
@@ -39,6 +44,10 @@ public class SecurityTests
     [InlineData("http://[fe80::1]/hook")]            // IPv6 link-local
     [InlineData("http://[fc00::1]/hook")]            // IPv6 unique local
     [InlineData("http://[fd00::1]/hook")]            // IPv6 unique local
+    [InlineData("http://[::]/hook")]                 // IPv6 unspecified
+    [InlineData("http://[ff02::1]/hook")]            // IPv6 multicast
+    [InlineData("http://[2001:db8::1]/hook")]        // IPv6 documentation range
+    [InlineData("http://[::ffff:127.0.0.1]/hook")]   // IPv4-mapped loopback
     public void WebhookUrlValidator_RejectsPrivateAndLoopbackIPv6(string url)
     {
         var ok = WebhookUrlValidator.TryValidate(url, out var error);
