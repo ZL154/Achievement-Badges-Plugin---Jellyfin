@@ -3,6 +3,18 @@
     <div data-role="content">
         <div class="content-primary">
             <h2>Achievement Badges Settings</h2>
+            <style>
+                #AchievementBadgesUserSelect {
+                    max-width: 360px;
+                    background: #05070a;
+                    color: #f8fafc;
+                    color-scheme: dark;
+                }
+                #AchievementBadgesUserSelect option {
+                    background: #05070a;
+                    color: #f8fafc;
+                }
+            </style>
 
                 <details open>
                     <summary>General</summary>
@@ -53,6 +65,36 @@
                                 <input type="checkbox" id="EnableItemDetailRibbon" is="emby-checkbox" />
                                 <span>Enable item detail ribbon</span>
                             </label>
+                        </div>
+                        <div class="inputContainer">
+                            <button is="emby-button" type="button" class="raised emby-button"
+                                    onclick="AchievementBadgesConfig.testDescriptionToast()">
+                                <span>Test description toast</span>
+                            </button>
+                            <div class="fieldDescription">Preview the unlock toast title stage rolling into the badge description stage.</div>
+                        </div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Advanced testing</summary>
+                    <div class="detailSection">
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="AchievementBadgesUserSelect">Server user</label>
+                            <select id="AchievementBadgesUserSelect" style="width:100%;max-width:360px;padding:.6em;background:#05070a;color:#f8fafc;border:1px solid rgba(255,255,255,.25);border-radius:4px;color-scheme:dark;">
+                                <option value="">Loading users...</option>
+                            </select>
+                            <div class="fieldDescription">Pick a server user, then open their achievement profile for testing.</div>
+                        </div>
+                        <div class="inputContainer" style="display:flex;gap:.75em;flex-wrap:wrap;">
+                            <button is="emby-button" type="button" class="raised emby-button"
+                                    onclick="AchievementBadgesConfig.loadUsers()">
+                                <span>Refresh users</span>
+                            </button>
+                            <button is="emby-button" type="button" class="raised emby-button"
+                                    onclick="AchievementBadgesConfig.openSelectedUser()">
+                                <span>Load selected user</span>
+                            </button>
                         </div>
                     </div>
                 </details>
@@ -170,8 +212,96 @@
             var AchievementBadgesConfig = {
                 pluginId: 'd9f4b7d2-6c4d-4d7e-9d2d-1c6b4f8e2a11',
 
+                getAuthHeaders: function () {
+                    var headers = {};
+                    if (window.ApiClient) {
+                        if (typeof ApiClient.getDefaultHeaders === 'function') {
+                            var defaults = ApiClient.getDefaultHeaders();
+                            if (defaults) {
+                                for (var key in defaults) {
+                                    if (defaults.hasOwnProperty(key)) headers[key] = defaults[key];
+                                }
+                            }
+                        }
+                        var token = ApiClient._serverInfo && ApiClient._serverInfo.AccessToken;
+                        if (token) headers['X-Emby-Token'] = token;
+                    }
+                    return headers;
+                },
+
+                getApiUrl: function (path) {
+                    var clean = String(path || '').replace(/^\/+/, '');
+                    if (window.ApiClient && typeof ApiClient.getUrl === 'function') {
+                        return ApiClient.getUrl(clean);
+                    }
+                    return '/' + clean;
+                },
+
+                getWebRoot: function () {
+                    var path = window.location.pathname || '';
+                    var idx = path.lastIndexOf('/web/');
+                    if (idx >= 0) return path.substring(0, idx + 1) + 'web/';
+                    return '/web/';
+                },
+
+                userName: function (user) {
+                    return user.Name || user.Username || user.UserName || user.ServerName || user.Id || 'Unknown';
+                },
+
+                loadUsers: function () {
+                    var select = document.getElementById('AchievementBadgesUserSelect');
+                    if (!select) return Promise.resolve([]);
+                    select.disabled = true;
+                    select.innerHTML = '<option value="">Loading users...</option>';
+
+                    return fetch(this.getApiUrl('Users'), {
+                        headers: this.getAuthHeaders(),
+                        credentials: 'include'
+                    }).then(function (response) {
+                        if (!response.ok) throw new Error('Request failed: ' + response.status);
+                        return response.json();
+                    }).then(function (users) {
+                        users = Array.isArray(users) ? users.slice() : [];
+                        users.sort(function (a, b) {
+                            return AchievementBadgesConfig.userName(a).localeCompare(AchievementBadgesConfig.userName(b), undefined, { sensitivity: 'base' });
+                        });
+
+                        select.innerHTML = '';
+                        var placeholder = document.createElement('option');
+                        placeholder.value = '';
+                        placeholder.textContent = users.length ? 'Pick a user...' : 'No users found';
+                        select.appendChild(placeholder);
+
+                        users.forEach(function (user) {
+                            if (!user || !user.Id) return;
+                            var option = document.createElement('option');
+                            option.value = user.Id;
+                            option.textContent = AchievementBadgesConfig.userName(user);
+                            option.title = user.Id;
+                            select.appendChild(option);
+                        });
+                        select.disabled = users.length === 0;
+                        return users;
+                    }).catch(function () {
+                        select.innerHTML = '<option value="">Could not load users</option>';
+                        select.disabled = true;
+                        return [];
+                    });
+                },
+
+                openSelectedUser: function () {
+                    var select = document.getElementById('AchievementBadgesUserSelect');
+                    var userId = select && select.value ? select.value : '';
+                    if (!userId) {
+                        alert('Pick a user first.');
+                        return;
+                    }
+                    window.location.href = this.getWebRoot() + 'index.html#!/configurationpage?name=achievementbadges&userId=' + encodeURIComponent(userId);
+                },
+
                 load: function () {
                     Dashboard.showLoadingMsg();
+                    this.loadUsers();
                     ApiClient.getPluginConfiguration(this.pluginId).then(function (config) {
                         document.getElementById('Enabled').checked = config.Enabled;
                         document.getElementById('ShowOnUserHome').checked = config.ShowOnUserHome;
@@ -231,6 +361,15 @@
                             Dashboard.processPluginConfigurationUpdateResult();
                         });
                     });
+                },
+
+                testDescriptionToast: function () {
+                    if (window.abAchievementTestToast) {
+                        window.abAchievementTestToast('legendary');
+                        return;
+                    }
+
+                    alert('Toast system is not loaded yet. Refresh the page and try again.');
                 }
             };
 

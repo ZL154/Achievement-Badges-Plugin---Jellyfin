@@ -164,7 +164,14 @@ public class UserNotificationPreferences
 
     /// <summary>Suppress achievement unlock TOASTS (the popup) while actively watching.</summary>
     [JsonPropertyName("MuteToastsDuringPlayback")]
-    public bool MuteToastsDuringPlayback { get; set; } = true;
+    public bool MuteToastsDuringPlayback { get; set; } = false;
+
+    /// <summary>
+    /// One-time migration marker for the old accidental default where visual
+    /// unlock toasts were muted during playback for every profile.
+    /// </summary>
+    [JsonPropertyName("ToastPlaybackMuteDefaultMigrated")]
+    public bool? ToastPlaybackMuteDefaultMigrated { get; set; }
 
     /// <summary>Suppress achievement unlock SOUND while actively watching.</summary>
     [JsonPropertyName("MuteToastSoundDuringPlayback")]

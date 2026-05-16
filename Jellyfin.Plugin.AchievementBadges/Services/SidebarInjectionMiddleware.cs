@@ -21,11 +21,14 @@ public class SidebarInjectionMiddleware
     // the showcase UI unconditionally, which ignored both flags — the disk
     // patch (WebInjectionService) was correctly gated but middleware-only
     // installs saw header dots / sidebar pills even when disabled.
-    private const string InjectionScript =
+    private static readonly string VerTag =
+        "?v=" + (typeof(SidebarInjectionMiddleware).Assembly.GetName().Version?.ToString() ?? "0");
+
+    private static readonly string InjectionScript =
         "<!-- achievementbadges-bootstrap -->" +
-        "<script src=\"/Plugins/AchievementBadges/client-script/sidebar\"></script>" +
-        "<script src=\"/Plugins/AchievementBadges/client-script/standalone\" defer></script>" +
-        "<script src=\"/Plugins/AchievementBadges/client-script/enhance\" defer></script>" +
+        "<script src=\"/Plugins/AchievementBadges/client-script/sidebar" + VerTag + "\"></script>" +
+        "<script src=\"/Plugins/AchievementBadges/client-script/standalone" + VerTag + "\" defer></script>" +
+        "<script src=\"/Plugins/AchievementBadges/client-script/enhance" + VerTag + "\" defer></script>" +
         "<!-- /achievementbadges-bootstrap -->";
 
     public SidebarInjectionMiddleware(RequestDelegate next, ILogger<SidebarInjectionMiddleware> logger)

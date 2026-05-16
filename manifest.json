@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.9.6.0",
+        "changelog": "v1.9.6 - Small follow-up release. Unlock toasts now show badge descriptions instead of rolling into a blank second stage, achievement popups show during playback by default again, and admin testing is easier with a server-user picker on the achievement admin/config pages. Also refreshes fallback script cache-busting for read-only Jellyfin web roots. Existing profiles are migrated so the old accidental mute-toasts-while-watching default is cleared; users can re-enable it in settings if preferred.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.9.6/Jellyfin.Plugin.AchievementBadges_1.9.6.0.zip",
+        "checksum": "dc5fe3b52106ce4d8c2d59815ac38069",
+        "timestamp": "2026-05-17T00:00:00Z"
+      },
+      {
         "version": "1.9.5.0",
         "changelog": "v1.9.5 - Small maintenance release. Chat image attachments now render and open correctly in the Friends drawer, and this release includes some security fixes and defensive hardening. No data migration required.",
         "targetAbi": "10.11.0.0",

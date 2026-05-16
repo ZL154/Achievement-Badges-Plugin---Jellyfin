@@ -179,7 +179,8 @@
         // Per-user opt-out: while watching, suppress the toast entirely.
         // The sound is checked separately further down (some users might
         // want the visual off but still hear the chime, or vice versa).
-        if (isActivelyWatching() && userPrefs && userPrefs.MuteToastsDuringPlayback !== false) {
+        var muteVisualDuringPlayback = userPrefs && (userPrefs.MuteToastsDuringPlayback === true || userPrefs.muteToastsDuringPlayback === true);
+        if (isActivelyWatching() && muteVisualDuringPlayback) {
             return;
         }
         if (visibleToastCount >= MAX_VISIBLE_TOASTS) {
@@ -194,6 +195,8 @@
         var isRare = rarity !== 'common' && rarity !== 'uncommon';
         var scorePts = rarityScorePts[rarity] || 10;
         var label = isRare ? tr('toast.rare_achievement_unlocked', 'Rare achievement unlocked') : tr('toast.achievement_unlocked', 'Achievement unlocked');
+        var title = badge.Title || badge.title || '';
+        var desc = badge.Description || badge.description || tr('toast.description_fallback', 'Keep watching to unlock more achievements.');
         var styleVars =
             '--ab-color:' + shades.base + ';' +
             '--ab-color-lighter:' + shades.lighter + ';' +
@@ -221,14 +224,20 @@
                 '<div class="ab-xb-banner">' +
                     '<div class="ab-xb-shimmer"></div>' +
                     '<div class="ab-xb-achieve-disp">' +
-                        '<span class="ab-xb-unlocked">' + label + '</span>' +
-                        '<div class="ab-xb-score-disp">' +
-                            '<div class="ab-xb-gamerscore">' +
-                                '<img width="20" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgdmlld0JveD0iMCAwIDQ5MyA0OTMiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8ZyBmaWxsPSIjRkZGRkZGIj4KICAgICAgICAgICAgPHBhdGggZD0iTTI0Nyw0NjggQzM2OS4wNTQ5Myw0NjggNDY4LDM2OS4wNTQ5MyA0NjgsMjQ3IEM0NjgsMTI0Ljk0NTA3IDM2OS4wNTQ5MywyNiAyNDcsMjYgQzEyNC45NDUwNywyNiAyNiwxMjQuOTQ1MDcgMjYsMjQ3IEMyNiwzNjkuMDU0OTMgMTI0Ljk0NTA3LDQ2OCAyNDcsNDY4IFogTTIzNi40OTcxNTksMjMxLjY1MzY2MSBMMzMzLjg3MjUyNiwyMzEuNjUzNjYxIEwzMzMuODcyNTI2LDM1OC45MTMxOTIgQzMxOC4wOTA5MjIsMzY0LjA2MTggMzAzLjIzMjkzMywzNjcuNjcxMzY4IDI4OS4yOTgxMTIsMzY5Ljc0MjAwNCBDMjc1LjM2MzI5MiwzNzEuODEyNjQgMjYxLjEyMDg4OCwzNzIuODQ3OTQzIDI0Ni41NzA0NzMsMzcyLjg0Nzk0MyBDMjA5LjUyMjg3OCwzNzIuODQ3OTQzIDE4MS4yMzM5MzgsMzYxLjk2MzI3NiAxNjEuNzAyODA0LDM0MC4xOTM2MTcgQzE0Mi4xNzE2NywzMTguNDIzOTU4IDEzMi40MDYyNSwyODcuMTY5MDE2IDEzMi40MDYyNSwyNDYuNDI3ODU1IEMxMzIuNDA2MjUsMjA2LjgwNTk1NiAxNDMuNzM4NjE1LDE3NS45MTQ3NjkgMTY2LjQwMzY4NCwxNTMuNzUzMzY4IEMxODkuMDY4NzUzLDEzMS41OTE5NjcgMjIwLjQ5MTU4MiwxMjAuNTExNDMyIDI2MC42NzMxMTIsMTIwLjUxMTQzMiBDMjg1Ljg1NjUyMywxMjAuNTExNDMyIDMxMC4xNDQxNTgsMTI1LjU0ODAzOSAzMzMuNTM2NzQ5LDEzNS42MjE0MDMgTDMxNi4yNDQyMjcsMTc3LjI1Nzc2NyBDMjk4LjMzNjAyNCwxNjguMzAzNjY1IDI3OS43MDA1NzksMTYzLjgyNjY4MiAyNjAuMzM3MzM1LDE2My44MjY2ODIgQzIzNy44NDAxNTUsMTYzLjgyNjY4MiAyMTkuODIwMjk2LDE3MS4zODE1OTEgMjA2LjI3NzIxOCwxODYuNDkxNjM4IEMxOTIuNzM0MTM5LDIwMS42MDE2ODQgMTg1Ljk2MjcwMiwyMjEuOTE1OTk3IDE4NS45NjI3MDIsMjQ3LjQzNTE4NiBDMTg1Ljk2MjcwMiwyNzQuMDczNjM4IDE5MS40MTkwMjUsMjk0LjQxNTkzMiAyMDIuMzMxODM3LDMwOC40NjI2NzkgQzIxMy4yNDQ2NDgsMzIyLjUwOTQyNSAyMjkuMTA5OTU4LDMyOS41MzI2OTMgMjQ5LjkyODI0NCwzMjkuNTMyNjkzIEMyNjAuNzg1MDkyLDMyOS41MzI2OTMgMjcxLjgwOTY2NCwzMjguNDEzNDQ3IDI4My4wMDIyOTEsMzI2LjE3NDkyMiBMMjgzLjAwMjI5MSwyNzQuOTY4OTEgTDIzNi40OTcxNTksMjc0Ljk2ODkxIEwyMzYuNDk3MTU5LDIzMS42NTM2NjEgWiI+PC9wYXRoPgogICAgPC9nPgo8L3N2Zz4="/>' +
-                                '<span class="ab-xb-score">' + scorePts + '</span>' +
+                        '<div class="ab-xb-text-stage">' +
+                            '<span class="ab-xb-unlocked">' + label + '</span>' +
+                            '<div class="ab-xb-score-disp">' +
+                                '<div class="ab-xb-gamerscore">' +
+                                    '<img width="20" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgdmlld0JveD0iMCAwIDQ5MyA0OTMiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8ZyBmaWxsPSIjRkZGRkZGIj4KICAgICAgICAgICAgPHBhdGggZD0iTTI0Nyw0NjggQzM2OS4wNTQ5Myw0NjggNDY4LDM2OS4wNTQ5MyA0NjgsMjQ3IEM0NjgsMTI0Ljk0NTA3IDM2OS4wNTQ5MywyNiAyNDcsMjYgQzEyNC45NDUwNywyNiAyNiwxMjQuOTQ1MDcgMjYsMjQ3IEMyNiwzNjkuMDU0OTMgMTI0Ljk0NTA3LDQ2OCAyNDcsNDY4IFogTTIzNi40OTcxNTksMjMxLjY1MzY2MSBMMzMzLjg3MjUyNiwyMzEuNjUzNjYxIEwzMzMuODcyNTI2LDM1OC45MTMxOTIgQzMxOC4wOTA5MjIsMzY0LjA2MTggMzAzLjIzMjkzMywzNjcuNjcxMzY4IDI4OS4yOTgxMTIsMzY5Ljc0MjAwNCBDMjc1LjM2MzI5MiwzNzEuODEyNjQgMjYxLjEyMDg4OCwzNzIuODQ3OTQzIDI0Ni41NzA0NzMsMzcyLjg0Nzk0MyBDMjA5LjUyMjg3OCwzNzIuODQ3OTQzIDE4MS4yMzM5MzgsMzYxLjk2MzI3NiAxNjEuNzAyODA0LDM0MC4xOTM2MTcgQzE0Mi4xNzE2NywzMTguNDIzOTU4IDEzMi40MDYyNSwyODcuMTY5MDE2IDEzMi40MDYyNSwyNDYuNDI3ODU1IEMxMzIuNDA2MjUsMjA2LjgwNTk1NiAxNDMuNzM4NjE1LDE3NS45MTQ3NjkgMTY2LjQwMzY4NCwxNTMuNzUzMzY4IEMxODkuMDY4NzUzLDEzMS41OTE5NjcgMjIwLjQ5MTU4MiwxMjAuNTExNDMyIDI2MC42NzMxMTIsMTIwLjUxMTQzMiBDMjg1Ljg1NjUyMywxMjAuNTExNDMyIDMxMC4xNDQxNTgsMTI1LjU0ODAzOSAzMzMuNTM2NzQ5LDEzNS42MjE0MDMgTDMxNi4yNDQyMjcsMTc3LjI1Nzc2NyBDMjk4LjMzNjAyNCwxNjguMzAzNjY1IDI3OS43MDA1NzksMTYzLjgyNjY4MiAyNjAuMzM3MzM1LDE2My44MjY2ODIgQzIzNy44NDAxNTUsMTYzLjgyNjY4MiAyMTkuODIwMjk2LDE3MS4zODE1OTEgMjA2LjI3NzIxOCwxODYuNDkxNjM4IEMxOTIuNzM0MTM5LDIwMS42MDE2ODQgMTg1Ljk2MjcwMiwyMjEuOTE1OTk3IDE4NS45NjI3MDIsMjQ3LjQzNTE4NiBDMTg1Ljk2MjcwMiwyNzQuMDczNjM4IDE5MS40MTkwMjUsMjk0LjQxNTkzMiAyMDIuMzMxODM3LDMwOC40NjI2NzkgQzIxMy4yNDQ2NDgsMzIyLjUwOTQyNSAyMjkuMTA5OTU4LDMyOS41MzI2OTMgMjQ5LjkyODI0NCwzMjkuNTMyNjkzIEMyNjAuNzg1MDkyLDMyOS41MzI2OTMgMjcxLjgwOTY2NCwzMjguNDEzNDQ3IDI4My4wMDIyOTEsMzI2LjE3NDkyMiBMMjgzLjAwMjI5MSwyNzQuOTY4OTEgTDIzNi40OTcxNTksMjc0Ljk2ODkxIEwyMzYuNDk3MTU5LDIzMS42NTM2NjEgWiI+PC9wYXRoPgogICAgPC9nPgo8L3N2Zz4="/>' +
+                                    '<span class="ab-xb-score">' + scorePts + '</span>' +
+                                '</div>' +
+                                '<span class="ab-xb-sep"> \u2013 </span>' +
+                                '<span class="ab-xb-name">' + escape(title) + '</span>' +
                             '</div>' +
-                            '<span class="ab-xb-sep"> \u2013 </span>' +
-                            '<span class="ab-xb-name">' + escape(badge.Title || '') + '</span>' +
+                        '</div>' +
+                        '<div class="ab-xb-text-stage ab-xb-desc-stage">' +
+                            '<span class="ab-xb-desc-label">' + tr('toast.description_label', 'Achievement detail') + '</span>' +
+                            '<span class="ab-xb-desc">' + escape(desc) + '</span>' +
                         '</div>' +
                     '</div>' +
                 '</div>' +
@@ -463,10 +472,19 @@
             legendary: 'Test Legendary Badge',
             mythic: 'Test Mythic Badge'
         };
+        var descriptions = {
+            common: 'Watch one item to begin your achievement journey.',
+            uncommon: 'Keep building your streak and your progress will show here.',
+            rare: 'A richer unlock toast now shows badge details in the second stage.',
+            epic: 'This preview confirms the title stage rolls into a useful description.',
+            legendary: 'Descriptions make unlocks feel clearer, especially for rarer badges.',
+            mythic: 'The second animation stage now has something worth showing.'
+        };
         var key = (rarity || 'common').toLowerCase();
         showToast({
             Id: 'test-' + key,
             Title: titles[key] || 'Test Badge',
+            Description: descriptions[key] || descriptions.common,
             Rarity: key.charAt(0).toUpperCase() + key.slice(1),
             Icon: 'emoji_events',
             UnlockedAt: new Date().toISOString()
@@ -530,14 +548,17 @@
                 'background:linear-gradient(115deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0) 35%,rgba(255,255,255,0.55) 50%,rgba(255,255,255,0) 65%,rgba(255,255,255,0) 100%);' +
                 'transform:translateX(0) skewX(-18deg);}' +
             // Achieve display - maps to .achieve_disp
-            '.ab-xb-achieve-disp{display:flex;flex-direction:column;width:60%;position:absolute;justify-content:center;margin-left:95px;left:0;height:100%;top:0;}' +
+            '.ab-xb-achieve-disp{display:block;width:60%;position:absolute;margin-left:95px;left:0;height:150px;top:0;}' +
+            '.ab-xb-text-stage{height:75px;display:flex;flex-direction:column;justify-content:center;min-width:0;}' +
             '.ab-xb-unlocked{width:100%;color:#fff;font-weight:400;font-size:13px;line-height:1.3;}' +
             // Score display row - maps to .score_disp
             '.ab-xb-score-disp{width:100%;display:flex;flex-direction:row;align-items:flex-start;margin-bottom:0;}' +
             '.ab-xb-gamerscore{display:flex;flex-direction:row;align-items:center;height:24px;}' +
             '.ab-xb-score{margin-left:5px;margin-right:5px;color:#fff;font-weight:bold;font-size:13pt;}' +
             '.ab-xb-sep{margin-right:5px;color:#fff;font-size:15pt;line-height:24px;}' +
-            '.ab-xb-name{border:none;outline:none;background:none;font-size:13pt;color:#fff;line-height:24px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}' +
+            '.ab-xb-name{border:none;outline:none;background:none;font-size:13pt;color:#fff;line-height:24px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0;max-width:145px;display:inline-block;}' +
+            '.ab-xb-desc-label{width:100%;color:#fff;font-weight:500;font-size:11px;line-height:1.25;text-transform:uppercase;letter-spacing:1.2px;opacity:.9;}' +
+            '.ab-xb-desc{width:100%;max-height:36px;color:#fff;font-weight:700;font-size:12.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}' +
             // ---- Animations triggered by .ab-xb-play ----
             // Circle: circle_grow_move (10.5s forwards)
             '.ab-xb-play .ab-xb-circle{animation:abXbCircle 10.5s forwards;transform-origin:center;}' +
@@ -631,9 +652,11 @@
                 '0%{transform:translateY(85px);opacity:0;}' +
                 '20%{transform:translateY(85px);opacity:0;}' +
                 '25%{transform:translateY(0);opacity:1;}' +
-                '79%{transform:translateY(0);opacity:1;}' +
-                '84%{transform:translateY(-115px);opacity:0;}' +
-                '100%{opacity:0;}' +
+                '55%{transform:translateY(0);opacity:1;}' +
+                '63%{transform:translateY(-75px);opacity:1;}' +
+                '82%{transform:translateY(-75px);opacity:1;}' +
+                '86%{transform:translateY(-160px);opacity:0;}' +
+                '100%{transform:translateY(-160px);opacity:0;}' +
             '}' +
             // rotate -> abXbRotate (forwards, not infinite - toast plays once)
             '@keyframes abXbRotate{' +
@@ -681,7 +704,7 @@
             }).catch(function () { /* non-fatal */ });
         }).finally(function () {
             pollUnlocks();
-            setInterval(pollUnlocks, 8000);
+            setInterval(pollUnlocks, 5000);
             onRouteChange();
             window.addEventListener('hashchange', onRouteChange);
             new MutationObserver(onRouteChange).observe(document.body, { childList: true, subtree: true });
@@ -694,14 +717,14 @@
                         window._abPlaybackBound = true;
                         var burst = function () {
                             pollUnlocks();
-                            setTimeout(pollUnlocks, 1500);
-                            setTimeout(pollUnlocks, 4000);
+                            setTimeout(pollUnlocks, 1000);
+                            setTimeout(pollUnlocks, 3000);
                         };
                         window.Events.on(window, 'playbackstart', burst);
                         window.Events.on(window, 'playbackstop', burst);
                         window.Events.on(window, 'playbackprogress', function () {
                             var now = Date.now();
-                            if (!window._abLastProgressPoll || now - window._abLastProgressPoll > 7000) {
+                            if (!window._abLastProgressPoll || now - window._abLastProgressPoll > 4500) {
                                 window._abLastProgressPoll = now;
                                 pollUnlocks();
                             }
@@ -725,8 +748,8 @@
                     if (playing && !wasPlaying) {
                         // Playback started — burst poll
                         pollUnlocks();
-                        setTimeout(pollUnlocks, 2000);
-                        setTimeout(pollUnlocks, 5000);
+                        setTimeout(pollUnlocks, 1000);
+                        setTimeout(pollUnlocks, 3000);
                     }
                     wasPlaying = playing;
                 }).observe(document.body, { childList: true, subtree: true });
