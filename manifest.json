@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.9.5.0",
+        "changelog": "v1.9.5 - Small maintenance release. Chat image attachments now render and open correctly in the Friends drawer, and this release includes some security fixes and defensive hardening. No data migration required.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.9.5/Jellyfin.Plugin.AchievementBadges_1.9.5.0.zip",
+        "checksum": "a361d3e1079e5999378c0dec800d6e30",
+        "timestamp": "2026-05-16T00:00:00Z"
+      },
+      {
         "version": "1.9.4.0",
         "changelog": "v1.9.4 - 32 new badges + full 8-language translation coverage + Revamp admin UI fix. New badges: 5 Afternoon (12-17h) tiers, 5 Prime Time (19-22h) tiers, 10 holiday one-shots (Valentine's, Easter, Lunar New Year, Diwali, US Thanksgiving, Independence Day, Bonfire Night, Boxing Day, Mother's, Father's), Anime tier (5/15/50/200/500), Studio specialists (Studio Ghibli, A24, HBO, Netflix, BBC, Disney via BaseItem.Studios), and Pilot vs Completer pair tracking S1E1-only watchers vs binge-past-pilot. All 32 translated into en/fr/es/de/it/pt/zh/ja with hand-tailored cultural references. Revamp UI fix: Use my account / Refresh / Simulate playback buttons + live status/error banner now sit at the top of the personal section in Revamp (previously hidden along with the Classic hero). Long-running ops like Scan all users now visibly pulse with status text. Existing badges.json round-trips cleanly; new fields default to 0/false/empty.",
         "targetAbi": "10.11.0.0",

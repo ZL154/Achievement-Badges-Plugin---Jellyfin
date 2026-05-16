@@ -618,19 +618,54 @@ public class MessagingService
         lock (_lock)
         {
             if (!_attachments.TryGetValue(attachmentId, out var att)) return null;
-            var ext = att.MimeType switch
-            {
-                "image/png"  => ".png",
-                "image/jpeg" => ".jpg",
-                "image/gif"  => ".gif",
-                "image/webp" => ".webp",
-                _ => ".bin"
-            };
-            var path = Path.Combine(_attachmentsDir, attachmentId + ext);
-            if (!File.Exists(path)) return null;
-            try { return (att, File.ReadAllBytes(path)); }
-            catch { return null; }
+            return LoadAttachmentBytesLocked(attachmentId, att);
         }
+    }
+
+    public (Attachment att, byte[] bytes)? LoadAttachmentForUser(string callerId, string attachmentId, bool allowAdmin = false)
+    {
+        callerId = NormalizeId(callerId);
+        if (string.IsNullOrWhiteSpace(callerId) || string.IsNullOrWhiteSpace(attachmentId)) return null;
+
+        lock (_lock)
+        {
+            if (!_attachments.TryGetValue(attachmentId, out var att)) return null;
+            if (!allowAdmin && !CanAccessAttachmentLocked(callerId, attachmentId, att)) return null;
+            return LoadAttachmentBytesLocked(attachmentId, att);
+        }
+    }
+
+    private bool CanAccessAttachmentLocked(string callerId, string attachmentId, Attachment att)
+    {
+        if (NormalizeId(att.UploadedBy) == callerId) return true;
+
+        foreach (var (convId, list) in _store.Messages)
+        {
+            if (!list.Any(m => string.Equals(m.AttachmentId, attachmentId, StringComparison.OrdinalIgnoreCase))) continue;
+            if (_store.ConvMeta.TryGetValue(convId, out var conv) &&
+                conv.ParticipantIds.Any(p => NormalizeId(p) == callerId))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private (Attachment att, byte[] bytes)? LoadAttachmentBytesLocked(string attachmentId, Attachment att)
+    {
+        var ext = att.MimeType switch
+        {
+            "image/png"  => ".png",
+            "image/jpeg" => ".jpg",
+            "image/gif"  => ".gif",
+            "image/webp" => ".webp",
+            _ => ".bin"
+        };
+        var path = Path.Combine(_attachmentsDir, attachmentId + ext);
+        if (!File.Exists(path)) return null;
+        try { return (att, File.ReadAllBytes(path)); }
+        catch { return null; }
     }
 
     private void TryDeleteAttachment(string attachmentId)
