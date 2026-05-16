@@ -521,6 +521,7 @@ public class AchievementBadgeService
         {
             var profile = GetOrCreateProfile(userId);
             profile.Preferences = prefs ?? new UserNotificationPreferences();
+            profile.Preferences.ToastPlaybackMuteDefaultMigrated = true;
             Save();
         }
     }
@@ -2195,7 +2196,11 @@ public class AchievementBadgeService
             UserId = userId,
             Counters = new UserAchievementCounters(),
             Badges = GetActiveDefinitions().Select(def => CreateBadgeFromDefinition(def, userId)).ToList(),
-            EquippedBadgeIds = new List<string>()
+            EquippedBadgeIds = new List<string>(),
+            Preferences = new UserNotificationPreferences
+            {
+                ToastPlaybackMuteDefaultMigrated = true
+            }
         };
     }
 
@@ -2832,6 +2837,20 @@ public class AchievementBadgeService
                 var profile = pair.Value;
                 if (profile == null) continue;
                 profile.UserId = canonicalKey;
+                profile.Preferences ??= new UserNotificationPreferences();
+
+                // v1.9.8: previous builds accidentally defaulted the visual
+                // "Mute toasts while watching" preference to enabled. That
+                // made achievement popups disappear during movies/episodes
+                // even though the global toast setting was on. Migrate old
+                // profiles once so playback toasts show again by default;
+                // users who prefer hiding them can re-enable the setting.
+                if (profile.Preferences.ToastPlaybackMuteDefaultMigrated != true)
+                {
+                    profile.Preferences.MuteToastsDuringPlayback = false;
+                    profile.Preferences.ToastPlaybackMuteDefaultMigrated = true;
+                    migrated = true;
+                }
 
                 if (_userProfiles.TryGetValue(canonicalKey, out var existing))
                 {

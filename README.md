@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Jellyfin-10.11%2B-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
   <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
-  <img src="https://img.shields.io/badge/Version-1.9.5-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/Version-1.9.6-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/License-MIT-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
 </p>
 
@@ -23,13 +23,14 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd, built natively into your media server.
 
-> **Status:** Active development - **v1.9.5** fixes chat image attachments in the Friends drawer and includes some security fixes and defensive hardening. **v1.9.4** adds 32 new badges across afternoon + prime-time time-of-day, 10 expanded holidays (Valentine's, Easter, Lunar NY, Diwali, US Thanksgiving, Independence Day, Bonfire Night, Boxing Day, Mother's, Father's), an Anime tier, Studio specialists (Studio Ghibli, A24, HBO, Netflix, BBC, Disney), and a Pilot vs Completer behavior pair. All 32 are translated into all 8 supported languages. Also fixes the Revamp admin UI: Simulate playback button + live status banner now sit at the top of the page (previously hidden along with the Classic hero). **v1.9.0** is a major release covering everything since v1.8.10. New: full **Revamp UI** for the user-facing achievements page (magazine hero, conic completion donut, asymmetric stat grid, chapter tabs, control-panel filter strip), **Friends drawer Revamp** following the same Classic/Revamp toggle, **"Offline — last watched X"** line on offline friends, **HMAC-SHA256 webhook signing** for receiver-side authenticity verification, and a `HideLastWatched` privacy preference. Plus a security upgrade (default rate-limiting, admin audit-log filter, CSP headers, **GitHub Actions CI** running the tests + dotnet vulnerability scan + gitleaks on every push) and a plugin-wide efficiency overhaul (debounced saves, friends-bar cache, in-place trims, browser-side asset caching). Prior highlights from v1.8.x: full **messaging suite** (Xbox-style 1:1 + group chats, attachments, read receipts, edit/delete, block, notifications). v1.7.x: Friends drawer foundation, hand-translated **French by [@frenchyx24](https://github.com/frenchyx24)**.
+> **Status:** Active development - **v1.9.6** fixes achievement toast descriptions, restores playback achievement popups by default, adds easier admin user testing, and improves fallback script cache-busting on read-only Jellyfin web roots. **v1.9.5** fixes chat image attachments in the Friends drawer and includes some security fixes and defensive hardening. **v1.9.4** adds 32 new badges across afternoon + prime-time time-of-day, 10 expanded holidays (Valentine's, Easter, Lunar NY, Diwali, US Thanksgiving, Independence Day, Bonfire Night, Boxing Day, Mother's, Father's), an Anime tier, Studio specialists (Studio Ghibli, A24, HBO, Netflix, BBC, Disney), and a Pilot vs Completer behavior pair. All 32 are translated into all 8 supported languages. Also fixes the Revamp admin UI: Simulate playback button + live status banner now sit at the top of the page (previously hidden along with the Classic hero). **v1.9.0** is a major release covering everything since v1.8.10. New: full **Revamp UI** for the user-facing achievements page (magazine hero, conic completion donut, asymmetric stat grid, chapter tabs, control-panel filter strip), **Friends drawer Revamp** following the same Classic/Revamp toggle, **"Offline - last watched X"** line on offline friends, **HMAC-SHA256 webhook signing** for receiver-side authenticity verification, and a `HideLastWatched` privacy preference. Plus a security upgrade (default rate-limiting, admin audit-log filter, CSP headers, **GitHub Actions CI** running the tests + dotnet vulnerability scan + gitleaks on every push) and a plugin-wide efficiency overhaul (debounced saves, friends-bar cache, in-place trims, browser-side asset caching). Prior highlights from v1.8.x: full **messaging suite** (Xbox-style 1:1 + group chats, attachments, read receipts, edit/delete, block, notifications). v1.7.x: Friends drawer foundation, hand-translated **French by [@frenchyx24](https://github.com/frenchyx24)**.
 
 ---
 
 ## 📑 Table of contents
 
 - [Overview](#-overview)
+- [What's new in v1.9.6](#whats-new-in-v196) - toast descriptions, playback popups, admin testing picker
 - [What's new in v1.9.5](#whats-new-in-v195) - attachment fix, some security fixes, defensive hardening
 - [What's new in v1.9.4](#-whats-new-in-v194) — 32 new badges (afternoon, prime time, holidays, anime, studios, pilot/completer), 8-language translations, Revamp admin UI fix
 - [What's new in v1.9.0](#-whats-new-in-v190) — Revamp UI, Friends drawer Revamp, last-watched, HMAC signing, A+ security
@@ -50,6 +51,12 @@ A full progression, gamification and achievement system for Jellyfin that reward
 Over **200 built-in achievements** across 35+ categories, a 10-tier rank ladder from Rookie to Immortal, a score economy with combos, prestige, and daily/weekly quests, plus admin power features like custom badges, seasonal challenges, webhook notifications and a full audit log.
 
 Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin, ElegantFin, or StarTrack.
+
+---
+
+## What's new in v1.9.6
+
+Small follow-up release. Unlock toasts now show badge descriptions instead of rolling into a blank second stage, achievement popups show during playback by default again, and admin testing is easier with a server-user picker on the achievement admin/config pages. The fallback script injection path now cache-busts by plugin version for servers with read-only Jellyfin web roots. Existing profiles are migrated so the old accidental mute-toasts-while-watching default is cleared; users can re-enable it in settings if preferred.
 
 ---
 

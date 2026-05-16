@@ -277,6 +277,29 @@ color:#fca5a5;
 margin-top:1em;
 }
 
+#abAdvanced .abUserPickerField{
+max-width:360px;
+flex:1 1 260px;
+}
+
+#abAdvanced .abUserPickerField select,
+#AchievementBadgesPage #abUserSelect{
+width:100%;
+padding:0.55em 0.75em;
+border-radius:8px;
+border:1px solid rgba(255,255,255,0.18);
+background:#05070a;
+color:#f8fafc;
+font-family:inherit;
+font-size:0.9em;
+color-scheme:dark;
+}
+
+#AchievementBadgesPage #abUserSelect option{
+background:#05070a;
+color:#f8fafc;
+}
+
 #abEquippedEmpty,
 #abEmpty{
 padding:1em;
@@ -1482,12 +1505,24 @@ font-size:0.88em;
                     <summary style="cursor:pointer;" data-i18n="admin.section_advanced">Advanced options</summary>
 
                     <div style="display:flex;gap:0.75em;flex-wrap:wrap;margin-top:1em;align-items:center;">
+                        <label class="abUserPickerField" style="display:block;min-width:260px;">
+                            <span data-i18n="admin.user_picker">Server user</span><br>
+                            <select id="abUserSelect"
+                                    style="width:100%;padding:0.55em;background:rgba(0,0,0,0.3);color:inherit;border:1px solid rgba(255,255,255,0.15);border-radius:4px;">
+                                <option value="" data-i18n="admin.user_picker_loading">Loading users...</option>
+                            </select>
+                        </label>
+
                         <input is="emby-input"
                                id="abUserId"
                                label="Manual User ID"
                                data-i18n-label="admin.manual_user_id"
                                type="text"
                                style="min-width:320px;" />
+
+                        <button is="emby-button" type="button" class="raised" id="abRefreshUsersBtn" data-i18n="admin.btn_refresh_users">
+                            Refresh users
+                        </button>
 
                         <button is="emby-button" type="button" class="raised" id="abLoadBtn" data-i18n="admin.btn_load_user">
                             Load this user
@@ -2117,6 +2152,8 @@ font-size:0.88em;
     }
 
     var userIdInput = document.getElementById('abUserId');
+    var userSelect = document.getElementById('abUserSelect');
+    var refreshUsersBtn = document.getElementById('abRefreshUsersBtn');
     var meBtn = document.getElementById('abMeBtn');
     var loadBtn = document.getElementById('abLoadBtn');
     var refreshBtn = document.getElementById('abRefreshBtn');
@@ -2250,6 +2287,69 @@ font-size:0.88em;
 
     function getUserId() {
         return (userIdInput.value || '').trim();
+    }
+
+    function setUserPickerState(message, disabled) {
+        if (!userSelect) return;
+        userSelect.innerHTML = '';
+        var opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = message;
+        userSelect.appendChild(opt);
+        userSelect.disabled = !!disabled;
+    }
+
+    function getUserDisplayName(user) {
+        return user.Name || user.Username || user.UserName || user.ServerName || user.Id || tr('common.unknown', 'Unknown');
+    }
+
+    function syncUserPickerSelection(userId) {
+        if (!userSelect || !userId) return;
+        var normalized = String(userId).replace(/-/g, '').toLowerCase();
+        for (var i = 0; i < userSelect.options.length; i++) {
+            var opt = userSelect.options[i];
+            if (String(opt.value || '').replace(/-/g, '').toLowerCase() === normalized) {
+                userSelect.value = opt.value;
+                return;
+            }
+        }
+    }
+
+    function loadServerUsers() {
+        if (!userSelect) return Promise.resolve([]);
+        setUserPickerState(tr('admin.user_picker_loading', 'Loading users...'), true);
+
+        return fetchJson('Users').then(function (users) {
+            users = Array.isArray(users) ? users.slice() : [];
+            users.sort(function (a, b) {
+                return getUserDisplayName(a).localeCompare(getUserDisplayName(b), undefined, { sensitivity: 'base' });
+            });
+
+            userSelect.innerHTML = '';
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = users.length
+                ? tr('admin.user_picker_placeholder', 'Pick a user...')
+                : tr('admin.user_picker_empty', 'No users found');
+            userSelect.appendChild(placeholder);
+
+            users.forEach(function (user) {
+                if (!user || !user.Id) return;
+                var opt = document.createElement('option');
+                opt.value = user.Id;
+                opt.textContent = getUserDisplayName(user);
+                opt.title = user.Id;
+                userSelect.appendChild(opt);
+            });
+
+            userSelect.disabled = users.length === 0;
+            syncUserPickerSelection(getUserId());
+            return users;
+        }).catch(function (error) {
+            setUserPickerState(tr('admin.user_picker_failed', 'Could not load users'), true);
+            setStatus(tr('admin.msg.user_list_failed', 'Could not load server users.') + ' ' + (error && error.message ? error.message : String(error)));
+            return [];
+        });
     }
 
     function setStatus(message) {
@@ -2496,6 +2596,7 @@ font-size:0.88em;
         }
         clearError();
         setStatus(tr('admin.msg.loading_badges', 'Loading badges...'));
+        syncUserPickerSelection(userId);
 
         reloadAll().then(function () {
             setStatus(tr('admin.msg.badges_loaded', 'Badges loaded.'));
@@ -2591,6 +2692,7 @@ font-size:0.88em;
         detectCurrentUserId().then(function (currentUserId) {
             if (!currentUserId) throw new Error(tr('admin.msg.cannot_determine_user', 'Could not determine current user.'));
             userIdInput.value = currentUserId;
+            syncUserPickerSelection(currentUserId);
             loadBadges();
         }).catch(function (error) {
             setStatus('');
@@ -2602,10 +2704,12 @@ font-size:0.88em;
         setActiveTab('badges');
         clearError();
         setStatus(tr('admin.msg.loading_profile', 'Loading profile...'));
+        loadServerUsers();
 
         var initialUserId = getUserIdFromUrl();
         if (initialUserId) {
             userIdInput.value = initialUserId;
+            syncUserPickerSelection(initialUserId);
             loadBadges();
             return;
         }
@@ -2613,6 +2717,7 @@ font-size:0.88em;
         detectCurrentUserId().then(function (currentUserId) {
             if (currentUserId) {
                 userIdInput.value = currentUserId;
+                syncUserPickerSelection(currentUserId);
                 loadBadges();
             } else {
                 setStatus('');
@@ -2628,6 +2733,15 @@ font-size:0.88em;
     tabLeaderboardBtn.addEventListener('click', function () { setActiveTab('leaderboard'); });
     tabStatsBtn.addEventListener('click', function () { setActiveTab('stats'); });
 
+    if (userSelect) {
+        userSelect.addEventListener('change', function () {
+            if (userSelect.value) {
+                userIdInput.value = userSelect.value;
+                setStatus(tr('admin.msg.user_selected_press_load', 'User selected. Press "Load this user" to test that profile.'));
+            }
+        });
+    }
+    if (refreshUsersBtn) refreshUsersBtn.addEventListener('click', loadServerUsers);
     meBtn.addEventListener('click', useMyAccount);
     loadBtn.addEventListener('click', loadBadges);
     refreshBtn.addEventListener('click', loadBadges);
