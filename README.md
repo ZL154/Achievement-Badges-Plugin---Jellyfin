@@ -54,16 +54,15 @@ Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin
 
 ---
 
-## What's new in v1.9.6
+## 🚀 What's new in v1.9.6
 
 Small follow-up release. Unlock toasts now show badge descriptions instead of rolling into a blank second stage, achievement popups show during playback by default again, and admin testing is easier with a server-user picker on the achievement admin/config pages. The fallback script injection path now cache-busts by plugin version for servers with read-only Jellyfin web roots. Existing profiles are migrated so the old accidental mute-toasts-while-watching default is cleared; users can re-enable it in settings if preferred.
 
 ---
 
-## What's new in v1.9.5
+## 🚀 What's new in v1.9.5
 
-Small maintenance release. Chat image attachments now render and open correctly in the Friends drawer, and this release includes some security fixes and defensive hardening. No data migration required.
-
+Small maintenance release. Chat image attachments now render and open correctly in the Friends drawer, and this release includes some security fixes and defensive hardening.
 ---
 
 ## 🚀 What's new in v1.9.4
