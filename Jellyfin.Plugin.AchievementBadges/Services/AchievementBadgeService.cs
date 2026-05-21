@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.AchievementBadges.Services;
 
-public class AchievementBadgeService
+public class AchievementBadgeService : IDisposable
 {
     private readonly string _dataFilePath;
     // Set to true if Load() fails to deserialise the store. While true,
@@ -2964,6 +2964,19 @@ public class AchievementBadgeService
         {
             _logger.LogWarning(ex, "[AchievementBadges] Debounced Save flush failed.");
         }
+    }
+
+    // v1.9.7: release the debounce Timer on plugin unload so it doesn't
+    // keep a delegate rooted to `this` across reloads.
+    public void Dispose()
+    {
+        FlushDebouncedSave();
+        lock (_saveLock)
+        {
+            _saveTimer?.Dispose();
+            _saveTimer = null;
+        }
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

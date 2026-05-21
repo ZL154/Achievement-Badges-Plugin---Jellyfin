@@ -15,8 +15,12 @@ public static class SvgSanitizer
     // resources. That's too strict — same-document `<use href="#id">` is
     // safe and common in modern icon SVGs. We now allow <use> but check
     // its href/xlink:href value below — only `#anchor` references are OK.
+    // v1.9.7: added animate + set. SMIL animation can mutate attributes at
+    // render time, including animating an `href` to a `javascript:` URI on
+    // SVG-capable clients. The post-load attribute scan below catches static
+    // event handlers and JS URIs but not values that only exist mid-animation.
     private static readonly string[] DisallowedElements = {
-        "script", "foreignObject", "iframe", "embed", "object"
+        "script", "foreignObject", "iframe", "embed", "object", "animate", "set"
     };
 
     public static bool TryValidate(string svg, out string error)

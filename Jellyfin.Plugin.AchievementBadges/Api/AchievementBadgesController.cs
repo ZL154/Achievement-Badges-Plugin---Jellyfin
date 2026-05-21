@@ -1276,9 +1276,15 @@ public class AchievementBadgesController : ControllerBase
         // prevents content-type confusion, X-Frame-Options restricts framing
         // to same-origin (Jellyfin embeds the card in /web/), Referrer-Policy
         // strips outbound referrers from any external links the user adds.
+        // v1.9.7 security: dropped 'unsafe-inline' from script-src. The
+        // profile-card template has no inline <script> blocks, so the
+        // allowance was pure defense-in-depth weakening. style-src still
+        // keeps 'unsafe-inline' because the embedded <style> block uses
+        // per-render template variables ({{tierColor}}) and migrating to a
+        // nonce-based allowlist is a deferred follow-up.
         Response.Headers["Content-Security-Policy"] =
             "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline'; " +
+            "script-src 'self'; " +
             "style-src 'self' 'unsafe-inline'; " +
             "img-src 'self' data: https:; " +
             "font-src 'self' data:; " +
@@ -1784,6 +1790,11 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetAuditLog([FromQuery] int limit = 200)
     {
+        // v1.9.7: clamp at the controller. AuditLogService.GetRecent already
+        // caps at MaxEntries (5000) internally, but admins can pass
+        // int.MaxValue and force the larger O(N) response. Bound at 1000 for
+        // consistency with the other paginated endpoints in this file.
+        limit = Math.Clamp(limit, 1, 1000);
         return Ok(_auditLog.GetRecent(limit));
     }
 
