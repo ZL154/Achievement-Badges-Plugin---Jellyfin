@@ -1,0 +1,48 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,csproj,props,targets}]
+indent_size = 4
+
+[*.{json,yml,yaml,html,js,css}]
+indent_size = 2
+
+# Roslyn analyzer overrides for this project. The rest of CA-series rules
+# follow the package default (Microsoft.CodeAnalysis.NetAnalyzers with
+# <AnalysisMode>Recommended</AnalysisMode>).
+
+[*.cs]
+
+# CA1848 (LoggerMessage delegates): perf hint for hot log paths. Plugin
+# logging is in cold paths (badge unlocks, audit events, webhook delivery)
+# at rates measured in events-per-minute, not events-per-millisecond.
+# Migrating every call to source-generated LoggerMessage partial methods
+# adds significant boilerplate without measurable runtime impact.
+dotnet_diagnostic.CA1848.severity = none
+
+# CA1873 (avoid potentially expensive logging): same family as CA1848.
+# String-interpolation message args allocate a few bytes on cold log paths;
+# the allocation cost is irrelevant at plugin scale.
+dotnet_diagnostic.CA1873.severity = none
+
+# CA1822 (mark members as static): plugin services are DI singletons.
+# Forcing every helper method that happens not to touch instance fields
+# into static would churn every call site without changing behavior.
+dotnet_diagnostic.CA1822.severity = none
+
+# CA1805 (do not initialize unnecessarily): configuration model fields
+# are initialized with their type defaults to keep the schema visible in
+# source. The micro-allocation argument doesn't apply because the config
+# object is built once per server.
+dotnet_diagnostic.CA1805.severity = none
+
+# CA1869 (cache JsonSerializerOptions): a few call sites build
+# JsonSerializerOptions per call. Allocation cost is irrelevant on
+# badge-unlock and webhook paths that run at most a few times per minute.
+dotnet_diagnostic.CA1869.severity = none

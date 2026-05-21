@@ -1,0 +1,49 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "37 9 * * 2"
+
+# OSSF Token-Permissions: read-all at top level so any future job that omits
+# its own permissions: block defaults to least privilege.
+permissions: read-all
+
+jobs:
+  analyze:
+    name: Analyze (csharp)
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+        with:
+          languages: csharp
+          queries: security-extended,security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Build
+        run: |
+          dotnet restore Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj
+          dotnet build Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj --configuration Release --no-restore
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+        with:
+          category: "/language:csharp"

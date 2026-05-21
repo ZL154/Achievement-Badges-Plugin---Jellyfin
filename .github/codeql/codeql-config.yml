@@ -1,0 +1,15 @@
+name: "AchievementBadges CodeQL config"
+
+# Run the security-extended + security-and-quality query packs (specified in
+# codeql.yml). Scope analysis to the plugin source tree only — embedded HTML
+# and JS in Pages/ would otherwise be parsed as separate JS analysis and
+# flood the dashboard with web-template noise unrelated to plugin security.
+
+paths:
+  - Jellyfin.Plugin.AchievementBadges/
+paths-ignore:
+  - Jellyfin.Plugin.AchievementBadges.Tests/
+  - Jellyfin.Plugin.AchievementBadges/Pages/**/*.html
+  - Jellyfin.Plugin.AchievementBadges/Pages/**/*.js
+  - Jellyfin.Plugin.AchievementBadges/Pages/**/*.css
+  - Jellyfin.Plugin.AchievementBadges/Configuration/configPage.html
