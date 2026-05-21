@@ -22,13 +22,20 @@ namespace Jellyfin.Plugin.AchievementBadges.Services;
 /// are silently dropped; conversations they share with blockers remain
 /// visible but send is rejected.
 /// </summary>
-public class MessagingService
+public class MessagingService : IDisposable
 {
     internal const int MaxTextLength                 = 1000;
     internal const int MaxMessagesPerConversation    = 2000;
     internal const int RateLimitMessagesPerMinute    = 20;
     internal const int MaxGroupParticipants          = 20;
     internal const long MaxAttachmentBytes           = 8L * 1024 * 1024;  // 8 MB images
+    // v1.9.7 security: per-user attachment quotas. Without these, an
+    // authenticated user could spam SaveAttachment calls (each within the
+    // 8 MB per-file cap) until the disk fills. Count cap stops file-handle
+    // exhaustion; byte cap stops a single user from claiming most of the
+    // shared attachments dir.
+    internal const int MaxAttachmentsPerUser         = 200;
+    internal const long MaxAttachmentBytesPerUser    = 200L * 1024 * 1024;  // 200 MB total
     internal static readonly TimeSpan EditWindow     = TimeSpan.FromHours(24);
     internal static readonly HashSet<string> AllowedAttachmentMimes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -579,6 +586,31 @@ public class MessagingService
         if (!AllowedAttachmentMimes.Contains(mimeType)) return (false, "Unsupported file type.", null);
         if (!VerifyImageMagic(mimeType, bytes)) return (false, "File content does not match declared type.", null);
 
+        // v1.9.7 security: per-user attachment quota — count + total size.
+        // Done under _lock so concurrent uploads from the same user can't
+        // race past the limit. Count first since the comparison is cheap;
+        // sum only over that user's attachments to keep the worst case
+        // O(per-user count), not O(total).
+        lock (_lock)
+        {
+            int userCount = 0;
+            long userBytes = 0;
+            foreach (var existing in _attachments.Values)
+            {
+                if (NormalizeId(existing.UploadedBy) != callerId) continue;
+                userCount++;
+                userBytes += existing.SizeBytes;
+            }
+            if (userCount >= MaxAttachmentsPerUser)
+            {
+                return (false, $"Attachment quota reached ({MaxAttachmentsPerUser} files). Delete old attachments to upload more.", null);
+            }
+            if (userBytes + bytes.Length > MaxAttachmentBytesPerUser)
+            {
+                return (false, $"Attachment quota reached ({MaxAttachmentBytesPerUser / (1024 * 1024)} MB total). Delete old attachments to upload more.", null);
+            }
+        }
+
         var att = new Attachment
         {
             UploadedBy = callerId,
@@ -870,6 +902,20 @@ public class MessagingService
     public void FlushPendingSave()
     {
         FlushDebouncedSave();
+    }
+
+    // v1.9.7: IDisposable so the debounce Timer is released on plugin
+    // unload. Without this, the Timer holds a delegate referencing `this`
+    // and prevents the singleton from being GC'd on Jellyfin's reload.
+    public void Dispose()
+    {
+        FlushDebouncedSave();
+        lock (_saveLock)
+        {
+            _saveTimer?.Dispose();
+            _saveTimer = null;
+        }
+        GC.SuppressFinalize(this);
     }
 
     private void SaveImmediate()

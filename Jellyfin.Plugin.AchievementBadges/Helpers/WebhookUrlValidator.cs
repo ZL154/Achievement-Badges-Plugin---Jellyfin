@@ -1,6 +1,8 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Jellyfin.Plugin.AchievementBadges.Helpers;
 
@@ -33,7 +35,22 @@ public static class WebhookUrlValidator
             }
             else
             {
-                addresses = Dns.GetHostAddresses(uri.Host);
+                // v1.9.7 security: bound DNS resolution at 3s. The previous
+                // synchronous GetHostAddresses call could stall the ASP.NET
+                // request thread for the OS DNS-client default (5-30s) when
+                // the resolver was slow, giving a logged-in admin a DoS
+                // vector against their own server.
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                try
+                {
+                    addresses = Dns.GetHostAddressesAsync(uri.Host, cts.Token)
+                        .GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException)
+                {
+                    error = $"Webhook URL host '{uri.Host}' DNS resolution timed out after 3s.";
+                    return false;
+                }
             }
             if (addresses.Length == 0)
             {
