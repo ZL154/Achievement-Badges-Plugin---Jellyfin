@@ -1564,6 +1564,77 @@ font-size:0.88em;
                     </div>
                 </details>
 
+                <details class="abAdminSection" id="abIntegritySection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;" data-i18n="admin.section_integrity">
+                        🛡 Integrity &amp; anti-abuse (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.integrity.intro">
+                            v1.9.8 anti-abuse controls. The playback-credit gate (80% real-watch required, position seeks excluded, items under 60s rejected as prerolls) is always on. The two settings below add a daily soft-cap and an audit-log flag for users hitting unusual rates. Test tools at the bottom let you verify both fire without waiting for real users to game the system.
+                        </p>
+
+                        <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 1em 0;">
+                            <legend style="padding:0 0.5em; font-weight:600;" data-i18n="admin.integrity.settings_legend">Settings</legend>
+                            <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
+                                <input type="checkbox" id="abIntEnableCap"> <span data-i18n="admin.integrity.enable_cap">Enable daily credit cap</span>
+                            </label>
+                            <label style="display:block; margin-bottom:0.75em;">
+                                <span data-i18n="admin.integrity.cap_value">Daily cap (items per user per UTC day):</span><br>
+                                <input type="number" id="abIntCapValue" min="1" max="10000" value="200" style="width:160px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                <span class="secondaryText" style="font-size:0.85em;" data-i18n="admin.integrity.cap_hint">Real users never hit this. Default 200.</span>
+                            </label>
+                            <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.5em;">
+                                <input type="checkbox" id="abIntEnableFlag"> <span data-i18n="admin.integrity.enable_flag">Enable suspicious-rate flag (audit log only)</span>
+                            </label>
+                            <label style="display:block; margin-bottom:0.75em;">
+                                <span data-i18n="admin.integrity.rate_threshold">Flag threshold (items credited per rolling hour):</span><br>
+                                <input type="number" id="abIntRateValue" min="1" max="1000" value="30" style="width:160px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                <span class="secondaryText" style="font-size:0.85em;" data-i18n="admin.integrity.rate_hint">Doesn't block; just records "suspicious_rate" in the audit log. Throttled to once per user per hour.</span>
+                            </label>
+                            <button is="emby-button" type="button" class="raised button-submit" id="abIntSaveBtn" data-i18n="admin.btn_save_integrity">Save integrity settings</button>
+                            <div id="abIntStatus" class="secondaryText"></div>
+                        </fieldset>
+
+                        <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 1em 0;">
+                            <legend style="padding:0 0.5em; font-weight:600;" data-i18n="admin.integrity.test_legend">Test injection</legend>
+                            <p class="secondaryText" style="margin-top:0;" data-i18n="admin.integrity.test_intro">
+                                Inject N fake credited playbacks into a test user's account. Real path: each event passes the 80% gate, then the cap and rate flag decide what lands. Use this on a throwaway test user to verify caps work before relying on them.
+                            </p>
+                            <label style="display:block; margin-bottom:0.5em;"><span data-i18n="admin.integrity.test_user">Target user:</span><br>
+                                <select id="abIntTestUser" style="width:100%; max-width:360px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                    <option value="">Loading users…</option>
+                                </select>
+                            </label>
+                            <label style="display:block; margin-bottom:0.5em;"><span data-i18n="admin.integrity.test_count">How many events:</span><br>
+                                <input type="number" id="abIntTestCount" min="1" max="500" value="50" style="width:120px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                            </label>
+                            <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
+                                <input type="checkbox" id="abIntTestIsMovie"> <span data-i18n="admin.integrity.test_is_movie">Credit as movies (default: episodes)</span>
+                            </label>
+                            <button is="emby-button" type="button" class="raised" id="abIntTestRunBtn" data-i18n="admin.btn_run_test">Run injection</button>
+                            <div id="abIntTestStatus" class="secondaryText" style="margin-top:0.5em;"></div>
+                        </fieldset>
+
+                        <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0;">
+                            <legend style="padding:0 0.5em; font-weight:600;" data-i18n="admin.integrity.revoke_legend">Manual badge revoke</legend>
+                            <p class="secondaryText" style="margin-top:0;" data-i18n="admin.integrity.revoke_intro">
+                                Un-award a specific badge from a specific user. Useful when a user was found to have gamed a badge before integrity fixes landed. Audit-logged as "admin_revoke_badge".
+                            </p>
+                            <label style="display:block; margin-bottom:0.5em;"><span data-i18n="admin.integrity.revoke_user">User:</span><br>
+                                <select id="abIntRevokeUser" style="width:100%; max-width:360px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                    <option value="">Loading users…</option>
+                                </select>
+                            </label>
+                            <label style="display:block; margin-bottom:0.5em;"><span data-i18n="admin.integrity.revoke_badge">Badge to revoke (id):</span><br>
+                                <input type="text" id="abIntRevokeBadgeId" placeholder="e.g. film-buff" style="width:100%; max-width:360px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                <span class="secondaryText" style="font-size:0.85em;" data-i18n="admin.integrity.revoke_hint">Badge ids show in the user's profile JSON or the badge catalog.</span>
+                            </label>
+                            <button is="emby-button" type="button" class="raised" id="abIntRevokeBtn" style="background:rgba(244,63,94,0.2); border:1px solid #f43f5e; color:#f43f5e;" data-i18n="admin.btn_revoke_badge">Revoke badge</button>
+                            <div id="abIntRevokeStatus" class="secondaryText" style="margin-top:0.5em;"></div>
+                        </fieldset>
+                    </div>
+                </details>
+
                 <details class="abAdminSection" style="margin-top:1em;">
                     <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;" data-i18n="admin.section_test_toast">
                         Test unlock toast
@@ -2964,6 +3035,108 @@ font-size:0.88em;
          .catch(function (e) { webhookStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
     });
     loadWebhook();
+
+    // --- v1.9.8: Integrity / anti-abuse admin panel ---
+    var intEnableCapEl   = document.getElementById('abIntEnableCap');
+    var intCapValueEl    = document.getElementById('abIntCapValue');
+    var intEnableFlagEl  = document.getElementById('abIntEnableFlag');
+    var intRateValueEl   = document.getElementById('abIntRateValue');
+    var intSaveBtn       = document.getElementById('abIntSaveBtn');
+    var intStatusEl      = document.getElementById('abIntStatus');
+    var intTestUserSel   = document.getElementById('abIntTestUser');
+    var intTestCountEl   = document.getElementById('abIntTestCount');
+    var intTestIsMovieEl = document.getElementById('abIntTestIsMovie');
+    var intTestRunBtn    = document.getElementById('abIntTestRunBtn');
+    var intTestStatusEl  = document.getElementById('abIntTestStatus');
+    var intRevokeUserSel = document.getElementById('abIntRevokeUser');
+    var intRevokeBadgeEl = document.getElementById('abIntRevokeBadgeId');
+    var intRevokeBtn     = document.getElementById('abIntRevokeBtn');
+    var intRevokeStatus  = document.getElementById('abIntRevokeStatus');
+
+    if (intSaveBtn) {
+        fetchJson('Plugins/AchievementBadges/admin/integrity-config').then(function (c) {
+            intEnableCapEl.checked   = c.EnableDailyCreditCap !== false;
+            intCapValueEl.value      = c.DailyCreditCap || 200;
+            intEnableFlagEl.checked  = c.EnableSuspiciousActivityFlag !== false;
+            intRateValueEl.value     = c.SuspiciousRatePerHour || 30;
+        }).catch(function () { /* user might not be admin; silent */ });
+
+        intSaveBtn.addEventListener('click', function () {
+            fetchJson('Plugins/AchievementBadges/admin/integrity-config', 'POST', {
+                EnableDailyCreditCap: intEnableCapEl.checked,
+                DailyCreditCap: parseInt(intCapValueEl.value, 10) || 200,
+                EnableSuspiciousActivityFlag: intEnableFlagEl.checked,
+                SuspiciousRatePerHour: parseInt(intRateValueEl.value, 10) || 30
+            }).then(function () { intStatusEl.textContent = tr('admin.msg.saved', 'Saved.'); })
+             .catch(function (e) { intStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
+        });
+
+        // Populate the two user pickers (test inject + manual revoke) from
+        // the same Users API used by the rest of the admin panel.
+        function populateUserSelect(sel, placeholderKey, placeholderFallback) {
+            if (!sel) return;
+            sel.innerHTML = '<option value="">' + tr(placeholderKey, placeholderFallback) + '</option>';
+            fetchJson('Users').then(function (users) {
+                if (!Array.isArray(users)) return;
+                users.sort(function (a, b) {
+                    return (a.Name || '').localeCompare(b.Name || '', undefined, { sensitivity: 'base' });
+                });
+                users.forEach(function (u) {
+                    if (!u || !u.Id) return;
+                    var opt = document.createElement('option');
+                    opt.value = u.Id;
+                    opt.textContent = u.Name || u.Id;
+                    sel.appendChild(opt);
+                });
+            }).catch(function () { /* silent */ });
+        }
+        populateUserSelect(intTestUserSel,   'admin.integrity.pick_user', 'Pick a user…');
+        populateUserSelect(intRevokeUserSel, 'admin.integrity.pick_user', 'Pick a user…');
+
+        intTestRunBtn.addEventListener('click', function () {
+            var uid = intTestUserSel.value;
+            if (!uid) {
+                intTestStatusEl.textContent = tr('admin.integrity.test_need_user', 'Pick a user first.');
+                return;
+            }
+            var count = Math.max(1, Math.min(500, parseInt(intTestCountEl.value, 10) || 50));
+            var isMovie = !!intTestIsMovieEl.checked;
+            intTestStatusEl.textContent = tr('admin.integrity.test_running', 'Injecting…');
+            intTestRunBtn.disabled = true;
+            fetchJson('Plugins/AchievementBadges/admin/users/' + encodeURIComponent(uid) + '/test/inject-playbacks?count=' + count + '&isMovie=' + (isMovie ? 'true' : 'false'), 'POST', {})
+                .then(function (r) {
+                    intTestStatusEl.textContent =
+                        tr('admin.integrity.test_done', 'Done.') + ' ' +
+                        'Requested ' + (r.Requested || 0) + ', credited ' + (r.Credited || 0) + ', blocked ' + (r.Blocked || 0) +
+                        (r.LastBlockMessage ? ' — last block: ' + r.LastBlockMessage : '');
+                })
+                .catch(function (e) {
+                    intTestStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e);
+                })
+                .finally(function () { intTestRunBtn.disabled = false; });
+        });
+
+        intRevokeBtn.addEventListener('click', function () {
+            var uid = intRevokeUserSel.value;
+            var bid = (intRevokeBadgeEl.value || '').trim();
+            if (!uid || !bid) {
+                intRevokeStatus.textContent = tr('admin.integrity.revoke_need_both', 'Pick a user and enter a badge id.');
+                return;
+            }
+            if (!confirm(tr('admin.integrity.revoke_confirm', 'Revoke this badge? The user will lose the unlock.'))) {
+                return;
+            }
+            intRevokeBtn.disabled = true;
+            fetchJson('Plugins/AchievementBadges/admin/users/' + encodeURIComponent(uid) + '/badges/' + encodeURIComponent(bid), 'DELETE')
+                .then(function (b) {
+                    intRevokeStatus.textContent = tr('admin.integrity.revoke_done', 'Revoked.') + ' ' + (b && b.Title ? '(' + b.Title + ')' : '');
+                })
+                .catch(function (e) {
+                    intRevokeStatus.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e);
+                })
+                .finally(function () { intRevokeBtn.disabled = false; });
+        });
+    }
 
     // --- UI features ---
     var uiToastsEl = document.getElementById('abUiToasts');

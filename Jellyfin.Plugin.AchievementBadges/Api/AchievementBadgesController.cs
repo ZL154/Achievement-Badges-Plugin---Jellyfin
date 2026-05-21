@@ -1783,6 +1783,126 @@ public class AchievementBadgesController : ControllerBase
         return Ok(new { Success = true });
     }
 
+    // ---------- v1.9.8: Admin testing tools -------------------------------
+    // Exercise the integrity gates (DailyCreditCap + SuspiciousRatePerHour
+    // from PluginConfiguration) end-to-end so admins can verify the
+    // anti-abuse plumbing actually fires. Each fake event goes through the
+    // real PlaybackCompletionService.RecordCompletion path with
+    // completionPercent=100, so the 80% check is satisfied — only the cap
+    // and the rolling-hour rate flag decide whether the credit lands.
+    // Resulting audit-log entries appear with type "rate_cap_blocked" and
+    // "suspicious_rate" so admins can see what the live behavior looks like.
+    [HttpPost("admin/users/{userId}/test/inject-playbacks")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult AdminTestInjectPlaybacks(
+        [FromRoute] string userId,
+        [FromQuery] int count = 50,
+        [FromQuery] bool isMovie = false)
+    {
+        count = Math.Clamp(count, 1, 500);
+        int credited = 0;
+        int blocked = 0;
+        string lastMessage = string.Empty;
+        for (int i = 0; i < count; i++)
+        {
+            // Unique synthetic item id per inject so the dedup window
+            // (RecentlyCompletedItemIds 6h check) doesn't bounce them.
+            var fakeItemId = $"admintest-{Guid.NewGuid():N}";
+            var success = _playbackCompletionService.RecordCompletion(
+                userId, fakeItemId, isMovie, !isMovie, false,
+                100d, DateTimeOffset.Now, out var msg);
+            if (success)
+            {
+                credited++;
+            }
+            else
+            {
+                blocked++;
+                lastMessage = msg;
+            }
+        }
+        _auditLog.Log(userId, string.Empty, "admin_test_inject",
+            $"Admin injected {count} fake playbacks; credited={credited} blocked={blocked}.");
+        return Ok(new
+        {
+            Requested = count,
+            Credited = credited,
+            Blocked = blocked,
+            LastBlockMessage = lastMessage
+        });
+    }
+
+    // v1.9.8 — Manual badge revoke. Use case: admin notices a user gamed
+    // a badge before the v1.9.8 integrity fixes shipped (or in a future
+    // unforeseen exploit) and wants to un-award that specific badge. Audit
+    // log captures the action so the revocation is traceable.
+    [HttpDelete("admin/users/{userId}/badges/{badgeId}")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(typeof(AchievementBadge), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<AchievementBadge> AdminRevokeBadge(
+        [FromRoute] string userId,
+        [FromRoute] string badgeId)
+    {
+        var badge = _badgeService.RevokeBadge(userId, badgeId);
+        if (badge is null)
+        {
+            return NotFound(new { Error = "Badge not found for user." });
+        }
+        _auditLog.Log(userId, string.Empty, "admin_revoke_badge",
+            $"Admin revoked badge {badgeId}.");
+        return Ok(badge);
+    }
+
+    // ---------- v1.9.8: Anti-abuse / integrity config --------------------
+    // Separate from feature-config because the integrity knobs answer a
+    // different operational question ("how strict do we want to be against
+    // playback-credit abuse?") and admins reasoning about them shouldn't
+    // have to scroll past UI feature toggles.
+    [HttpGet("admin/integrity-config")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetIntegrityConfig()
+    {
+        var c = Plugin.Instance?.Configuration;
+        return Ok(new
+        {
+            EnableDailyCreditCap = c?.EnableDailyCreditCap ?? true,
+            DailyCreditCap = c?.DailyCreditCap ?? 200,
+            EnableSuspiciousActivityFlag = c?.EnableSuspiciousActivityFlag ?? true,
+            SuspiciousRatePerHour = c?.SuspiciousRatePerHour ?? 30
+        });
+    }
+
+    public class IntegrityConfigRequest
+    {
+        public bool EnableDailyCreditCap { get; set; } = true;
+        public int DailyCreditCap { get; set; } = 200;
+        public bool EnableSuspiciousActivityFlag { get; set; } = true;
+        public int SuspiciousRatePerHour { get; set; } = 30;
+    }
+
+    [HttpPost("admin/integrity-config")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult SetIntegrityConfig([FromBody] IntegrityConfigRequest request)
+    {
+        var plugin = Plugin.Instance;
+        if (plugin?.Configuration == null) return BadRequest();
+        var cfg = plugin.Configuration;
+        cfg.EnableDailyCreditCap = request.EnableDailyCreditCap;
+        // Clamp to sane bounds — 0 = disabled, but the toggle expresses
+        // that more clearly, so floor positive values at 1.
+        cfg.DailyCreditCap = Math.Clamp(request.DailyCreditCap, 1, 10000);
+        cfg.EnableSuspiciousActivityFlag = request.EnableSuspiciousActivityFlag;
+        cfg.SuspiciousRatePerHour = Math.Clamp(request.SuspiciousRatePerHour, 1, 1000);
+        plugin.SaveConfiguration();
+        _auditLog.Log(string.Empty, string.Empty, "admin_integrity_config",
+            $"Cap={cfg.DailyCreditCap}/day (enabled={cfg.EnableDailyCreditCap}), suspicious-rate={cfg.SuspiciousRatePerHour}/h (enabled={cfg.EnableSuspiciousActivityFlag}).");
+        return Ok(new { Success = true });
+    }
+
     // ---------- Audit log --------------------------------------------
 
     [HttpGet("admin/audit-log")]

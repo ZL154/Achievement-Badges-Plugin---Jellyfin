@@ -77,6 +77,85 @@
                 </details>
 
                 <details>
+                    <summary>🛡 Integrity &amp; anti-abuse</summary>
+                    <div class="detailSection">
+                        <p class="fieldDescription" style="margin-top:0;">
+                            v1.9.8 anti-abuse controls. The playback-credit gate (80% real-watch required, position seeks excluded, items under 60s rejected as prerolls) is always on. These settings add a daily soft-cap and an audit-log flag for users hitting unusual rates.
+                        </p>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="EnableDailyCreditCap" is="emby-checkbox" />
+                                <span>Enable daily credit cap</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="DailyCreditCap">Daily cap (items per user per UTC day)</label>
+                            <input type="number" id="DailyCreditCap" is="emby-input" min="1" max="10000" />
+                            <div class="fieldDescription">Real users never hit this. Default 200.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="EnableSuspiciousActivityFlag" is="emby-checkbox" />
+                                <span>Enable suspicious-rate audit flag</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="SuspiciousRatePerHour">Flag threshold (credits per rolling hour)</label>
+                            <input type="number" id="SuspiciousRatePerHour" is="emby-input" min="1" max="1000" />
+                            <div class="fieldDescription">Doesn't block; just records "suspicious_rate" in the audit log. Throttled to once per user per hour.</div>
+                        </div>
+
+                        <hr style="border:none; border-top:1px solid rgba(255,255,255,.08); margin:1em 0;" />
+                        <p class="fieldDescription"><strong>Test injection</strong> — drive N fake credited playbacks through the real path to verify cap+flag actually fire. Use on a throwaway test user.</p>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="AchievementBadgesTestUserSelect">Target user</label>
+                            <select id="AchievementBadgesTestUserSelect" style="width:100%;max-width:360px;padding:.6em;background:#05070a;color:#f8fafc;border:1px solid rgba(255,255,255,.25);border-radius:4px;color-scheme:dark;">
+                                <option value="">Loading users...</option>
+                            </select>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="AchievementBadgesTestCount">Number of events</label>
+                            <input type="number" id="AchievementBadgesTestCount" is="emby-input" min="1" max="500" value="50" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="AchievementBadgesTestIsMovie" is="emby-checkbox" />
+                                <span>Credit as movies (default: episodes)</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <button is="emby-button" type="button" class="raised emby-button"
+                                    onclick="AchievementBadgesConfig.runIntegrityTest()">
+                                <span>Run injection</span>
+                            </button>
+                            <div id="AchievementBadgesTestStatus" class="fieldDescription"></div>
+                        </div>
+
+                        <hr style="border:none; border-top:1px solid rgba(255,255,255,.08); margin:1em 0;" />
+                        <p class="fieldDescription"><strong>Manual badge revoke</strong> — un-award a specific badge from a specific user. Audit-logged.</p>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="AchievementBadgesRevokeUserSelect">User</label>
+                            <select id="AchievementBadgesRevokeUserSelect" style="width:100%;max-width:360px;padding:.6em;background:#05070a;color:#f8fafc;border:1px solid rgba(255,255,255,.25);border-radius:4px;color-scheme:dark;">
+                                <option value="">Loading users...</option>
+                            </select>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="AchievementBadgesRevokeBadgeId">Badge id to revoke</label>
+                            <input type="text" id="AchievementBadgesRevokeBadgeId" is="emby-input" placeholder="e.g. film-buff" />
+                            <div class="fieldDescription">Badge ids show in the user's profile JSON or the badge catalog.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <button is="emby-button" type="button" class="raised emby-button"
+                                    style="background:rgba(244,63,94,0.2);border:1px solid #f43f5e;color:#f43f5e;"
+                                    onclick="AchievementBadgesConfig.revokeBadge()">
+                                <span>Revoke badge</span>
+                            </button>
+                            <div id="AchievementBadgesRevokeStatus" class="fieldDescription"></div>
+                        </div>
+                    </div>
+                </details>
+
+                <details>
                     <summary>Advanced testing</summary>
                     <div class="detailSection">
                         <div class="inputContainer">
@@ -302,6 +381,9 @@
                 load: function () {
                     Dashboard.showLoadingMsg();
                     this.loadUsers();
+                    // v1.9.8 — also populate the two integrity-section user pickers
+                    this.loadUsersInto('AchievementBadgesTestUserSelect');
+                    this.loadUsersInto('AchievementBadgesRevokeUserSelect');
                     ApiClient.getPluginConfiguration(this.pluginId).then(function (config) {
                         document.getElementById('Enabled').checked = config.Enabled;
                         document.getElementById('ShowOnUserHome').checked = config.ShowOnUserHome;
@@ -326,7 +408,53 @@
                         document.getElementById('DisabledBadgeCategories').value = (config.DisabledBadgeCategories || []).join(', ');
                         document.getElementById('WelcomeMessage').value = config.WelcomeMessage || '';
 
+                        // v1.9.8 — Integrity controls
+                        document.getElementById('EnableDailyCreditCap').checked = config.EnableDailyCreditCap !== false;
+                        document.getElementById('DailyCreditCap').value = config.DailyCreditCap || 200;
+                        document.getElementById('EnableSuspiciousActivityFlag').checked = config.EnableSuspiciousActivityFlag !== false;
+                        document.getElementById('SuspiciousRatePerHour').value = config.SuspiciousRatePerHour || 30;
+
                         Dashboard.hideLoadingMsg();
+                    });
+                },
+
+                // v1.9.8 helper — generic version of loadUsers that targets any
+                // <select> id (used by the integrity-section pickers in
+                // addition to the existing Advanced-testing picker).
+                loadUsersInto: function (selectId) {
+                    var select = document.getElementById(selectId);
+                    if (!select) return Promise.resolve([]);
+                    select.disabled = true;
+                    select.innerHTML = '<option value="">Loading users...</option>';
+                    return fetch(this.getApiUrl('Users'), {
+                        headers: this.getAuthHeaders(),
+                        credentials: 'include'
+                    }).then(function (response) {
+                        if (!response.ok) throw new Error('Request failed: ' + response.status);
+                        return response.json();
+                    }).then(function (users) {
+                        users = Array.isArray(users) ? users.slice() : [];
+                        users.sort(function (a, b) {
+                            return AchievementBadgesConfig.userName(a).localeCompare(AchievementBadgesConfig.userName(b), undefined, { sensitivity: 'base' });
+                        });
+                        select.innerHTML = '';
+                        var placeholder = document.createElement('option');
+                        placeholder.value = '';
+                        placeholder.textContent = users.length ? 'Pick a user...' : 'No users found';
+                        select.appendChild(placeholder);
+                        users.forEach(function (user) {
+                            if (!user || !user.Id) return;
+                            var option = document.createElement('option');
+                            option.value = user.Id;
+                            option.textContent = AchievementBadgesConfig.userName(user);
+                            select.appendChild(option);
+                        });
+                        select.disabled = users.length === 0;
+                        return users;
+                    }).catch(function () {
+                        select.innerHTML = '<option value="">Could not load users</option>';
+                        select.disabled = true;
+                        return [];
                     });
                 },
 
@@ -357,9 +485,64 @@
                         config.DisabledBadgeCategories = cats ? cats.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
                         config.WelcomeMessage = document.getElementById('WelcomeMessage').value || '';
 
+                        // v1.9.8 — Integrity controls
+                        config.EnableDailyCreditCap = document.getElementById('EnableDailyCreditCap').checked;
+                        config.DailyCreditCap = parseInt(document.getElementById('DailyCreditCap').value, 10) || 200;
+                        config.EnableSuspiciousActivityFlag = document.getElementById('EnableSuspiciousActivityFlag').checked;
+                        config.SuspiciousRatePerHour = parseInt(document.getElementById('SuspiciousRatePerHour').value, 10) || 30;
+
                         ApiClient.updatePluginConfiguration(AchievementBadgesConfig.pluginId, config).then(function () {
                             Dashboard.processPluginConfigurationUpdateResult();
                         });
+                    });
+                },
+
+                // v1.9.8 — Run the test-injection endpoint against a picked user.
+                runIntegrityTest: function () {
+                    var sel = document.getElementById('AchievementBadgesTestUserSelect');
+                    var countEl = document.getElementById('AchievementBadgesTestCount');
+                    var isMovieEl = document.getElementById('AchievementBadgesTestIsMovie');
+                    var statusEl = document.getElementById('AchievementBadgesTestStatus');
+                    var uid = sel && sel.value;
+                    if (!uid) { statusEl.textContent = 'Pick a target user first.'; return; }
+                    var count = Math.max(1, Math.min(500, parseInt(countEl.value, 10) || 50));
+                    var isMovie = !!isMovieEl.checked;
+                    statusEl.textContent = 'Injecting…';
+                    fetch(this.getApiUrl('Plugins/AchievementBadges/admin/users/' + encodeURIComponent(uid) + '/test/inject-playbacks?count=' + count + '&isMovie=' + (isMovie ? 'true' : 'false')), {
+                        method: 'POST',
+                        headers: this.getAuthHeaders(),
+                        credentials: 'include'
+                    }).then(function (r) {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }).then(function (j) {
+                        statusEl.textContent = 'Done. Requested ' + (j.Requested || 0) + ', credited ' + (j.Credited || 0) + ', blocked ' + (j.Blocked || 0) + (j.LastBlockMessage ? ' — last block: ' + j.LastBlockMessage : '');
+                    }).catch(function (e) {
+                        statusEl.textContent = 'Failed: ' + (e.message || e);
+                    });
+                },
+
+                // v1.9.8 — Revoke a badge from a picked user.
+                revokeBadge: function () {
+                    var sel = document.getElementById('AchievementBadgesRevokeUserSelect');
+                    var idEl = document.getElementById('AchievementBadgesRevokeBadgeId');
+                    var statusEl = document.getElementById('AchievementBadgesRevokeStatus');
+                    var uid = sel && sel.value;
+                    var bid = (idEl.value || '').trim();
+                    if (!uid || !bid) { statusEl.textContent = 'Pick a user and enter a badge id.'; return; }
+                    if (!confirm('Revoke this badge? The user will lose the unlock.')) return;
+                    fetch(this.getApiUrl('Plugins/AchievementBadges/admin/users/' + encodeURIComponent(uid) + '/badges/' + encodeURIComponent(bid)), {
+                        method: 'DELETE',
+                        headers: this.getAuthHeaders(),
+                        credentials: 'include'
+                    }).then(function (r) {
+                        if (r.status === 404) { statusEl.textContent = 'Badge not found for that user.'; return; }
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }).then(function (j) {
+                        if (j) statusEl.textContent = 'Revoked' + (j.Title ? ' (' + j.Title + ')' : '') + '.';
+                    }).catch(function (e) {
+                        statusEl.textContent = 'Failed: ' + (e.message || e);
                     });
                 },
 

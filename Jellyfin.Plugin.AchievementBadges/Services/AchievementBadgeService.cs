@@ -1379,6 +1379,41 @@ public class AchievementBadgeService : IDisposable
         }
     }
 
+    // v1.9.8 — Admin-initiated badge revoke. Use case: a user was found to
+    // have gamed the system before the integrity fixes; admin clicks Revoke
+    // in the audit log row and the badge gets un-awarded. We reset Unlocked
+    // + CurrentValue but DO NOT decrement the underlying watch counters
+    // (those are derived from real-or-fake playback records and the audit
+    // log already pinpoints the suspect activity for further investigation).
+    public AchievementBadge? RevokeBadge(string userId, string badgeId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            var badge = profile.Badges.FirstOrDefault(b => b.Id.Equals(badgeId, StringComparison.OrdinalIgnoreCase));
+
+            if (badge is null)
+            {
+                return null;
+            }
+
+            if (badge.Unlocked || badge.CurrentValue > 0)
+            {
+                badge.Unlocked = false;
+                badge.UnlockedAt = null;
+                badge.CurrentValue = 0;
+                // Also un-equip if it was equipped — a revoked badge should
+                // not stay visible in the user's showcase.
+                profile.EquippedBadgeIds.RemoveAll(x => x.Equals(badgeId, StringComparison.OrdinalIgnoreCase));
+                Save();
+                _logger.LogInformation("Revoked badge {BadgeId} for user {UserId}", badgeId, userId);
+            }
+
+            return CloneBadge(badge);
+        }
+    }
+
     public List<AchievementBadge> ResetBadgesForUser(string userId)
     {
         userId = NormalizeUserId(userId);

@@ -97,4 +97,23 @@ public class PluginConfiguration : BasePluginConfiguration
     // list of every user on the server — useful on small family servers
     // where the request/accept flow is friction that nobody needs.
     public bool FriendsSimpleMode { get; set; } = false;
+
+    // v1.9.8 — Anti-abuse / integrity controls. These exist because the
+    // playback-credit flow used to trust Jellyfin's PlayedToCompletion flag,
+    // which a user could trigger by seek-to-end or "Mark as played" without
+    // actually watching. The bug itself is fixed in v1.9.8 by per-session
+    // tick accumulation in PlaybackCompletionTracker, but these caps are
+    // defense in depth + visibility for admins.
+
+    // Daily soft cap on credited items per user. Real users watching real
+    // content never hit this; bot-clickers and exploit-spammers get capped.
+    public bool EnableDailyCreditCap { get; set; } = true;
+    public int DailyCreditCap { get; set; } = 200;
+
+    // If the user crosses this many credited items in a rolling 60-minute
+    // window, emit a "suspicious_rate" entry to the audit log so admins can
+    // investigate. Does NOT block the credit — visibility only. Throttled
+    // to one entry per user per hour so a single burst doesn't spam.
+    public bool EnableSuspiciousActivityFlag { get; set; } = true;
+    public int SuspiciousRatePerHour { get; set; } = 30;
 }

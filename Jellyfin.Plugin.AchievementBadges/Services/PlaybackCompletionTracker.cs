@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +20,30 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     private readonly ILogger<PlaybackCompletionTracker> _logger;
     private bool _subscribed;
     private bool _disposed;
+
+    // v1.9.8 — Per-session play-time tracker. Closes the spam-click /
+    // seek-to-end / mark-as-played exploits: we now track REAL accumulated
+    // play ticks instead of trusting position/runtime ratios or Jellyfin's
+    // PlayedToCompletion flag. A "good" delta is 0 < delta < ~15s of
+    // position movement between progress events; seeks and rewinds don't
+    // accumulate. Credit only fires from PlaybackStopped.
+    private const long MaxGoodDeltaTicks = 15L * TimeSpan.TicksPerSecond;
+
+    // v1.9.8 — Minimum runtime for an item to be credited as a real watch.
+    // Filters out Projectionist prerolls / Intros plugins / bumpers that
+    // register short clips into the Movie or Episode library type but
+    // aren't real watch sessions. No real film or episode runs under a
+    // minute, so 60s is a safe floor.
+    private const long MinItemRuntimeTicks = 60L * TimeSpan.TicksPerSecond;
+    private sealed class SessionWatchState
+    {
+        public string? ItemId;
+        public long LastPositionTicks;
+        public long AccumulatedPlayTicks;
+        public DateTimeOffset StartedAt;
+        public int ProgressEventCount;
+    }
+    private readonly ConcurrentDictionary<string, SessionWatchState> _sessions = new();
 
     public PlaybackCompletionTracker(
         ISessionManager sessionManager,
@@ -65,12 +90,86 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
 
     private void OnPlaybackProgress(object? sender, PlaybackProgressEventArgs e)
     {
-        TryRecordCompletion(e, "progress", playedToCompletion: false);
+        // v1.9.8 — Progress events only update accumulated play time.
+        // Credit is decided exclusively at stop. Previously this path also
+        // called TryRecordCompletion using position/runtime ratio, which
+        // let a user seek to 90% and trigger a credit without watching.
+        UpdateSessionState(e);
     }
 
     private void OnPlaybackStopped(object? sender, PlaybackStopEventArgs e)
     {
+        // v1.9.8 — Final tick update so the last delta is captured, then
+        // decide credit based on accumulated play ticks. PlayedToCompletion
+        // is now informational only; we do NOT trust it to bypass the gate.
+        UpdateSessionState(e);
         TryRecordCompletion(e, "stopped", playedToCompletion: e.PlayedToCompletion);
+    }
+
+    /// <summary>
+    /// v1.9.8 — Update per-session accumulated play ticks. A "good" delta
+    /// (0 < delta < MaxGoodDeltaTicks of position advancement between events)
+    /// is added; large positive deltas (seeks) and negative deltas (rewinds)
+    /// are not counted. Item-change inside the same session resets state.
+    /// </summary>
+    private void UpdateSessionState(PlaybackProgressEventArgs e)
+    {
+        try
+        {
+            var sessionId = e.Session?.Id;
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                return;
+            }
+
+            var item = e.Item;
+            if (item is null)
+            {
+                return;
+            }
+
+            var itemId = item.Id.ToString("D");
+            var positionTicks = e.PlaybackPositionTicks ?? 0;
+
+            _sessions.AddOrUpdate(
+                sessionId,
+                _ => new SessionWatchState
+                {
+                    ItemId = itemId,
+                    LastPositionTicks = positionTicks,
+                    AccumulatedPlayTicks = 0,
+                    StartedAt = DateTimeOffset.UtcNow,
+                    ProgressEventCount = 1
+                },
+                (_, prev) =>
+                {
+                    // If the user switched to a different item inside the
+                    // same session, reset accumulator to that new item.
+                    if (!string.Equals(prev.ItemId, itemId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return new SessionWatchState
+                        {
+                            ItemId = itemId,
+                            LastPositionTicks = positionTicks,
+                            AccumulatedPlayTicks = 0,
+                            StartedAt = DateTimeOffset.UtcNow,
+                            ProgressEventCount = 1
+                        };
+                    }
+                    var delta = positionTicks - prev.LastPositionTicks;
+                    if (delta > 0 && delta <= MaxGoodDeltaTicks)
+                    {
+                        prev.AccumulatedPlayTicks += delta;
+                    }
+                    prev.LastPositionTicks = positionTicks;
+                    prev.ProgressEventCount++;
+                    return prev;
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[AchievementBadges] UpdateSessionState failed.");
+        }
     }
 
     private void TryRecordCompletion(PlaybackProgressEventArgs e, string source, bool playedToCompletion)
@@ -103,23 +202,63 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             }
 
             var runTimeTicks = item.RunTimeTicks ?? 0;
-            var positionTicks = e.PlaybackPositionTicks ?? 0;
+
+            // v1.9.8 — Reject items shorter than 60s. Projectionist prerolls,
+            // Intros plugins, and bumpers register short clips into the
+            // Movie/Episode library type, so without this gate every preroll
+            // play credits +1 movie. Real films/episodes are never <1m.
+            if (runTimeTicks > 0 && runTimeTicks < MinItemRuntimeTicks)
+            {
+                _logger.LogDebug(
+                    "[AchievementBadges] {Source} for user {UserId} item {ItemId}: runtime {Seconds}s below 60s floor; treating as preroll/intro and skipping credit.",
+                    source, userId, itemId, runTimeTicks / TimeSpan.TicksPerSecond);
+                // Drop any session state we accumulated for this short item
+                // so it doesn't leak into the next session.
+                var prerollSessionId = e.Session?.Id;
+                if (!string.IsNullOrWhiteSpace(prerollSessionId))
+                {
+                    _sessions.TryRemove(prerollSessionId, out _);
+                }
+                return;
+            }
+
+            // v1.9.8 — Read accumulated play ticks for this session. This is
+            // the real number of position-time the user actually advanced
+            // through (seeks excluded). We then remove the session from the
+            // tracker since the playback is ending.
+            long accumulatedPlayTicks = 0;
+            int progressEventCount = 0;
+            var sessionId = e.Session?.Id;
+            if (!string.IsNullOrWhiteSpace(sessionId)
+                && _sessions.TryRemove(sessionId, out var session))
+            {
+                accumulatedPlayTicks = session.AccumulatedPlayTicks;
+                progressEventCount = session.ProgressEventCount;
+            }
 
             double completionPercent;
-            if (playedToCompletion)
+            if (runTimeTicks > 0)
             {
-                completionPercent = 100d;
-            }
-            else if (runTimeTicks > 0 && positionTicks > 0)
-            {
-                completionPercent = (double)positionTicks / runTimeTicks * 100d;
+                completionPercent = (double)accumulatedPlayTicks / runTimeTicks * 100d;
             }
             else
             {
                 _logger.LogDebug(
-                    "[AchievementBadges] {Source} event for user {UserId} item {ItemId}: runtime={RunTime} position={Position}.",
-                    source, userId, itemId, runTimeTicks, positionTicks);
+                    "[AchievementBadges] {Source} event for user {UserId} item {ItemId}: runtime ticks unavailable; skipping credit.",
+                    source, userId, itemId);
                 return;
+            }
+
+            // Visibility for admins debugging "why didn't this credit?":
+            // log the gap between Jellyfin's PlayedToCompletion flag and our
+            // accumulated-tick view. This is the canonical signal that a
+            // user is attempting to spam-click / seek-to-end / mark-as-played
+            // their way to a badge unlock.
+            if (playedToCompletion && completionPercent < 80d)
+            {
+                _logger.LogInformation(
+                    "[AchievementBadges] {Source} event for user {UserId} item {ItemId}: PlayedToCompletion=true but accumulated watch is only {Completion:0.##}% (progressEvents={Events}). Refusing credit; this is the expected behavior for seek-to-end / mark-as-played / 0-second-watch attempts.",
+                    source, userId, itemId, completionPercent, progressEventCount);
             }
 
             var libraryName = ResolveLibraryName(item);

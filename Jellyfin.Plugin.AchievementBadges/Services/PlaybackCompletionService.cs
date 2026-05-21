@@ -12,6 +12,7 @@ namespace Jellyfin.Plugin.AchievementBadges.Services;
 public class PlaybackCompletionService
 {
     private readonly AchievementBadgeService _achievementBadgeService;
+    private readonly AuditLogService? _auditLog;
     private readonly string _dataFilePath;
     private readonly object _lock = new();
     // v1.8.60: WriteIndented=false. See AchievementBadgeService for rationale.
@@ -24,9 +25,11 @@ public class PlaybackCompletionService
 
     public PlaybackCompletionService(
         AchievementBadgeService achievementBadgeService,
-        IApplicationPaths applicationPaths)
+        IApplicationPaths applicationPaths,
+        AuditLogService? auditLog = null)
     {
         _achievementBadgeService = achievementBadgeService;
+        _auditLog = auditLog;
 
         var pluginDataPath = Path.Combine(applicationPaths.PluginConfigurationsPath, "achievementbadges");
         Directory.CreateDirectory(pluginDataPath);
@@ -99,6 +102,60 @@ public class PlaybackCompletionService
             {
                 state.RecentlyCompletedItemIds[itemId] = playedAt;
             }
+
+            // v1.9.8 — Daily watch-rate cap. Tracks credited items per UTC
+            // day. Real users watching real content never hit this; it's
+            // pure defense in depth against the spam-click exploit class.
+            var cfg = Plugin.Instance?.Configuration;
+            var today = playedAt.UtcDateTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            state.CreditedItemsByDate.TryGetValue(today, out var todayCount);
+            if (cfg?.EnableDailyCreditCap == true && cfg.DailyCreditCap > 0 && todayCount >= cfg.DailyCreditCap)
+            {
+                message = $"Daily credit cap reached ({cfg.DailyCreditCap}/day). Try again tomorrow.";
+                // Log only the FIRST time per day we hit the cap; subsequent
+                // attempts in the same day stay silent to avoid spam.
+                if (todayCount == cfg.DailyCreditCap)
+                {
+                    _auditLog?.Log(context.UserId, string.Empty, "rate_cap_blocked",
+                        $"User hit daily credit cap of {cfg.DailyCreditCap} items on {today}.");
+                }
+                return false;
+            }
+
+            // v1.9.8 — Suspicious-rate flag. Track timestamps of credits in a
+            // rolling 1h window; if the user crosses SuspiciousRatePerHour
+            // emit an audit-log entry (throttled to once per hour per user).
+            // Visibility only — does not block the credit.
+            state.RecentCreditTimestamps.RemoveAll(t => playedAt - t > TimeSpan.FromHours(1));
+            state.RecentCreditTimestamps.Add(playedAt);
+            if (state.RecentCreditTimestamps.Count > 256)
+            {
+                state.RecentCreditTimestamps.RemoveRange(0, state.RecentCreditTimestamps.Count - 256);
+            }
+            if (cfg?.EnableSuspiciousActivityFlag == true && cfg.SuspiciousRatePerHour > 0
+                && state.RecentCreditTimestamps.Count >= cfg.SuspiciousRatePerHour
+                && (state.LastSuspiciousFlagAt is null
+                    || playedAt - state.LastSuspiciousFlagAt.Value > TimeSpan.FromHours(1)))
+            {
+                _auditLog?.Log(context.UserId, string.Empty, "suspicious_rate",
+                    $"User credited {state.RecentCreditTimestamps.Count} items in the last hour (threshold {cfg.SuspiciousRatePerHour}).");
+                state.LastSuspiciousFlagAt = playedAt;
+            }
+
+            // Prune the date dictionary to last 30 days so it doesn't grow
+            // unbounded over months.
+            if (state.CreditedItemsByDate.Count > 60)
+            {
+                var cutoff = playedAt.UtcDateTime.AddDays(-30);
+                var stale = state.CreditedItemsByDate
+                    .Where(kvp => !System.DateTime.TryParseExact(kvp.Key, "yyyy-MM-dd",
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.AssumeUniversal, out var d) || d < cutoff)
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+                foreach (var key in stale) state.CreditedItemsByDate.Remove(key);
+            }
+            state.CreditedItemsByDate[today] = todayCount + 1;
 
             state.TotalCompletedItems++;
 
@@ -255,7 +312,10 @@ public class PlaybackCompletionService
             TotalCompletedItems = state.TotalCompletedItems,
             TotalCompletedMovies = state.TotalCompletedMovies,
             TotalCompletedEpisodes = state.TotalCompletedEpisodes,
-            LastCompletionAt = state.LastCompletionAt
+            LastCompletionAt = state.LastCompletionAt,
+            CreditedItemsByDate = new Dictionary<string, int>(state.CreditedItemsByDate),
+            RecentCreditTimestamps = new List<DateTimeOffset>(state.RecentCreditTimestamps),
+            LastSuspiciousFlagAt = state.LastSuspiciousFlagAt
         };
     }
 }
