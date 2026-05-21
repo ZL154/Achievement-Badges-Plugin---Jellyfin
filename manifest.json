@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.9.7.0",
+        "changelog": "v1.9.7 - Security-only release. No new features, no UI changes, drop-in upgrade from v1.9.6. Per-user chat attachment quota (200 files / 200MB total) closes a disk-exhaustion vector. Anonymous profile-card CSP drops script-src 'unsafe-inline' (defense-in-depth tightening). SVG sanitizer now blocks <animate>/<set> SMIL elements that could mutate attributes mid-render. Webhook URL DNS resolution bounded at 3s (was OS default 5-30s). Audit-log endpoint limit clamped to [1, 1000] at controller. MessagingService + AchievementBadgeService now IDisposable so the debounced-save Timer is released on plugin reload. CodeQL first scan baselined; Scorecard Pinned-Dependencies fix on security.yml. Release zip is Sigstore-signed and SLSA build-provenance attested - verify with cosign verify-blob or gh attestation verify.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.9.7/Jellyfin.Plugin.AchievementBadges_1.9.7.0.zip",
+        "checksum": "528176710984a56ff28e8039037fb582",
+        "timestamp": "2026-05-21T00:00:00Z"
+      },
+      {
         "version": "1.9.6.0",
         "changelog": "v1.9.6 - Small follow-up release. Unlock toasts now show badge descriptions instead of rolling into a blank second stage, achievement popups show during playback by default again, and admin testing is easier with a server-user picker on the achievement admin/config pages. Also refreshes fallback script cache-busting for read-only Jellyfin web roots. Existing profiles are migrated so the old accidental mute-toasts-while-watching default is cleared; users can re-enable it in settings if preferred.",
         "targetAbi": "10.11.0.0",
