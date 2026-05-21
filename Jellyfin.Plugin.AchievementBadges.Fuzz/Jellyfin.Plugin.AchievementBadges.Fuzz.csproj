@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Jellyfin.Plugin.AchievementBadges.Fuzz</RootNamespace>
+    <AssemblyName>Jellyfin.Plugin.AchievementBadges.Fuzz</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <LangVersion>latest</LangVersion>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- Fuzz harness exists to crash on bad input. Analyzer strict-mode adds
+         no value here. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SharpFuzz wraps libFuzzer for managed .NET assemblies. The `sharpfuzz`
+         CLI runs as a post-build step inside ClusterFuzzLite's Docker image
+         to instrument the plugin assembly; the NuGet package here only
+         provides the `Fuzzer.Run` entry point Program.Main calls. -->
+    <PackageReference Include="SharpFuzz" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Jellyfin.Plugin.AchievementBadges\Jellyfin.Plugin.AchievementBadges.csproj" />
+  </ItemGroup>
+
+</Project>

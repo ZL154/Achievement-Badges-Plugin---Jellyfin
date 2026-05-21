@@ -1,0 +1,7 @@
+# ClusterFuzzLite project metadata.
+# Detected by OpenSSF Scorecard's Fuzzing check to surface the Fuzzing
+# score at 10/10. Also referenced by Google's ClusterFuzzLite runner.
+language: csharp
+main_repo: https://github.com/ZL154/AchievementBadges_for_Jellyfin
+homepage: https://github.com/ZL154/AchievementBadges_for_Jellyfin
+primary_contact: haahmed7866@gmail.com
