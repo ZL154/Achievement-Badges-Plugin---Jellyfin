@@ -1,0 +1,45 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/Jellyfin.Plugin.AchievementBadges"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "nuget"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    ignore:
+      # Jellyfin SDK is pinned exactly in the csproj — upgrades require a
+      # manual ABI check against the target Jellyfin release.
+      - dependency-name: "Jellyfin.Controller"
+      - dependency-name: "Jellyfin.Model"
+
+  - package-ecosystem: "nuget"
+    directory: "/Jellyfin.Plugin.AchievementBadges.Tests"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "tests"
+    commit-message:
+      prefix: "deps(tests)"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
