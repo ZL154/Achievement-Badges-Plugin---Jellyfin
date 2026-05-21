@@ -9,7 +9,7 @@
 # accepts csharp from its GitHub Action wrapper. Until then this Dockerfile
 # exists primarily for OpenSSF Scorecard's Fuzzing-check scaffolding
 # detection (which looks at file presence, not behavior).
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:a6a603ef884955aa79576bb42fce189fe7ce005eab8b82d29b3e0968b4844960
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:5109a953fb4a40bb962dace67ded52a5a5ef83e49e372d39d029755f345f4498
 
 # Stage the repo and the build script at the paths CFLite expects.
 COPY . $SRC/AchievementBadges
