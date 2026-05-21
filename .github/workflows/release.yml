@@ -51,8 +51,10 @@ jobs:
       - name: Build plugin
         run: |
           set -euo pipefail
+          dotnet restore Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj --locked-mode
           dotnet publish Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj \
             --configuration Release \
+            --no-restore \
             --output dist/build
 
       - name: Stage plugin payload

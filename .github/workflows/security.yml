@@ -27,7 +27,7 @@ jobs:
 
       - name: Restore
         working-directory: Jellyfin.Plugin.AchievementBadges.Tests
-        run: dotnet restore
+        run: dotnet restore --locked-mode
 
       - name: Run security regression tests
         working-directory: Jellyfin.Plugin.AchievementBadges.Tests
@@ -46,7 +46,7 @@ jobs:
 
       - name: Restore plugin
         working-directory: Jellyfin.Plugin.AchievementBadges
-        run: dotnet restore
+        run: dotnet restore --locked-mode
 
       - name: Audit direct + transitive packages for known CVEs
         working-directory: Jellyfin.Plugin.AchievementBadges

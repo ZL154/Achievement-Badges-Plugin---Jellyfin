@@ -39,8 +39,8 @@ jobs:
 
       - name: Restore
         run: |
-          dotnet restore Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj
-          dotnet restore Jellyfin.Plugin.AchievementBadges.Tests/Jellyfin.Plugin.AchievementBadges.Tests.csproj
+          dotnet restore Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj --locked-mode
+          dotnet restore Jellyfin.Plugin.AchievementBadges.Tests/Jellyfin.Plugin.AchievementBadges.Tests.csproj --locked-mode
 
       - name: Build
         run: |
@@ -69,7 +69,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore
-        run: dotnet restore Jellyfin.Plugin.AchievementBadges.Tests/Jellyfin.Plugin.AchievementBadges.Tests.csproj
+        run: dotnet restore Jellyfin.Plugin.AchievementBadges.Tests/Jellyfin.Plugin.AchievementBadges.Tests.csproj --locked-mode
 
       - name: Test
         run: |

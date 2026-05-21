@@ -40,7 +40,7 @@ jobs:
 
       - name: Build
         run: |
-          dotnet restore Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj
+          dotnet restore Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj --locked-mode
           dotnet build Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj --configuration Release --no-restore
 
       - name: Perform CodeQL Analysis

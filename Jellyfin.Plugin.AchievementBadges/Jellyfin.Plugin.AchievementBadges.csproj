@@ -13,6 +13,12 @@
     <AnalysisMode>Recommended</AnalysisMode>
     <AnalysisLevel>latest</AnalysisLevel>
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <!-- v1.9.7 hardening: lock every transitive NuGet by hash so dotnet
+         restore is reproducible across machines and CI runs. CI passes the
+         locked-mode flag so any drift between the lock file and csproj
+         fails fast. Closes Scorecard's Pinned Dependencies nugetCommand
+         finding. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <ItemGroup>
