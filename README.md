@@ -24,6 +24,7 @@
   <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/actions/workflows/codeql.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZL154/AchievementBadges_for_Jellyfin/codeql.yml?style=for-the-badge&labelColor=000000&label=CodeQL" /></a>
   <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZL154/AchievementBadges_for_Jellyfin/security.yml?style=for-the-badge&labelColor=000000&label=Security" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/ZL154/AchievementBadges_for_Jellyfin"><img src="https://img.shields.io/ossf-scorecard/github.com/ZL154/AchievementBadges_for_Jellyfin?style=for-the-badge&labelColor=000000&label=OSSF%20Score" alt="OpenSSF Scorecard" /></a>
+  <a href="https://www.bestpractices.dev/projects/12937"><img src="https://www.bestpractices.dev/projects/12937/badge" alt="OpenSSF Best Practices" /></a>
 </p>
 
 # 🏆 Achievement Badges for Jellyfin
