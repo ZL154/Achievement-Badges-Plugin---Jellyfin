@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "1.9.8.0",
+        "changelog": "v1.9.8 - Integrity release. Closes playback-credit exploits: mark-as-played, seek-to-end, and spam-click no longer credit badges without real watching. Tracker now uses per-session accumulated play ticks (seeks excluded) instead of trusting Jellyfin's PlayedToCompletion flag. Defense in depth: 60s minimum runtime filter (excludes Projectionist prerolls and bumpers), DailyCreditCap (default 200/user/day, configurable), SuspiciousRatePerHour audit flag (default 30/h, configurable). Admin tools in both Classic and Revamp config UIs: integrity settings, test-injection endpoint to verify caps end-to-end on a throwaway user, and manual badge revoke. New REST endpoints: /admin/integrity-config, /admin/users/{id}/test/inject-playbacks, /admin/users/{id}/badges/{badge}. Verified end-to-end on a live server. Drop-in upgrade from v1.9.7; existing unlocks are NOT retroactively re-evaluated. Sigstore-signed + SLSA build-provenance attested.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v1.9.8/Jellyfin.Plugin.AchievementBadges_1.9.8.0.zip",
+        "checksum": "7ea2f86cb028e3657f44d40f96fd8d80",
+        "timestamp": "2026-05-21T00:00:00Z"
+      },
+      {
         "version": "1.9.7.0",
         "changelog": "v1.9.7 - Security-only release. No new features, no UI changes, drop-in upgrade from v1.9.6. Per-user chat attachment quota (200 files / 200MB total) closes a disk-exhaustion vector. Anonymous profile-card CSP drops script-src 'unsafe-inline' (defense-in-depth tightening). SVG sanitizer now blocks <animate>/<set> SMIL elements that could mutate attributes mid-render. Webhook URL DNS resolution bounded at 3s (was OS default 5-30s). Audit-log endpoint limit clamped to [1, 1000] at controller. MessagingService + AchievementBadgeService now IDisposable so the debounced-save Timer is released on plugin reload. CodeQL first scan baselined; Scorecard Pinned-Dependencies fix on security.yml. Release zip is Sigstore-signed and SLSA build-provenance attested - verify with cosign verify-blob or gh attestation verify.",
         "targetAbi": "10.11.0.0",
