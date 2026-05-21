@@ -2,8 +2,18 @@
 
 ## Reporting a vulnerability
 
-Please add **zack1544** on Discord with the subject `[AchievementBadges] security`
-before opening a public issue.
+Preferred private channel: **GitHub Security Advisories** — open one at
+https://github.com/ZL154/AchievementBadges_for_Jellyfin/security/advisories/new
+(this repo has private vulnerability reporting enabled, so the advisory is
+visible only to the maintainer until you and the maintainer agree to publish).
+
+Alternative: add **zack1544** on Discord with the subject `[AchievementBadges]
+security` before opening a public issue.
+
+Out-of-band: if both channels are unreachable, file a draft issue at
+https://github.com/ZL154/AchievementBadges_for_Jellyfin/issues/new with the
+title `security` and the body redacted to a single line ("contact request");
+the maintainer will reach out via the email tied to your GitHub account.
 
 | Stage | SLA |
 |---|---|

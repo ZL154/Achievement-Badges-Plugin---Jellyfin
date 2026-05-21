@@ -8,6 +8,9 @@
     <IsTestProject>true</IsTestProject>
     <!-- Plugin DLL artifact is built by the main csproj; this test project is
          CI-only and never ships inside the plugin zip. -->
+    <!-- v1.9.7 hardening: lock transitive NuGet by hash. CI restore uses
+         the locked-mode flag so dependency drift fails fast. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <ItemGroup>
