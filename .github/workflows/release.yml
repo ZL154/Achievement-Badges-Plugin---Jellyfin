@@ -1,0 +1,159 @@
+name: Release Plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Create/update GitHub Release and upload artifacts"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+# OSSF Token-Permissions: read-all top-level; the build job opts into the
+# narrower contents: write + id-token: write that it actually needs.
+permissions: read-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Read version
+        id: ver
+        run: |
+          set -euo pipefail
+          VERSION="$(grep -oPm1 '(?<=<Version>)[^<]+' Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj)"
+          # Existing releases use a 4-segment version (1.9.6.0) in the zip
+          # filename. Normalize: if csproj has 3 segments, append .0.
+          case "$(echo "$VERSION" | awk -F. '{print NF}')" in
+            3) ZIPVER="${VERSION}.0" ;;
+            4) ZIPVER="${VERSION}" ;;
+            *) echo "::error::Unexpected version format: $VERSION"; exit 1 ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "zipver=$ZIPVER" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build plugin
+        run: |
+          set -euo pipefail
+          dotnet publish Jellyfin.Plugin.AchievementBadges/Jellyfin.Plugin.AchievementBadges.csproj \
+            --configuration Release \
+            --output dist/build
+
+      - name: Stage plugin payload
+        run: |
+          set -euo pipefail
+          mkdir -p dist/Jellyfin.Plugin.AchievementBadges
+          # Copy only the plugin DLL — Jellyfin.Controller / Jellyfin.Model
+          # are ExcludeAssets=runtime in the csproj, so they're not emitted.
+          # Anything else in dist/build is either a transitive ref of the
+          # SDK base or the app host (unused by plugins).
+          cp dist/build/Jellyfin.Plugin.AchievementBadges.dll dist/Jellyfin.Plugin.AchievementBadges/
+
+      - name: Package zip + checksums
+        id: pkg
+        run: |
+          set -euo pipefail
+          ZIPNAME="Jellyfin.Plugin.AchievementBadges_${{ steps.ver.outputs.zipver }}.zip"
+          cd dist
+          zip -r "$ZIPNAME" "Jellyfin.Plugin.AchievementBadges"
+          md5sum "$ZIPNAME"    | awk '{print toupper($1)}' > "${ZIPNAME}.md5"
+          sha256sum "$ZIPNAME"                              > "${ZIPNAME}.sha256"
+          echo "zipname=$ZIPNAME"     >> "$GITHUB_OUTPUT"
+          echo "zippath=dist/$ZIPNAME" >> "$GITHUB_OUTPUT"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # Pin cosign binary to v2.4.0 — newer v3+ cosign defaults to
+          # --new-bundle-format which silently ignores --output-signature
+          # and --output-certificate flags, breaking the .sig/.pem assets
+          # Scorecard's Signed-Releases check looks for. v2.4.0 keeps the
+          # legacy flag behavior.
+          cosign-release: 'v2.4.0'
+
+      - name: Sign release zip
+        if: ${{ github.event.inputs.publish_release == 'true' }}
+        run: |
+          set -euo pipefail
+          ZIP="${{ steps.pkg.outputs.zippath }}"
+          cosign sign-blob --yes \
+            --output-signature "${ZIP}.sig" \
+            --output-certificate "${ZIP}.pem" \
+            "$ZIP"
+
+      # SLSA build provenance: GitHub's first-party attestation action signs
+      # an in-toto attestation linking the zip to this workflow run + commit
+      # SHA. Lifts OpenSSF Scorecard's Signed-Releases check from partial to
+      # full credit. Verify downstream with
+      # `gh attestation verify --owner ZL154 <zip>`.
+      - name: Attest build provenance
+        id: attest
+        if: ${{ github.event.inputs.publish_release == 'true' }}
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-path: ${{ steps.pkg.outputs.zippath }}
+
+      - name: Stage attestation as release asset
+        if: ${{ github.event.inputs.publish_release == 'true' }}
+        run: |
+          set -euo pipefail
+          cp '${{ steps.attest.outputs.bundle-path }}' "${{ steps.pkg.outputs.zippath }}.intoto.jsonl"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: achievementbadges-plugin
+          path: |
+            dist/Jellyfin.Plugin.AchievementBadges_*.zip
+            dist/Jellyfin.Plugin.AchievementBadges_*.md5
+            dist/Jellyfin.Plugin.AchievementBadges_*.sha256
+            dist/Jellyfin.Plugin.AchievementBadges_*.sig
+            dist/Jellyfin.Plugin.AchievementBadges_*.pem
+            dist/Jellyfin.Plugin.AchievementBadges_*.intoto.jsonl
+
+      - name: Create or update release
+        if: ${{ github.event.inputs.publish_release == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.ver.outputs.tag }}"
+          ZIP="${{ steps.pkg.outputs.zippath }}"
+          MD5="${ZIP}.md5"
+          SHA256="${ZIP}.sha256"
+          SIG="${ZIP}.sig"
+          PEM="${ZIP}.pem"
+          ATTESTATION="${ZIP}.intoto.jsonl"
+          # Release body: prefer docs/release-notes/v<VERSION>.md when present,
+          # else fall back to a generic blurb. Lets each release ship a real
+          # changelog without editing the workflow file.
+          NOTES_FILE=""
+          if [ -f "docs/release-notes/v${{ steps.ver.outputs.version }}.md" ]; then
+            NOTES_FILE="docs/release-notes/v${{ steps.ver.outputs.version }}.md"
+          elif [ -f "docs/release-notes/${TAG}.md" ]; then
+            NOTES_FILE="docs/release-notes/${TAG}.md"
+          fi
+          if [ -z "$NOTES_FILE" ]; then
+            echo "Automated release for Achievement Badges for Jellyfin ${{ steps.ver.outputs.version }}. Sigstore-signed zip — verify with cosign verify-blob." > "$RUNNER_TEMP/notes.md"
+            NOTES_FILE="$RUNNER_TEMP/notes.md"
+          fi
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            && gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file "$NOTES_FILE" \
+            || gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file "$NOTES_FILE"
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" "$ZIP" "$MD5" "$SHA256" "$SIG" "$PEM" "$ATTESTATION" --clobber
