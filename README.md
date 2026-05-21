@@ -20,10 +20,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZL154/AchievementBadges_for_Jellyfin/ci.yml?style=for-the-badge&labelColor=000000&color=2b2b2b&label=CI" /></a>
-  <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/actions/workflows/codeql.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZL154/AchievementBadges_for_Jellyfin/codeql.yml?style=for-the-badge&labelColor=000000&color=2b2b2b&label=CodeQL" /></a>
-  <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZL154/AchievementBadges_for_Jellyfin/security.yml?style=for-the-badge&labelColor=000000&color=2b2b2b&label=Security" /></a>
-  <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases"><img src="https://img.shields.io/github/downloads/ZL154/AchievementBadges_for_Jellyfin/total?style=for-the-badge&labelColor=000000&color=2b2b2b&label=Downloads" /></a>
+  <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZL154/AchievementBadges_for_Jellyfin/ci.yml?style=for-the-badge&labelColor=000000&label=CI" /></a>
+  <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/actions/workflows/codeql.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZL154/AchievementBadges_for_Jellyfin/codeql.yml?style=for-the-badge&labelColor=000000&label=CodeQL" /></a>
+  <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZL154/AchievementBadges_for_Jellyfin/security.yml?style=for-the-badge&labelColor=000000&label=Security" /></a>
 </p>
 
 # 🏆 Achievement Badges for Jellyfin
