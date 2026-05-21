@@ -33,7 +33,7 @@ A full progression, gamification and achievement system for Jellyfin that reward
 - [What's new in v1.9.6](#whats-new-in-v196) - toast descriptions, playback popups, admin testing picker
 - [What's new in v1.9.5](#whats-new-in-v195) - attachment fix, some security fixes, defensive hardening
 - [What's new in v1.9.4](#-whats-new-in-v194) — 32 new badges (afternoon, prime time, holidays, anime, studios, pilot/completer), 8-language translations, Revamp admin UI fix
-- [What's new in v1.9.0](#-whats-new-in-v190) — Revamp UI, Friends drawer Revamp, last-watched, HMAC signing, A+ security
+- [What's new in v1.9.0](#-whats-new-in-v190) — Revamp UI, Friends drawer Revamp, last-watched, HMAC signing.
 - [Core features](#-core-features) — badges, ranks, score, prestige, quests, stats, UI, preferences, admin
 - [Messaging](#-messaging-new-in-v18) — 1:1 + groups, attachments, read receipts, edit/delete, block
 - [Installation](#️-installation)
