@@ -31,8 +31,18 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
+          # repo_token grants the scorecard-action enough scope to read
+          # classic branch-protection rules. The default GITHUB_TOKEN
+          # can't, which makes the Branch-Protection check error out with
+          # "internal error: some github tokens can't read classic branch
+          # protection rules". The secret is a fine-grained PAT scoped to
+          # this single repo with Administration: Read-only.
+          # If the secret is unset, scorecard-action falls back to
+          # GITHUB_TOKEN and the Branch-Protection check stays in error
+          # state — non-fatal for the rest of the run.
+          repo_token: ${{ secrets.SCORECARD_TOKEN }}
           # publish_results=true publishes the score to the public
-          # api.securityscorecards.dev API so the README badge can render it.
+          # api.securityscorecards.dev API.
           publish_results: true
 
       - name: Upload artifact
