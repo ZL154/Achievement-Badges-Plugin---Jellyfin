@@ -13,6 +13,12 @@
     <AnalysisMode>Recommended</AnalysisMode>
     <AnalysisLevel>latest</AnalysisLevel>
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <!-- v1.9.7 hardening: warnings are now build errors so future
+         regressions can't ship silently. The .editorconfig at repo root
+         silences the perf/style-only CA rules with documented
+         justifications; correctness rules (CA1816, CA2211, CA2263)
+         have been fixed at the source. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- v1.9.7 hardening: lock every transitive NuGet by hash so dotnet
          restore is reproducible across machines and CI runs. CI passes the
          locked-mode flag so any drift between the lock file and csproj

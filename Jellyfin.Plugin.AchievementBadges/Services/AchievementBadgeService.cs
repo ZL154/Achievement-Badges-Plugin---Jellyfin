@@ -2725,8 +2725,12 @@ public class AchievementBadgeService : IDisposable
     private string RecoveryPath => _dataFilePath + ".recovery";
 
     // Summary of what Load() did this process, surfaced via the /test
-    // endpoint so the admin can see recovery activity.
-    public static string LastLoadSummary = "not loaded yet";
+    // endpoint so the admin can see recovery activity. Written from a
+    // single Load() callsite during plugin init and read concurrently
+    // afterwards — Volatile semantics not required because reference
+    // assignment is atomic on .NET and the only writer runs before any
+    // controller method that reads it.
+    public static string LastLoadSummary { get; internal set; } = "not loaded yet";
 
     private bool TryParseStore(string path, out UserBadgeStore? store, out string? error)
     {

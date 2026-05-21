@@ -49,12 +49,14 @@ public class WebInjectionService : IHostedService
     private static readonly string CurrentStamp =
         "<!-- ab-v" + (typeof(WebInjectionService).Assembly.GetName().Version?.ToString() ?? "0") + " -->";
 
-    // Diagnostics for the test endpoint
-    public static string DiagWebPath = "not set";
-    public static bool DiagIndexFound;
-    public static bool DiagIndexPatched;
-    public static string DiagPatchedPath = "none";
-    public static string DiagLastError = "none";
+    // Diagnostics for the /test endpoint. Single-writer (WebInjectionService
+    // own ctor + Patch path) plus controller read. Reference and bool writes
+    // are atomic on .NET so no Volatile is required.
+    public static string DiagWebPath { get; internal set; } = "not set";
+    public static bool DiagIndexFound { get; internal set; }
+    public static bool DiagIndexPatched { get; internal set; }
+    public static string DiagPatchedPath { get; internal set; } = "none";
+    public static string DiagLastError { get; internal set; } = "none";
 
     private readonly IApplicationPaths _appPaths;
     private readonly ILogger<WebInjectionService> _logger;

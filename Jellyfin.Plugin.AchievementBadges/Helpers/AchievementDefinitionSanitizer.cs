@@ -18,7 +18,7 @@ public static class AchievementDefinitionSanitizer
         def.MetricParameter = Trim(def.MetricParameter ?? "", 256);
         if (def.TargetValue < 1) def.TargetValue = 1;
         if (def.TargetValue > 1_000_000) def.TargetValue = 1_000_000;
-        if (!Enum.IsDefined(typeof(AchievementMetric), def.Metric)) def.Metric = default;
+        if (!Enum.IsDefined(def.Metric)) def.Metric = default;
         return def;
     }
 

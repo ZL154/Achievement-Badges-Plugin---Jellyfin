@@ -284,6 +284,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             return;
         }
 
+        GC.SuppressFinalize(this);
         Unsubscribe();
         _disposed = true;
     }

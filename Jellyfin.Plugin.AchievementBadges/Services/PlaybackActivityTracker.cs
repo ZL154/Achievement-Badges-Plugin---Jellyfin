@@ -48,6 +48,7 @@ public class PlaybackActivityTracker : IDisposable
             return;
         }
 
+        GC.SuppressFinalize(this);
         _sessionManager.SessionStarted -= OnSessionStarted;
         _disposed = true;
     }
