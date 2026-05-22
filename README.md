@@ -31,7 +31,7 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd meets Steam profile customization, built natively into your media server.
 
-> **Status:** Active development — **v2.0.0 "Choose Your Loadout"** is live. The plugin transitions from a passive achievement tracker into an active progression game: earn score by watching, spend it in the Shop on power-ups + 70+ cosmetics (themes, frames, avatars, animated video backgrounds, profile borders, custom rank titles), and equip them to express your viewing identity. Drop-in upgrade from v1.9.8 with no data migration — existing badges, friendships, messages, quests all carry over untouched.
+> **Status:** Active development — **v2.0.0 "Choose Your Loadout"** is live. The plugin transitions from a passive achievement tracker into an active progression game: earn score by watching, spend it in the Shop on power-ups + 70+ cosmetics (themes, frames, avatars, animated video backgrounds, profile borders, custom rank titles), and equip them to express your viewing identity.
 
 ---
 
