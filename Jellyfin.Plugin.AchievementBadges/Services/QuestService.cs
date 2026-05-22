@@ -191,6 +191,83 @@ public class QuestService
         return EvaluateQuestList(profile, profile.WeeklyQuests.Where(q => q.Period == weekKey).ToList(), pool, "weekly");
     }
 
+    // v2.0 - Reroll the user's daily quest set. Returns (success, message,
+    // newList). Honors a single reroll per UTC day (gating done by the
+    // controller against profile.DailyQuestRerollsUsed). The new pick uses
+    // a different deterministic seed so the user gets fresh quests; if a
+    // pool of size <= DailyQuestCount exists they'll get the same set
+    // (acceptable - we don't have enough variety to guarantee a swap).
+    public (bool ok, string message, List<object> quests) RerollDaily(string userId)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return (false, "Profile not found.", new List<object>());
+
+        var today = DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd");
+        var pool = GetEffectiveDailyPool();
+        if (pool.Count == 0)
+        {
+            return (false, "No daily quests are configured.", new List<object>());
+        }
+
+        // Wipe today's slate. Use a fresh deterministic seed mixed with
+        // the reroll counter so the new pick is different from the old
+        // (when the pool has enough variety).
+        profile.DailyQuests.RemoveAll(q => q.Period == today);
+        var seed = today.GetHashCode() ^ ((profile.DailyQuestRerollsUsed + 1) * 0x9E3779B1);
+        var picked = PickN(pool, DailyQuestCount, unchecked((int)seed));
+        foreach (var tpl in picked)
+        {
+            if (profile.DailyQuests.Any(q => q.Id == tpl.Id && q.Period == today)) continue;
+            profile.DailyQuests.Add(new QuestState
+            {
+                Id = tpl.Id,
+                Period = today,
+                Completed = false,
+                StartValue = GetCounterValue(profile.Counters, tpl.Metric)
+            });
+        }
+        _badgeService.SaveProfileDirect(profile);
+        var list = EvaluateQuestList(profile, profile.DailyQuests.Where(q => q.Period == today).ToList(), pool, "daily");
+        return (true, "Daily quests rerolled.", list);
+    }
+
+    // v2.0 - Reroll the user's weekly quest set. Mirrors RerollDaily but
+    // gated against profile.WeeklyQuestRerollsUsed / WeeklyQuestRerollWeek so
+    // a fresh ISO week resets the allowance.
+    public (bool ok, string message, List<object> quests) RerollWeekly(string userId)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return (false, "Profile not found.", new List<object>());
+
+        var now = DateTime.Today;
+        var isoWeek = ISOWeek.GetWeekOfYear(now);
+        var isoYear = ISOWeek.GetYear(now);
+        var weekKey = isoYear + "-W" + isoWeek.ToString("D2");
+        var pool = GetEffectiveWeeklyPool();
+        if (pool.Count == 0)
+        {
+            return (false, "No weekly quests are configured.", new List<object>());
+        }
+
+        profile.WeeklyQuests.RemoveAll(q => q.Period == weekKey);
+        var seed = weekKey.GetHashCode() ^ ((profile.WeeklyQuestRerollsUsed + 1) * 0x9E3779B1);
+        var picked = PickN(pool, WeeklyQuestCount, unchecked((int)seed));
+        foreach (var tpl in picked)
+        {
+            if (profile.WeeklyQuests.Any(q => q.Id == tpl.Id && q.Period == weekKey)) continue;
+            profile.WeeklyQuests.Add(new QuestState
+            {
+                Id = tpl.Id,
+                Period = weekKey,
+                Completed = false,
+                StartValue = GetCounterValue(profile.Counters, tpl.Metric)
+            });
+        }
+        _badgeService.SaveProfileDirect(profile);
+        var list = EvaluateQuestList(profile, profile.WeeklyQuests.Where(q => q.Period == weekKey).ToList(), pool, "weekly");
+        return (true, "Weekly quests rerolled.", list);
+    }
+
     // Kept for backward compat with existing controller endpoints
     public object GetOrCreateDaily(string userId)
     {

@@ -33,17 +33,27 @@ public class AchievementBadgeService : IDisposable
 
     private Dictionary<string, UserAchievementProfile> _userProfiles = new();
 
+    // v2.0 - Power-up + Shop services optional-injected. Optional so old
+    // tests + partial DI scenarios still construct the service; null at
+    // runtime is treated as "no power-up effects, no shop milestones".
+    private readonly PowerUpService? _powerUps;
+    private readonly ShopService? _shop;
+
     public AchievementBadgeService(
         IApplicationPaths applicationPaths,
         IUserManager userManager,
         WebhookNotifier webhookNotifier,
         AuditLogService auditLog,
-        ILogger<AchievementBadgeService> logger)
+        ILogger<AchievementBadgeService> logger,
+        PowerUpService? powerUps = null,
+        ShopService? shop = null)
     {
         _logger = logger;
         _userManager = userManager;
         _webhookNotifier = webhookNotifier;
         _auditLog = auditLog;
+        _powerUps = powerUps;
+        _shop = shop;
 
         var pluginDataPath = Path.Combine(applicationPaths.PluginConfigurationsPath, "achievementbadges");
         Directory.CreateDirectory(pluginDataPath);
@@ -886,6 +896,16 @@ public class AchievementBadgeService : IDisposable
         }
     }
 
+    // v2.0: snapshot of all known profiles. Used by admin backfill tools
+    // (one-shot milestone re-check across all users after a release).
+    public IReadOnlyList<UserAchievementProfile> EnumerateAllProfiles()
+    {
+        lock (_lock)
+        {
+            return _userProfiles.Values.ToList();
+        }
+    }
+
     public void SaveProfileDirect(UserAchievementProfile profile)
     {
         lock (_lock)
@@ -1457,7 +1477,12 @@ public class AchievementBadgeService : IDisposable
             var dayKey = timestamp.ToString("yyyy-MM-dd");
             var today = DateOnly.FromDateTime(timestamp.DateTime);
 
-            counters.TotalItemsWatched++;
+            // v2.0 - Consume pending Double Credit so this single playback
+            // counts twice toward the main per-item counters. Multiplier is
+            // 1 (normal) or 2 (DoubleCredit consumed).
+            var creditMultiplier = _powerUps?.ConsumeDoubleCreditIfPending(profile) ?? 1;
+
+            counters.TotalItemsWatched += creditMultiplier;
             counters.WatchDates.Add(dayKey);
 
             if (counters.LastWatchDate == null)
@@ -1467,6 +1492,15 @@ public class AchievementBadgeService : IDisposable
             else
             {
                 var diff = today.DayNumber - counters.LastWatchDate.Value.DayNumber;
+
+                // v2.0 - Streak Freeze: if exactly one day was missed,
+                // consume a banked freeze and backfill the WatchDate for
+                // the missed day so the streak math treats the gap as
+                // filled. Skips when the user has zero freezes banked.
+                if (diff == 2 && _powerUps?.TryConsumeStreakFreeze(profile) == true)
+                {
+                    counters.WatchDates.Add(counters.LastWatchDate.Value.AddDays(1).ToString("yyyy-MM-dd"));
+                }
 
                 if (diff >= 1)
                 {
@@ -1487,14 +1521,14 @@ public class AchievementBadgeService : IDisposable
 
             if (context.IsMovie)
             {
-                counters.MoviesWatched++;
+                counters.MoviesWatched += creditMultiplier;
 
                 if (!counters.MoviesByDate.ContainsKey(dayKey))
                 {
                     counters.MoviesByDate[dayKey] = 0;
                 }
 
-                counters.MoviesByDate[dayKey]++;
+                counters.MoviesByDate[dayKey] += creditMultiplier;
             }
 
             if (context.IsEpisode)
@@ -1504,7 +1538,7 @@ public class AchievementBadgeService : IDisposable
                     counters.EpisodesByDate[dayKey] = 0;
                 }
 
-                counters.EpisodesByDate[dayKey]++;
+                counters.EpisodesByDate[dayKey] += creditMultiplier;
             }
 
             if (context.SeriesCompleted)
@@ -1816,7 +1850,38 @@ public class AchievementBadgeService : IDisposable
 
             // Base score accrual into the bank: 5 points per watched item, scaled by combo
             var earned = (int)Math.Round(5 * comboMultiplier);
+
+            // v2.0 - XP Boost doubles score for the active 60-minute window.
+            if (_powerUps?.IsXpBoostActive(profile, timestamp) == true)
+            {
+                earned = (int)Math.Round(earned * PowerUpDefinitions.XpBoostMultiplier);
+            }
+
+            // v2.0 - Daily Login Bonus. First >=80% real watch of a UTC day
+            // grants +10 score + a random power-up. Guarded by
+            // LastLoginBonusDate so a single day can't double-claim.
+            var loginBonusKey = timestamp.UtcDateTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            if (_powerUps != null && profile.LastLoginBonusDate != loginBonusKey)
+            {
+                profile.LastLoginBonusDate = loginBonusKey;
+                earned += 10;
+                // Deterministic-random pick keyed on (userId, day) so the
+                // award feels surprising without needing an RNG singleton.
+                var hash = unchecked((uint)(userId.GetHashCode() ^ loginBonusKey.GetHashCode()));
+                var puTypes = Enum.GetValues<PowerUpType>();
+                var pick = puTypes[(int)(hash % (uint)puTypes.Length)];
+                _powerUps.Grant(profile, pick);
+                _logger.LogInformation(
+                    "[AchievementBadges] Daily login bonus granted to {UserId}: +10 score, +1 {PowerUp}.",
+                    userId, pick);
+            }
+
             profile.ScoreBank += earned;
+
+            // v2.0 - Score-milestone cosmetic auto-unlocks (Cinephile at
+            // 1000, Marathoner at 2500, Curator at 5000). Idempotent;
+            // already-owned cosmetics are skipped.
+            _shop?.CheckMilestones(profile, profile.ScoreBank);
 
             // For historical backfills, use the original played date as the unlock stamp so the
             // toast poller's "UnlockedAt > LAST_SEEN" check won't match (stops scan-spam toasts).

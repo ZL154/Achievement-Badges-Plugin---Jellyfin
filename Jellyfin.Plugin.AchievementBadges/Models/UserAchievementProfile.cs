@@ -40,6 +40,97 @@ public class UserAchievementProfile
 
     public List<int> CompletionMilestonesReached { get; set; } = new();
 
+    // ---- v2.0: Power-ups + Shop + Cosmetics ------------------------------
+
+    /// <summary>
+    /// Power-up inventory keyed by PowerUpType.ToString() ("XpBoost",
+    /// "DoubleCredit", "StreakFreeze"). Capped per-type by
+    /// PowerUpDefinitions.MaxInventoryPerType so admins can't inadvertently
+    /// brick a profile with overflow.
+    /// </summary>
+    public Dictionary<string, int> PowerUpInventory { get; set; } = new();
+
+    /// <summary>
+    /// Active XP-boost expiry. null = no active boost. Refresh-not-stack:
+    /// applying a second boost while active just resets the timer to the
+    /// new 60-minute window. Reading is O(1) on every score-grant call.
+    /// </summary>
+    public DateTimeOffset? ActiveXpBoostUntil { get; set; }
+
+    /// <summary>
+    /// True when the user has activated a Double Credit power-up; cleared
+    /// to false after the next item credits through the integrity gate.
+    /// </summary>
+    public bool DoubleCreditPending { get; set; }
+
+    /// <summary>
+    /// Streak Freezes currently banked (max PowerUpDefinitions.MaxStreak
+    /// FreezesBanked). Auto-consumed by the streak calculator when a
+    /// missed day would otherwise break the watch streak.
+    /// </summary>
+    public int StreakFreezesBanked { get; set; }
+
+    /// <summary>
+    /// Cosmetic ids the user has purchased or auto-unlocked via score
+    /// milestone. Lookup-only — equipped state lives in the three
+    /// EquippedXxxId fields below so a user can preview switches without
+    /// re-buying.
+    /// </summary>
+    public List<string> OwnedCosmetics { get; set; } = new();
+
+    /// <summary>Currently-equipped profile theme cosmetic id, null = default.</summary>
+    public string? EquippedThemeId { get; set; }
+
+    /// <summary>Currently-equipped badge frame cosmetic id, null = default.</summary>
+    public string? EquippedBadgeFrameId { get; set; }
+
+    /// <summary>Currently-equipped custom rank title cosmetic id, null = auto tier name.</summary>
+    public string? EquippedCustomTitleId { get; set; }
+
+    /// <summary>
+    /// v2.0: equipped Avatar cosmetic id (e.g. "avatar-trophy"). Replaces the
+    /// default medal emoji next to the rank label.
+    /// </summary>
+    public string? EquippedAvatarId { get; set; }
+
+    /// <summary>
+    /// v2.0.x: equipped Background cosmetic id (e.g. "bg-blackhole"). Adds an
+    /// animated CSS layer behind the page content.
+    /// </summary>
+    public string? EquippedBackgroundId { get; set; }
+
+    /// <summary>
+    /// v2.0.x: equipped Profile Border cosmetic id (e.g. "border-plasma").
+    /// Wraps the achievement-profile hero card with an animated edge.
+    /// </summary>
+    public string? EquippedProfileBorderId { get; set; }
+
+    /// <summary>Running total of score spent in shop. Useful for "lifetime value" achievements and admin audits.</summary>
+    public int LifetimeScoreSpent { get; set; }
+
+    /// <summary>
+    /// UTC date key ("yyyy-MM-dd") of the last Daily Login Bonus claim.
+    /// Bonus triggers on the first &gt;=80% real watch of a UTC day; this
+    /// prevents double-claiming on a single day.
+    /// </summary>
+    public string? LastLoginBonusDate { get; set; }
+
+    /// <summary>
+    /// Daily-quest reroll bookkeeping. Resets at UTC midnight. Default
+    /// allowance is 1 reroll per UTC day so users can swap an unappealing
+    /// quest without grinding it or skipping it.
+    /// </summary>
+    public int DailyQuestRerollsUsed { get; set; }
+    public string? DailyQuestRerollDate { get; set; }
+
+    /// <summary>
+    /// Weekly-quest reroll bookkeeping. Resets every Monday UTC. Default
+    /// allowance is 1 reroll per ISO week so users can swap a long-haul
+    /// weekly that doesn't fit their viewing pattern.
+    /// </summary>
+    public int WeeklyQuestRerollsUsed { get; set; }
+    public string? WeeklyQuestRerollWeek { get; set; }
+
     public List<CompareHistoryEntry> CompareHistory { get; set; } = new();
 
     // Accepted friends — mutual. Adding someone = request; accepting writes

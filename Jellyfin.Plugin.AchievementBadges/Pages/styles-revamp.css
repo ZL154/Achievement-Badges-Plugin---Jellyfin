@@ -3335,9 +3335,11 @@ body.ab-revamp-fullwidth::after {
 #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero::after {
     display: none !important;
 }
-/* Section number sits at the very top, above the name. */
+/* Section number sits at the very top, above the name. Label text is now
+   read from data-rv-label on the .ab-hero so JS can localize it per the
+   user's selected language. */
 #achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero::before {
-    content: "01 / ACHIEVEMENT PROFILE";
+    content: attr(data-rv-label);
     position: static;
     top: auto; left: auto;
     grid-column: 1 / -1;
@@ -4494,4 +4496,506 @@ body[data-ab-style="revamp"] #abFriendsBtn:focus-visible {
     border: 1px solid oklch(70% 0.18 25 / 0.5);
     border-radius: 8px;
     color: oklch(88% 0.08 25);
+}
+
+/* =====================================================================
+   v2.0 - Cosmetic profile themes + badge frames.
+   Themes apply when the user equips a cosmetic via the Loadout UI; the
+   theme id is added as a class on #AchievementBadgesPage. The .frame-*
+   classes get added to .abShowcase / equipped-badge tiles by enhance.js
+   when the badge frame cosmetic is equipped.
+   ===================================================================== */
+
+/* Theme: Sunset - warm orange/pink gradient hero accent */
+#AchievementBadgesPage.theme-sunset #abProfileHero,
+#AchievementBadgesPage.theme-sunset #abPersonalHero,
+#AchievementBadgesPage.theme-sunset #abLoadoutSection {
+    background: linear-gradient(135deg, rgba(249,115,22,0.18), rgba(236,72,153,0.08) 60%, transparent);
+    border-color: rgba(249,115,22,0.35);
+}
+#AchievementBadgesPage.theme-sunset .abHeroTitle { color: #fdba74; }
+
+/* Theme: Cyberpunk - magenta/cyan w/ subtle scanlines */
+#AchievementBadgesPage.theme-cyberpunk #abProfileHero,
+#AchievementBadgesPage.theme-cyberpunk #abPersonalHero,
+#AchievementBadgesPage.theme-cyberpunk #abLoadoutSection {
+    background:
+        linear-gradient(135deg, rgba(168,85,247,0.15), rgba(34,211,238,0.08) 70%, transparent),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 4px);
+    border-color: rgba(168,85,247,0.4);
+}
+#AchievementBadgesPage.theme-cyberpunk .abHeroTitle { color: #d8b4fe; text-shadow: 0 0 8px rgba(168,85,247,0.5); }
+
+/* Theme: Pastel - soft lilac/mint, lower contrast */
+#AchievementBadgesPage.theme-pastel #abProfileHero,
+#AchievementBadgesPage.theme-pastel #abPersonalHero,
+#AchievementBadgesPage.theme-pastel #abLoadoutSection {
+    background: linear-gradient(135deg, rgba(196,181,253,0.18), rgba(167,243,208,0.08) 60%, transparent);
+    border-color: rgba(196,181,253,0.35);
+}
+#AchievementBadgesPage.theme-pastel .abHeroTitle { color: #ddd6fe; }
+
+/* Theme: Monochrome - pure black/white with thin accent lines */
+#AchievementBadgesPage.theme-monochrome #abProfileHero,
+#AchievementBadgesPage.theme-monochrome #abPersonalHero,
+#AchievementBadgesPage.theme-monochrome #abLoadoutSection {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.5);
+}
+#AchievementBadgesPage.theme-monochrome .abHeroTitle { color: #fff; letter-spacing:0.04em; }
+
+/* Theme: Default - explicit so equip/unequip parity is symmetric */
+#AchievementBadgesPage.theme-default #abProfileHero { /* no overrides; intentionally empty */ }
+
+/* ---------- v2.0: Same themes for the user-facing standalone page ---------- */
+/* Standalone root is #achievementBadgesStandaloneRoot. Themes recolor the
+   page background, the Loadout panel hero, and the hero arc accents.       */
+#achievementBadgesStandaloneRoot.theme-sunset {
+    background: linear-gradient(180deg, rgba(249,115,22,0.10), rgba(24,24,24,1) 320px);
+}
+#achievementBadgesStandaloneRoot.theme-sunset #abSaLoadoutHero {
+    background: linear-gradient(135deg, rgba(249,115,22,0.30), rgba(236,72,153,0.18)) !important;
+    border-color: rgba(249,115,22,0.45) !important;
+}
+#achievementBadgesStandaloneRoot.theme-sunset .ab-tab.active {
+    background: linear-gradient(135deg, #f97316, #ec4899);
+    color: #fff;
+}
+
+#achievementBadgesStandaloneRoot.theme-cyberpunk {
+    background:
+        linear-gradient(180deg, rgba(168,85,247,0.10), rgba(8,8,18,1) 320px),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 4px);
+}
+#achievementBadgesStandaloneRoot.theme-cyberpunk #abSaLoadoutHero {
+    background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(34,211,238,0.18)) !important;
+    border-color: rgba(168,85,247,0.5) !important;
+    box-shadow: 0 0 24px rgba(168,85,247,0.25) inset !important;
+}
+#achievementBadgesStandaloneRoot.theme-cyberpunk .ab-tab.active {
+    background: linear-gradient(135deg, #a855f7, #06b6d4);
+    color: #fff;
+}
+
+#achievementBadgesStandaloneRoot.theme-pastel {
+    background: linear-gradient(180deg, rgba(196,181,253,0.10), rgba(24,24,24,1) 320px);
+}
+#achievementBadgesStandaloneRoot.theme-pastel #abSaLoadoutHero {
+    background: linear-gradient(135deg, rgba(196,181,253,0.28), rgba(167,243,208,0.18)) !important;
+    border-color: rgba(196,181,253,0.45) !important;
+}
+#achievementBadgesStandaloneRoot.theme-pastel .ab-tab.active {
+    background: linear-gradient(135deg, #c4b5fd, #a7f3d0);
+    color: #1f1f1f;
+}
+
+#achievementBadgesStandaloneRoot.theme-monochrome {
+    background: #000;
+    color: rgba(255,255,255,0.92);
+}
+#achievementBadgesStandaloneRoot.theme-monochrome #abSaLoadoutHero {
+    background: rgba(255,255,255,0.04) !important;
+    border-color: rgba(255,255,255,0.7) !important;
+}
+#achievementBadgesStandaloneRoot.theme-monochrome .ab-tab.active {
+    background: #fff;
+    color: #000;
+}
+
+#achievementBadgesStandaloneRoot.theme-default { /* no overrides; intentionally empty */ }
+
+/* Hover lift for Loadout cards (matches existing badge-card affordance). */
+#achievementBadgesStandaloneRoot .ab-lo-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(102,126,234,0.45) !important;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+}
+
+/* ===================================================================
+   v2.0 - Steam-style Shop storefront cards
+   ================================================================== */
+#achievementBadgesStandaloneRoot .ab-store-row-head {
+    display: flex; align-items: center; gap: 0.6em;
+    margin: 1.6em 0 0.85em;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+#achievementBadgesStandaloneRoot .ab-store-row-head h3 {
+    margin: 0; font-size: 1.1em; font-weight: 800; letter-spacing: 0.02em;
+}
+#achievementBadgesStandaloneRoot .ab-store-row-head .material-icons {
+    color: #a3b5f7; font-size: 1.3em;
+}
+#achievementBadgesStandaloneRoot .ab-store-row-count {
+    margin-left: auto; font-size: 0.78em; color: rgba(255,255,255,0.45);
+    text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+#achievementBadgesStandaloneRoot .ab-store-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 0.95em;
+}
+
+#achievementBadgesStandaloneRoot .ab-store-card {
+    background: linear-gradient(180deg, #1e2a3a 0%, #131b27 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    position: relative;
+}
+#achievementBadgesStandaloneRoot .ab-store-card:hover {
+    transform: translateY(-4px);
+    border-color: #66c0f4;
+    box-shadow: 0 14px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(102,192,244,0.25);
+}
+#achievementBadgesStandaloneRoot .ab-store-card.is-owned {
+    opacity: 0.92;
+    border-color: rgba(16,185,129,0.55);
+}
+#achievementBadgesStandaloneRoot .ab-store-card.is-owned:hover {
+    border-color: #10b981;
+    box-shadow: 0 14px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(16,185,129,0.4);
+}
+#achievementBadgesStandaloneRoot .ab-store-card.is-milestone .ab-store-card-hero {
+    filter: grayscale(0.4) brightness(0.85);
+}
+
+#achievementBadgesStandaloneRoot .ab-store-card-hero {
+    position: relative; height: 130px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+}
+#achievementBadgesStandaloneRoot .ab-store-card-hero::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.3) 100%);
+    pointer-events: none;
+}
+#achievementBadgesStandaloneRoot .ab-store-card-icon {
+    font-size: 3.2em !important;
+    color: #fff;
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,0.55));
+    z-index: 1;
+}
+#achievementBadgesStandaloneRoot .ab-store-card-tag {
+    position: absolute; top: 8px; right: 8px;
+    padding: 0.18em 0.55em;
+    background: #fcd34d; color: #1c1106;
+    font-size: 0.66em; font-weight: 800; letter-spacing: 0.06em;
+    border-radius: 3px;
+    z-index: 2;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+}
+#achievementBadgesStandaloneRoot .ab-store-card-owned-stripe {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(16,185,129,0.92);
+    color: #03150e;
+    font-size: 0.72em; font-weight: 800;
+    text-align: center;
+    padding: 0.3em 0;
+    letter-spacing: 0.16em;
+    z-index: 2;
+}
+
+#achievementBadgesStandaloneRoot .ab-store-theme-tag {
+    padding: 0.35em 0.85em;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(2px);
+    border-radius: 4px;
+    font-weight: 800; font-size: 0.78em; letter-spacing: 0.12em;
+    color: #fff;
+    z-index: 1;
+}
+#achievementBadgesStandaloneRoot .ab-store-frame-preview {
+    width: 70px; height: 70px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1;
+}
+#achievementBadgesStandaloneRoot .ab-store-title-preview {
+    font-family: 'Cinzel', 'Trajan Pro', Georgia, serif;
+    font-size: 1.25em; font-weight: 700;
+    color: #fde68a;
+    letter-spacing: 0.06em;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.55), 0 0 18px rgba(252,211,77,0.25);
+    text-align: center;
+    padding: 0 1em;
+    z-index: 1;
+}
+
+#achievementBadgesStandaloneRoot .ab-store-card-body {
+    padding: 0.7em 0.85em 0.45em;
+    flex: 1;
+}
+#achievementBadgesStandaloneRoot .ab-store-card-title {
+    font-weight: 700; font-size: 0.96em;
+    margin-bottom: 0.3em;
+    color: rgba(255,255,255,0.95);
+}
+#achievementBadgesStandaloneRoot .ab-store-card-desc {
+    font-size: 0.76em;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+#achievementBadgesStandaloneRoot .ab-store-card-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.65em 0.85em 0.9em;
+    gap: 0.5em;
+}
+#achievementBadgesStandaloneRoot .ab-store-card-price {
+    display: flex; align-items: baseline; gap: 0.3em;
+}
+#achievementBadgesStandaloneRoot .ab-store-card-price-num {
+    font-weight: 800; font-size: 1.15em; color: #beee11;
+    text-shadow: 0 0 8px rgba(190,238,17,0.25);
+}
+#achievementBadgesStandaloneRoot .ab-store-card-price-unit {
+    font-size: 0.7em; color: rgba(255,255,255,0.5);
+    text-transform: uppercase; letter-spacing: 0.06em;
+}
+#achievementBadgesStandaloneRoot .ab-store-card-price.off .ab-store-card-price-num {
+    color: rgba(255,255,255,0.35); text-shadow: none;
+}
+
+#achievementBadgesStandaloneRoot .ab-store-cta {
+    background: linear-gradient(180deg, #75b022 0%, #5c7e10 100%);
+    color: #fff; border: none;
+    padding: 0.55em 1.3em; border-radius: 3px;
+    font-weight: 800; letter-spacing: 0.08em; font-size: 0.86em;
+    cursor: pointer;
+    transition: filter 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+#achievementBadgesStandaloneRoot .ab-store-cta:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 16px rgba(140,195,74,0.45), 0 4px 12px rgba(0,0,0,0.4);
+}
+#achievementBadgesStandaloneRoot .ab-store-cta:active { transform: translateY(1px); }
+#achievementBadgesStandaloneRoot .ab-store-cta.sm {
+    padding: 0.4em 0.95em; font-size: 0.76em;
+}
+#achievementBadgesStandaloneRoot .ab-store-cta.off {
+    background: #2a3441; color: #6b7280;
+    cursor: not-allowed; text-shadow: none;
+}
+#achievementBadgesStandaloneRoot .ab-store-cta.off:hover {
+    filter: none; box-shadow: none;
+}
+
+#achievementBadgesStandaloneRoot .ab-store-owned {
+    display: flex; align-items: center; gap: 0.35em;
+    color: #34d399; font-weight: 800; font-size: 0.82em;
+    letter-spacing: 0.06em;
+    width: 100%; justify-content: center;
+    background: rgba(16,185,129,0.1);
+    padding: 0.4em;
+    border-radius: 4px;
+    border: 1px solid rgba(16,185,129,0.3);
+}
+#achievementBadgesStandaloneRoot .ab-store-milestone-wrap { width: 100%; }
+#achievementBadgesStandaloneRoot .ab-store-milestone {
+    display: flex; align-items: center; gap: 0.35em;
+    color: #fcd34d; font-size: 0.78em;
+    background: rgba(252,211,77,0.08);
+    border: 1px solid rgba(252,211,77,0.3);
+    padding: 0.45em 0.65em;
+    border-radius: 4px;
+    width: 100%;
+}
+#achievementBadgesStandaloneRoot .ab-store-milestone strong { color: #fde68a; }
+
+/* ---------- Featured hero card ---------- */
+#achievementBadgesStandaloneRoot .ab-store-featured {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 0.4em 0 1.6em;
+    min-height: 240px;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 14px 38px rgba(0,0,0,0.5);
+}
+#achievementBadgesStandaloneRoot .ab-store-featured-glow {
+    position: absolute; top: -40%; right: -10%;
+    width: 60%; height: 180%;
+    background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 60%);
+    pointer-events: none;
+    animation: ab-store-glow 6s ease-in-out infinite alternate;
+}
+@keyframes ab-store-glow {
+    from { opacity: 0.5; transform: translateX(20px); }
+    to   { opacity: 0.9; transform: translateX(-20px); }
+}
+#achievementBadgesStandaloneRoot .ab-store-featured-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%),
+                linear-gradient(90deg, rgba(0,0,0,0.55) 0%, transparent 60%);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 1.6em 1.85em;
+}
+#achievementBadgesStandaloneRoot .ab-store-featured-eyebrow {
+    color: #fcd34d;
+    font-size: 0.78em; font-weight: 800;
+    letter-spacing: 0.16em;
+    display: flex; align-items: center; gap: 0.35em;
+    margin-bottom: 0.35em;
+}
+#achievementBadgesStandaloneRoot .ab-store-featured-title {
+    font-size: 2em; font-weight: 900;
+    text-shadow: 0 3px 14px rgba(0,0,0,0.75);
+    margin: 0.05em 0 0.3em;
+    line-height: 1.05;
+}
+#achievementBadgesStandaloneRoot .ab-store-featured-desc {
+    font-size: 0.96em;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 1em;
+    max-width: 70%;
+    line-height: 1.4;
+}
+#achievementBadgesStandaloneRoot .ab-store-featured-foot {
+    display: flex; align-items: center; gap: 1.2em;
+    flex-wrap: wrap;
+}
+#achievementBadgesStandaloneRoot .ab-store-featured-price {
+    font-size: 1.55em; font-weight: 900;
+    color: #beee11;
+    text-shadow: 0 2px 10px rgba(190,238,17,0.35);
+}
+#achievementBadgesStandaloneRoot .ab-store-featured-price-unit {
+    font-size: 0.55em; opacity: 0.7; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+}
+#achievementBadgesStandaloneRoot .ab-store-featured .ab-store-cta {
+    padding: 0.75em 1.7em;
+    font-size: 1em;
+    border-radius: 4px;
+}
+
+/* Badge frames: applied to .abShowcase tiles or equipped-badge images. */
+.frame-gilded   { box-shadow: 0 0 0 2px #facc15, 0 0 12px rgba(250,204,21,0.6); border-radius:10px; }
+.frame-holo     {
+    box-shadow: 0 0 0 2px transparent, 0 0 12px rgba(34,211,238,0.5);
+    background-image: linear-gradient(135deg, rgba(168,85,247,0.18), rgba(34,211,238,0.18) 50%, rgba(250,204,21,0.18));
+    transition: filter 0.3s ease;
+    border-radius:10px;
+}
+.frame-holo:hover { filter: hue-rotate(45deg); }
+.frame-frosted  {
+    box-shadow: 0 0 0 2px #bfdbfe, inset 0 0 0 1px rgba(255,255,255,0.4);
+    background-color: rgba(191,219,254,0.08);
+    border-radius:10px;
+}
+.frame-default  { /* default - no extra border */ }
+
+/* Loadout tab buttons: subtle active state */
+#abLoadoutTabs button.is-active {
+    background: rgba(125,211,252,0.18);
+    border: 1px solid rgba(125,211,252,0.6);
+}
+
+/* ======================================================================
+   v2.0: Revamp-page parity for the new themes + boost pills + reroll
+   button. The standalone injects equivalent rules in injectStyles() for
+   Classic mode; these mirror them so a user on Revamp also sees themes
+   paint the page properly and the active-boost pills look the same.
+   The selectors include [data-ab-style="revamp"] to fire only on revamp.
+   ====================================================================== */
+
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-sunset {
+    background: radial-gradient(ellipse at top, rgba(249,115,22,0.32), rgba(24,24,24,1) 70%) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-cyberpunk {
+    background: linear-gradient(180deg, rgba(168,85,247,0.18), rgba(6,8,20,1) 60%) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-pastel {
+    background: linear-gradient(180deg, rgba(196,181,253,0.22), rgba(167,243,208,0.10) 50%, rgba(24,24,24,1) 100%) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-monochrome {
+    background: #000 !important;
+    color: rgba(255,255,255,0.92) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-noir {
+    background: radial-gradient(ellipse at top, rgba(120,113,108,0.25), rgba(12,10,9,1) 70%) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-aurora {
+    background: linear-gradient(180deg, rgba(16,185,129,0.18), rgba(59,130,246,0.15) 35%, rgba(139,92,246,0.12) 60%, rgba(8,8,18,1) 100%) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-crimson {
+    background: radial-gradient(ellipse at top, rgba(220,38,38,0.32), rgba(15,8,8,1) 70%) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-vaporwave {
+    background: linear-gradient(180deg, rgba(236,72,153,0.22), rgba(168,85,247,0.18) 30%, rgba(6,182,212,0.14) 60%, rgba(15,8,30,1) 100%) !important;
+}
+
+/* Revamp hero card picks up theme accent too */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-sunset    .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-sunset    .ab-panel-card {
+    background: linear-gradient(135deg, rgba(249,115,22,0.16), rgba(236,72,153,0.08)) !important;
+    border-color: rgba(249,115,22,0.42) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-cyberpunk .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-cyberpunk .ab-panel-card {
+    background: linear-gradient(135deg, rgba(168,85,247,0.20), rgba(34,211,238,0.12)) !important;
+    border-color: rgba(168,85,247,0.5) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-aurora    .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-aurora    .ab-panel-card {
+    background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.12) 60%, rgba(139,92,246,0.10)) !important;
+    border-color: rgba(16,185,129,0.42) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-crimson   .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-crimson   .ab-panel-card {
+    background: linear-gradient(180deg, rgba(220,38,38,0.14), rgba(124,45,18,0.06)) !important;
+    border-color: rgba(220,38,38,0.45) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-vaporwave .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-vaporwave .ab-panel-card {
+    background: linear-gradient(135deg, rgba(236,72,153,0.18), rgba(6,182,212,0.12)) !important;
+    border-color: rgba(236,72,153,0.42) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-pastel    .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-pastel    .ab-panel-card {
+    background: linear-gradient(135deg, rgba(196,181,253,0.18), rgba(167,243,208,0.10)) !important;
+    border-color: rgba(196,181,253,0.42) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-monochrome .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-monochrome .ab-panel-card {
+    background: rgba(255,255,255,0.03) !important;
+    border-color: rgba(255,255,255,0.55) !important;
+}
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-noir       .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"].theme-noir       .ab-panel-card {
+    background: linear-gradient(180deg, rgba(120,113,108,0.10), rgba(0,0,0,0.4)) !important;
+    border-color: rgba(168,162,158,0.4) !important;
+}
+
+/* New frame variants on revamp showcase / equipped tiles */
+.frame-obsidian { box-shadow: 0 0 0 2px #292524, 0 0 18px rgba(220,38,38,0.4); border-radius: 10px; }
+.frame-emerald  { box-shadow: 0 0 0 2px #10b981, 0 0 18px rgba(16,185,129,0.5); border-radius: 10px; }
+.frame-neon     { box-shadow: 0 0 0 2px #ec4899, 0 0 22px rgba(236,72,153,0.6); border-radius: 10px; }
+
+/* v2.0.x: border-* cosmetics paint their animated edge via ::before pseudos
+   anchored with inset:-2px — that extends 2px outside the hero card. On the
+   revamp page the .ab-hero sits inside numbered section containers; some of
+   those containers had overflow:hidden, which clipped the top 2px of the
+   border ring and made it look detached from the card.
+   Force overflow:visible on the hero + its immediate revamp ancestors so
+   the border ring renders cleanly all the way around. */
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-hero,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] section,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-section,
+#achievementBadgesStandaloneRoot[data-ab-style="revamp"] .ab-panel-card {
+    overflow: visible !important;
+}
+
+/* Belt-and-braces: give the animated border ::before a positive z-index so
+   it always stamps over the card's own border, never under it. */
+#achievementBadgesStandaloneRoot[class*="border-"] .ab-hero::before {
+    z-index: 1;
 }

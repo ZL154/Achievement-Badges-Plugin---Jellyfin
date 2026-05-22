@@ -37,6 +37,9 @@ public class AchievementBadgesController : ControllerBase
     private readonly IAuthorizationService _authService;
     private readonly FriendsService _friendsService;
     private readonly MessagingService _messagingService;
+    // v2.0 - Power-ups + Shop + Cosmetics
+    private readonly PowerUpService _powerUps;
+    private readonly ShopService _shop;
 
     public AchievementBadgesController(
         AchievementBadgeService badgeService,
@@ -50,7 +53,9 @@ public class AchievementBadgesController : ControllerBase
         IUserManager userManager,
         IAuthorizationService authService,
         FriendsService friendsService,
-        MessagingService messagingService)
+        MessagingService messagingService,
+        PowerUpService powerUps,
+        ShopService shop)
     {
         _badgeService = badgeService;
         _playbackCompletionService = playbackCompletionService;
@@ -64,6 +69,8 @@ public class AchievementBadgesController : ControllerBase
         _authService = authService;
         _friendsService = friendsService;
         _messagingService = messagingService;
+        _powerUps = powerUps;
+        _shop = shop;
     }
 
     [HttpGet("test")]
@@ -181,6 +188,52 @@ public class AchievementBadgesController : ControllerBase
         return NotFound();
     }
 
+    // v2.0.x: dedicated streaming endpoint for video/image backgrounds stored
+    // under Pages/assets/. Kept separate from /client-script/ so the assets
+    // subfolder isn't flattened and the route signals binary content.
+    // Same character whitelist + long-lived immutable cache as client-script.
+    [HttpGet("asset/{name}")]
+    [AllowAnonymous]
+    [DisableRateLimiting]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult GetAsset([FromRoute] string name)
+    {
+        foreach (var ch in name)
+        {
+            if (!char.IsLetterOrDigit(ch) && ch != '-' && ch != '_')
+            {
+                return NotFound();
+            }
+        }
+        Response.Headers["Cache-Control"] = "public, max-age=86400, immutable";
+        // Accept supports range so HTML5 <video> can seek through long loops.
+        Response.Headers["Accept-Ranges"] = "bytes";
+
+        (string ext, string mime)[] candidates =
+        {
+            (".mp4",  "video/mp4"),
+            (".webm", "video/webm"),
+            (".gif",  "image/gif"),
+            (".png",  "image/png"),
+            (".webp", "image/webp"),
+            (".jpg",  "image/jpeg")
+        };
+        foreach (var (ext, mime) in candidates)
+        {
+            var resourceName = "Jellyfin.Plugin.AchievementBadges.Pages.assets." + name + ext;
+            var bytes = GetCachedEmbeddedBytes(resourceName);
+            if (bytes != null)
+            {
+                // File() handles HTTP Range requests automatically when given
+                // bytes — enables seeking and improves first-frame latency
+                // because the browser only fetches what it needs to start.
+                return File(bytes, mime, enableRangeProcessing: true);
+            }
+        }
+        return NotFound();
+    }
+
     // v1.9.0: in-process cache for embedded assets. Resources are immutable
     // for the lifetime of the loaded plugin DLL, so a one-time read is safe
     // and re-deploys load a fresh DLL anyway. Negative results (asset name
@@ -214,6 +267,11 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetTranslations([FromRoute] string lang)
     {
+        // v2.0.x: tell the browser to revalidate every time. Without this the
+        // browser served the OLD translation bundle from heuristic cache,
+        // even after the DLL ships new strings — users saw raw English for
+        // the new keys until they hard-refreshed.
+        Response.Headers["Cache-Control"] = "no-cache, must-revalidate";
         // Sanitize lang to prevent path traversal (only letters + dash).
         var clean = new string((lang ?? "en").ToLowerInvariant()
             .Where(c => (c >= 'a' && c <= 'z') || c == '-').ToArray());
@@ -1712,7 +1770,29 @@ public class AchievementBadgesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult GetAllQuests([FromRoute] string userId)
     {
-        return Ok(_questService.GetOrCreate(userId));
+        // v2.0: also surface daily-reroll state so the UI can render the
+        // reroll button as a disabled "Rerolled today" pill once the user has
+        // used their single daily reroll instead of letting the click flop
+        // into a red error.
+        var quests = _questService.GetOrCreate(userId);
+        var profile = _badgeService.PeekProfile(userId);
+        var todayUtc = DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd");
+        var nowUtc = DateTime.UtcNow;
+        var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(nowUtc);
+        var isoYear = System.Globalization.ISOWeek.GetYear(nowUtc);
+        var weekKey = isoYear + "-W" + isoWeek.ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
+        var dailyUsed = (profile is not null && profile.DailyQuestRerollDate == todayUtc) ? profile.DailyQuestRerollsUsed : 0;
+        var weeklyUsed = (profile is not null && profile.WeeklyQuestRerollWeek == weekKey) ? profile.WeeklyQuestRerollsUsed : 0;
+        var anonObj = new
+        {
+            Daily = ((dynamic)quests).Daily,
+            Weekly = ((dynamic)quests).Weekly,
+            DailyRerollsRemaining = Math.Max(0, 1 - dailyUsed),
+            DailyRerollsUsedToday = dailyUsed,
+            WeeklyRerollsRemaining = Math.Max(0, 1 - weeklyUsed),
+            WeeklyRerollsUsedThisWeek = weeklyUsed
+        };
+        return Ok(anonObj);
     }
 
     // ---------- Recommendations --------------------------------------
@@ -1781,6 +1861,311 @@ public class AchievementBadgesController : ControllerBase
     {
         _badgeService.InjectCounters(userId, request?.Counters ?? new());
         return Ok(new { Success = true });
+    }
+
+    // v2.0: Admin grant endpoints — give a user score, power-ups, or cosmetics
+    // for end-to-end testing without having to actually rack up watch time.
+    // All endpoints elevation-gated + audit-logged.
+
+    public class GrantScoreRequest { public int Amount { get; set; } }
+    public class GrantPowerUpRequest { public int Count { get; set; } = 1; }
+    public class GrantCosmeticRequest { public string CosmeticId { get; set; } = string.Empty; }
+
+    [HttpPost("admin/users/{userId}/grant-score")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult GrantScore([FromRoute] string userId, [FromBody] GrantScoreRequest request)
+    {
+        var amount = request?.Amount ?? 0;
+        if (amount == 0) return BadRequest(new { Message = "Amount cannot be zero." });
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        profile.ScoreBank += amount;
+        profile.LifetimeScore += Math.Max(0, amount);
+        _shop?.CheckMilestones(profile, profile.LifetimeScore);
+        _badgeService.SaveProfileDirect(profile);
+        _auditLog.Log(userId, string.Empty, "admin_grant_score",
+            $"Admin granted {amount} score. New bank={profile.ScoreBank}, lifetime={profile.LifetimeScore}.");
+        return Ok(new { Success = true, ScoreBank = profile.ScoreBank, LifetimeScore = profile.LifetimeScore });
+    }
+
+    [HttpPost("admin/users/{userId}/grant-powerup/{type}")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult GrantPowerUp([FromRoute] string userId, [FromRoute] string type, [FromBody] GrantPowerUpRequest request)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        if (!Models.PowerUpDefinitions.TryParse(type, out var puType))
+        {
+            return BadRequest(new { Message = "Unknown power-up type. Expected XpBoost / DoubleCredit / StreakFreeze." });
+        }
+        var count = Math.Max(1, request?.Count ?? 1);
+        _powerUps.Grant(profile, puType, count);
+        _badgeService.SaveProfileDirect(profile);
+        _auditLog.Log(userId, string.Empty, "admin_grant_powerup",
+            $"Admin granted {count}x {puType}.");
+        return Ok(new
+        {
+            Success = true,
+            Inventory = _powerUps.GetInventoryView(profile, DateTimeOffset.UtcNow)
+        });
+    }
+
+    [HttpPost("admin/users/{userId}/grant-cosmetic")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult GrantCosmetic([FromRoute] string userId, [FromBody] GrantCosmeticRequest request)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        var id = request?.CosmeticId?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(id)) return BadRequest(new { Message = "CosmeticId required." });
+        if (profile.OwnedCosmetics.Contains(id))
+        {
+            return Ok(new { Success = true, AlreadyOwned = true, Owned = profile.OwnedCosmetics });
+        }
+        profile.OwnedCosmetics.Add(id);
+        _badgeService.SaveProfileDirect(profile);
+        _auditLog.Log(userId, string.Empty, "admin_grant_cosmetic",
+            $"Admin granted cosmetic {id}.");
+        return Ok(new { Success = true, Owned = profile.OwnedCosmetics });
+    }
+
+    [HttpPost("admin/backfill-milestones")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult BackfillMilestones()
+    {
+        var profiles = _badgeService.EnumerateAllProfiles();
+        var changed = 0;
+        foreach (var p in profiles)
+        {
+            var before = p.OwnedCosmetics.Count;
+            _shop?.CheckMilestones(p, p.LifetimeScore);
+            if (p.OwnedCosmetics.Count != before)
+            {
+                _badgeService.SaveProfileDirect(p);
+                changed++;
+            }
+        }
+        _auditLog.Log(string.Empty, string.Empty, "admin_backfill_milestones",
+            $"Backfilled shop milestones across {profiles.Count} profile(s); {changed} updated.");
+        return Ok(new { Success = true, Scanned = profiles.Count, Changed = changed });
+    }
+
+    // ---------- v2.0: Power-ups + Shop + Cosmetics + Quest reroll ---------
+
+    public class PowerUpUseRequest { public string Type { get; set; } = string.Empty; }
+    public class CosmeticEquipRequest { public string CosmeticId { get; set; } = string.Empty; }
+
+    [HttpGet("users/{userId}/powerups")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetPowerUps([FromRoute] string userId)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        return Ok(new
+        {
+            Inventory = _powerUps.GetInventoryView(profile, DateTimeOffset.UtcNow),
+            ScoreBank = profile.ScoreBank,
+            ActiveXpBoostUntil = profile.ActiveXpBoostUntil,
+            DoubleCreditPending = profile.DoubleCreditPending,
+            StreakFreezesBanked = profile.StreakFreezesBanked
+        });
+    }
+
+    [HttpPost("users/{userId}/powerups/use/{type}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult UsePowerUp([FromRoute] string userId, [FromRoute] string type)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        if (!Models.PowerUpDefinitions.TryParse(type, out var puType))
+        {
+            return BadRequest(new { Message = "Unknown power-up type. Expected XpBoost / DoubleCredit / StreakFreeze." });
+        }
+        var (ok, message) = _powerUps.Use(profile, puType, DateTimeOffset.UtcNow);
+        if (!ok)
+        {
+            return BadRequest(new { Message = message });
+        }
+        _badgeService.SaveProfileDirect(profile);
+        _auditLog.Log(userId, string.Empty, "powerup_used", $"Used {puType}.");
+        return Ok(new
+        {
+            Message = message,
+            Inventory = _powerUps.GetInventoryView(profile, DateTimeOffset.UtcNow),
+            ActiveXpBoostUntil = profile.ActiveXpBoostUntil,
+            DoubleCreditPending = profile.DoubleCreditPending
+        });
+    }
+
+    [HttpGet("shop/catalog")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetShopCatalog()
+    {
+        return Ok(_shop.GetCatalog());
+    }
+
+    [HttpPost("users/{userId}/shop/purchase")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult Purchase([FromRoute] string userId, [FromBody] Models.ShopPurchaseRequest request)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        var result = _shop.TryPurchase(profile, request?.ItemId ?? string.Empty);
+        if (!result.Success)
+        {
+            return BadRequest(new { Message = result.Message });
+        }
+        _badgeService.SaveProfileDirect(profile);
+        _auditLog.Log(userId, string.Empty, "shop_purchase",
+            $"Bought {request?.ItemId}; bank={result.ScoreBalanceAfter}.");
+        return Ok(result);
+    }
+
+    [HttpGet("users/{userId}/cosmetics")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult GetCosmetics([FromRoute] string userId)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        var before = profile.OwnedCosmetics.Count;
+        _shop?.EnsureDefaultsOwned(profile);
+        if (profile.OwnedCosmetics.Count != before)
+        {
+            _badgeService.SaveProfileDirect(profile);
+        }
+        return Ok(new
+        {
+            Owned = profile.OwnedCosmetics,
+            EquippedThemeId = profile.EquippedThemeId,
+            EquippedBadgeFrameId = profile.EquippedBadgeFrameId,
+            EquippedCustomTitleId = profile.EquippedCustomTitleId,
+            EquippedAvatarId = profile.EquippedAvatarId,
+            EquippedBackgroundId = profile.EquippedBackgroundId,
+            EquippedProfileBorderId = profile.EquippedProfileBorderId,
+            LifetimeScoreSpent = profile.LifetimeScoreSpent,
+            // v2.0: expose LifetimeScore so the Shop UI can render the
+            // milestone progress bar (current / target) on auto-unlock cards.
+            LifetimeScore = profile.LifetimeScore,
+            ScoreBank = profile.ScoreBank
+        });
+    }
+
+    [HttpPost("users/{userId}/cosmetics/equip")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult EquipCosmetic([FromRoute] string userId, [FromBody] CosmeticEquipRequest request)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        var (ok, message) = _shop.Equip(profile, request?.CosmeticId);
+        if (!ok) return BadRequest(new { Message = message });
+        _badgeService.SaveProfileDirect(profile);
+        return Ok(new
+        {
+            Message = message,
+            EquippedThemeId = profile.EquippedThemeId,
+            EquippedBadgeFrameId = profile.EquippedBadgeFrameId,
+            EquippedCustomTitleId = profile.EquippedCustomTitleId,
+            EquippedAvatarId = profile.EquippedAvatarId,
+            EquippedBackgroundId = profile.EquippedBackgroundId,
+            EquippedProfileBorderId = profile.EquippedProfileBorderId
+        });
+    }
+
+    [HttpPost("users/{userId}/cosmetics/unequip")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult UnequipCosmetic([FromRoute] string userId, [FromQuery] string kind)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        if (!Enum.TryParse<Models.CosmeticKind>(kind, ignoreCase: true, out var k))
+        {
+            return BadRequest(new { Message = "Unknown kind. Expected ProfileTheme / BadgeFrame / RankTitle." });
+        }
+        var (ok, message) = _shop.Unequip(profile, k);
+        if (!ok) return BadRequest(new { Message = message });
+        _badgeService.SaveProfileDirect(profile);
+        return Ok(new { Message = message });
+    }
+
+    [HttpPost("users/{userId}/quests/daily/reroll")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public ActionResult RerollDaily([FromRoute] string userId)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        var todayKey = DateTime.UtcNow.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        // Reset the per-day reroll counter if a new UTC day rolled over.
+        if (profile.DailyQuestRerollDate != todayKey)
+        {
+            profile.DailyQuestRerollDate = todayKey;
+            profile.DailyQuestRerollsUsed = 0;
+        }
+        if (profile.DailyQuestRerollsUsed >= 1)
+        {
+            return StatusCode(StatusCodes.Status429TooManyRequests,
+                new { Message = "Daily quest reroll already used today. Comes back at UTC midnight." });
+        }
+        var (ok, message, list) = _questService.RerollDaily(userId);
+        if (!ok) return BadRequest(new { Message = message });
+        profile.DailyQuestRerollsUsed++;
+        _badgeService.SaveProfileDirect(profile);
+        _auditLog.Log(userId, string.Empty, "daily_quest_reroll",
+            $"Used daily reroll {profile.DailyQuestRerollsUsed}/1 for {todayKey}.");
+        return Ok(new
+        {
+            Message = message,
+            Quests = list,
+            RerollsUsed = profile.DailyQuestRerollsUsed,
+            RerollsRemaining = 1 - profile.DailyQuestRerollsUsed
+        });
+    }
+
+    [HttpPost("users/{userId}/quests/weekly/reroll")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public ActionResult RerollWeekly([FromRoute] string userId)
+    {
+        var profile = _badgeService.PeekProfile(userId);
+        if (profile is null) return NotFound();
+        var now = DateTime.UtcNow;
+        var isoWeek = System.Globalization.ISOWeek.GetWeekOfYear(now);
+        var isoYear = System.Globalization.ISOWeek.GetYear(now);
+        var weekKey = isoYear + "-W" + isoWeek.ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
+        if (profile.WeeklyQuestRerollWeek != weekKey)
+        {
+            profile.WeeklyQuestRerollWeek = weekKey;
+            profile.WeeklyQuestRerollsUsed = 0;
+        }
+        if (profile.WeeklyQuestRerollsUsed >= 1)
+        {
+            return StatusCode(StatusCodes.Status429TooManyRequests,
+                new { Message = "Weekly quest reroll already used this week. Resets Monday UTC." });
+        }
+        var (ok, message, list) = _questService.RerollWeekly(userId);
+        if (!ok) return BadRequest(new { Message = message });
+        profile.WeeklyQuestRerollsUsed++;
+        _badgeService.SaveProfileDirect(profile);
+        _auditLog.Log(userId, string.Empty, "weekly_quest_reroll",
+            $"Used weekly reroll {profile.WeeklyQuestRerollsUsed}/1 for {weekKey}.");
+        return Ok(new
+        {
+            Message = message,
+            Quests = list,
+            RerollsUsed = profile.WeeklyQuestRerollsUsed,
+            RerollsRemaining = 1 - profile.WeeklyQuestRerollsUsed
+        });
     }
 
     // ---------- v1.9.8: Admin testing tools -------------------------------

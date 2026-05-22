@@ -1635,6 +1635,72 @@ font-size:0.88em;
                     </div>
                 </details>
 
+                <details class="abAdminSection" id="abV2TestSection" open style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                        🎮 v2.0 testing tools (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;">
+                            Grant score, power-ups, or cosmetics to a user without waiting for real watch progress. Useful for verifying the Loadout UI on a test profile or backfilling milestone titles after the v2.0 release.
+                        </p>
+
+                        <label style="display:block; margin-bottom:0.75em;">
+                            <span>Target user ID:</span><br>
+                            <input type="text" id="abV2UserId" placeholder="User GUID (e.g. ab1234...)" style="width:100%; max-width:420px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                            <span class="secondaryText" style="font-size:0.85em; display:block; margin-top:0.25em;">Find the user GUID via Jellyfin Admin → Users → click a user; their GUID is in the URL.</span>
+                        </label>
+
+                        <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 0.75em 0;">
+                            <legend style="padding:0 0.5em; font-weight:600;">Grant score</legend>
+                            <label style="display:block; margin-bottom:0.5em;">
+                                <span>Amount (positive adds, negative subtracts):</span><br>
+                                <input type="number" id="abV2GrantScoreAmt" value="1000" style="width:160px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                            </label>
+                            <button is="emby-button" type="button" class="raised" id="abV2GrantScoreBtn">Grant score</button>
+                            <div id="abV2GrantScoreStatus" class="secondaryText" style="margin-top:0.4em;"></div>
+                        </fieldset>
+
+                        <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 0.75em 0;">
+                            <legend style="padding:0 0.5em; font-weight:600;">Grant power-up</legend>
+                            <label style="display:block; margin-bottom:0.5em;">
+                                <span>Type:</span><br>
+                                <select id="abV2GrantPuType" style="padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                    <option value="XpBoost">XP Boost</option>
+                                    <option value="DoubleCredit">Double Credit</option>
+                                    <option value="StreakFreeze">Streak Freeze</option>
+                                </select>
+                            </label>
+                            <label style="display:block; margin-bottom:0.5em;">
+                                <span>Count:</span><br>
+                                <input type="number" id="abV2GrantPuCount" value="1" min="1" max="20" style="width:120px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                            </label>
+                            <button is="emby-button" type="button" class="raised" id="abV2GrantPuBtn">Grant power-up</button>
+                            <div id="abV2GrantPuStatus" class="secondaryText" style="margin-top:0.4em;"></div>
+                        </fieldset>
+
+                        <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 0.75em 0;">
+                            <legend style="padding:0 0.5em; font-weight:600;">Grant cosmetic</legend>
+                            <label style="display:block; margin-bottom:0.5em;">
+                                <span>Cosmetic ID:</span><br>
+                                <select id="abV2GrantCosId" style="min-width:280px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                    <option value="" disabled selected>— loading catalog —</option>
+                                </select>
+                            </label>
+                            <button is="emby-button" type="button" class="raised" id="abV2GrantCosBtn">Grant cosmetic</button>
+                            <div id="abV2GrantCosStatus" class="secondaryText" style="margin-top:0.4em;"></div>
+                        </fieldset>
+
+                        <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 0.75em 0;">
+                            <legend style="padding:0 0.5em; font-weight:600;">Backfill milestones (server-wide)</legend>
+                            <p class="secondaryText" style="margin-top:0;">
+                                Iterates every known profile and runs the v2.0 shop milestone check against their <em>LifetimeScore</em>. Users already past Cinephile (1000) / Marathoner (2500) / Curator (5000) get those rank titles auto-granted now instead of waiting for their next watch event. Idempotent — safe to run multiple times.
+                            </p>
+                            <button is="emby-button" type="button" class="raised" id="abV2BackfillBtn">Run backfill</button>
+                            <div id="abV2BackfillStatus" class="secondaryText" style="margin-top:0.4em;"></div>
+                        </fieldset>
+                    </div>
+                </details>
+
                 <details class="abAdminSection" style="margin-top:1em;">
                     <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;" data-i18n="admin.section_test_toast">
                         Test unlock toast
@@ -3137,6 +3203,89 @@ font-size:0.88em;
                 .finally(function () { intRevokeBtn.disabled = false; });
         });
     }
+
+    // --- v2.0: Admin testing tools (grant score / power-up / cosmetic, backfill milestones) ---
+    (function setupV2Admin() {
+        var section = document.getElementById('abV2TestSection');
+        if (!section) return;
+        var uidEl   = document.getElementById('abV2UserId');
+        var scoreAmt   = document.getElementById('abV2GrantScoreAmt');
+        var scoreBtn   = document.getElementById('abV2GrantScoreBtn');
+        var scoreStat  = document.getElementById('abV2GrantScoreStatus');
+        var puType     = document.getElementById('abV2GrantPuType');
+        var puCount    = document.getElementById('abV2GrantPuCount');
+        var puBtn      = document.getElementById('abV2GrantPuBtn');
+        var puStat     = document.getElementById('abV2GrantPuStatus');
+        var cosSel     = document.getElementById('abV2GrantCosId');
+        var cosBtn     = document.getElementById('abV2GrantCosBtn');
+        var cosStat    = document.getElementById('abV2GrantCosStatus');
+        var bfBtn      = document.getElementById('abV2BackfillBtn');
+        var bfStat     = document.getElementById('abV2BackfillStatus');
+
+        function uid() { return (uidEl && uidEl.value || '').trim(); }
+        function needUser(stat) {
+            if (uid()) return true;
+            stat.style.color = '#f87171';
+            stat.textContent = 'Target user ID required.';
+            return false;
+        }
+        function ok(stat, msg) { stat.style.color = ''; stat.textContent = msg; }
+        function err(stat, e) { stat.style.color = '#f87171'; stat.textContent = (e && e.message) || 'Failed'; }
+
+        // Populate the cosmetic dropdown from the shop catalog.
+        fetchJson('Plugins/AchievementBadges/shop/catalog').then(function (c) {
+            if (!cosSel) return;
+            cosSel.innerHTML = '<option value="" disabled selected>— pick a cosmetic —</option>';
+            (c.Cosmetics || []).forEach(function (it) {
+                var opt = document.createElement('option');
+                opt.value = it.Id;
+                opt.textContent = '[' + it.Kind + '] ' + it.DisplayName + ' (' + it.Id + ')';
+                cosSel.appendChild(opt);
+            });
+        }).catch(function () { /* leave the loading placeholder */ });
+
+        scoreBtn.addEventListener('click', function () {
+            if (!needUser(scoreStat)) return;
+            var amt = parseInt(scoreAmt.value, 10) || 0;
+            scoreBtn.disabled = true;
+            fetchJson('Plugins/AchievementBadges/admin/users/' + encodeURIComponent(uid()) + '/grant-score', 'POST', { Amount: amt })
+                .then(function (r) { ok(scoreStat, 'Granted. ScoreBank=' + r.ScoreBank + ', LifetimeScore=' + r.LifetimeScore + '.'); })
+                .catch(function (e) { err(scoreStat, e); })
+                .finally(function () { scoreBtn.disabled = false; });
+        });
+
+        puBtn.addEventListener('click', function () {
+            if (!needUser(puStat)) return;
+            var t = puType.value;
+            var n = Math.max(1, parseInt(puCount.value, 10) || 1);
+            puBtn.disabled = true;
+            fetchJson('Plugins/AchievementBadges/admin/users/' + encodeURIComponent(uid()) + '/grant-powerup/' + encodeURIComponent(t), 'POST', { Count: n })
+                .then(function () { ok(puStat, 'Granted ' + n + 'x ' + t + '.'); })
+                .catch(function (e) { err(puStat, e); })
+                .finally(function () { puBtn.disabled = false; });
+        });
+
+        cosBtn.addEventListener('click', function () {
+            if (!needUser(cosStat)) return;
+            var id = cosSel.value;
+            if (!id) { err(cosStat, { message: 'Pick a cosmetic.' }); return; }
+            cosBtn.disabled = true;
+            fetchJson('Plugins/AchievementBadges/admin/users/' + encodeURIComponent(uid()) + '/grant-cosmetic', 'POST', { CosmeticId: id })
+                .then(function (r) { ok(cosStat, r.AlreadyOwned ? 'Already owned.' : 'Granted. Owned count = ' + (r.Owned || []).length + '.'); })
+                .catch(function (e) { err(cosStat, e); })
+                .finally(function () { cosBtn.disabled = false; });
+        });
+
+        bfBtn.addEventListener('click', function () {
+            bfBtn.disabled = true;
+            bfStat.style.color = '';
+            bfStat.textContent = 'Scanning…';
+            fetchJson('Plugins/AchievementBadges/admin/backfill-milestones', 'POST', {})
+                .then(function (r) { ok(bfStat, 'Done. Scanned ' + r.Scanned + ' profiles; ' + r.Changed + ' got new milestones.'); })
+                .catch(function (e) { err(bfStat, e); })
+                .finally(function () { bfBtn.disabled = false; });
+        });
+    })();
 
     // --- UI features ---
     var uiToastsEl = document.getElementById('abUiToasts');

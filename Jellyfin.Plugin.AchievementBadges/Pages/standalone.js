@@ -273,7 +273,14 @@
         if (document.getElementById('ab-standalone-css')) return;
         var s = document.createElement('style');
         s.id = 'ab-standalone-css';
-        s.textContent = '#' + ROOT_ID + '{position:fixed;inset:0;z-index:999999;overflow-y:auto;padding:2em;background:var(--theme-body-background,#181818);color:#fff;font-family:inherit;color-scheme:dark;}' +
+        // v2.0: bulletproof full-viewport coverage. Some Jellyfin host themes
+        // / web wrappers were leaking the "Page not found" 404 page through
+        // when the standalone root was sized by `inset:0` alone (theory: the
+        // host adds a viewport-constraining ancestor at certain widths). The
+        // belt-and-braces declarations below pin every edge AND set explicit
+        // 100vw/100vh so no ancestor can clip us, with !important so a host
+        // CSS reset can't override the layout properties.
+        s.textContent = '#' + ROOT_ID + '{position:fixed !important;top:0 !important;right:0 !important;bottom:0 !important;left:0 !important;width:100vw !important;height:100vh !important;max-width:none !important;max-height:none !important;margin:0 !important;z-index:999999;overflow-y:auto;padding:2em;background:var(--theme-body-background,#181818);color:#fff;font-family:inherit;color-scheme:dark;box-sizing:border-box;}' +
             /* v1.8.48: Classic-mode styling for the Classic/Revamp toggle button.
                Lives in standalone's own injectStyles so the button looks correct
                even when styles-revamp.css isn't loaded. */
@@ -845,6 +852,296 @@
             '#' + ROOT_ID + '.ab-theme-light .ab-eta{color:rgba(0,0,0,0.6);}' +
             '#' + ROOT_ID + '.ab-theme-light .ab-prog-text{color:rgba(0,0,0,0.7);}' +
             '#' + ROOT_ID + '.ab-theme-light .ab-badge-pts{color:rgba(0,0,0,0.65);}';
+        // v2.0 Steam-style Shop CSS + Loadout theme rules. Appended after the
+        // big initial assignment so the long string above stays untouched.
+        s.textContent +=
+            '#' + ROOT_ID + ' .ab-store-row-head{display:flex;align-items:center;gap:0.6em;margin:1.6em 0 0.85em;padding-bottom:0.5em;border-bottom:1px solid rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + ' .ab-store-row-head h3{margin:0;font-size:1.1em;font-weight:800;letter-spacing:0.02em;}' +
+            '#' + ROOT_ID + ' .ab-store-row-head .material-icons{color:#a3b5f7;font-size:1.3em;}' +
+            '#' + ROOT_ID + ' .ab-store-row-count{margin-left:auto;font-size:0.78em;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;}' +
+            '#' + ROOT_ID + ' .ab-store-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.85em;}' +
+            '#' + ROOT_ID + ' .ab-store-card{background:linear-gradient(180deg,#1e2a3a 0%,#131b27 100%);border:1px solid rgba(255,255,255,0.08);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;transition:transform 180ms ease,box-shadow 180ms ease,border-color 180ms ease;position:relative;}' +
+            '#' + ROOT_ID + ' .ab-store-card:hover{transform:translateY(-4px);border-color:#66c0f4;box-shadow:0 14px 32px rgba(0,0,0,0.5),0 0 0 1px rgba(102,192,244,0.25);}' +
+            '#' + ROOT_ID + ' .ab-store-card.is-owned{opacity:0.92;border-color:rgba(16,185,129,0.55);}' +
+            '#' + ROOT_ID + ' .ab-store-card.is-owned:hover{border-color:#10b981;box-shadow:0 14px 32px rgba(0,0,0,0.5),0 0 0 1px rgba(16,185,129,0.4);}' +
+            '#' + ROOT_ID + ' .ab-store-card.is-milestone .ab-store-card-hero{filter:grayscale(0.4) brightness(0.85);}' +
+            '#' + ROOT_ID + ' .ab-store-card-hero{position:relative;height:130px;display:flex;align-items:center;justify-content:center;overflow:hidden;}' +
+            '#' + ROOT_ID + ' .ab-store-card-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,0.3) 100%);pointer-events:none;}' +
+            '#' + ROOT_ID + ' .ab-store-card-icon{font-size:3.2em !important;color:#fff;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.55));z-index:1;}' +
+            '#' + ROOT_ID + ' .ab-store-card-tag{position:absolute;top:8px;right:8px;padding:0.22em 0.6em;background:#fcd34d;color:#1c1106;font-size:0.66em;font-weight:800;letter-spacing:0.06em;border-radius:3px;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,0.35);}' +
+            '#' + ROOT_ID + ' .ab-store-card-owned-stripe{position:absolute;bottom:0;left:0;right:0;background:rgba(16,185,129,0.92);color:#03150e;font-size:0.72em;font-weight:800;text-align:center;padding:0.3em 0;letter-spacing:0.16em;z-index:2;}' +
+            '#' + ROOT_ID + ' .ab-store-theme-tag{padding:0.4em 0.95em;background:rgba(0,0,0,0.55);border-radius:4px;font-weight:800;font-size:0.78em;letter-spacing:0.12em;color:#fff;z-index:1;}' +
+            '#' + ROOT_ID + ' .ab-store-frame-preview{width:70px;height:70px;border-radius:8px;display:flex;align-items:center;justify-content:center;z-index:1;}' +
+            '#' + ROOT_ID + ' .ab-store-title-preview{font-family:"Cinzel","Trajan Pro",Georgia,serif;font-size:1.25em;font-weight:700;color:#fde68a;letter-spacing:0.06em;text-shadow:0 2px 8px rgba(0,0,0,0.55),0 0 18px rgba(252,211,77,0.25);text-align:center;padding:0 1em;z-index:1;}' +
+            '#' + ROOT_ID + ' .ab-store-card-body{padding:0.7em 0.85em 0.45em;flex:1;}' +
+            '#' + ROOT_ID + ' .ab-store-card-title{font-weight:700;font-size:0.96em;margin-bottom:0.3em;color:rgba(255,255,255,0.95);}' +
+            '#' + ROOT_ID + ' .ab-store-card-desc{font-size:0.76em;color:rgba(255,255,255,0.55);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}' +
+            '#' + ROOT_ID + ' .ab-store-card-foot{display:flex;align-items:center;justify-content:space-between;padding:0.65em 0.85em 0.9em;gap:0.5em;}' +
+            '#' + ROOT_ID + ' .ab-store-card-price{display:flex;align-items:baseline;gap:0.3em;}' +
+            '#' + ROOT_ID + ' .ab-store-card-price-num{font-weight:800;font-size:1.15em;color:#beee11;text-shadow:0 0 8px rgba(190,238,17,0.25);}' +
+            '#' + ROOT_ID + ' .ab-store-card-price-unit{font-size:0.7em;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.06em;}' +
+            '#' + ROOT_ID + ' .ab-store-card-price.off .ab-store-card-price-num{color:rgba(255,255,255,0.35);text-shadow:none;}' +
+            '#' + ROOT_ID + ' .ab-store-cta{background:linear-gradient(180deg,#75b022 0%,#5c7e10 100%);color:#fff;border:none;padding:0.55em 1.3em;border-radius:3px;font-weight:800;letter-spacing:0.08em;font-size:0.86em;cursor:pointer;transition:filter 150ms ease,transform 150ms ease,box-shadow 150ms ease;text-shadow:0 1px 2px rgba(0,0,0,0.4);}' +
+            '#' + ROOT_ID + ' .ab-store-cta:hover{filter:brightness(1.15);box-shadow:0 0 16px rgba(140,195,74,0.45),0 4px 12px rgba(0,0,0,0.4);}' +
+            '#' + ROOT_ID + ' .ab-store-cta:active{transform:translateY(1px);}' +
+            '#' + ROOT_ID + ' .ab-store-cta.sm{padding:0.4em 0.95em;font-size:0.76em;}' +
+            '#' + ROOT_ID + ' .ab-store-cta.off{background:#2a3441;color:#6b7280;cursor:not-allowed;text-shadow:none;}' +
+            '#' + ROOT_ID + ' .ab-store-cta.off:hover{filter:none;box-shadow:none;}' +
+            '#' + ROOT_ID + ' .ab-store-owned{display:flex;align-items:center;gap:0.35em;color:#34d399;font-weight:800;font-size:0.82em;letter-spacing:0.06em;width:100%;justify-content:center;background:rgba(16,185,129,0.1);padding:0.4em;border-radius:4px;border:1px solid rgba(16,185,129,0.3);}' +
+            '#' + ROOT_ID + ' .ab-store-milestone-wrap{width:100%;}' +
+            '#' + ROOT_ID + ' .ab-store-milestone{display:flex;align-items:center;gap:0.35em;color:#fcd34d;font-size:0.78em;background:rgba(252,211,77,0.08);border:1px solid rgba(252,211,77,0.3);padding:0.45em 0.65em;border-radius:4px;width:100%;}' +
+            '#' + ROOT_ID + ' .ab-store-milestone strong{color:#fde68a;}' +
+            '#' + ROOT_ID + ' .ab-store-featured{position:relative;border-radius:12px;overflow:hidden;margin:0.4em 0 1.6em;min-height:240px;border:1px solid rgba(255,255,255,0.12);box-shadow:0 14px 38px rgba(0,0,0,0.5);}' +
+            '#' + ROOT_ID + ' .ab-store-featured-glow{position:absolute;top:-40%;right:-10%;width:60%;height:180%;background:radial-gradient(circle,rgba(255,255,255,0.18),transparent 60%);pointer-events:none;animation:ab-store-glow 6s ease-in-out infinite alternate;}' +
+            '@keyframes ab-store-glow{from{opacity:0.5;transform:translateX(20px);}to{opacity:0.9;transform:translateX(-20px);}}' +
+            '#' + ROOT_ID + ' .ab-store-featured-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.85) 100%),linear-gradient(90deg,rgba(0,0,0,0.55) 0%,transparent 60%);display:flex;flex-direction:column;justify-content:flex-end;padding:1.6em 1.85em;}' +
+            '#' + ROOT_ID + ' .ab-store-featured-eyebrow{color:#fcd34d;font-size:0.78em;font-weight:800;letter-spacing:0.16em;display:flex;align-items:center;gap:0.35em;margin-bottom:0.35em;}' +
+            '#' + ROOT_ID + ' .ab-store-featured-title{font-size:2em;font-weight:900;text-shadow:0 3px 14px rgba(0,0,0,0.75);margin:0.05em 0 0.3em;line-height:1.05;}' +
+            '#' + ROOT_ID + ' .ab-store-featured-desc{font-size:0.96em;color:rgba(255,255,255,0.85);margin-bottom:1em;max-width:70%;line-height:1.4;}' +
+            '#' + ROOT_ID + ' .ab-store-featured-foot{display:flex;align-items:center;gap:1.2em;flex-wrap:wrap;}' +
+            '#' + ROOT_ID + ' .ab-store-featured-price{font-size:1.55em;font-weight:900;color:#beee11;text-shadow:0 2px 10px rgba(190,238,17,0.35);}' +
+            '#' + ROOT_ID + ' .ab-store-featured-price-unit{font-size:0.55em;opacity:0.7;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;}' +
+            '#' + ROOT_ID + ' .ab-store-featured .ab-store-cta{padding:0.75em 1.7em;font-size:1em;border-radius:4px;}' +
+            // Cosmetic theme classes (also added to styles-revamp.css for revamp
+            // mode — repeat here so Classic mode equip-theme works too).
+            // v2.0 themes — paint the whole page (background gradient + panel
+            // cards + tabs + accents) so equipping a theme actually feels
+            // like a reskin rather than a tint. Each theme defines an accent
+            // color used for headings, active tabs, hover borders, and the
+            // section dividers; the page background gets a strong gradient
+            // and panels pick up a subtle wash.
+            // ---- Sunset ----
+            '#' + ROOT_ID + '.theme-sunset{background:radial-gradient(ellipse at top, rgba(249,115,22,0.32), rgba(24,24,24,1) 70%) !important;}' +
+            '#' + ROOT_ID + '.theme-sunset #abSaLoadoutHero,#' + ROOT_ID + '.theme-sunset .ab-panel-card{background:linear-gradient(180deg, rgba(249,115,22,0.12), rgba(236,72,153,0.06)) !important; border-color:rgba(249,115,22,0.32) !important;}' +
+            '#' + ROOT_ID + '.theme-sunset .ab-tab.active{background:linear-gradient(135deg,#f97316,#ec4899) !important; color:#fff !important; border-color:#fb923c !important;}' +
+            '#' + ROOT_ID + '.theme-sunset .ab-store-row-head{border-bottom-color:rgba(249,115,22,0.35) !important;}' +
+            '#' + ROOT_ID + '.theme-sunset .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-sunset .ab-cos-row-head .material-icons{color:#fb923c !important;}' +
+            '#' + ROOT_ID + '.theme-sunset .ab-store-card:hover,#' + ROOT_ID + '.theme-sunset .ab-cos-card:hover{border-color:#fb923c !important; box-shadow:0 14px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(249,115,22,0.35) !important;}' +
+            // ---- Cyberpunk ----
+            '#' + ROOT_ID + '.theme-cyberpunk{background:linear-gradient(180deg, rgba(168,85,247,0.18), rgba(6,8,20,1) 60%) !important; background-image:linear-gradient(180deg, rgba(168,85,247,0.18), rgba(6,8,20,1) 60%), repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 4px) !important;}' +
+            '#' + ROOT_ID + '.theme-cyberpunk #abSaLoadoutHero,#' + ROOT_ID + '.theme-cyberpunk .ab-panel-card{background:linear-gradient(135deg, rgba(168,85,247,0.18), rgba(34,211,238,0.10)) !important; border-color:rgba(168,85,247,0.5) !important; box-shadow:0 0 24px rgba(168,85,247,0.18) inset !important;}' +
+            '#' + ROOT_ID + '.theme-cyberpunk .ab-tab.active{background:linear-gradient(135deg,#a855f7,#06b6d4) !important; color:#fff !important;}' +
+            '#' + ROOT_ID + '.theme-cyberpunk .ab-store-row-head{border-bottom-color:rgba(168,85,247,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-cyberpunk .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-cyberpunk .ab-cos-row-head .material-icons{color:#d8b4fe !important;}' +
+            '#' + ROOT_ID + '.theme-cyberpunk .ab-store-card:hover,#' + ROOT_ID + '.theme-cyberpunk .ab-cos-card:hover{border-color:#22d3ee !important; box-shadow:0 14px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(34,211,238,0.4) !important;}' +
+            // ---- Pastel ----
+            '#' + ROOT_ID + '.theme-pastel{background:linear-gradient(180deg, rgba(196,181,253,0.22), rgba(167,243,208,0.10) 50%, rgba(24,24,24,1) 100%) !important;}' +
+            '#' + ROOT_ID + '.theme-pastel #abSaLoadoutHero,#' + ROOT_ID + '.theme-pastel .ab-panel-card{background:linear-gradient(135deg, rgba(196,181,253,0.18), rgba(167,243,208,0.10)) !important; border-color:rgba(196,181,253,0.42) !important;}' +
+            '#' + ROOT_ID + '.theme-pastel .ab-tab.active{background:linear-gradient(135deg,#c4b5fd,#a7f3d0) !important; color:#1f1f1f !important;}' +
+            '#' + ROOT_ID + '.theme-pastel .ab-store-row-head{border-bottom-color:rgba(196,181,253,0.42) !important;}' +
+            '#' + ROOT_ID + '.theme-pastel .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-pastel .ab-cos-row-head .material-icons{color:#ddd6fe !important;}' +
+            '#' + ROOT_ID + '.theme-pastel .ab-store-card:hover,#' + ROOT_ID + '.theme-pastel .ab-cos-card:hover{border-color:#c4b5fd !important;}' +
+            // ---- Monochrome ----
+            '#' + ROOT_ID + '.theme-monochrome{background:#000 !important; color:rgba(255,255,255,0.92) !important;}' +
+            '#' + ROOT_ID + '.theme-monochrome #abSaLoadoutHero,#' + ROOT_ID + '.theme-monochrome .ab-panel-card{background:rgba(255,255,255,0.03) !important; border-color:rgba(255,255,255,0.55) !important;}' +
+            '#' + ROOT_ID + '.theme-monochrome .ab-tab.active{background:#fff !important; color:#000 !important;}' +
+            '#' + ROOT_ID + '.theme-monochrome .ab-store-row-head{border-bottom-color:rgba(255,255,255,0.35) !important;}' +
+            '#' + ROOT_ID + '.theme-monochrome .ab-store-card,#' + ROOT_ID + '.theme-monochrome .ab-cos-card{background:#0a0a0a !important; border-color:rgba(255,255,255,0.25) !important;}' +
+            '#' + ROOT_ID + '.theme-monochrome .ab-store-card:hover,#' + ROOT_ID + '.theme-monochrome .ab-cos-card:hover{border-color:#fff !important; box-shadow:0 0 0 1px #fff !important;}' +
+            // ---- Noir ----
+            '#' + ROOT_ID + '.theme-noir{background:radial-gradient(ellipse at top, rgba(120,113,108,0.25), rgba(12,10,9,1) 70%) !important;}' +
+            '#' + ROOT_ID + '.theme-noir #abSaLoadoutHero,#' + ROOT_ID + '.theme-noir .ab-panel-card{background:linear-gradient(180deg, rgba(120,113,108,0.10), rgba(0,0,0,0.4)) !important; border-color:rgba(168,162,158,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-noir .ab-tab.active{background:linear-gradient(180deg,#a8a29e,#57534e) !important; color:#1c1917 !important;}' +
+            '#' + ROOT_ID + '.theme-noir .ab-store-row-head{border-bottom-color:rgba(168,162,158,0.3) !important;}' +
+            '#' + ROOT_ID + '.theme-noir .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-noir .ab-cos-row-head .material-icons{color:#d6d3d1 !important;}' +
+            // ---- Aurora ----
+            '#' + ROOT_ID + '.theme-aurora{background:linear-gradient(180deg, rgba(16,185,129,0.18), rgba(59,130,246,0.15) 35%, rgba(139,92,246,0.12) 60%, rgba(8,8,18,1) 100%) !important;}' +
+            '#' + ROOT_ID + '.theme-aurora #abSaLoadoutHero,#' + ROOT_ID + '.theme-aurora .ab-panel-card{background:linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.12) 60%, rgba(139,92,246,0.10)) !important; border-color:rgba(16,185,129,0.42) !important;}' +
+            '#' + ROOT_ID + '.theme-aurora .ab-tab.active{background:linear-gradient(135deg,#10b981,#3b82f6) !important; color:#fff !important;}' +
+            '#' + ROOT_ID + '.theme-aurora .ab-store-row-head{border-bottom-color:rgba(16,185,129,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-aurora .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-aurora .ab-cos-row-head .material-icons{color:#6ee7b7 !important;}' +
+            '#' + ROOT_ID + '.theme-aurora .ab-store-card:hover,#' + ROOT_ID + '.theme-aurora .ab-cos-card:hover{border-color:#34d399 !important;}' +
+            // ---- Crimson ----
+            '#' + ROOT_ID + '.theme-crimson{background:radial-gradient(ellipse at top, rgba(220,38,38,0.32), rgba(15,8,8,1) 70%) !important;}' +
+            '#' + ROOT_ID + '.theme-crimson #abSaLoadoutHero,#' + ROOT_ID + '.theme-crimson .ab-panel-card{background:linear-gradient(180deg, rgba(220,38,38,0.12), rgba(124,45,18,0.05)) !important; border-color:rgba(220,38,38,0.45) !important;}' +
+            '#' + ROOT_ID + '.theme-crimson .ab-tab.active{background:linear-gradient(135deg,#dc2626,#7c2d12) !important; color:#fff !important;}' +
+            '#' + ROOT_ID + '.theme-crimson .ab-store-row-head{border-bottom-color:rgba(220,38,38,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-crimson .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-crimson .ab-cos-row-head .material-icons{color:#fca5a5 !important;}' +
+            // ---- Vaporwave ----
+            '#' + ROOT_ID + '.theme-vaporwave{background:linear-gradient(180deg, rgba(236,72,153,0.22), rgba(168,85,247,0.18) 30%, rgba(6,182,212,0.14) 60%, rgba(15,8,30,1) 100%) !important;}' +
+            '#' + ROOT_ID + '.theme-vaporwave #abSaLoadoutHero,#' + ROOT_ID + '.theme-vaporwave .ab-panel-card{background:linear-gradient(135deg, rgba(236,72,153,0.18), rgba(6,182,212,0.12)) !important; border-color:rgba(236,72,153,0.42) !important;}' +
+            '#' + ROOT_ID + '.theme-vaporwave .ab-tab.active{background:linear-gradient(135deg,#ec4899,#06b6d4) !important; color:#fff !important;}' +
+            '#' + ROOT_ID + '.theme-vaporwave .ab-store-row-head{border-bottom-color:rgba(236,72,153,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-vaporwave .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-vaporwave .ab-cos-row-head .material-icons{color:#f9a8d4 !important;}' +
+            '#' + ROOT_ID + '.theme-vaporwave .ab-store-card:hover,#' + ROOT_ID + '.theme-vaporwave .ab-cos-card:hover{border-color:#ec4899 !important; box-shadow:0 0 24px rgba(236,72,153,0.35) !important;}' +
+            // ---- v2.0.x: 5 newer themes (galaxy, forest, ocean, rose gold, midnight) ----
+            // ---- Galaxy ----
+            '#' + ROOT_ID + '.theme-galaxy{background:radial-gradient(ellipse at top, rgba(88,28,135,0.45), rgba(15,8,40,1) 60%, rgba(0,0,0,1) 100%) !important;}' +
+            '#' + ROOT_ID + '.theme-galaxy #abSaLoadoutHero,#' + ROOT_ID + '.theme-galaxy .ab-panel-card{background:linear-gradient(135deg, rgba(88,28,135,0.18), rgba(30,27,75,0.10)) !important; border-color:rgba(168,85,247,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-galaxy .ab-tab.active{background:linear-gradient(135deg,#581c87,#1e1b4b) !important; color:#fff !important;}' +
+            '#' + ROOT_ID + '.theme-galaxy .ab-store-row-head{border-bottom-color:rgba(168,85,247,0.35) !important;}' +
+            '#' + ROOT_ID + '.theme-galaxy .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-galaxy .ab-cos-row-head .material-icons{color:#d8b4fe !important;}' +
+            // ---- Forest ----
+            '#' + ROOT_ID + '.theme-forest{background:radial-gradient(ellipse at top, rgba(21,128,61,0.32), rgba(6,30,16,1) 65%) !important;}' +
+            '#' + ROOT_ID + '.theme-forest #abSaLoadoutHero,#' + ROOT_ID + '.theme-forest .ab-panel-card{background:linear-gradient(135deg, rgba(21,128,61,0.14), rgba(180,83,9,0.06)) !important; border-color:rgba(34,197,94,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-forest .ab-tab.active{background:linear-gradient(135deg,#15803d,#854d0e) !important; color:#fff !important;}' +
+            '#' + ROOT_ID + '.theme-forest .ab-store-row-head{border-bottom-color:rgba(34,197,94,0.35) !important;}' +
+            '#' + ROOT_ID + '.theme-forest .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-forest .ab-cos-row-head .material-icons{color:#86efac !important;}' +
+            // ---- Ocean ----
+            '#' + ROOT_ID + '.theme-ocean{background:linear-gradient(180deg, rgba(12,74,110,0.45), rgba(2,21,42,1) 70%) !important;}' +
+            '#' + ROOT_ID + '.theme-ocean #abSaLoadoutHero,#' + ROOT_ID + '.theme-ocean .ab-panel-card{background:linear-gradient(135deg, rgba(12,74,110,0.18), rgba(34,211,238,0.08)) !important; border-color:rgba(34,211,238,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-ocean .ab-tab.active{background:linear-gradient(135deg,#0c4a6e,#0e7490) !important; color:#fff !important;}' +
+            '#' + ROOT_ID + '.theme-ocean .ab-store-row-head{border-bottom-color:rgba(34,211,238,0.35) !important;}' +
+            '#' + ROOT_ID + '.theme-ocean .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-ocean .ab-cos-row-head .material-icons{color:#7dd3fc !important;}' +
+            // ---- Rose Gold ----
+            '#' + ROOT_ID + '.theme-rosegold{background:linear-gradient(180deg, rgba(251,113,133,0.22), rgba(245,158,11,0.10) 35%, rgba(24,8,15,1) 100%) !important;}' +
+            '#' + ROOT_ID + '.theme-rosegold #abSaLoadoutHero,#' + ROOT_ID + '.theme-rosegold .ab-panel-card{background:linear-gradient(135deg, rgba(251,113,133,0.20), rgba(245,158,11,0.10)) !important; border-color:rgba(251,113,133,0.42) !important;}' +
+            '#' + ROOT_ID + '.theme-rosegold .ab-tab.active{background:linear-gradient(135deg,#fb7185,#f59e0b) !important; color:#1c1106 !important;}' +
+            '#' + ROOT_ID + '.theme-rosegold .ab-store-row-head{border-bottom-color:rgba(251,113,133,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-rosegold .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-rosegold .ab-cos-row-head .material-icons{color:#fda4af !important;}' +
+            // ---- Midnight ----
+            '#' + ROOT_ID + '.theme-midnight{background:radial-gradient(ellipse at top, rgba(30,27,75,0.5), rgba(2,6,23,1) 65%) !important;}' +
+            '#' + ROOT_ID + '.theme-midnight #abSaLoadoutHero,#' + ROOT_ID + '.theme-midnight .ab-panel-card{background:linear-gradient(135deg, rgba(30,27,75,0.20), rgba(15,23,42,0.10)) !important; border-color:rgba(99,102,241,0.4) !important;}' +
+            '#' + ROOT_ID + '.theme-midnight .ab-tab.active{background:linear-gradient(135deg,#1e1b4b,#3730a3) !important; color:#fff !important;}' +
+            '#' + ROOT_ID + '.theme-midnight .ab-store-row-head{border-bottom-color:rgba(99,102,241,0.35) !important;}' +
+            '#' + ROOT_ID + '.theme-midnight .ab-store-row-head .material-icons,#' + ROOT_ID + '.theme-midnight .ab-cos-row-head .material-icons{color:#a5b4fc !important;}' +
+            // ---- More frames (obsidian/emerald/neon) ----
+            '#' + ROOT_ID + ' .ab-card.frame-obsidian{box-shadow:0 0 0 2px #292524, 0 0 18px rgba(220,38,38,0.4);border-color:#292524 !important;background-color:#0c0a09 !important;}' +
+            '#' + ROOT_ID + ' .ab-card.frame-emerald{box-shadow:0 0 0 2px #10b981, 0 0 18px rgba(16,185,129,0.5);border-color:#10b981 !important;}' +
+            '#' + ROOT_ID + ' .ab-card.frame-neon{box-shadow:0 0 0 2px #ec4899, 0 0 22px rgba(236,72,153,0.6);border-color:#ec4899 !important;}' +
+            // ---- v2.0.x animated backgrounds (full-page) + shop previews ----
+            // position:fixed on the ::before so the bg layer is anchored to
+            // the viewport, not to the (scrollable) standalone root — the old
+            // position:absolute meant scrolling down moved past the bg layer
+            // and the bg only covered roughly the first viewport height.
+            // pointer-events:none so it doesn't capture clicks.
+            // z-index handling: stamping `position:relative; z-index:1` on
+            // direct children of root ensures all our UI renders above the
+            // fixed pseudo. The preview tiles re-scope the same class on a
+            // contained block, so the shop card shows the live animation
+            // without breaking the page layout (the .ab-store-bg-preview
+            // overrides position to absolute so it stays inside the card).
+            '#' + ROOT_ID + ' .ab-store-bg-preview,#' + ROOT_ID + ' .ab-store-border-preview{position:relative;width:70px;height:70px;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0f172a;border:1px solid rgba(255,255,255,0.08);}' +
+            // When a video background is active on the root, suppress the
+            // CSS-only animation pseudos for the same bg-* class so we don't
+            // get the old conic ring spinning on top of the video.
+            '#' + ROOT_ID + '.has-video-bg::before,#' + ROOT_ID + '.has-video-bg::after{display:none !important;}' +
+            // v2.0 first-visit welcome toast (pointer at the Loadout tab).
+            // Floats top-right, dismissable, auto-clears after 30s, set via
+            // localStorage so it never re-shows on the same browser.
+            '#' + ROOT_ID + ' #abSaV2Welcome{position:fixed;top:84px;right:28px;width:min(380px,calc(100vw - 48px));background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border:1px solid rgba(252,211,77,0.5);border-radius:14px;padding:1.1em 1.25em 1.15em;color:#fff;z-index:1000001;box-shadow:0 20px 50px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04), 0 0 28px rgba(252,211,77,0.18);animation:ab-v2-welcome-in 0.4s cubic-bezier(.21,1.02,.73,1) both;}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-row{display:flex;gap:0.9em;align-items:flex-start;}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-icon{font-size:2.1em;line-height:1;flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-body{flex:1;min-width:0;}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-eyebrow{font-size:0.7em;font-weight:800;letter-spacing:0.12em;color:#fcd34d;margin-bottom:0.2em;}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-title{font-family:"Cinzel","Trajan Pro",Georgia,serif;font-style:italic;font-size:1.2em;font-weight:700;color:#fff;margin-bottom:0.4em;background:linear-gradient(135deg,#fcd34d 0%,#f59e0b 50%,#fde68a 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-desc{font-size:0.85em;line-height:1.5;color:rgba(255,255,255,0.85);margin-bottom:0.85em;}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-cta{background:linear-gradient(180deg,#75b022,#5c7e10);color:#fff;border:none;padding:0.55em 1.15em;border-radius:4px;font-weight:800;font-size:0.82em;letter-spacing:0.06em;cursor:pointer;transition:filter 150ms ease, transform 150ms ease;text-shadow:0 1px 2px rgba(0,0,0,0.35);}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-cta:hover{filter:brightness(1.15);transform:translateY(-1px);box-shadow:0 8px 16px rgba(140,195,74,0.35);}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-close{position:absolute;top:8px;right:10px;background:transparent;color:rgba(255,255,255,0.5);border:none;cursor:pointer;width:26px;height:26px;font-size:1.3em;line-height:1;border-radius:6px;transition:color 120ms ease, background 120ms ease;}' +
+            '#' + ROOT_ID + ' .ab-v2-welcome-close:hover{color:#fff;background:rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + ' #abSaV2Welcome.ab-v2-welcome-out{animation:ab-v2-welcome-out 0.25s ease both;}' +
+            '@keyframes ab-v2-welcome-in{from{transform:translate(20px,-10px);opacity:0;}to{transform:translate(0,0);opacity:1;}}' +
+            '@keyframes ab-v2-welcome-out{to{transform:translate(20px,-10px);opacity:0;}}' +
+            '#' + ROOT_ID + '.bg-blackhole > *,#' + ROOT_ID + '.bg-starfield > *,#' + ROOT_ID + '.bg-nebula > *,#' + ROOT_ID + '.bg-matrix > *,#' + ROOT_ID + '.bg-aurora > *,#' + ROOT_ID + '.bg-fireflies > *{position:relative;z-index:1;}' +
+            // Common: full-viewport fixed paint layer with a back-of-stack
+            // z-index. Each bg variant overrides the background image.
+            '#' + ROOT_ID + '.bg-blackhole::before,#' + ROOT_ID + '.bg-starfield::before,#' + ROOT_ID + '.bg-nebula::before,#' + ROOT_ID + '.bg-matrix::before,#' + ROOT_ID + '.bg-aurora::before,#' + ROOT_ID + '.bg-fireflies::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;}' +
+            // Preview tile variants use position:absolute scoped to the tile
+            '#' + ROOT_ID + ' .ab-store-bg-preview.bg-blackhole::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-starfield::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-nebula::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-matrix::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-aurora::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-fireflies::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;}' +
+            // ---- Black hole: deep-space radial darken + slow rotating accretion ring ----
+            '#' + ROOT_ID + '.bg-blackhole,#' + ROOT_ID + ' .ab-store-bg-preview.bg-blackhole{background-color:#020617 !important;}' +
+            '#' + ROOT_ID + '.bg-blackhole::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-blackhole::before{background:conic-gradient(from 0deg at 50% 50%,transparent 0deg,rgba(124,58,237,0.18) 40deg,rgba(34,211,238,0.18) 120deg,transparent 180deg,rgba(220,38,38,0.16) 240deg,rgba(245,158,11,0.16) 300deg,transparent 360deg);animation:ab-bg-blackhole-spin 40s linear infinite;}' +
+            '#' + ROOT_ID + '.bg-blackhole::after{content:"";position:fixed;inset:0;background:radial-gradient(circle at 50% 50%,#000 0%,#000 6%,transparent 18%);pointer-events:none;z-index:0;}' +
+            '#' + ROOT_ID + ' .ab-store-bg-preview.bg-blackhole::after{content:"";position:absolute;inset:0;background:radial-gradient(circle,#000 0%,#000 18%,transparent 42%);pointer-events:none;z-index:1;}' +
+            '@keyframes ab-bg-blackhole-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}' +
+            // ---- Starfield: 3 layered star fields ----
+            '#' + ROOT_ID + '.bg-starfield,#' + ROOT_ID + ' .ab-store-bg-preview.bg-starfield{background-color:#020617 !important;}' +
+            '#' + ROOT_ID + '.bg-starfield::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-starfield::before{background-image:radial-gradient(1px 1px at 20% 12%,#fff,transparent 60%),radial-gradient(1px 1px at 65% 18%,#fff,transparent 60%),radial-gradient(2px 2px at 38% 78%,#fde68a,transparent 60%),radial-gradient(1px 1px at 85% 55%,#fff,transparent 60%),radial-gradient(1px 1px at 9% 70%,#fff,transparent 60%),radial-gradient(1.5px 1.5px at 55% 38%,#fff,transparent 60%),radial-gradient(1px 1px at 92% 88%,#fff,transparent 60%),radial-gradient(2px 2px at 30% 50%,#a5b4fc,transparent 60%);background-size:240px 240px;animation:ab-bg-starfield-twinkle 4.5s ease-in-out infinite alternate;}' +
+            '@keyframes ab-bg-starfield-twinkle{from{opacity:0.55;}to{opacity:1;}}' +
+            // ---- Nebula: drifting purple+cyan blobs ----
+            '#' + ROOT_ID + '.bg-nebula,#' + ROOT_ID + ' .ab-store-bg-preview.bg-nebula{background-color:#0c0a1f !important;}' +
+            '#' + ROOT_ID + '.bg-nebula::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-nebula::before{background:radial-gradient(60% 60% at 25% 30%,rgba(168,85,247,0.45),transparent 70%),radial-gradient(55% 55% at 75% 65%,rgba(34,211,238,0.35),transparent 70%),radial-gradient(50% 50% at 50% 50%,rgba(236,72,153,0.3),transparent 70%);background-size:200% 200%;animation:ab-bg-nebula-drift 28s ease-in-out infinite alternate;}' +
+            '@keyframes ab-bg-nebula-drift{from{background-position:0% 0%, 100% 100%, 50% 50%;}to{background-position:100% 50%, 0% 30%, 60% 80%;}}' +
+            // ---- Matrix: 3 overlapping layers of green code at different
+            // speeds + densities so it actually reads as digital rain, not
+            // static stripes. Each layer is a repeating gradient with its
+            // own keyframe — fast/medium/slow scroll. The "characters" are
+            // approximated by short bright dashes inside taller faint columns.
+            '#' + ROOT_ID + '.bg-matrix,#' + ROOT_ID + ' .ab-store-bg-preview.bg-matrix{background-color:#000 !important;}' +
+            '#' + ROOT_ID + '.bg-matrix::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-matrix::before{background:repeating-linear-gradient(180deg, transparent 0, transparent 8px, rgba(74,222,128,0.95) 8px, rgba(74,222,128,0.95) 10px, rgba(34,197,94,0.55) 10px, rgba(34,197,94,0.55) 16px, transparent 16px, transparent 40px),repeating-linear-gradient(180deg, transparent 0, transparent 30px, rgba(22,163,74,0.45) 30px, rgba(22,163,74,0.45) 32px, transparent 32px, transparent 80px),repeating-linear-gradient(90deg, transparent 0, transparent 12px, rgba(0,0,0,0.55) 12px, rgba(0,0,0,0.55) 16px),linear-gradient(180deg, #001a05 0%, #000 70%);background-size: 14px 240px, 22px 320px, 28px 100%, 100% 100%;background-position: 0 0, 8px 0, 0 0, 0 0;animation: ab-bg-matrix-fall-fast 2.2s linear infinite, ab-bg-matrix-fall-slow 4.5s linear infinite;opacity:0.55;}' +
+            '@keyframes ab-bg-matrix-fall-fast{from{background-position:0 0, 0 0, 0 0, 0 0;}to{background-position:0 240px, 8px 0, 0 0, 0 0;}}' +
+            '@keyframes ab-bg-matrix-fall-slow{from{background-position:0 0, 8px 0, 0 0, 0 0;}to{background-position:0 0, 8px 320px, 0 0, 0 0;}}' +
+            // ---- Aurora: green→blue→violet ribbons drifting at the top ----
+            '#' + ROOT_ID + '.bg-aurora,#' + ROOT_ID + ' .ab-store-bg-preview.bg-aurora{background-color:#02061a !important;}' +
+            '#' + ROOT_ID + '.bg-aurora::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-aurora::before{background:linear-gradient(180deg,rgba(16,185,129,0.35) 0%,rgba(59,130,246,0.25) 20%,rgba(139,92,246,0.18) 35%,transparent 65%);background-size:200% 120%;animation:ab-bg-aurora-wave 14s ease-in-out infinite alternate;filter:blur(40px);}' +
+            '@keyframes ab-bg-aurora-wave{from{background-position:0% 0%;}to{background-position:100% 5%;}}' +
+            // ---- Fireflies: warm bokeh particles ----
+            '#' + ROOT_ID + '.bg-fireflies,#' + ROOT_ID + ' .ab-store-bg-preview.bg-fireflies{background-color:#0c0a09 !important;}' +
+            '#' + ROOT_ID + '.bg-fireflies::before,#' + ROOT_ID + ' .ab-store-bg-preview.bg-fireflies::before{background-image:radial-gradient(3px 3px at 20% 80%,rgba(252,211,77,0.85),transparent 60%),radial-gradient(2px 2px at 60% 40%,rgba(253,224,71,0.7),transparent 60%),radial-gradient(4px 4px at 80% 70%,rgba(252,211,77,0.8),transparent 60%),radial-gradient(2px 2px at 30% 30%,rgba(254,240,138,0.65),transparent 60%),radial-gradient(3px 3px at 70% 90%,rgba(252,211,77,0.75),transparent 60%),radial-gradient(1px 1px at 10% 15%,rgba(252,211,77,0.6),transparent 60%);background-size:400px 400px;animation:ab-bg-fireflies-float 22s linear infinite;}' +
+            '@keyframes ab-bg-fireflies-float{0%{background-position:0 0;opacity:0.4;}50%{opacity:1;}100%{background-position:-400px -400px;opacity:0.4;}}' +
+            // ---- v2.0.x animated profile borders (applied to .ab-hero) ----
+            '#' + ROOT_ID + '.border-gold-shimmer .ab-hero,#' + ROOT_ID + ' .ab-store-border-preview.border-gold-shimmer{position:relative;border-radius:14px;background-clip:padding-box;}' +
+            '#' + ROOT_ID + '.border-gold-shimmer .ab-hero::before,#' + ROOT_ID + ' .ab-store-border-preview.border-gold-shimmer::before{content:"";position:absolute;inset:-2px;border-radius:inherit;padding:2px;background:linear-gradient(120deg,#facc15 0%,#fde68a 30%,#facc15 50%,#a16207 70%,#facc15 100%);background-size:300% 100%;animation:ab-border-shimmer 4s linear infinite;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}' +
+            '@keyframes ab-border-shimmer{from{background-position:0% 0%;}to{background-position:300% 0%;}}' +
+            // Plasma: hue-rotate the gradient in place — no whole-card spin.
+            '#' + ROOT_ID + '.border-plasma .ab-hero,#' + ROOT_ID + ' .ab-store-border-preview.border-plasma{position:relative;border-radius:14px;}' +
+            '#' + ROOT_ID + '.border-plasma .ab-hero::before,#' + ROOT_ID + ' .ab-store-border-preview.border-plasma::before{content:"";position:absolute;inset:-2px;border-radius:inherit;padding:2px;background:linear-gradient(90deg,#ec4899,#a855f7,#06b6d4,#22d3ee,#ec4899);background-size:300% 100%;animation:ab-border-plasma 5s linear infinite;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}' +
+            '@keyframes ab-border-plasma{from{background-position:0% 0%;filter:hue-rotate(0deg);}to{background-position:300% 0%;filter:hue-rotate(360deg);}}' +
+            '#' + ROOT_ID + '.border-ember .ab-hero,#' + ROOT_ID + ' .ab-store-border-preview.border-ember{position:relative;border-radius:14px;animation:ab-border-ember-pulse 2.5s ease-in-out infinite;}' +
+            '@keyframes ab-border-ember-pulse{0%,100%{box-shadow:0 0 0 1px #dc2626,0 0 14px rgba(220,38,38,0.5);}50%{box-shadow:0 0 0 2px #fca5a5,0 0 28px rgba(220,38,38,0.85);}}' +
+            // Holo Edge: distinctly different from Plasma — uses a SLOW
+            // pulsing rainbow ring with a bright "specular highlight" that
+            // sweeps once per cycle (not a continuous color crawl). The
+            // gradient is conic (full ring) not horizontal, and the highlight
+            // is a separate masked overlay so it reads as a chrome shimmer.
+            '#' + ROOT_ID + '.border-holo .ab-hero,#' + ROOT_ID + ' .ab-store-border-preview.border-holo{position:relative;border-radius:14px;}' +
+            '#' + ROOT_ID + '.border-holo .ab-hero::before,#' + ROOT_ID + ' .ab-store-border-preview.border-holo::before{content:"";position:absolute;inset:-2px;border-radius:inherit;padding:2px;background:conic-gradient(from 0deg, #ff006e, #ffbe0b, #06ffa5, #00b4d8, #8338ec, #ff006e);animation:ab-border-holo-pulse 6s ease-in-out infinite;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;}' +
+            '#' + ROOT_ID + '.border-holo .ab-hero::after,#' + ROOT_ID + ' .ab-store-border-preview.border-holo::after{content:"";position:absolute;inset:-2px;border-radius:inherit;padding:2px;background:linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.85) 50%, transparent 70%);background-size:400% 100%;animation:ab-border-holo-sweep 4s linear infinite;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;mix-blend-mode:screen;}' +
+            '@keyframes ab-border-holo-pulse{0%,100%{filter:saturate(1) brightness(1);}50%{filter:saturate(1.6) brightness(1.25);}}' +
+            '@keyframes ab-border-holo-sweep{from{background-position:-100% 0;}to{background-position:200% 0;}}' +
+            '#' + ROOT_ID + '.border-crystal .ab-hero,#' + ROOT_ID + ' .ab-store-border-preview.border-crystal{position:relative;border-radius:14px;box-shadow:0 0 0 2px #bfdbfe, inset 0 0 18px rgba(191,219,254,0.25);}' +
+            // ---- Active boost pills (multi-pill stack in the Loadout hero) ----
+            '#' + ROOT_ID + ' .ab-boost-pill{padding:0.5em 0.95em; border-radius:10px; min-width:170px; backdrop-filter:blur(6px); border:1px solid; transition:transform 150ms ease;}' +
+            '#' + ROOT_ID + ' .ab-boost-pill:hover{transform:translateX(-3px);}' +
+            '#' + ROOT_ID + ' .ab-boost-pill-head{display:flex; align-items:center; gap:0.35em; font-size:0.7em; font-weight:800; letter-spacing:0.1em;}' +
+            '#' + ROOT_ID + ' .ab-boost-pill-head .material-icons{font-size:1em;}' +
+            '#' + ROOT_ID + ' .ab-boost-pill-body{font-size:0.95em; margin-top:0.15em; font-weight:700; letter-spacing:0.02em;}' +
+            '#' + ROOT_ID + ' .ab-boost-xp{background:rgba(251,191,36,0.18); border-color:#f59e0b; color:#fcd34d;}' +
+            '#' + ROOT_ID + ' .ab-boost-xp .ab-boost-pill-body{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums; color:#fde68a;}' +
+            '#' + ROOT_ID + ' .ab-boost-dc{background:rgba(16,185,129,0.18); border-color:#10b981; color:#6ee7b7;}' +
+            '#' + ROOT_ID + ' .ab-boost-dc .ab-boost-pill-body{color:#a7f3d0; font-weight:600; font-size:0.85em;}' +
+            '#' + ROOT_ID + ' .ab-boost-sf{background:rgba(125,211,252,0.18); border-color:#0ea5e9; color:#7dd3fc;}' +
+            '#' + ROOT_ID + ' .ab-boost-sf .ab-boost-pill-body{color:#bae6fd; font-weight:600; font-size:0.85em;}' +
+            // v2.0: badge frame cosmetics — applied as a class on equipped
+            // badge cards by renderEquipped() once the user equips a frame.
+            '#' + ROOT_ID + ' .ab-card.frame-gilded{box-shadow:0 0 0 2px #facc15, 0 0 18px rgba(250,204,21,0.55);border-color:#facc15 !important;}' +
+            '#' + ROOT_ID + ' .ab-card.frame-holo{box-shadow:0 0 0 2px #22d3ee, 0 0 18px rgba(34,211,238,0.5);border-color:#22d3ee !important;background-image:linear-gradient(135deg, rgba(168,85,247,0.16), rgba(34,211,238,0.16) 50%, rgba(250,204,21,0.16));transition:filter 300ms ease;}' +
+            '#' + ROOT_ID + ' .ab-card.frame-holo:hover{filter:hue-rotate(40deg);}' +
+            '#' + ROOT_ID + ' .ab-card.frame-frosted{box-shadow:0 0 0 2px #bfdbfe, inset 0 0 0 1px rgba(255,255,255,0.4);border-color:#bfdbfe !important;background-color:rgba(191,219,254,0.06) !important;}' +
+            // v2.0 polish: deeper Steam-store hero for the Loadout score balance
+            '#' + ROOT_ID + ' #abSaLoadoutHero{background:linear-gradient(135deg,#1b2838 0%,#2a475e 60%,#1b2838 100%) !important;border-color:rgba(102,192,244,0.18) !important;box-shadow:0 10px 38px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05) !important;}' +
+            // Featured carousel
+            '#' + ROOT_ID + ' .ab-store-featured-wrap{position:relative;}' +
+            '#' + ROOT_ID + ' .ab-store-featured-track{display:flex;gap:1em;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;padding-bottom:0.25em;}' +
+            '#' + ROOT_ID + ' .ab-store-featured-track::-webkit-scrollbar{display:none;}' +
+            '#' + ROOT_ID + ' .ab-store-featured-track > .ab-store-featured{flex:0 0 100%;scroll-snap-align:start;margin:0;}' +
+            '#' + ROOT_ID + ' .ab-store-carousel-btn{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(15,23,42,0.7);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.4em;font-weight:900;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,0.55);opacity:0;transition:opacity 200ms ease, background 150ms ease, transform 150ms ease;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.12);}' +
+            '#' + ROOT_ID + ' .ab-store-featured-wrap:hover .ab-store-carousel-btn{opacity:1;}' +
+            '#' + ROOT_ID + ' .ab-store-carousel-btn:hover{background:#66c0f4;color:#0f172a;transform:translateY(-50%) scale(1.12);}' +
+            '#' + ROOT_ID + ' .ab-store-carousel-btn.prev{left:-12px;}' +
+            '#' + ROOT_ID + ' .ab-store-carousel-btn.next{right:-12px;}' +
+            '#' + ROOT_ID + ' .ab-store-carousel-dots{display:flex;justify-content:center;gap:0.4em;margin-top:0.6em;}' +
+            '#' + ROOT_ID + ' .ab-store-carousel-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25);cursor:pointer;transition:all 150ms ease;border:none;padding:0;}' +
+            '#' + ROOT_ID + ' .ab-store-carousel-dot.active{background:#66c0f4;width:24px;border-radius:4px;}' +
+            // Cosmetics-tab Steam-style cards (mirrors Shop grid but with Equip controls)
+            '#' + ROOT_ID + ' .ab-cos-row-head{display:flex;align-items:center;gap:0.6em;margin:1.4em 0 0.8em;padding-bottom:0.45em;border-bottom:1px solid rgba(255,255,255,0.08);}' +
+            '#' + ROOT_ID + ' .ab-cos-row-head h3{margin:0;font-size:1.05em;font-weight:800;letter-spacing:0.02em;}' +
+            '#' + ROOT_ID + ' .ab-cos-row-head .material-icons{color:#66c0f4;font-size:1.25em;}' +
+            '#' + ROOT_ID + ' .ab-cos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.85em;}' +
+            '#' + ROOT_ID + ' .ab-cos-card{position:relative;border:1px solid rgba(255,255,255,0.08);border-radius:10px;background:linear-gradient(180deg,#1b2838 0%,#0f172a 100%);overflow:hidden;display:flex;flex-direction:column;transition:transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;}' +
+            '#' + ROOT_ID + ' .ab-cos-card:hover{transform:translateY(-3px);border-color:#66c0f4;box-shadow:0 12px 28px rgba(0,0,0,0.5);}' +
+            '#' + ROOT_ID + ' .ab-cos-card.equipped{border-color:#10b981;box-shadow:0 0 0 1px #10b981, 0 0 22px rgba(16,185,129,0.22);}' +
+            '#' + ROOT_ID + ' .ab-cos-card-hero{position:relative;height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden;}' +
+            '#' + ROOT_ID + ' .ab-cos-card-equipped-pill{position:absolute;top:8px;right:8px;background:#10b981;color:#03150e;padding:0.22em 0.65em;border-radius:3px;font-size:0.66em;font-weight:800;letter-spacing:0.08em;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,0.35);}' +
+            '#' + ROOT_ID + ' .ab-cos-card-body{padding:0.7em 0.85em 0.45em;flex:1;}' +
+            '#' + ROOT_ID + ' .ab-cos-card-name{font-weight:700;font-size:0.96em;color:rgba(255,255,255,0.95);margin-bottom:0.2em;}' +
+            '#' + ROOT_ID + ' .ab-cos-card-foot{padding:0.6em 0.85em 0.85em;}' +
+            '#' + ROOT_ID + ' .ab-cos-action{display:block;width:100%;padding:0.55em 1em;border:none;border-radius:3px;font-weight:800;letter-spacing:0.06em;font-size:0.86em;cursor:pointer;transition:filter 150ms ease, box-shadow 150ms ease, transform 150ms ease;}' +
+            '#' + ROOT_ID + ' .ab-cos-action.equip{background:linear-gradient(180deg,#75b022,#5c7e10);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.4);}' +
+            '#' + ROOT_ID + ' .ab-cos-action.equip:hover{filter:brightness(1.15);box-shadow:0 0 16px rgba(140,195,74,0.45);}' +
+            '#' + ROOT_ID + ' .ab-cos-action.unequip{background:rgba(239,68,68,0.18);color:#fca5a5;border:1px solid rgba(239,68,68,0.45);}' +
+            '#' + ROOT_ID + ' .ab-cos-action.unequip:hover{background:rgba(239,68,68,0.3);}';
         document.head.appendChild(s);
     }
 
@@ -864,7 +1161,7 @@
                     /* v1.8.47: Classic/Revamp toggle \u2014 mirrors the admin-page
                        toggle. Persists via the same `ab-style-pref` localStorage
                        key so the user's choice is shared across both surfaces. */
-                    '<button type="button" id="abSaStyleToggleBtn" class="abSaStyleToggleBtn" aria-pressed="false" title="Toggle Revamp / Classic UI">UI: Classic</button>' +
+                    '<button type="button" id="abSaStyleToggleBtn" class="abSaStyleToggleBtn" aria-pressed="false" title="Toggle Revamp / Classic UI" data-i18n="ui.toggle.classic">UI: Classic</button>' +
                     '<a class="ab-back" href="/web/index.html#!/home">\u2190 <span data-i18n="achievements.back_home">Back Home</span></a>' +
                 '</div>' +
                 '<div class="ab-hero">' +
@@ -880,7 +1177,7 @@
                                 ' style="--rv-arc-c:540.35;--rv-arc-off:540.35"></circle>' +
                         '</svg>' +
                         '<div class="abSaHeroArcCenter">' +
-                            '<div class="abSaHeroArcEyebrow">COMPLETION</div>' +
+                            '<div class="abSaHeroArcEyebrow" data-i18n="achievements.completion">Completion</div>' +
                             '<div id="abSaHeroArcPct" class="abSaHeroArcPct">0%</div>' +
                         '</div>' +
                     '</div>' +
@@ -921,6 +1218,7 @@
                     '<button type="button" class="ab-tab" id="abSaTabActivity" data-i18n="tabs.activity">Activity</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabWrapped" data-i18n="tabs.wrapped">Wrapped</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabStats" data-i18n="tabs.stats">Stats</button>' +
+                    '<button type="button" class="ab-tab" id="abSaTabLoadout" data-i18n="tabs.loadout">Loadout</button>' +
                     '<button type="button" class="ab-tab" id="abSaTabSettings" data-i18n-title="tabs.settings" title="Settings"><span class="material-icons" style="font-size:1.1em;vertical-align:middle;">settings</span></button>' +
                 '</div>' +
                 '<div id="abSaPanelBadges" class="ab-panel">' +
@@ -965,11 +1263,17 @@
                 '</div>' +
                 '<div id="abSaPanelQuests" class="ab-panel" style="display:none;">' +
                     '<div class="ab-panel-card">' +
-                        '<h3 style="margin:0 0 0.5em;" data-i18n="quests.daily">Daily quest</h3>' +
-                        '<div class="ab-muted" style="font-size:0.85em; margin-bottom:0.75em;" data-i18n="quests.daily_desc">Resets at midnight. Everyone shares the same daily challenge.</div>' +
+                        '<div style="display:flex; align-items:center; justify-content:space-between; gap:0.6em; flex-wrap:wrap;">' +
+                            '<h3 style="margin:0;">Daily quests</h3>' +
+                            '<div id="abSaDailyRerollSlot"></div>' +
+                        '</div>' +
+                        '<div class="ab-muted" style="font-size:0.85em; margin:0.4em 0 0.85em;">Resets at midnight UTC. Everyone shares the same daily challenge.</div>' +
                         '<div id="abSaDailyQuest" data-i18n="common.loading">Loading...</div>' +
-                        '<h3 style="margin:1.5em 0 0.5em;" data-i18n="quests.weekly">Weekly quest</h3>' +
-                        '<div class="ab-muted" style="font-size:0.85em; margin-bottom:0.75em;" data-i18n="quests.weekly_desc">Resets every Monday. Bigger reward, harder target.</div>' +
+                        '<div style="display:flex; align-items:center; justify-content:space-between; gap:0.6em; margin-top:1.6em; flex-wrap:wrap;">' +
+                            '<h3 style="margin:0;">Weekly quests</h3>' +
+                            '<div id="abSaWeeklyRerollSlot"></div>' +
+                        '</div>' +
+                        '<div class="ab-muted" style="font-size:0.85em; margin:0.4em 0 0.85em;">Resets every Monday UTC. Bigger reward, harder target.</div>' +
                         '<div id="abSaWeeklyQuest" data-i18n="common.loading">Loading...</div>' +
                     '</div>' +
                 '</div>' +
@@ -1050,6 +1354,39 @@
                         '<div id="abSaPrefs" class="ab-prefs" data-i18n="common.loading">Loading...</div>' +
                     '</div>' +
                 '</div>' +
+                '<div id="abSaPanelLoadout" class="ab-panel" style="display:none;">' +
+                    '<div class="ab-panel-card">' +
+                        '<div id="abSaLoadoutHero" style="display:flex; gap:1em; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:1.1em 1.35em; border-radius:14px; background:linear-gradient(135deg, rgba(102,126,234,0.22), rgba(118,75,162,0.22)); border:1px solid rgba(255,255,255,0.1); margin-bottom:1.25em; box-shadow:0 6px 24px rgba(0,0,0,0.18);">' +
+                            '<div>' +
+                                '<div class="ab-muted" style="font-size:0.78em; letter-spacing:0.06em; text-transform:uppercase; font-weight:600;" data-i18n="loadout.score_balance">Score balance</div>' +
+                                '<div style="display:flex; align-items:baseline; gap:0.5em; margin-top:0.25em;">' +
+                                    '<div id="abSaLoadoutScore" style="font-size:2.6em; font-weight:800; background:linear-gradient(135deg,#a3b5f7,#d4c1ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; line-height:1;">0</div>' +
+                                    '<div class="ab-muted" style="font-size:0.9em;" data-i18n="loadout.shop.score">score</div>' +
+                                '</div>' +
+                                '<div class="ab-muted" style="font-size:0.8em; margin-top:0.4em;"><span data-i18n="loadout.lifetime_spent">Lifetime spent:</span> <span id="abSaLoadoutSpent" style="color:rgba(255,255,255,0.85); font-weight:600;">0</span></div>' +
+                            '</div>' +
+                            '<div id="abSaLoadoutBoostStack" style="display:flex; flex-direction:column; gap:0.5em; align-items:flex-end;"></div>' +
+                        '</div>' +
+                        '<div class="ab-tabs" style="margin-bottom:1.1em;">' +
+                            '<button type="button" class="ab-tab active" data-lo="powerups" data-i18n="loadout.tab.powerups">Power-ups</button>' +
+                            '<button type="button" class="ab-tab" data-lo="shop" data-i18n="loadout.tab.shop">Shop</button>' +
+                            '<button type="button" class="ab-tab" data-lo="cosmetics" data-i18n="loadout.tab.cosmetics">Cosmetics</button>' +
+                        '</div>' +
+                        '<div id="abSaLoPanelPowerups" class="ab-lo-panel">' +
+                            '<div class="ab-muted" style="font-size:0.88em; margin-bottom:0.85em;" data-i18n="loadout.intro.powerups">Activate consumables you have earned or bought. Streak Freeze auto-consumes if you miss a day.</div>' +
+                            '<div id="abSaLoPowerupGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:0.85em;"><div class="ab-muted" data-i18n="common.loading">Loading...</div></div>' +
+                        '</div>' +
+                        '<div id="abSaLoPanelShop" class="ab-lo-panel" style="display:none;">' +
+                            '<div class="ab-muted" style="font-size:0.88em; margin-bottom:0.85em;" data-i18n="loadout.intro.shop">Spend score on power-up refills, profile themes, badge frames, and custom rank titles.</div>' +
+                            '<div id="abSaLoShopBody"><div class="ab-muted" data-i18n="common.loading">Loading...</div></div>' +
+                        '</div>' +
+                        '<div id="abSaLoPanelCosmetics" class="ab-lo-panel" style="display:none;">' +
+                            '<div class="ab-muted" style="font-size:0.88em; margin-bottom:0.85em;" data-i18n="loadout.intro.cosmetics">Equip cosmetics you own. Theme repaints this page; frame restyles equipped badges; title replaces your auto rank name.</div>' +
+                            '<div id="abSaLoCosmeticsBody"><div class="ab-muted" data-i18n="common.loading">Loading...</div></div>' +
+                        '</div>' +
+                        '<div id="abSaLoStatus" class="ab-muted" style="margin-top:0.85em; font-size:0.85em; min-height:1.2em;"></div>' +
+                    '</div>' +
+                '</div>' +
                 '<div id="abSaPanelSettings" class="ab-panel" style="display:none;">' +
                     '<div class="ab-panel-card">' +
                         '<h3 style="margin:0 0 1em;" data-i18n="settings.title">Settings</h3>' +
@@ -1066,8 +1403,8 @@
     }
 
     function setTab(name) {
-        var panels = { badges: 'abSaPanelBadges', quests: 'abSaPanelQuests', recap: 'abSaPanelRecap', lb: 'abSaPanelLb', compare: 'abSaPanelCompare', activity: 'abSaPanelActivity', wrapped: 'abSaPanelWrapped', stats: 'abSaPanelStats', settings: 'abSaPanelSettings' };
-        var tabs = { badges: 'abSaTabBadges', quests: 'abSaTabQuests', recap: 'abSaTabRecap', lb: 'abSaTabLb', compare: 'abSaTabCompare', activity: 'abSaTabActivity', wrapped: 'abSaTabWrapped', stats: 'abSaTabStats', settings: 'abSaTabSettings' };
+        var panels = { badges: 'abSaPanelBadges', quests: 'abSaPanelQuests', recap: 'abSaPanelRecap', lb: 'abSaPanelLb', compare: 'abSaPanelCompare', activity: 'abSaPanelActivity', wrapped: 'abSaPanelWrapped', stats: 'abSaPanelStats', loadout: 'abSaPanelLoadout', settings: 'abSaPanelSettings' };
+        var tabs = { badges: 'abSaTabBadges', quests: 'abSaTabQuests', recap: 'abSaTabRecap', lb: 'abSaTabLb', compare: 'abSaTabCompare', activity: 'abSaTabActivity', wrapped: 'abSaTabWrapped', stats: 'abSaTabStats', loadout: 'abSaTabLoadout', settings: 'abSaTabSettings' };
         for (var k in panels) {
             var p = el(panels[k]); if (p) p.style.display = k === name ? 'block' : 'none';
             var t = el(tabs[k]); if (t) t.classList.toggle('active', k === name);
@@ -1079,6 +1416,7 @@
         if (name === 'activity') { loadActivity(); }
         if (name === 'wrapped') { loadWrapped(); }
         if (name === 'lb') { loadCategoryLb('score'); }
+        if (name === 'loadout') { loadLoadout(); }
         if (name === 'settings') { loadSettingsPanel(); }
     }
 
@@ -1162,7 +1500,16 @@
         });
     }
 
-    function renderQuestCards(list, containerId) {
+    // Inline SVG dice icon used by the reroll button so it renders even when
+    // the host page hasn't loaded the Material Icons font.
+    function diceSvg(size) {
+        var s = size || 14;
+        return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;">' +
+            '<path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm3.5 3.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm7 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM12 10.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM8.5 14.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm7 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/>' +
+        '</svg>';
+    }
+
+    function renderQuestCards(list, containerId, _ignoredAllowReroll, _ignoredRem, _ignoredPeriod) {
         var box = el(containerId);
         if (!box) return;
         if (!list || !list.length) { box.innerHTML = '<div class="ab-muted">' + tr('quests.none_available', 'No quests available.') + '</div>'; return; }
@@ -1171,11 +1518,10 @@
             var pct = q.Target ? Math.round(100 * (q.Current || 0) / q.Target) : 0;
             var borderColor = q.Completed ? '#4caf50' : 'rgba(255,255,255,0.1)';
             var glow = q.Completed ? 'box-shadow:0 0 20px rgba(76,175,80,0.15);' : '';
-            // Translate quest title/description via the per-quest translation key.
             var title = tr('quest.' + q.Id + '.title', q.Title);
             var desc = tr('quest.' + q.Id + '.desc', q.Description || '');
             return '<div style="padding:0.95em 1.1em; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid ' + borderColor + ';' + glow + ' margin-bottom:0.75em;">' +
-                '<div style="display:flex; justify-content:space-between; align-items:center; gap:0.5em;">' +
+                '<div style="display:flex; justify-content:space-between; align-items:center; gap:0.5em; flex-wrap:wrap;">' +
                     '<div style="font-weight:700; font-size:1.05em;">' + escapeHtml(title) + (q.Completed ? ' \u2713' : '') + '</div>' +
                     '<div style="font-size:0.78em; padding:0.25em 0.6em; border-radius:999px; background:rgba(102,126,234,0.2); color:#a3b5f7; font-weight:600;">+' + (q.Reward || 0) + ' ' + tr('quests.pts', 'pts') + '</div>' +
                 '</div>' +
@@ -1188,13 +1534,782 @@
         }).join('');
     }
 
+    // Render the single per-section reroll button into the slot in the
+    // quests panel header. One reroll per period (daily/weekly) rerolls the
+    // entire set on the server, so showing a button per-card was misleading.
+    function renderRerollSlot(slotId, period, remaining) {
+        var slot = el(slotId); if (!slot) return;
+        var canReroll = remaining > 0;
+        var rerollPath = (period === 'weekly') ? 'quests/weekly/reroll' : 'quests/daily/reroll';
+        var usedLabel  = (period === 'weekly')
+            ? tr('loadout.reroll.used_weekly', 'REROLLED THIS WEEK')
+            : tr('loadout.reroll.used_daily', 'REROLLED TODAY');
+        var tip        = (period === 'weekly') ? 'Reroll this week\'s quests (1 per ISO week)' : 'Reroll today\'s daily set (1 per UTC day)';
+        if (canReroll) {
+            slot.innerHTML = '<button type="button" class="ab-quest-reroll"' +
+                ' title="' + tip + '"' +
+                ' style="background:linear-gradient(180deg,#5e6ad2,#4c5bc0); color:#fff; border:none; padding:0.45em 1em; border-radius:999px; font-size:0.78em; font-weight:800; letter-spacing:0.06em; cursor:pointer; display:inline-flex; align-items:center; gap:0.4em; box-shadow:0 4px 12px rgba(94,106,210,0.45); transition:filter 150ms ease, transform 150ms ease;">' +
+                diceSvg(14) + '<span>' + tr('loadout.reroll.btn', 'REROLL SET') + '</span>' +
+            '</button>';
+            var btn = slot.firstChild;
+            btn.addEventListener('mouseover', function () { btn.style.filter = 'brightness(1.15)'; btn.style.transform = 'translateY(-1px)'; });
+            btn.addEventListener('mouseout',  function () { btn.style.filter = ''; btn.style.transform = ''; });
+            btn.addEventListener('click', function () {
+                if (!userId) return;
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+                btn.innerHTML = diceSvg(14) + '<span>' + tr('loadout.reroll.in_progress', 'REROLLING\u2026') + '</span>';
+                fetchJson('Plugins/AchievementBadges/users/' + userId + '/' + rerollPath, 'POST', {})
+                    .then(function () { loadQuests(); })
+                    .catch(function () { loadQuests(); });
+            });
+        } else {
+            slot.innerHTML = '<span class="ab-quest-reroll-used"' +
+                ' title="Available again ' + (period === 'weekly' ? 'Monday UTC' : 'at UTC midnight') + '"' +
+                ' style="background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.1); padding:0.4em 0.95em; border-radius:999px; font-size:0.72em; font-weight:700; letter-spacing:0.06em; display:inline-flex; align-items:center; gap:0.35em;">' +
+                diceSvg(12) + '<span>' + usedLabel + '</span>' +
+            '</span>';
+        }
+    }
+
     function loadQuests() {
         if (!userId) return;
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/quests').then(function (res) {
+            var dRem = (res && typeof res.DailyRerollsRemaining === 'number') ? res.DailyRerollsRemaining : 1;
+            var wRem = (res && typeof res.WeeklyRerollsRemaining === 'number') ? res.WeeklyRerollsRemaining : 1;
             renderQuestCards(res && res.Daily, 'abSaDailyQuest');
             renderQuestCards(res && res.Weekly, 'abSaWeeklyQuest');
+            renderRerollSlot('abSaDailyRerollSlot', 'daily', dRem);
+            renderRerollSlot('abSaWeeklyRerollSlot', 'weekly', wRem);
         }).catch(function () {
             var d = el('abSaDailyQuest'); if (d) d.innerHTML = '<div class="ab-muted">' + tr('quests.load_failed', 'Failed to load quests.') + '</div>';
+        });
+    }
+
+    // --- v2.0: Loadout (Power-ups + Shop + Cosmetics) ---
+    var _loSubtabInit = false;
+    var _loThemeApplied = '';
+
+    function loSetStatus(msg, isError) {
+        var s = el('abSaLoStatus'); if (!s) return;
+        s.textContent = msg || '';
+        s.style.color = isError ? '#f87171' : '';
+    }
+
+    function loShowSubtab(name) {
+        ['powerups', 'shop', 'cosmetics'].forEach(function (id) {
+            var p = el('abSaLoPanel' + id.charAt(0).toUpperCase() + id.slice(1));
+            if (p) p.style.display = (id === name) ? '' : 'none';
+        });
+        var btns = document.querySelectorAll('#abSaPanelLoadout .ab-tabs button[data-lo]');
+        for (var i = 0; i < btns.length; i++) {
+            btns[i].classList.toggle('active', btns[i].getAttribute('data-lo') === name);
+        }
+    }
+
+    // v2.0.x: revamp page section header reads from data-rv-label on the
+    // .ab-hero so we can localize what used to be a CSS-hardcoded English
+    // "01 / ACHIEVEMENT PROFILE". Re-runs on every translation load.
+    function syncRevampSectionLabel() {
+        if (!root) return;
+        var hero = root.querySelector('.ab-hero');
+        if (!hero) return;
+        var label = '01 / ' + tr('achievements.profile_title', 'Achievement Profile');
+        hero.setAttribute('data-rv-label', label);
+    }
+
+    function applyEquippedThemeStd(themeId) {
+        if (!root) return;
+        if (_loThemeApplied) root.classList.remove(_loThemeApplied);
+        if (themeId) { root.classList.add(themeId); _loThemeApplied = themeId; }
+        else _loThemeApplied = '';
+    }
+
+    // v2.0: live countdown for XP Boost + multi-pill rendering for the
+    // hero. Each active power-up gets its own pill (XP Boost shows a ticking
+    // MM:SS, DoubleCredit shows "ON NEXT WATCH", StreakFreeze shows
+    // "PROTECTING STREAK"). The timer is a single setInterval that updates
+    // the visible XP-Boost pill text — replacing the previous code that did
+    // `new Date(null).toLocaleTimeString()` and rendered "Invalid Date".
+    var _boostTimer = null;
+    var _boostExpiry = 0;
+    function renderActiveBoostStack(inventory) {
+        var stack = el('abSaLoadoutBoostStack');
+        if (!stack) return;
+        var actives = inventory.filter(function (i) { return i.Active; });
+        if (!actives.length) {
+            stack.innerHTML = '';
+            stopBoostTimer();
+            return;
+        }
+        var html = actives.map(function (item) {
+            switch (item.Type) {
+                case 'XpBoost':
+                    return '<div class="ab-boost-pill ab-boost-xp">' +
+                            '<div class="ab-boost-pill-head"><span class="material-icons">flash_on</span><span>' + tr('loadout.boost.xp', 'XP BOOST') + '</span></div>' +
+                            '<div class="ab-boost-pill-body"><span id="abSaXpBoostCountdown">--:--</span></div>' +
+                        '</div>';
+                case 'DoubleCredit':
+                    return '<div class="ab-boost-pill ab-boost-dc">' +
+                            '<div class="ab-boost-pill-head"><span class="material-icons">looks_two</span><span>' + tr('loadout.boost.dc', 'DOUBLE CREDIT') + '</span></div>' +
+                            '<div class="ab-boost-pill-body">' + tr('loadout.boost.dc_msg', '+2x on next watch') + '</div>' +
+                        '</div>';
+                case 'StreakFreeze':
+                    return '<div class="ab-boost-pill ab-boost-sf">' +
+                            '<div class="ab-boost-pill-head"><span class="material-icons">ac_unit</span><span>' + tr('loadout.boost.sf', 'STREAK FREEZE') + '</span></div>' +
+                            '<div class="ab-boost-pill-body">' + tr('loadout.boost.sf_msg', 'Streak protected') + '</div>' +
+                        '</div>';
+                default:
+                    return '';
+            }
+        }).join('');
+        stack.innerHTML = html;
+        // Wire the XP Boost live countdown
+        var xp = actives.filter(function (i) { return i.Type === 'XpBoost'; })[0];
+        if (xp && xp.ActiveUntil) {
+            var t = Date.parse(xp.ActiveUntil);
+            if (!isNaN(t)) {
+                _boostExpiry = t;
+                startBoostTimer();
+            } else {
+                _boostExpiry = 0;
+                stopBoostTimer();
+                var cd = el('abSaXpBoostCountdown'); if (cd) cd.textContent = 'active';
+            }
+        } else {
+            stopBoostTimer();
+        }
+    }
+    function startBoostTimer() {
+        if (_boostTimer) clearInterval(_boostTimer);
+        var tick = function () {
+            var cd = el('abSaXpBoostCountdown');
+            if (!cd || !_boostExpiry) { stopBoostTimer(); return; }
+            var ms = _boostExpiry - Date.now();
+            if (ms <= 0) {
+                cd.textContent = '00:00';
+                stopBoostTimer();
+                // Refresh inventory so the pill clears when the server-side
+                // boost actually expires (cheap call, only when timer hits 0).
+                if (typeof loadLoadout === 'function') loadLoadout();
+                return;
+            }
+            var s = Math.floor(ms / 1000);
+            var h = Math.floor(s / 3600);
+            var m = Math.floor((s % 3600) / 60);
+            var sec = s % 60;
+            var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+            cd.textContent = (h > 0 ? pad(h) + ':' : '') + pad(m) + ':' + pad(sec);
+        };
+        tick();
+        _boostTimer = setInterval(tick, 1000);
+    }
+    function stopBoostTimer() {
+        if (_boostTimer) { clearInterval(_boostTimer); _boostTimer = null; }
+    }
+
+    // v2.0: pull current cosmetic equip state + catalog and surface what the
+    // rest of the renderer needs (frame id for badge cards, custom title name
+    // for the rank label). Cached so we only fetch the catalog once per page
+    // session — equip/unequip handlers force a refresh by passing force=true.
+    function loadV2Cosmetics(force) {
+        if (!userId) return Promise.resolve(null);
+        var catP = (v2CosmeticsCatalogCache && !force)
+            ? Promise.resolve(v2CosmeticsCatalogCache)
+            : fetchJson('Plugins/AchievementBadges/shop/catalog').then(function (c) { v2CosmeticsCatalogCache = c; return c; });
+        return Promise.all([
+            catP,
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/cosmetics')
+        ]).then(function (r) {
+            var catalog = r[0] || {}; var own = r[1] || {};
+            v2EquippedFrameId = own.EquippedBadgeFrameId || '';
+            v2EquippedThemeId = own.EquippedThemeId || '';
+            v2EquippedBackgroundId = own.EquippedBackgroundId || '';
+            v2EquippedBorderId = own.EquippedProfileBorderId || '';
+            v2EquippedTitleName = '';
+            v2EquippedAvatarEmoji = '';
+            var tid = own.EquippedCustomTitleId;
+            var avid = own.EquippedAvatarId;
+            if (catalog.Cosmetics) {
+                if (tid) {
+                    var found = catalog.Cosmetics.filter(function (c) { return c.Id === tid; })[0];
+                    if (found) v2EquippedTitleName = trCatName(found.Id, found.DisplayName || '');
+                }
+                if (avid) {
+                    var av = catalog.Cosmetics.filter(function (c) { return c.Id === avid; })[0];
+                    if (av) v2EquippedAvatarEmoji = av.PreviewColor || '';
+                }
+            }
+            applyEquippedThemeStd(v2EquippedThemeId);
+            applyEquippedBackground(v2EquippedBackgroundId);
+            applyEquippedBorder(v2EquippedBorderId);
+            return own;
+        }).catch(function () { return null; });
+    }
+
+    // v2.0.x: swap the bg-* class on the root (mirrors how theme- works).
+    // The CSS animation for each background id is shipped in injectStyles().
+    // For video-backed bgs (blackhole, nebula, fireflies, galaxy) we also
+    // inject a <video> element that streams the embedded MP4 loop — the
+    // class still gets applied so CSS picks up theme/page bg color.
+    var _bgApplied = '';
+    // Every bg that has a real video asset shipped under /asset/. The CSS
+    // ::before animation for these ids must NOT paint at the same time, or
+    // you get the old CSS conic ring spinning on top of the video (the black
+    // hole color-bar bug). Adding `has-video-bg` to root suppresses the
+    // pseudo via the CSS rule shipped in injectStyles().
+    var VIDEO_BG_IDS = [
+        'bg-blackhole', 'bg-nebula', 'bg-fireflies', 'bg-galaxy',
+        'bg-moonlit-village', 'bg-rainy-station', 'bg-matrix', 'bg-aurora'
+    ];
+    function applyEquippedBackground(bgId) {
+        if (!root) return;
+        if (_bgApplied) root.classList.remove(_bgApplied);
+        root.classList.remove('has-video-bg');
+        // Tear down any previous video + overlay
+        var oldVid = document.getElementById('abSaBgVideo');
+        if (oldVid && oldVid.parentNode) oldVid.parentNode.removeChild(oldVid);
+        var oldOver = document.getElementById('abSaBgOverlay');
+        if (oldOver && oldOver.parentNode) oldOver.parentNode.removeChild(oldOver);
+
+        if (bgId && bgId !== 'bg-none') {
+            root.classList.add(bgId);
+            _bgApplied = bgId;
+            if (VIDEO_BG_IDS.indexOf(bgId) >= 0) {
+                root.classList.add('has-video-bg');
+                var v = document.createElement('video');
+                v.id = 'abSaBgVideo';
+                v.autoplay = true;
+                v.loop = true;
+                v.muted = true;
+                v.playsInline = true;
+                v.setAttribute('playsinline', '');
+                v.setAttribute('disableremoteplayback', '');
+                v.src = buildUrl('Plugins/AchievementBadges/asset/' + encodeURIComponent(bgId));
+                v.style.cssText = 'position:fixed; inset:0; width:100vw; height:100vh; object-fit:cover; z-index:0; pointer-events:none; opacity:0.50; filter:brightness(0.62) saturate(0.85);';
+                root.insertBefore(v, root.firstChild);
+                v.play().catch(function () { /* swallow — will start on click */ });
+
+                // Stronger dark overlay — the previous gradient still let too
+                // much hot color show through near the top/bottom edges. Pure
+                // 50% black with a slight vignette gradient = readable UI on
+                // every bg from black hole to fireflies.
+                var overlay = document.createElement('div');
+                overlay.id = 'abSaBgOverlay';
+                overlay.style.cssText = 'position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.55) 100%); z-index:0; pointer-events:none;';
+                root.insertBefore(overlay, v.nextSibling);
+            }
+        } else {
+            _bgApplied = '';
+        }
+    }
+
+    // v2.0.x: profile-border class on root drives the .ab-hero edge effect.
+    var _borderApplied = '';
+    function applyEquippedBorder(borderId) {
+        if (!root) return;
+        if (_borderApplied) root.classList.remove(_borderApplied);
+        if (borderId && borderId !== 'border-none') {
+            root.classList.add(borderId);
+            _borderApplied = borderId;
+        } else {
+            _borderApplied = '';
+        }
+    }
+
+    // Re-paints the equipped-badge frame + rank-label custom title without
+    // having to rerun the heavier loadAll. Safe to call any time after
+    // loadV2Cosmetics() has populated state.
+    function reapplyV2Visuals() {
+        // Strip then reapply frame class on equipped badge cards (frame
+        // cosmetic only applies to equipped badges, matching the design spec).
+        var FRAME_CLASSES = ['frame-default', 'frame-gilded', 'frame-holo', 'frame-frosted'];
+        var cards = document.querySelectorAll('#abSaEquipped .ab-card');
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            for (var j = 0; j < FRAME_CLASSES.length; j++) card.classList.remove(FRAME_CLASSES[j]);
+            if (v2EquippedFrameId && v2EquippedFrameId !== 'frame-default') {
+                card.classList.add(v2EquippedFrameId);
+            }
+        }
+        // Rank label substitution — only if a custom title is equipped. Mirrors
+        // the loadAll rendering: small star prefix + gold-gradient Cinzel italic
+        // title + faded tier name as a subtle suffix.
+        var lbl = el('abSaRankLabel');
+        if (lbl && v2EquippedTitleName) {
+            var tierTxt = (lbl.dataset && lbl.dataset.abTier) || '';
+            lbl.innerHTML =
+                '<span style="display:inline-flex; align-items:center; gap:0.4em;">' +
+                    '<span style="color:#fcd34d; font-size:0.85em;">&#9733;</span>' +
+                    '<span style="font-family:\'Cinzel\',\'Trajan Pro\',Georgia,serif; font-style:italic; font-weight:700; letter-spacing:0.03em; background:linear-gradient(135deg,#fcd34d 0%,#f59e0b 50%,#fde68a 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">' + escapeHtml(v2EquippedTitleName) + '</span>' +
+                    (tierTxt ? '<span class="ab-muted" style="font-size:0.65em; font-weight:500; opacity:0.55; margin-left:0.1em;">&middot; ' + escapeHtml(tierTxt) + '</span>' : '') +
+                '</span>';
+        }
+        // v2.0 Avatar: replace the default 🏅 next to the rank label. When
+        // nothing is equipped, restore the default so unequip is reversible.
+        var icon = el('abSaRankIcon');
+        if (icon) {
+            icon.textContent = v2EquippedAvatarEmoji || '🏅';
+        }
+    }
+
+    function themeSwatchFor(id) {
+        switch (id) {
+            case 'theme-sunset':     return 'linear-gradient(135deg,#ff6b6b,#feca57,#ff9f43)';
+            case 'theme-cyberpunk':  return 'linear-gradient(135deg,#0f0f23,#ff006e,#06ffa5)';
+            case 'theme-pastel':     return 'linear-gradient(135deg,#ffeaa7,#fab1a0,#a29bfe)';
+            case 'theme-monochrome': return 'linear-gradient(135deg,#2d3436,#636e72,#dfe6e9)';
+            case 'theme-noir':       return 'linear-gradient(135deg,#1c1917,#44403c,#a8a29e)';
+            case 'theme-aurora':     return 'linear-gradient(135deg,#064e3b,#10b981,#3b82f6,#8b5cf6)';
+            case 'theme-crimson':    return 'linear-gradient(135deg,#450a0a,#dc2626,#7c2d12)';
+            case 'theme-vaporwave':  return 'linear-gradient(135deg,#ec4899,#a855f7,#06b6d4,#fde68a)';
+            case 'theme-galaxy':     return 'linear-gradient(135deg,#1e1b4b,#581c87,#a855f7,#fcd34d)';
+            case 'theme-forest':     return 'linear-gradient(135deg,#15803d,#854d0e,#facc15)';
+            case 'theme-ocean':      return 'linear-gradient(135deg,#0c4a6e,#0e7490,#22d3ee)';
+            case 'theme-rosegold':   return 'linear-gradient(135deg,#fb7185,#fbbf24,#fde68a)';
+            case 'theme-midnight':   return 'linear-gradient(135deg,#020617,#1e1b4b,#3730a3)';
+            default:                 return 'linear-gradient(135deg,#667eea,#764ba2)';
+        }
+    }
+
+    function frameSwatchFor(id) {
+        switch (id) {
+            case 'frame-gilded':   return 'background:#1a1410; border:2px solid #f59e0b; box-shadow:inset 0 0 8px rgba(245,158,11,0.45);';
+            case 'frame-holo':     return 'background:linear-gradient(135deg,#0ea5e9,#a855f7,#ec4899); border:2px solid #fff;';
+            case 'frame-frosted':  return 'background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.6);';
+            case 'frame-obsidian': return 'background:#0c0a09; border:2px solid #292524; box-shadow:inset 0 0 12px rgba(220,38,38,0.4);';
+            case 'frame-emerald':  return 'background:#022c22; border:2px solid #10b981; box-shadow:inset 0 0 10px rgba(16,185,129,0.45);';
+            case 'frame-neon':     return 'background:#1f0a1a; border:2px solid #ec4899; box-shadow:0 0 14px rgba(236,72,153,0.7), inset 0 0 8px rgba(236,72,153,0.4);';
+            default:               return 'background:rgba(255,255,255,0.05); border:2px solid rgba(255,255,255,0.18);';
+        }
+    }
+
+    function loadLoadout() {
+        if (!userId) return;
+        if (!_loSubtabInit) {
+            _loSubtabInit = true;
+            var subBtns = document.querySelectorAll('#abSaPanelLoadout .ab-tabs button[data-lo]');
+            for (var i = 0; i < subBtns.length; i++) {
+                (function (b) { b.addEventListener('click', function () { loShowSubtab(b.getAttribute('data-lo')); }); })(subBtns[i]);
+            }
+        }
+        Promise.all([
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/powerups'),
+            fetchJson('Plugins/AchievementBadges/shop/catalog'),
+            fetchJson('Plugins/AchievementBadges/users/' + userId + '/cosmetics')
+        ]).then(function (r) {
+            var pu = r[0] || {}; var catalog = r[1] || {}; var cos = r[2] || {};
+            var sEl = el('abSaLoadoutScore'); if (sEl) sEl.textContent = pu.ScoreBank || 0;
+            var spEl = el('abSaLoadoutSpent'); if (spEl) spEl.textContent = cos.LifetimeScoreSpent || 0;
+            renderActiveBoostStack(pu.Inventory || []);
+            renderLoadoutPowerups(pu);
+            var ownedSet = {};
+            (cos.Owned || []).forEach(function (id) { ownedSet[id] = true; });
+            lifetimeScoreForShop = (typeof cos.LifetimeScore === 'number') ? cos.LifetimeScore : (pu.ScoreBank || 0);
+            renderLoadoutShop(catalog, ownedSet);
+            renderLoadoutCosmetics(catalog, ownedSet, cos);
+            applyEquippedThemeStd(cos.EquippedThemeId);
+        }).catch(function (e) { loSetStatus((e && e.message) || tr('loadout.load_failed', 'Load failed'), true); });
+    }
+
+    function renderLoadoutPowerups(data) {
+        var host = el('abSaLoPowerupGrid'); if (!host) return;
+        var inv = (data && data.Inventory) || [];
+        if (!inv.length) {
+            host.innerHTML = '<div class="ab-muted" style="padding:1em; border:1px dashed rgba(255,255,255,0.15); border-radius:10px;">' + tr('loadout.pu.empty', 'No power-ups yet. Earn from daily login bonuses or buy refills in the Shop.') + '</div>';
+            return;
+        }
+        host.innerHTML = inv.map(function (item) {
+            var canUse = item.Count > 0 && item.Type !== 'StreakFreeze';
+            var activePill = item.Active
+                ? '<span style="display:inline-block; margin-left:0.5em; padding:0.18em 0.6em; background:#10b981; color:#03150e; border-radius:999px; font-size:0.66em; font-weight:800; letter-spacing:0.04em;">' + tr('loadout.pu.active', 'ACTIVE') + '</span>'
+                : '';
+            var action = canUse
+                ? '<button type="button" class="ab-btn" data-lo-use="' + (item.Type || '') + '" style="background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; padding:0.45em 1em; border-radius:8px; font-weight:600;">' + tr('loadout.pu.use', 'Use') + '</button>'
+                : (item.Type === 'StreakFreeze'
+                    ? '<span class="ab-muted" style="font-size:0.78em;">' + tr('loadout.pu.auto_consumed', 'Auto-consumed') + '</span>'
+                    : '<span class="ab-muted" style="font-size:0.78em;">' + tr('loadout.pu.none_to_use', 'None to use') + '</span>');
+            return '<div class="ab-lo-card" style="border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:0.95em 1em; background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)); transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;">' +
+                '<div style="display:flex; align-items:center; gap:0.6em; margin-bottom:0.35em;">' +
+                    '<span class="material-icons" style="font-size:1.6em; color:#a3b5f7;">' + escapeHtml(item.Icon || 'extension') + '</span>' +
+                    '<div style="font-weight:700; font-size:1.02em;">' + escapeHtml(trPuName(item.Type, item.DisplayName)) + activePill + '</div>' +
+                '</div>' +
+                '<div class="ab-muted" style="font-size:0.84em; margin:0.2em 0 0.75em;">' + escapeHtml(trPuDesc(item.Type, item.Description)) + '</div>' +
+                '<div style="display:flex; align-items:center; justify-content:space-between; gap:0.6em;">' +
+                    '<div><span style="font-size:1.4em; font-weight:800;">' + (item.Count || 0) + '</span> <span class="ab-muted" style="font-size:0.78em;">' + tr('loadout.pu.owned', 'owned') + '</span></div>' +
+                    action +
+                '</div>' +
+                (item.ActiveUntil ? '<div class="ab-muted" style="font-size:0.74em; margin-top:0.55em; text-align:right;">' + tr('loadout.pu.until', 'Until') + ' ' + new Date(item.ActiveUntil).toLocaleTimeString() + '</div>' : '') +
+            '</div>';
+        }).join('');
+        host.querySelectorAll('button[data-lo-use]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var type = btn.getAttribute('data-lo-use');
+                btn.disabled = true;
+                fetchJson('Plugins/AchievementBadges/users/' + userId + '/powerups/use/' + encodeURIComponent(type), 'POST', {})
+                    .then(function (r) { loSetStatus((r && r.Message) || tr('loadout.used', 'Activated.')); loadLoadout(); })
+                    .catch(function (e) { loSetStatus((e && e.message) || tr('loadout.use_failed', 'Failed'), true); btn.disabled = false; });
+            });
+        });
+    }
+
+    function powerupIconFor(id) {
+        id = id || '';
+        if (id.indexOf('xp-boost') >= 0) return 'flash_on';
+        if (id.indexOf('double-credit') >= 0) return 'looks_two';
+        if (id.indexOf('streak-freeze') >= 0) return 'ac_unit';
+        return 'extension';
+    }
+
+    // v2.0.x: look up a localized name/description for a catalog item, falling
+    // back to the English DisplayName/Description that the server shipped.
+    // The key namespace is `cat.{id}.name` / `cat.{id}.desc`.
+    function trCatName(id, fallback)  { return tr('cat.' + (id || '') + '.name', fallback || ''); }
+    function trCatDesc(id, fallback)  { return tr('cat.' + (id || '') + '.desc', fallback || ''); }
+    // Power-ups identify themselves by Type ("XpBoost") rather than Id, so we
+    // key inventory cards under `pu.{type}.name` instead. Shop power-up cards
+    // (which DO have an Id) use the cat.* namespace via the cosmetic path.
+    function trPuName(type, fallback) { return tr('pu.' + (type || '').toLowerCase() + '.name', fallback || ''); }
+    function trPuDesc(type, fallback) { return tr('pu.' + (type || '').toLowerCase() + '.desc', fallback || ''); }
+    function powerupHeroFor(id) {
+        id = id || '';
+        if (id.indexOf('xp-boost') >= 0)       return 'linear-gradient(135deg,#fbbf24 0%,#f59e0b 60%,#b45309 100%)';
+        if (id.indexOf('double-credit') >= 0)  return 'linear-gradient(135deg,#6ee7b7 0%,#10b981 60%,#065f46 100%)';
+        if (id.indexOf('streak-freeze') >= 0)  return 'linear-gradient(135deg,#bae6fd 0%,#3b82f6 60%,#1e3a8a 100%)';
+        return 'linear-gradient(135deg,#a3b5f7,#5e6ad2)';
+    }
+
+    var lifetimeScoreForShop = 0;
+    function renderLoadoutShop(catalog, ownedSet) {
+        var host = el('abSaLoShopBody'); if (!host) return;
+        var pu  = (catalog && catalog.PowerUps)  || [];
+        var cos = (catalog && catalog.Cosmetics) || [];
+        var scoreBank = parseInt((el('abSaLoadoutScore') || {}).textContent || '0', 10) || 0;
+
+        // ----- Featured carousel: top 5 unowned items by price (most enticing first) -----
+        var featuredPool = cos
+            .filter(function (c) { return !ownedSet[c.Id] && c.PriceScore > 0; })
+            .sort(function (a, b) { return b.PriceScore - a.PriceScore; })
+            .slice(0, 5);
+        var featuredHtml = '';
+        if (featuredPool.length) {
+            featuredHtml = '<div class="ab-store-featured-wrap">' +
+                '<div class="ab-store-featured-track" id="abSaFeaturedTrack">' +
+                featuredPool.map(function (f) {
+                    var fHero = f.Kind === 'ProfileTheme'
+                        ? themeSwatchFor(f.Id)
+                        : (f.Kind === 'BadgeFrame'
+                            ? 'linear-gradient(135deg,#0f172a,#1e293b 60%,#0c4a6e)'
+                            : 'linear-gradient(135deg,#1e1b4b,#312e81 60%,#1e3a8a)');
+                    var afford = scoreBank >= (f.PriceScore || 0);
+                    return '<div class="ab-store-featured" style="background:' + fHero + ';">' +
+                        '<div class="ab-store-featured-glow"></div>' +
+                        '<div class="ab-store-featured-overlay">' +
+                            '<div class="ab-store-featured-eyebrow">★ ' + tr('loadout.shop.featured', 'FEATURED') + '</div>' +
+                            '<div class="ab-store-featured-title">' + escapeHtml(trCatName(f.Id, f.DisplayName)) + '</div>' +
+                            '<div class="ab-store-featured-desc">' + escapeHtml(trCatDesc(f.Id, f.Description)) + '</div>' +
+                            '<div class="ab-store-featured-foot">' +
+                                '<div class="ab-store-featured-price">' + (f.PriceScore || 0) + ' <span class="ab-store-featured-price-unit">' + tr('loadout.shop.score', 'score') + '</span></div>' +
+                                (afford
+                                    ? '<button type="button" class="ab-store-cta" data-lo-buy="' + (f.Id || '') + '">' + tr('loadout.shop.buy_now', 'BUY NOW') + '</button>'
+                                    : '<button type="button" class="ab-store-cta off" disabled>' + tr('loadout.shop.need_more', 'NEED MORE SCORE').replace('{n}', String((f.PriceScore || 0) - scoreBank)) + '</button>'
+                                ) +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join('') +
+                '</div>' +
+                (featuredPool.length > 1
+                    ? '<button type="button" class="ab-store-carousel-btn prev" id="abSaFeaturedPrev" aria-label="Previous">&#8249;</button>' +
+                      '<button type="button" class="ab-store-carousel-btn next" id="abSaFeaturedNext" aria-label="Next">&#8250;</button>' +
+                      '<div class="ab-store-carousel-dots" id="abSaFeaturedDots">' +
+                          featuredPool.map(function (_, i) { return '<button type="button" class="ab-store-carousel-dot' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '" aria-label="Slide ' + (i + 1) + '"></button>'; }).join('') +
+                      '</div>'
+                    : '') +
+            '</div>';
+        }
+
+        // ----- Power-ups storefront -----
+        var puHtml = '<div class="ab-store-row-head">' +
+            '<span class="material-icons">flash_on</span>' +
+            '<h3>' + tr('loadout.shop.powerup_refills', 'Power-up Refills') + '</h3>' +
+            '<span class="ab-store-row-count">' + pu.length + ' ' + tr('loadout.shop.items', 'items') + '</span>' +
+        '</div>' +
+        '<div class="ab-store-grid">' +
+            pu.map(function (item) {
+                var afford = scoreBank >= (item.PriceScore || 0);
+                return '<div class="ab-store-card">' +
+                    '<div class="ab-store-card-hero" style="background:' + powerupHeroFor(item.Id) + ';">' +
+                        '<span class="material-icons ab-store-card-icon">' + powerupIconFor(item.Id) + '</span>' +
+                        (item.BundleSize > 1 ? '<div class="ab-store-card-tag">x' + item.BundleSize + ' ' + tr('loadout.shop.bundle', 'BUNDLE') + '</div>' : '') +
+                    '</div>' +
+                    '<div class="ab-store-card-body">' +
+                        '<div class="ab-store-card-title">' + escapeHtml(trCatName(item.Id, item.DisplayName)) + '</div>' +
+                        '<div class="ab-store-card-desc">' + escapeHtml(trCatDesc(item.Id, item.Description)) + '</div>' +
+                    '</div>' +
+                    '<div class="ab-store-card-foot">' +
+                        '<div class="ab-store-card-price' + (afford ? '' : ' off') + '">' +
+                            '<span class="ab-store-card-price-num">' + (item.PriceScore || 0) + '</span>' +
+                            '<span class="ab-store-card-price-unit">' + tr('loadout.shop.score', 'score') + '</span>' +
+                        '</div>' +
+                        (afford
+                            ? '<button type="button" class="ab-store-cta sm" data-lo-buy="' + (item.Id || '') + '">' + tr('loadout.shop.buy', 'BUY') + '</button>'
+                            : '<button type="button" class="ab-store-cta sm off" disabled>' + tr('loadout.shop.locked', 'LOCKED') + '</button>'
+                        ) +
+                    '</div>' +
+                '</div>';
+            }).join('') +
+        '</div>';
+
+        // ----- Cosmetics storefronts (themes, frames, titles) -----
+        var byKind = { ProfileTheme: [], BadgeFrame: [], RankTitle: [], Avatar: [], Background: [], ProfileBorder: [] };
+        cos.forEach(function (c) { if (byKind[c.Kind]) byKind[c.Kind].push(c); });
+
+        var kindMeta = {
+            ProfileTheme:  { icon: 'palette',       title: tr('loadout.kind.themes',      'Profile Themes') },
+            BadgeFrame:    { icon: 'filter_frames', title: tr('loadout.kind.frames',      'Badge Frames') },
+            RankTitle:     { icon: 'military_tech', title: tr('loadout.kind.titles',      'Custom Rank Titles') },
+            Avatar:        { icon: 'mood',          title: tr('loadout.kind.avatars',     'Avatars') },
+            Background:    { icon: 'animation',     title: tr('loadout.kind.backgrounds', 'Animated Backgrounds') },
+            ProfileBorder: { icon: 'border_color',  title: tr('loadout.kind.borders',     'Profile Borders') }
+        };
+
+        function cosCard(c, k) {
+            var owned = !!ownedSet[c.Id];
+            var isMilestone = c.MilestoneScore > 0;
+            var afford = scoreBank >= (c.PriceScore || 0);
+            var hero, preview;
+            if (k === 'ProfileTheme') {
+                hero = themeSwatchFor(c.Id);
+                preview = '<div class="ab-store-theme-tag">' + escapeHtml(trCatName(c.Id, c.DisplayName)).toUpperCase() + '</div>';
+            } else if (k === 'BadgeFrame') {
+                hero = 'linear-gradient(135deg,#0f172a,#1e293b 70%,#0c4a6e)';
+                preview = '<div class="ab-store-frame-preview" style="' + frameSwatchFor(c.Id) + '"><span class="material-icons" style="font-size:1.9em; color:#fde68a; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));">emoji_events</span></div>';
+            } else if (k === 'Avatar') {
+                hero = 'radial-gradient(circle at 50% 45%, rgba(102,192,244,0.25), rgba(15,23,42,1) 70%)';
+                preview = '<div style="font-size:3.4em; line-height:1; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));">' + escapeHtml(c.PreviewColor || '★') + '</div>';
+            } else if (k === 'Background') {
+                // Live mini-preview: scope the bg-* class to a contained
+                // element so the shop card shows the animation in a tile.
+                hero = '#0f172a';
+                preview = '<div class="ab-store-bg-preview ' + (c.Id || '') + '"><span class="material-icons" style="font-size:1.6em; color:rgba(255,255,255,0.45); z-index:2; position:relative;">' + escapeHtml(c.PreviewIcon || 'animation') + '</span></div>';
+            } else if (k === 'ProfileBorder') {
+                hero = 'linear-gradient(135deg,#1e293b,#0f172a)';
+                preview = '<div class="ab-store-border-preview ' + (c.Id || '') + '"><span class="material-icons" style="font-size:1.6em; color:#fcd34d;">' + escapeHtml(c.PreviewIcon || 'border_color') + '</span></div>';
+            } else {
+                hero = 'linear-gradient(135deg,#1e1b4b,#312e81 70%,#0c4a6e)';
+                preview = '<div class="ab-store-title-preview">' + escapeHtml(trCatName(c.Id, c.DisplayName)) + '</div>';
+            }
+
+            var foot;
+            if (owned) {
+                foot = '<div class="ab-store-owned"><span class="material-icons" style="font-size:1.1em;">check_circle</span><span>' + tr('loadout.shop.owned', 'IN LIBRARY') + '</span></div>';
+            } else if (isMilestone) {
+                // Show concrete progress toward the milestone (lifetime score
+                // basis, matches the server's CheckMilestones check). Hits
+                // 100% as soon as the user crosses the threshold — next watch
+                // event auto-unlocks the cosmetic. Admin "Backfill milestones"
+                // tool also grants it on demand.
+                var lifetime = (typeof lifetimeScoreForShop === 'number') ? lifetimeScoreForShop : scoreBank;
+                var pct = c.MilestoneScore > 0 ? Math.min(100, Math.round(100 * lifetime / c.MilestoneScore)) : 0;
+                var pctTxt = lifetime + ' / ' + c.MilestoneScore;
+                foot = '<div class="ab-store-milestone-wrap">' +
+                    '<div class="ab-store-milestone"><span class="material-icons" style="font-size:1em;">lock</span> ' + tr('loadout.shop.auto_unlock_at', 'Auto-unlock at {n} score').replace('{n}', '<strong>' + c.MilestoneScore + '</strong>') + '</div>' +
+                    '<div style="height:6px; border-radius:3px; background:rgba(255,255,255,0.08); margin-top:0.45em; overflow:hidden;">' +
+                        '<div style="height:100%; width:' + pct + '%; background:linear-gradient(90deg,#fbbf24,#f59e0b); transition:width 0.4s;"></div>' +
+                    '</div>' +
+                    '<div style="display:flex; justify-content:space-between; font-size:0.7em; color:rgba(255,255,255,0.55); margin-top:0.3em; font-weight:600; letter-spacing:0.04em;">' +
+                        '<span>' + pctTxt + '</span><span>' + pct + '%</span>' +
+                    '</div>' +
+                '</div>';
+            } else {
+                foot = '<div class="ab-store-card-price' + (afford ? '' : ' off') + '">' +
+                    '<span class="ab-store-card-price-num">' + (c.PriceScore || 0) + '</span>' +
+                    '<span class="ab-store-card-price-unit">score</span>' +
+                '</div>' +
+                (afford
+                    ? '<button type="button" class="ab-store-cta sm" data-lo-buy="' + (c.Id || '') + '">BUY</button>'
+                    : '<button type="button" class="ab-store-cta sm off" disabled>LOCKED</button>'
+                );
+            }
+
+            return '<div class="ab-store-card' + (owned ? ' is-owned' : '') + (isMilestone && !owned ? ' is-milestone' : '') + '">' +
+                '<div class="ab-store-card-hero" style="background:' + hero + ';">' + preview +
+                    (owned ? '<div class="ab-store-card-owned-stripe">' + tr('loadout.shop.owned_stripe', 'OWNED') + '</div>' : '') +
+                '</div>' +
+                '<div class="ab-store-card-body">' +
+                    '<div class="ab-store-card-title">' + escapeHtml(trCatName(c.Id, c.DisplayName)) + '</div>' +
+                    '<div class="ab-store-card-desc">' + escapeHtml(trCatDesc(c.Id, c.Description)) + '</div>' +
+                '</div>' +
+                '<div class="ab-store-card-foot">' + foot + '</div>' +
+            '</div>';
+        }
+
+        var cosHtml = ['ProfileTheme', 'BadgeFrame', 'RankTitle', 'Avatar', 'Background', 'ProfileBorder'].map(function (k) {
+            if (!byKind[k].length) return '';
+            var m = kindMeta[k];
+            return '<div class="ab-store-row-head">' +
+                '<span class="material-icons">' + m.icon + '</span>' +
+                '<h3>' + m.title + '</h3>' +
+                '<span class="ab-store-row-count">' + byKind[k].length + ' ' + tr('loadout.shop.items', 'items') + '</span>' +
+            '</div>' +
+            '<div class="ab-store-grid">' +
+                byKind[k].map(function (c) { return cosCard(c, k); }).join('') +
+            '</div>';
+        }).join('');
+
+        host.innerHTML = featuredHtml + puHtml + cosHtml;
+
+        host.querySelectorAll('button[data-lo-buy]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-lo-buy');
+                btn.disabled = true;
+                fetchJson('Plugins/AchievementBadges/users/' + userId + '/shop/purchase', 'POST', { ItemId: id })
+                    .then(function (r) { loSetStatus((r && r.Message) || 'Purchased.'); loadLoadout(); })
+                    .catch(function (e) { loSetStatus((e && e.message) || 'Purchase failed', true); btn.disabled = false; });
+            });
+        });
+
+        // Featured carousel — arrow + dot navigation. Snap-scroll on the
+        // track gives us the per-slide motion for free; we only have to
+        // compute the target scrollLeft per dot/arrow press.
+        var track = el('abSaFeaturedTrack');
+        if (track) {
+            var prevBtn = el('abSaFeaturedPrev');
+            var nextBtn = el('abSaFeaturedNext');
+            var dotsHost = el('abSaFeaturedDots');
+            var slideW = function () { return track.clientWidth; };
+            var currentIdx = function () { return Math.round(track.scrollLeft / Math.max(1, slideW())); };
+            function syncDots() {
+                if (!dotsHost) return;
+                var i = currentIdx();
+                dotsHost.querySelectorAll('.ab-store-carousel-dot').forEach(function (d, idx) {
+                    d.classList.toggle('active', idx === i);
+                });
+            }
+            function goTo(idx) {
+                var w = slideW();
+                var maxIdx = featuredPool.length - 1;
+                if (idx < 0) idx = maxIdx;
+                if (idx > maxIdx) idx = 0;
+                track.scrollTo({ left: idx * w, behavior: 'smooth' });
+                setTimeout(syncDots, 350);
+            }
+            if (prevBtn) prevBtn.addEventListener('click', function () { goTo(currentIdx() - 1); });
+            if (nextBtn) nextBtn.addEventListener('click', function () { goTo(currentIdx() + 1); });
+            if (dotsHost) {
+                dotsHost.querySelectorAll('.ab-store-carousel-dot').forEach(function (d) {
+                    d.addEventListener('click', function () { goTo(parseInt(d.getAttribute('data-idx'), 10) || 0); });
+                });
+            }
+            track.addEventListener('scroll', function () {
+                // Throttle via rAF so the dot highlight follows manual
+                // scroll/swipe without firing on every scroll event.
+                if (track._dotRaf) return;
+                track._dotRaf = requestAnimationFrame(function () {
+                    track._dotRaf = null;
+                    syncDots();
+                });
+            });
+        }
+    }
+
+    function renderLoadoutCosmetics(catalog, owned, equipped) {
+        var host = el('abSaLoCosmeticsBody'); if (!host) return;
+        var ownedItems = ((catalog && catalog.Cosmetics) || []).filter(function (c) { return owned[c.Id]; });
+        if (!ownedItems.length) {
+            host.innerHTML = '<div class="ab-muted" style="padding:1em; border:1px dashed rgba(255,255,255,0.15); border-radius:10px;">You don\'t own any cosmetics yet. Buy or earn one in the Shop tab.</div>';
+            return;
+        }
+        var groups = { ProfileTheme: [], BadgeFrame: [], RankTitle: [], Avatar: [], Background: [], ProfileBorder: [] };
+        ownedItems.forEach(function (c) { if (groups[c.Kind]) groups[c.Kind].push(c); });
+        var meta = {
+            ProfileTheme:  { icon: 'palette',       title: tr('loadout.kind.themes',      'Profile Themes') },
+            BadgeFrame:    { icon: 'filter_frames', title: tr('loadout.kind.frames',      'Badge Frames') },
+            RankTitle:     { icon: 'military_tech', title: tr('loadout.kind.titles',      'Rank Titles') },
+            Avatar:        { icon: 'mood',          title: tr('loadout.kind.avatars',     'Avatars') },
+            Background:    { icon: 'animation',     title: tr('loadout.kind.backgrounds', 'Animated Backgrounds') },
+            ProfileBorder: { icon: 'border_color',  title: tr('loadout.kind.borders',     'Profile Borders') }
+        };
+
+        host.innerHTML = Object.keys(groups).map(function (k) {
+            if (!groups[k].length) return '';
+            var equippedId = k === 'ProfileTheme'  ? equipped.EquippedThemeId
+                          : k === 'BadgeFrame'     ? equipped.EquippedBadgeFrameId
+                          : k === 'Avatar'         ? equipped.EquippedAvatarId
+                          : k === 'Background'     ? equipped.EquippedBackgroundId
+                          : k === 'ProfileBorder'  ? equipped.EquippedProfileBorderId
+                          :                          equipped.EquippedCustomTitleId;
+            var m = meta[k];
+            return '<div class="ab-cos-row-head">' +
+                '<span class="material-icons">' + m.icon + '</span>' +
+                '<h3>' + m.title + '</h3>' +
+                '<span class="ab-store-row-count">' + groups[k].length + ' ' + tr('loadout.shop.owned_count', 'owned') + '</span>' +
+            '</div>' +
+            '<div class="ab-cos-grid">' +
+                groups[k].map(function (c) {
+                    var isEq = equippedId === c.Id;
+                    var hero, preview;
+                    if (k === 'ProfileTheme') {
+                        hero = themeSwatchFor(c.Id);
+                        preview = '<div style="padding:0.4em 0.95em; background:rgba(0,0,0,0.5); border-radius:4px; font-weight:800; font-size:0.78em; letter-spacing:0.12em; color:#fff;">' + escapeHtml((c.DisplayName || '').toUpperCase()) + '</div>';
+                    } else if (k === 'BadgeFrame') {
+                        hero = 'linear-gradient(135deg,#0f172a,#1e293b 70%,#0c4a6e)';
+                        preview = '<div style="width:70px; height:70px; border-radius:8px; display:flex; align-items:center; justify-content:center; ' + frameSwatchFor(c.Id) + '"><span class="material-icons" style="font-size:1.9em; color:#fde68a; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));">emoji_events</span></div>';
+                    } else if (k === 'Avatar') {
+                        hero = 'radial-gradient(circle at 50% 45%, rgba(102,192,244,0.25), rgba(15,23,42,1) 70%)';
+                        preview = '<div style="font-size:3em; line-height:1; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));">' + escapeHtml(c.PreviewColor || '★') + '</div>';
+                    } else if (k === 'Background') {
+                        hero = '#0f172a';
+                        preview = '<div class="ab-store-bg-preview ' + (c.Id || '') + '"><span class="material-icons" style="font-size:1.6em; color:rgba(255,255,255,0.45); z-index:2; position:relative;">' + escapeHtml(c.PreviewIcon || 'animation') + '</span></div>';
+                    } else if (k === 'ProfileBorder') {
+                        hero = 'linear-gradient(135deg,#1e293b,#0f172a)';
+                        preview = '<div class="ab-store-border-preview ' + (c.Id || '') + '"><span class="material-icons" style="font-size:1.6em; color:#fcd34d;">' + escapeHtml(c.PreviewIcon || 'border_color') + '</span></div>';
+                    } else {
+                        hero = 'linear-gradient(135deg,#1e1b4b,#312e81 70%,#0c4a6e)';
+                        preview = '<div style="font-family:\'Cinzel\',\'Trajan Pro\',Georgia,serif; font-size:1.25em; font-weight:700; color:#fde68a; letter-spacing:0.06em; text-shadow:0 2px 8px rgba(0,0,0,0.55), 0 0 18px rgba(252,211,77,0.25); text-align:center; padding:0 1em;">' + escapeHtml(trCatName(c.Id, c.DisplayName)) + '</div>';
+                    }
+                    var action = isEq
+                        ? '<button type="button" class="ab-cos-action unequip" data-lo-unequip="' + k + '">' + tr('loadout.cos.unequip', 'UNEQUIP') + '</button>'
+                        : '<button type="button" class="ab-cos-action equip" data-lo-equip="' + (c.Id || '') + '">' + tr('loadout.cos.equip', 'EQUIP') + '</button>';
+                    return '<div class="ab-cos-card' + (isEq ? ' equipped' : '') + '">' +
+                        '<div class="ab-cos-card-hero" style="background:' + hero + ';">' +
+                            preview +
+                            (isEq ? '<div class="ab-cos-card-equipped-pill">' + tr('loadout.cos.equipped', 'EQUIPPED') + '</div>' : '') +
+                        '</div>' +
+                        '<div class="ab-cos-card-body">' +
+                            '<div class="ab-cos-card-name">' + escapeHtml(trCatName(c.Id, c.DisplayName)) + '</div>' +
+                        '</div>' +
+                        '<div class="ab-cos-card-foot">' + action + '</div>' +
+                    '</div>';
+                }).join('') +
+            '</div>';
+        }).join('');
+        host.querySelectorAll('button[data-lo-equip]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                btn.disabled = true;
+                fetchJson('Plugins/AchievementBadges/users/' + userId + '/cosmetics/equip', 'POST', { CosmeticId: btn.getAttribute('data-lo-equip') })
+                    .then(function (r) {
+                        loSetStatus((r && r.Message) || 'Equipped.');
+                        if (r) applyEquippedThemeStd(r.EquippedThemeId);
+                        loadV2Cosmetics(true).then(function () { reapplyV2Visuals(); });
+                        loadLoadout();
+                    })
+                    .catch(function (e) { loSetStatus((e && e.message) || 'Equip failed', true); btn.disabled = false; });
+            });
+        });
+        host.querySelectorAll('button[data-lo-unequip]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                btn.disabled = true;
+                fetchJson('Plugins/AchievementBadges/users/' + userId + '/cosmetics/unequip?kind=' + encodeURIComponent(btn.getAttribute('data-lo-unequip')), 'POST', {})
+                    .then(function (r) {
+                        loSetStatus((r && r.Message) || 'Unequipped.');
+                        applyEquippedThemeStd(null);
+                        loadV2Cosmetics(true).then(function () { reapplyV2Visuals(); });
+                        loadLoadout();
+                    })
+                    .catch(function (e) { loSetStatus((e && e.message) || 'Unequip failed', true); btn.disabled = false; });
+            });
         });
     }
 
@@ -1210,6 +2325,16 @@
     var equippedIdsGlobal = {};
     var pinnedIdsGlobal = {};
     var equippedTitleId = null;
+    // v2.0: cosmetic equip state — populated by loadV2Cosmetics(). The frame
+    // id (e.g. "frame-gilded") becomes a CSS class on each equipped badge
+    // card; the resolved title name overrides the auto rank label.
+    var v2EquippedFrameId = '';
+    var v2EquippedThemeId = '';
+    var v2EquippedTitleName = '';
+    var v2EquippedAvatarEmoji = '';
+    var v2EquippedBackgroundId = '';
+    var v2EquippedBorderId = '';
+    var v2CosmeticsCatalogCache = null;
     var badgeEtaMap = {};
     // Server-wide rarity percentages { badgeId: pct }. Populated by loadAll
     // from /badges/rarity-stats so every badge card can show how scarce it
@@ -2100,8 +3225,14 @@
         row.innerHTML = '';
         if (!badges || !badges.length) { if (empty) empty.style.display = 'block'; return; }
         if (empty) empty.style.display = 'none';
+        // v2.0: equipped Badge Frame cosmetic (e.g. frame-gilded) is applied
+        // as a class to every equipped badge card so the .frame-* CSS in
+        // injectStyles paints the gold/holo/frosted edge effect.
+        var frameCls = (v2EquippedFrameId && v2EquippedFrameId !== 'frame-default') ? ' ' + v2EquippedFrameId : '';
         badges.forEach(function (b) {
-            var c = document.createElement('div'); c.className = 'ab-card'; c.setAttribute('data-badge-id', b.Id);
+            var c = document.createElement('div');
+            c.className = 'ab-card' + frameCls;
+            c.setAttribute('data-badge-id', b.Id);
             c.innerHTML = '<div class="ab-card-h"><div class="ab-card-icon">' + icon(b.Icon) + '</div><div style="flex:1;"><div class="ab-card-title">' + escapeHtml(b.Title) + '</div><div class="ab-card-meta ' + rarityClass(b.Rarity) + '">' + escapeHtml(b.Rarity) + '</div></div></div>' +
                 '<div class="ab-footer"><div class="ab-unlocked">' + tr('badge.equipped_state', 'Equipped') + '</div><button type="button" class="ab-btn">' + tr('badge.unequip', 'Unequip') + '</button></div>';
             c.querySelector('button').addEventListener('click', function () { doUnequip(b.Id); });
@@ -2487,6 +3618,14 @@
                         // always shows the user's chosen language — never
                         // bounce back to Default because of a racy fetch.
                         try { renderSettingsPanel(prefs); } catch (e) {}
+                        // v2.0.x: Loadout content is built from string
+                        // templates with tr() calls baked in at render time;
+                        // it doesn't refresh from applyStaticTranslations
+                        // because the strings are inside child elements that
+                        // the DOM walker skips. Force a re-fetch+re-render
+                        // so the new language sticks on Power-ups/Shop/Cos.
+                        try { if (typeof loadLoadout === 'function' && userId) loadLoadout(); } catch (e) {}
+                        try { syncRevampSectionLabel(); } catch (e) {}
                         // Also hard-pin the select's value after render
                         // as belt-and-braces: even if another async code
                         // path re-rendered the panel with stale data, the
@@ -2757,6 +3896,11 @@
         var eqIds = {};
         // fire login ping (safe even if it fails)
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/login-ping', 'POST').catch(function () {});
+        // v2.0: pull current cosmetic equip state so the equipped Badge Frame
+        // class + custom Rank Title are available by the time renderEquipped
+        // and the rank-label code path run below. Best-effort — if it fails
+        // the page still renders with the auto rank name and default frame.
+        loadV2Cosmetics().then(function () { try { reapplyV2Visuals(); } catch (e) {} });
 
         // Fetch server-wide rarity stats in parallel. Not gated on the main
         // Promise.all — if it fails or is slow the rest of the UI still
@@ -2783,7 +3927,10 @@
             var userLang = (p.Language || p.language || 'default').toString().toLowerCase();
             var adminLang = (cfg.DefaultLanguage || cfg.defaultLanguage || 'en').toString().toLowerCase();
             var effective = (userLang === 'default' || !userLang) ? adminLang : userLang;
-            return loadTranslations(effective).then(function () { applyStaticTranslations(); });
+            return loadTranslations(effective).then(function () {
+                applyStaticTranslations();
+                try { syncRevampSectionLabel(); } catch (e) {}
+            });
         }).catch(function () {});
 
         // Fetch and show welcome message if configured, and apply feature-flag tab hiding
@@ -2875,7 +4022,30 @@
             if (rank && rank.Tier) {
                 applyThemeForTier(rank.Tier.Name);
                 var lbl = el('abSaRankLabel');
-                if (lbl) { lbl.textContent = rank.Tier.Name; lbl.style.color = rank.Tier.Color || ''; }
+                if (lbl) {
+                    // v2.0: equipped Rank Title cosmetic overrides the
+                    // auto-generated tier name. Renders as a clean inline pill
+                    // with a star icon prefix and a gold gradient — feels like
+                    // an earned title without taking 3 lines of vertical space.
+                    var color = rank.Tier.Color || '#a3b5f7';
+                    // Translate the auto rank tier name via the existing
+                    // rank.* keys ("rank.connoisseur", etc). Falls back to
+                    // the English name from the server if no translation.
+                    var tierLabel = tr('rank.' + (rank.Tier.Name || '').toLowerCase(), rank.Tier.Name);
+                    lbl.dataset.abTier = tierLabel || '';
+                    if (v2EquippedTitleName) {
+                        lbl.innerHTML =
+                            '<span style="display:inline-flex; align-items:center; gap:0.4em;">' +
+                                '<span style="color:#fcd34d; font-size:0.85em;">&#9733;</span>' +
+                                '<span style="font-family:\'Cinzel\',\'Trajan Pro\',Georgia,serif; font-style:italic; font-weight:700; letter-spacing:0.03em; background:linear-gradient(135deg,#fcd34d 0%,#f59e0b 50%,#fde68a 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">' + escapeHtml(v2EquippedTitleName) + '</span>' +
+                                '<span class="ab-muted" style="font-size:0.65em; font-weight:500; opacity:0.55; margin-left:0.1em;">&middot; ' + escapeHtml(tierLabel) + '</span>' +
+                            '</span>';
+                        lbl.style.color = '';
+                    } else {
+                        lbl.textContent = tierLabel;
+                        lbl.style.color = color;
+                    }
+                }
                 var fill = el('abSaRankBarFill');
                 if (fill) {
                     fill.style.width = (rank.ProgressToNext || 0) + '%';
@@ -2884,7 +4054,8 @@
                 var pct = el('abSaRankBarPct');
                 if (pct) {
                     if (rank.NextTier) {
-                        pct.textContent = rank.Score + ' / ' + rank.NextTier.MinScore + ' ' + tr('achievements.to_next', 'to') + ' ' + rank.NextTier.Name;
+                        var nextTierLabel = tr('rank.' + (rank.NextTier.Name || '').toLowerCase(), rank.NextTier.Name);
+                        pct.textContent = rank.Score + ' / ' + rank.NextTier.MinScore + ' ' + tr('achievements.to_next', 'to') + ' ' + nextTierLabel;
                     } else {
                         pct.textContent = tr('achievements.max_rank', 'Max rank');
                     }
@@ -3078,7 +4249,13 @@
         } catch (e) { /* document.body unavailable extremely early — ignore */ }
         var btn = el('abSaStyleToggleBtn');
         if (btn) {
-            btn.textContent = pref === 'revamp' ? 'UI: Revamp' : 'UI: Classic';
+            // Update the data-i18n key so applyStaticTranslations picks up
+            // the correct one on next pass; also set textContent immediately
+            // so the user sees the change without waiting for a translations
+            // reload.
+            var key = pref === 'revamp' ? 'ui.toggle.revamp' : 'ui.toggle.classic';
+            btn.setAttribute('data-i18n', key);
+            btn.textContent = tr(key, pref === 'revamp' ? 'UI: Revamp' : 'UI: Classic');
             btn.setAttribute('aria-pressed', pref === 'revamp' ? 'true' : 'false');
         }
     }
@@ -3113,6 +4290,7 @@
         el('abSaTabActivity').addEventListener('click', function () { setTab('activity'); });
         el('abSaTabWrapped').addEventListener('click', function () { setTab('wrapped'); });
         el('abSaTabStats').addEventListener('click', function () { setTab('stats'); loadStats(); });
+        el('abSaTabLoadout').addEventListener('click', function () { setTab('loadout'); });
         el('abSaTabSettings').addEventListener('click', function () { setTab('settings'); });
         setTab('badges');
 
@@ -3170,7 +4348,49 @@
             userId = id;
             if (!id) { showError(tr('error.no_user', 'Could not detect your user account. Please log in.')); return; }
             return loadAll();
+        }).then(function () {
+            // v2.0 one-time welcome hint pointing at the new Loadout tab.
+            // Idempotent: shows once per browser via localStorage flag,
+            // dismissable or auto-clears after 30s.
+            try { showV2WelcomeHint(); } catch (e) { /* swallow */ }
         });
+    }
+
+    function showV2WelcomeHint() {
+        if (!root) return;
+        try { if (localStorage.getItem('ab-v2-tour-seen') === '1') return; } catch (e) { return; }
+        // Don't double-show if already mounted
+        if (document.getElementById('abSaV2Welcome')) return;
+
+        var toast = document.createElement('div');
+        toast.id = 'abSaV2Welcome';
+        toast.innerHTML =
+            '<button type="button" class="ab-v2-welcome-close" id="abSaV2DismissWelcome" aria-label="Dismiss">&times;</button>' +
+            '<div class="ab-v2-welcome-row">' +
+                '<div class="ab-v2-welcome-icon">🎮</div>' +
+                '<div class="ab-v2-welcome-body">' +
+                    '<div class="ab-v2-welcome-eyebrow">' + tr('v2.welcome.eyebrow', 'NEW IN v2.0') + '</div>' +
+                    '<div class="ab-v2-welcome-title">' + tr('v2.welcome.title', 'Choose Your Loadout') + '</div>' +
+                    '<div class="ab-v2-welcome-desc">' + tr('v2.welcome.desc', 'Earn score by watching, spend it in the Shop on power-ups, themes, avatars + more. Open the Loadout tab to start.') + '</div>' +
+                    '<button type="button" class="ab-v2-welcome-cta" id="abSaV2OpenLoadout">' + tr('v2.welcome.cta', 'Open Loadout') + '</button>' +
+                '</div>' +
+            '</div>';
+        root.appendChild(toast);
+
+        function dismiss() {
+            try { localStorage.setItem('ab-v2-tour-seen', '1'); } catch (e) {}
+            toast.classList.add('ab-v2-welcome-out');
+            setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
+        }
+        var dismissBtn = document.getElementById('abSaV2DismissWelcome');
+        if (dismissBtn) dismissBtn.addEventListener('click', dismiss);
+        var ctaBtn = document.getElementById('abSaV2OpenLoadout');
+        if (ctaBtn) ctaBtn.addEventListener('click', function () {
+            try { setTab('loadout'); } catch (e) {}
+            dismiss();
+        });
+        // Auto-clear after 30s so it doesn't sit forever
+        setTimeout(function () { if (toast.parentNode) dismiss(); }, 30000);
     }
 
     function unmountRoute() {
@@ -3193,6 +4413,28 @@
 
     window.addEventListener('hashchange', onRouteChange);
     window.addEventListener('popstate', onRouteChange);
+
+    // v2.0 defensive: some host themes / SPA shells can hide our overlay
+    // (or fail to fire hashchange when they swap routes), leaving Jellyfin's
+    // "Page not found" view visible while the URL still contains /achievements.
+    // Re-check periodically and force-mount when we should be on-route but
+    // aren't. Cheap (every 1.5s, only does work if the route state mismatches).
+    setInterval(function () {
+        try {
+            if (!isAchievementsRoute()) return;
+            var r = document.getElementById(ROOT_ID);
+            if (!r) {
+                onRouteChange();
+                return;
+            }
+            if (r.style.display === 'none' || getComputedStyle(r).display === 'none') {
+                r.style.display = 'block';
+            }
+            if (r.parentNode !== document.body) {
+                document.body.appendChild(r);
+            }
+        } catch (e) { /* swallow — recovery is best-effort */ }
+    }, 1500);
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', onRouteChange);

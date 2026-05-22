@@ -28,6 +28,9 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<QuestService>();
         serviceCollection.AddSingleton<FriendsService>();
         serviceCollection.AddSingleton<MessagingService>();
+        // v2.0 - Power-ups + Shop.
+        serviceCollection.AddSingleton<PowerUpService>();
+        serviceCollection.AddSingleton<ShopService>();
 
         serviceCollection.AddSingleton<PlaybackCompletionTracker>();
         serviceCollection.AddHostedService(provider => provider.GetRequiredService<PlaybackCompletionTracker>());
