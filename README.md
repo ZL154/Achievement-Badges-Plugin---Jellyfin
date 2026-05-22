@@ -29,85 +29,145 @@
 
 # 🏆 Achievement Badges for Jellyfin
 
-A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd, built natively into your media server.
+A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd meets Steam profile customization, built natively into your media server.
 
-> **Status:** Active development - **v1.9.6** fixes achievement toast descriptions, restores playback achievement popups by default, adds easier admin user testing, and improves fallback script cache-busting on read-only Jellyfin web roots. **v1.9.5** fixes chat image attachments in the Friends drawer and includes some security fixes and defensive hardening. **v1.9.4** adds 32 new badges across afternoon + prime-time time-of-day, 10 expanded holidays (Valentine's, Easter, Lunar NY, Diwali, US Thanksgiving, Independence Day, Bonfire Night, Boxing Day, Mother's, Father's), an Anime tier, Studio specialists (Studio Ghibli, A24, HBO, Netflix, BBC, Disney), and a Pilot vs Completer behavior pair. All 32 are translated into all 8 supported languages. Also fixes the Revamp admin UI: Simulate playback button + live status banner now sit at the top of the page (previously hidden along with the Classic hero). **v1.9.0** is a major release covering everything since v1.8.10. New: full **Revamp UI** for the user-facing achievements page (magazine hero, conic completion donut, asymmetric stat grid, chapter tabs, control-panel filter strip), **Friends drawer Revamp** following the same Classic/Revamp toggle, **"Offline - last watched X"** line on offline friends, **HMAC-SHA256 webhook signing** for receiver-side authenticity verification, and a `HideLastWatched` privacy preference. Plus a security upgrade (default rate-limiting, admin audit-log filter, CSP headers, **GitHub Actions CI** running the tests + dotnet vulnerability scan + gitleaks on every push) and a plugin-wide efficiency overhaul (debounced saves, friends-bar cache, in-place trims, browser-side asset caching). Prior highlights from v1.8.x: full **messaging suite** (Xbox-style 1:1 + group chats, attachments, read receipts, edit/delete, block, notifications). v1.7.x: Friends drawer foundation, hand-translated **French by [@frenchyx24](https://github.com/frenchyx24)**.
+> **Status:** Active development — **v2.0.0 "Choose Your Loadout"** is live. The plugin transitions from a passive achievement tracker into an active progression game: earn score by watching, spend it in the Shop on power-ups + 70+ cosmetics (themes, frames, avatars, animated video backgrounds, profile borders, custom rank titles), and equip them to express your viewing identity. Drop-in upgrade from v1.9.8 with no data migration — existing badges, friendships, messages, quests all carry over untouched.
 
 ---
 
 ## 📑 Table of contents
 
 - [Overview](#-overview)
-- [What's new in v1.9.6](#whats-new-in-v196) - toast descriptions, playback popups, admin testing picker
-- [What's new in v1.9.5](#whats-new-in-v195) - attachment fix, some security fixes, defensive hardening
-- [What's new in v1.9.4](#-whats-new-in-v194) — 32 new badges (afternoon, prime time, holidays, anime, studios, pilot/completer), 8-language translations, Revamp admin UI fix
-- [What's new in v1.9.0](#-whats-new-in-v190) — Revamp UI, Friends drawer Revamp, last-watched, HMAC signing.
-- [Core features](#-core-features) — badges, ranks, score, prestige, quests, stats, UI, preferences, admin
-- [Messaging](#-messaging-new-in-v18) — 1:1 + groups, attachments, read receipts, edit/delete, block
-- [Installation](#️-installation)
+- [What's new in v2.0 — Choose Your Loadout](#-whats-new-in-v20--choose-your-loadout) — power-ups, shop, 70+ cosmetics, video backgrounds, i18n
+- [Core features](#-core-features)
+  - [Badge system](#-badge-system) — 200+ achievements, 35+ categories, 6 rarities
+  - [Rank system](#-rank-system) — 10 tiers from Rookie to Immortal
+  - [Score economy](#-score-economy) — earn, combo, gift, **spend** in the shop
+  - [Prestige](#-prestige) — Legend-rank reset for +50% multiplier
+  - [Daily & weekly quests](#-daily--weekly-quests) — with reroll (v2.0)
+  - [Power-ups & Score Shop](#-power-ups--score-shop) **(new in v2.0)**
+  - [Profile customization](#-profile-customization) **(new in v2.0)**
+  - [Friends drawer](#-friends-drawer) — bi-directional, online/offline, last-watched
+  - [Messaging](#-messaging) — 1:1 + groups, attachments, read receipts
+  - [Rarity percentage chip](#-rarity-percentage-chip)
+  - [Data-loss recovery](#-data-loss-recovery)
+  - [Stats & visualization](#-stats--visualization)
+  - [UI integration](#-ui-integration) — Classic / Revamp toggle, toasts, sidebar
+  - [User preferences](#-user-preferences)
+  - [Languages](#-languages)
+  - [Admin features](#-admin-features)
+  - [Tracking](#-tracking)
+- [Security & operations](#-security--operations) — rate limits, CSP, audit log, signed releases, CI
+- [Installation](#-installation)
 - [Requirements](#-requirements)
-- [Troubleshooting](#-troubleshooting) — permissions, NixOS, reverse proxy
+- [Troubleshooting](#-troubleshooting)
 - [API endpoints](#-api-endpoints)
 - [Screenshots](#-screenshots)
+- [Release history](#-release-history)
 - [Support the project](#-support-the-project)
+- [Credits & thanks](#-credits--thanks)
 - [License](#-license)
 
 ---
 
 ## ✨ Overview
 
-Over **200 built-in achievements** across 35+ categories, a 10-tier rank ladder from Rookie to Immortal, a score economy with combos, prestige, and daily/weekly quests, plus admin power features like custom badges, seasonal challenges, webhook notifications and a full audit log.
+Over **200 built-in achievements** across 35+ categories, a 10-tier rank ladder from Rookie to Immortal, a full score economy with combos, prestige, daily/weekly quests, a **Score Shop with 70+ cosmetics**, power-up consumables, a Friends drawer with messaging, plus admin power features like custom badges, seasonal challenges, webhook notifications, and a full audit log.
 
 Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin, ElegantFin, or StarTrack.
 
 ---
 
-## 🚀 What's new in v1.9.6
+## 🚀 What's new in v2.0 — Choose Your Loadout
 
-Small follow-up release. Unlock toasts now show badge descriptions instead of rolling into a blank second stage, achievement popups show during playback by default again, and admin testing is easier with a server-user picker on the achievement admin/config pages. The fallback script injection path now cache-busts by plugin version for servers with read-only Jellyfin web roots. Existing profiles are migrated so the old accidental mute-toasts-while-watching default is cleared; users can re-enable it in settings if preferred.
+The plugin transitions from a passive achievement tracker into an active progression game. **Earn score by watching, spend it in the shop on power-ups + cosmetics, equip them to express your viewing identity.** Drop-in upgrade from v1.9.8 with no data migration. DLL size: 4 MB → 35 MB (the extra is 8 embedded MP4 video backgrounds at 1080p H.264).
+
+### ⚡ Power-ups
+
+Three consumable boosts you can earn from the daily login bonus or buy from the Shop:
+
+- **XP Boost** — doubles score gains for 60 minutes. Re-applying refreshes the timer.
+- **Double Credit** — your next watched item counts 2× toward badge progress (`TotalItemsWatched` / `MoviesWatched` / `EpisodesByDate`).
+- **Streak Freeze** — auto-protects your watch streak from one missed day. Max 1 banked.
+
+Inventory cap of 20 per type. Live MM:SS countdown in the Loadout hero for active XP Boost. Multi-pill stack when several boosts run at once.
+
+### 🛒 Score Shop
+
+Steam-style storefront with a **featured carousel**, color-graded hero cards, hover lift, milestone progress bars for auto-unlock items, and "NEED N MORE SCORE" pills when you can't afford something yet. Pricing curve is reachable but meaningful — most users earn 100-500 score/week from passive playback; cheap cosmetics are 1-2 weeks of play, premium milestone titles are months.
+
+### 🎨 Profile customization (60+ cosmetics)
+
+Six cosmetic kinds. Equipping is instant — no reload required.
+
+- **14 Profile Themes** — paint the whole page (background gradient, panel cards, active tabs, accents): Default / Sunset / Cyberpunk / Pastel / Monochrome / Noir / Aurora / Crimson / Vaporwave / Galaxy / Forest / Ocean / Rose Gold / Midnight
+- **7 Badge Frames** — applied to your equipped badges: Default / Gilded (gold glow) / Holographic (iridescent gradient that shifts on hover) / Frosted (cool blue rim) / Obsidian (red ember glow) / Emerald (jade) / Neon (hot-pink electric outline)
+- **10 Custom Rank Titles** — replace your auto-generated tier name. 3 auto-unlock by lifetime-score milestone (*Cinephile* @ 1,000, *Marathoner* @ 2,500, *Curator* @ 5,000), the rest are shop-only (*Night Owl*, *Archivist*, *Tastemaker*, *Binge King*, *Aficionado*, *Legend* @ 7,500, *Completionist* @ 10,000)
+- **14 Avatars** — emoji swap for the rank-medal icon: 🏅 Medal / 🏆 Trophy / 👑 Crown / 🎬 Clapperboard / 🔥 Flame / 🦉 Night Owl / 💎 Diamond / 🚀 Rocket / 🍿 Popcorn / 👻 Ghost / 🦄 Unicorn / 🐉 Dragon / ⭐ Star / 🎮 Controller
+- **8 Animated Backgrounds** — 4 CSS-only (Starfield / Aurora-CSS / Fireflies-CSS / *None*) and **4 embedded HD video loops** at 1080p (Black Hole / Nebula / Galaxy / Moonlit Village / Rainy Station / Live Matrix / Live Aurora / Live Fireflies). Videos autoplay-muted, fixed to viewport with a dimming overlay so UI text stays legible. Browser-cached `immutable` so first equip is the only network cost.
+- **6 Profile Borders** — animated edge effects on the hero card: Gold Shimmer (sweeping gradient) / Plasma (color-cycling neon) / Ember (pulsing red halo) / Holo Edge (iridescent rainbow with specular sweep) / Crystal (cool-blue refractive)
+
+### 🎯 Daily + Weekly quest reroll
+
+- **Daily reroll** — 1 per UTC day, swaps the daily set
+- **Weekly reroll** — 1 per ISO week
+- Disabled "REROLLED TODAY" / "REROLLED THIS WEEK" pill shows you've used yours; tooltip says when it comes back
+
+### 🎁 Daily login bonus
+
+First ≥80% real watch of each UTC day grants **+10 score + one random power-up** (XP Boost / Double Credit / Streak Freeze). Integrity-consistent with v1.9.8's playback-credit gate — only real watches qualify.
+
+### 🤫 8 hidden / easter-egg badges
+
+Discovered only after unlock — they don't appear in the catalog until you earn them:
+
+| Badge | Trigger | Rarity |
+|---|---|---|
+| First Anniversary | Watch on 365 separate days | Legendary |
+| Late-Night Sage | 100 late-night sessions | Mythic |
+| Quadruple Feature | 4 films in a single day | Epic |
+| Dawn Chorus | 50 early-morning sessions | Legendary |
+| Universal Watcher | 15 different genres | Legendary |
+| Archivist Supreme | 100 series completed | Mythic |
+| Deep Cut | items from 10 different decades | Mythic |
+| Saga Marathon | single item over 5 hours | Mythic |
+
+### 🌐 Full i18n for the new surfaces
+
+~1,500 new translation entries across **English, Français, Español, Deutsch, Italiano, Português, 中文 (简体), 日本語** covering every cosmetic name + description, every shop button, every power-up label, the new Loadout tab, settings toggles, and the welcome toast. Per-user language picker; admin sets the server-wide default.
+
+### 🛠️ Admin testing tools
+
+Inside the plugin config page: **grant score**, **grant power-up**, **grant cosmetic**, **backfill milestones** across all profiles (one-shot to retroactively unlock title milestones for users who crossed thresholds before v2.0 shipped). All elevation-gated, audit-logged.
+
+### ✨ Polish
+
+- One-time **v2.0 welcome toast** points new users at the Loadout tab on first visit (dismissable, `localStorage` flag so it never re-shows)
+- Inline reroll buttons on quest cards
+- Bulletproof root coverage so the host's "page not found" shell can't bleed through the standalone page
+- 14 new REST endpoints, all elevation-gated where applicable and audit-logged
 
 ---
 
-## 🚀 What's new in v1.9.5
+## 🧩 Core features
 
-Small maintenance release. Chat image attachments now render and open correctly in the Friends drawer, and this release includes some security fixes and defensive hardening.
----
+### 🏅 Badge system
 
-## 🚀 What's new in v1.9.4
+- **200+ built-in achievements** across categories: Films, Series, Binge, Night Watching, Morning, Afternoon (12-17h), Prime Time (19-22h), Weekend, Exploration, Streaks, Episode/Film Marathons, Eras, World, Languages, Genres, Runtime, Total Time, Holidays (Christmas, New Year, Halloween, Eid, Valentine's, Easter, Lunar New Year, Diwali, US Thanksgiving, Independence Day, Bonfire Night, Boxing Day, Mother's Day, Father's Day), Library Completion, Loyalty, People, Rewatch, Anime, Studio Specialist, Pilot vs Completer, and Hidden categories
+- **8 v2.0 easter-egg badges** — *First Anniversary, Late-Night Sage, Quadruple Feature, Dawn Chorus, Universal Watcher, Archivist Supreme, Deep Cut, Saga Marathon* (don't appear until unlocked)
+- **6 rarity tiers** — Common, Uncommon, Rare, Epic, Legendary, Mythic
+- **Hidden/secret badges** displayed as `???` until unlocked
+- **Library completion milestones** that auto-scale to any library structure
+- **Per-person tracking** — Director and Actor affinity badges
+- **Per-genre tracking** — unique genre counters with dedicated badges
+- **Era / country / language** breakdowns via item metadata
+- **Watch streaks** — current and best streak badges
+- **Daily login streak** — loyalty rewards for consistent visits
 
-32 new badges + full 8-language translation coverage + a Revamp admin UI fix. No breaking changes. Existing `badges.json` round-trips cleanly — new fields default to 0 / false / empty so legacy profiles deserialize without any migration.
+Standout sub-collections:
 
-### 🕒 Time-of-day fillers (10 badges)
-
-The 9am–5pm and 7pm–10pm windows previously had no badge surface. Now they do.
-
-- **Afternoon Watching** (12–17h) — *Afternoon Tea / Lunchtime Lurker / Daylight Devotee / Permanent Vacation / Sun-Drunk* at 1 / 10 / 50 / 200 / 500 sessions.
-- **Prime Time** (19–22h) — *Prime Time / Couch Critic / Sofa Sage / Living Room Legend / Channel Sovereign* at 1 / 10 / 50 / 200 / 500 sessions.
-
-### 🎉 Holidays expansion (10 badges)
-
-One-shot badges for ten more holidays. Variable-date events use the anonymous-Gregorian algorithm (Easter), embedded 2020–2035 lookup tables (Lunar New Year, Diwali), or closed-form formulas (Thanksgiving = 4th Thursday Nov, Mother's = 2nd Sun May, Father's = 3rd Sun Jun).
-
-| Badge | Trigger |
-|---|---|
-| Hopeless Romantic | Watch on Feb 14 |
-| Easter Sunday | Watch on Easter Sunday |
-| Lunar New Year | Watch on Lunar New Year (Chinese calendar) |
-| Festival of Lights | Watch on Diwali |
-| Thanks for Watching | Watch on US Thanksgiving |
-| Independence Day | Watch on Jul 4 |
-| Remember Remember | Watch on Bonfire Night (Nov 5) |
-| Boxing Day | Watch on Dec 26 |
-| Mother's Day | Watch on the 2nd Sunday of May |
-| Father's Day | Watch on the 3rd Sunday of June |
-
-### 🎌 Anime tier (5 badges)
-
-Genre-tag detection (any genre containing `"anime"`, case-insensitive). *Anime Curious / Anime Fan / Otaku / Anime Veteran / All-Otaku* at 5 / 15 / 50 / 200 / 500 anime items.
-
-### 🎬 Studio specialists (6 badges)
-
-Letterboxd-style "I watch a lot of A24" badges, parameterised by `BaseItem.Studios`.
+- **🎌 Anime tier (5 badges)** — Genre-tag detection (any genre containing `"anime"`, case-insensitive). *Anime Curious / Anime Fan / Otaku / Anime Veteran / All-Otaku* at 5 / 15 / 50 / 200 / 500 anime items.
+- **🎬 Studio specialists (6 badges)** — Letterboxd-style "I watch a lot of A24" badges, parameterised by `BaseItem.Studios`:
 
 | Badge | Studio | Threshold |
 |---|---|---|
@@ -118,130 +178,82 @@ Letterboxd-style "I watch a lot of A24" badges, parameterised by `BaseItem.Studi
 | Auntie Beeb | BBC | 25 |
 | House of Mouse | Disney | 50 |
 
-### 🎟️ Pilot vs Completer (6 badges)
+- **🎟️ Pilot vs Completer (6 badges)** — every series whose S1E1 you watch is added to a per-user "pilots watched" set. If any other episode of that series follows, the series graduates into "continued past pilot". *Pilot Tester / Window Shopper / Commitment Issues* for sampling 5 / 20 / 50 series and bailing after the pilot; *Hooked / Sticks the Landing / Always In* for continuing past the pilot on 5 / 20 / 50 series.
 
-New behavior tracking: every series whose S1E1 you watch is added to a per-user "pilots watched" set. If any other episode of that series follows, the series graduates into "continued past pilot". Two derived metrics drive the new badges.
-
-- **Pilot Tester / Window Shopper / Commitment Issues** — sample 5 / 20 / 50 series and bail after the pilot.
-- **Hooked / Sticks the Landing / Always In** — continue past the pilot on 5 / 20 / 50 series.
-
-> **Backfill credits these too** — the watch-history backfill task now passes `Studios`, `SeriesId`, `SeasonNumber`, `EpisodeNumber` through to the achievement service, so historical episodes credit anime / studio / pilot badges. Time-of-day buckets only count NEW sessions (no historical hour-of-day to backfill against).
-
-### 🌍 8-language translations for all 32 new badges
-
-Every new badge has hand-tailored titles + descriptions in **English, Français, Español, Deutsch, Italiano, Português, 中文 (简体), 日本語**. Local cultural references where it fits — the *Spirited Away* badge is *Le Voyage de Chihiro* / *El Viaje de Chihiro* / *Chihiros Reise* / *La Città Incantata* / *A Viagem de Chihiro* / *千与千寻* / *千と千尋*. Holiday descriptions include the date hint (e.g. *"2nd Sunday of May"*) so users without context still know what triggered them.
-
-### 🛠️ Revamp admin UI — operator action strip
-
-Surfaces three live action buttons + status feedback that v1.9.0's Revamp restructure was hiding along with the Classic hero card:
-
-- **Use my account / Refresh / Simulate playback** — moved (live DOM, listeners intact) into a new `#abActionStrip` at the top of the personal section in Revamp mode. First thing operators see when they scroll past the admin groups.
-- **Live status / error banner** — `#abStatus` and `#abError` now render emerald-tinted (with a soft pulse) while a long op is running, red-tinted on failure. Long-running ops like *Scan all users* now visibly indicate progress instead of writing far below the fold.
-
-Classic mode is unchanged.
-
----
-
-## 🚀 What's new in v1.9.0
-
-### 🎨 Revamp UI (toggle anytime)
-
-Every screen the plugin renders now has a Classic/Revamp toggle. Classic stays the v1.8.10 look you know; Revamp is the new design.
-
-- **Achievements page** — magazine-spread hero with massive Geist 700 rank name, **220px conic completion donut** that fills from empty to your real percentage on mount, **asymmetric stats grid** (1 dominant + 3 supporting), **chapter-numbered tabs** (`01 / MY BADGES`, `02 / QUESTS`, `03 / RECAP`…), control-panel filter strip with proper labels and chevrons, ambient drift orb behind the page, film grain overlay, day-streak pulse, rank-name shimmer, full page entrance cascade (topbar → hero → stats → tabs → panel)
-- **Admin page** — HUD corner brackets at the four corners of the plugin and personal hero cards, conic rim sheen on Mythic and Legendary badge cards, animated KPI count-up, tier-staggered reveal on badge sections
-- **Friends drawer** follows the same Classic/Revamp toggle — sets `body[data-ab-style="revamp"]` so the same tokens apply globally
-- One toggle, one preference (`ab-style-pref` localStorage) — flip it in the admin or `/achievements` page settings
-
-### 👥 Friends drawer upgrades
-
-- **Offline — last watched X** — offline friends now show what they watched most recently (mirrors the online "Watching X" treatment). Backed by `IUserDataManager` with reflection-based `LastPlayedDate` lookup
-- **`HideLastWatched` privacy preference** — opt out per user, same contract as `AppearOffline` and `HideNowPlaying` (suppressed entirely server-side; never leaks)
-
-### 🔐 Webhook authenticity
-
-- **HMAC-SHA256 signing** — when admin sets `WebhookSigningSecret`, every outbound POST carries:
-  ```
-  X-AchievementBadges-Signature: sha256=<hex>
-  X-AchievementBadges-Timestamp: <unix>
-  ```
-  Receivers verify with `HMAC(secret, timestamp + "." + raw_body)` and reject stale timestamps to prevent replay. Same envelope as Stripe and GitHub.
-- Empty secret = legacy unsigned behaviour (backward compatible).
-
-### 🛡️ Security
-
-- **Default class-level rate limit** (`user-60-per-min`) on every controller route, with stricter overrides preserved on cooldown routes
-- **`AdminAuditLogFilter`** writes an entry on every `RequiresElevation` action — answer "who unlocked X for whom last Tuesday" without grepping runtime logs
-- **CSP** + `X-Content-Type-Options` + `X-Frame-Options` + `Referrer-Policy` + `Permissions-Policy` on the anonymous profile-card endpoint
-- **Unit security regression tests** — SSRF, IPv6 SSRF, scheme rejection, malformed URL rejection, dangerous SVG element rejection, on-event-handler rejection, external DTD rejection, oversized payload rejection, external `<use href>` rejection
-- **GitHub Actions CI** runs the tests + `dotnet list package --vulnerable` + `gitleaks` on every push, every PR, and weekly cron
-- **`SECURITY.md`** expanded with full threat model, trust boundaries, defences-in-place inventory, continuous verification matrix, disclosure SLA, and safe-harbour for researchers
-
-### ⚡ Plugin-wide efficiency
-
-- **Debounced `Save()`** in `AchievementBadgeService` and `MessagingService` — coalesces back-to-back disk writes from playback and messaging hot paths into one flush per 1.5s
-- **`FriendsService.LastWatched` cache** — 90s TTL, invalidated on play, eliminates per-friend 50-item DB query on every friends-list call
-- **`WriteIndented = false`** on production stores (~50% smaller `badges.json`)
-- **Embedded resource cache** in `client-script` route — one read per process
-- **`Cache-Control: public, max-age=86400, immutable`** on assets with version-only cache busting (browsers actually cache between page loads now)
-- Middleware marker fast-path (last-4KB scan instead of full body)
-
----
-
-## 🧩 Core features
-
-### 🏅 Badge system
-- **200+ built-in achievements** across Films, Series, Binge, Night Watching, Morning, **Afternoon Watching, Prime Time** *(new 1.9.4)*, Weekend, Exploration, Streaks, Episode/Film Marathons, Eras, World, Languages, Genres, Runtime, Total Time, Holidays (Christmas, New Year, Halloween, Eid, **+10 more in 1.9.4**), Library Completion, Loyalty, People, Rewatch, **Anime, Studio Specialist, Pilot vs Completer** *(new 1.9.4)*, and Hidden categories
-- **6 rarity tiers** — Common, Uncommon, Rare, Epic, Legendary, Mythic
-- **Hidden/secret badges** displayed as `???` until unlocked
-- **Library completion milestones** that auto-scale to any library structure
-- **Per-person tracking** — Director and Actor affinity badges
-- **Per-genre tracking** — unique genre counters with dedicated badges
-- **Era / country / language** breakdowns via item metadata
-- **Watch streaks** — current and best streak badges
-- **Daily login streak** — loyalty rewards for consistent visits
+> **Backfill credits these too** — the watch-history backfill task passes `Studios`, `SeriesId`, `SeasonNumber`, `EpisodeNumber` through to the achievement service, so historical episodes credit anime / studio / pilot badges. Time-of-day buckets only count NEW sessions.
 
 ### 🎖️ Rank system
+
 - **10 tiers** from Rookie → Novice → Viewer → Regular → Enthusiast → Binger → Connoisseur → Maestro → Legend → Immortal
 - Rank computed from your achievement score with progress bar to next tier
 - **Theme unlocks** — the achievements page changes gradient/border color as you climb
+- **Custom rank titles (new in v2.0)** — equip a cosmetic title (Cinephile / Curator / Tastemaker etc.) to replace the auto-generated tier name
 - Sidebar badge showcase + header dots display your current equipped badges at a glance
 
 ### 💰 Score economy
+
 - Every playback accrues 5 base points into a **score bank**
 - **Combo multiplier** — consecutive watches within 15 minutes stack up to +100% bonus
-- **Spend bank** to buy locked badges directly
+- **Spend bank** to buy locked badges directly, **or in the new Shop on power-ups + cosmetics (v2.0)**
 - **Gift score** to other users on your server
+- **Daily login bonus (v2.0)** — +10 score on first real watch of each UTC day
 - Rarity-based badge scoring (10-150 pts), scaled by prestige level
 
 ### ⭐ Prestige
+
 - Reach Legend rank (12,000 score) to unlock prestige
 - **Resets badges + counters** but keeps your lifetime score and awards a prestige star
 - Each prestige level adds a **+50% score multiplier** to future badge unlocks
 - Visible on profile and leaderboard
 
 ### 🎯 Daily & weekly quests
+
 - **3 concurrent daily quests** rotating from 12 built-in templates
 - **3 concurrent weekly quests** rotating from 8 built-in templates
 - Deterministic rotation — everyone on the server gets the same quests per day/week
 - Completing quests pays into the score bank
-- **Admin quest customization** (new in v1.7.0) — add / edit / remove daily + weekly quests from the admin page, replace built-in quests by Id, or disable built-ins your server can't satisfy
+- **Reroll (new in v2.0)** — 1 daily reroll per UTC day, 1 weekly reroll per ISO week. Disabled pill shows you've used it, comes back at the next reset.
+- **Admin quest customization** — add / edit / remove daily + weekly quests from the admin page, replace built-in quests by Id, or disable built-ins your server can't satisfy
 
-### 👥 Friends (new in v1.7.x)
+### ⚡ Power-ups & Score Shop
+
+*(See [What's new in v2.0](#-whats-new-in-v20--choose-your-loadout) above for the full breakdown.)*
+
+- **3 consumable power-ups** — XP Boost, Double Credit, Streak Freeze
+- **70+ cosmetic items** across 6 kinds — themes, frames, titles, avatars, backgrounds, borders
+- **Steam-style storefront** with featured carousel, live previews, milestone progress bars, "NEED N MORE SCORE" affordability indicators
+- **Daily login bonus** drops a random power-up on first ≥80% real watch of each UTC day
+- All purchases audit-logged; admin testing tools to grant items without watch grinding
+
+### 🎨 Profile customization
+
+*(See [What's new in v2.0](#-whats-new-in-v20--choose-your-loadout) above for the full catalog.)*
+
+- **14 Profile Themes** — repaint the whole achievements page in any of 14 styles
+- **7 Badge Frames** — animated edges on your equipped badges
+- **10 Custom Rank Titles** — 3 auto-unlock + 7 shop-only
+- **14 Avatars** — emoji swap for the rank-medal icon
+- **8 Animated Backgrounds** — 4 CSS + 4 HD MP4 video loops, viewport-fixed with dimming overlay
+- **6 Profile Borders** — animated effects on the hero card
+
+### 👥 Friends drawer
+
 - **Bi-directional** friendship with a proper **request / accept** flow — nobody follows you silently
 - **Global floating button** anchored bottom-left on every Jellyfin page — not just the achievements tab. Auto-hides on `/dashboard` + `/plugins` pages and during media playback; reappears as soon as you leave either state
-- **Xbox-guide-style side drawer** with three sub-tabs: Friends / Requests / Find
+- **Xbox-guide-style side drawer** with four sub-tabs: Friends / Requests / Find / Messages
 - **Jellyfin profile-image avatars** per friend row (initials fall back when no image is set)
 - **Online / offline** status pulled live from Jellyfin's `ISessionManager`, with a 15-minute grace window so casual browsing still counts as online (not just active playback)
 - **Now playing** display — see the series + episode title each online friend is watching
+- **Offline — last watched X** — offline friends now show what they watched most recently (mirrors the online "Watching X" treatment). Backed by `IUserDataManager` with reflection-based `LastPlayedDate` lookup
 - Each friend's **equipped badges** shown next to their row (respects their privacy prefs)
 - **Type-to-search** user picker in the Find tab (not a giant dropdown of every server user)
 - **Red unread badge** on the floating button + Requests tab when someone has sent you a friend request
 - **Mutual** indicator on friend rows; **Auto-accept** kicks in if the target has already sent a request to you
-- **Privacy toggles** in user settings: *Appear offline to friends* (always shows you as offline) and *Hide what I'm watching* (still online, but the series/episode is hidden). Enforced server-side in `FriendsService.BuildFriendRow` — can't be bypassed by client tampering
+- **Privacy toggles** in user settings: *Appear offline to friends* (always shows you as offline), *Hide what I'm watching* (still online, but the series/episode is hidden), and *Hide my last watched when offline*. Enforced server-side in `FriendsService.BuildFriendRow` — can't be bypassed by client tampering
 - **Compact request rows** — Accept / Decline / Cancel buttons are icon-only with tooltips, so the Requests tab doesn't visually bloat
+- Drawer follows the Classic/Revamp toggle — sets `body[data-ab-style="revamp"]` so the same tokens apply globally
 
-### 💬 Messaging (new in v1.8)
+### 💬 Messaging
 
 Xbox-Guide-style chat built into the Friends drawer. No external service, no WebSockets, everything stored on your own server.
 
@@ -267,13 +279,15 @@ Xbox-Guide-style chat built into the Friends drawer. No external service, no Web
 - **Friendship gate** — only mutual friends can DM; group creators can only add their own friends. Admin's `FriendsSimpleMode` treats the whole server as one friend list for messaging too
 - **Storage** — single `messages.json` + `attachments.json` + `attachments/<id>.<ext>` on disk under `plugins/configurations/achievementbadges/`. Atomic writes via temp file + `File.Move` so a crash mid-send can't corrupt the store. Messages survive server restarts
 
-### 🏅 Rarity percentage chip (new in v1.7.6)
+### 🏅 Rarity percentage chip
+
 - Every badge card on the achievements page shows a coloured chip with the **% of users on your server** who have unlocked that badge
 - **Green ≥ 50%** (common on this server), **amber 10–50%** (uncommon), **red < 10%** (rare / flex-worthy)
 - Fed by a `/badges/rarity-stats` endpoint with a 5-minute server-side cache so it doesn't re-scan every profile on every page load
 - Scarcity signal lets users see "nobody else on this server has this badge" at a glance
 
-### 💾 Data-loss recovery chain (v1.7.5+)
+### 💾 Data-loss recovery
+
 - `Load()` walks **primary `badges.json` → `.bak` → `.recovery`** before giving up. A flaky primary file with a clean backup recovers silently
 - `.bak` is rotated on every successful save
 - `.recovery` captures in-session state when the primary is quarantined, so restart never feels like a fresh reset
@@ -281,13 +295,17 @@ Xbox-Guide-style chat built into the Friends drawer. No external service, no Web
 - Unparseable primary files are quarantined to `badges.json.corrupt-<timestamp>` (not deleted) for manual recovery
 
 ### 📊 Stats & visualization
+
 - **Recap tab** — weekly / monthly / yearly breakdowns with top genres, directors, actors
+- **Year Wrapped** — Spotify-style end-of-year recap with hero, your numbers, your highlights, your favorites
 - **Watch heatmap** — GitHub-style calendar (30/90/180/365 day range) colored by intensity
 - **Genre radar chart** — SVG spider chart of your genre distribution
+- **Watch clock** — 24-hour polar chart of when you actually watch
 - **Stats snapshot** — histogram of unlocked / score / best streak
 - **Category leaderboards** — Score, Movies, Episodes, Hours, Best Streak, Series
 
 ### 🏠 UI integration
+
 - **Sidebar entry** auto-injected into the Jellyfin nav menu (works on web, iOS, and Android after restart)
 - **Equipped badge showcase** in header + profile (configurable slot count, 1-10)
 - **Xbox-style unlock toasts** with per-rarity colors (6 tiers), Xbox logo → trophy swap, shimmer sweep, and confetti on rare+ unlocks
@@ -296,28 +314,42 @@ Xbox-Guide-style chat built into the Friends drawer. No external service, no Web
 - **One-at-a-time toast queue** — multiple simultaneous unlocks play sequentially so each gets its full animation
 - **Toasts during playback** — unlocks fire within ~1s of earning via playback event hooks + DOM fallback
 - **Admin toast preview** — test buttons for each rarity tier
-- **Standalone achievements page** at `#!/achievements`
+- **Standalone achievements page** at `#!/achievements` with the new **Loadout tab (v2.0)** for managing power-ups, shop, and cosmetics
 - **Shareable profile card** — server-rendered HTML at `/Plugins/AchievementBadges/users/{id}/profile-card`
+- **Classic / Revamp toggle** — every screen the plugin renders has a Classic/Revamp toggle (`ab-style-pref` localStorage):
+  - **Revamp** — magazine-spread hero with massive Geist 700 rank name, 220px conic completion donut, asymmetric stats grid, chapter-numbered tabs (`01 / MY BADGES`, `02 / QUESTS`…), control-panel filter strip, ambient drift orb, film grain overlay, day-streak pulse, rank-name shimmer, full page entrance cascade
+  - **Classic** — the v1.8.10 look you know
+  - Friends drawer follows the toggle too. **Admin page** has HUD corner brackets, conic rim sheen on Mythic + Legendary cards, animated KPI count-up, tier-staggered reveal.
+- **Revamp admin operator strip** — Use my account / Refresh / Simulate playback buttons + live status banner sit at the top of the personal section in Revamp mode. Long-running ops like Scan all users visibly pulse with status text.
 
 ### ⚙️ User preferences
+
 A gear icon on the achievements page opens a full settings panel with auto-save:
+
 - **Toast controls** — enable/disable toasts, sound, confetti, milestone toasts
 - **Minimum toast rarity** — filter out common spam (All / Rare+ / Epic+ / Legendary+)
 - **Privacy** — hide from leaderboard, compare profiles, activity feed, prestige board
-- **Achievement page themes** — Default, Dark, or Light (scoped to achievements page only, doesn't affect Jellyfin)
+- **Achievement page theme** — Default, Dark, or Light (legacy site-wide theme, separate from v2.0's profile-theme cosmetics)
 - **Spoiler mode** — hides locked badge descriptions with "???" so you discover them naturally
 - **Equipped badge slots** — choose how many badges show in your showcase (1-10)
 - **Auto-equip new unlocks** — newly earned badges automatically fill empty slots
+- **Per-user language picker** — overrides the admin's server-wide default
+- **Hide my last watched when offline** — friends won't see what you watched most recently when you're offline
+- **Mute toasts during playback** + **Mute toast sound during playback** — keep the unlock animation/sound out of the way while actively watching
+- **Message notifications + sound + mute-during-playback** — full control over the Friends drawer's chat notifications
 
 ### 🌍 Languages
+
 - **8 languages** — English, Français, Español, Deutsch, Italiano, Português, 中文 (简体), 日本語
-- **659 UI keys** translated across every tab (achievements profile, stats, heatmap, streak calendar, prestige leaderboard, notification prefs, server stats, compare, leaderboards, recap, quests, admin page)
-- **All 203 built-in badges** translated — titles + descriptions per language
+- **~2,200 UI keys** translated across every tab (achievements profile, stats, heatmap, streak calendar, prestige leaderboard, notification prefs, server stats, compare, leaderboards, recap, quests, admin page, and every v2.0 Loadout surface)
+- **All 200+ built-in badges** translated — titles + descriptions per language, with hand-tailored cultural references (the *Spirited Away* badge is *Le Voyage de Chihiro* / *El Viaje de Chihiro* / *Chihiros Reise* / *La Città Incantata* / *A Viagem de Chihiro* / *千与千寻* / *千と千尋*)
 - **Badge categories + rarities** also localised ("Binge" → "Marathon", "Legendary" → "Légendaire", etc.)
+- **All v2.0 cosmetic names + descriptions** translated — Cinephile / 影迷 / シネフィル / Cinéphile, every theme, every avatar, every background
 - **Per-user language picker** in preferences; admin can set a server-wide default
 - Translations loaded client-side + server-side (`BadgeLocalizer`) so both UI chrome and badge titles on the leaderboard / showcase localise together
 
 ### 🛠️ Admin features
+
 - **Feature Controls** — kill switches for leaderboard, compare, activity feed, prestige, quests
 - **Force Privacy Mode** — override all users to hidden from all social features
 - **Max Equipped Badges** — server-wide cap (1-10)
@@ -331,16 +363,53 @@ A gear icon on the achievements page opens a full settings panel with auto-save:
 - **Seasonal challenges** — time-limited goals with start/end dates
 - **Challenge templates** — one-click add for Monthly Marathon, October Horror, New Year, Summer Blockbuster
 - **Webhook notifications** — Discord/Slack-compatible POST on every unlock
-- **Audit log** — last 5,000 unlock events with timestamps
+  - **HMAC-SHA256 signing** — when admin sets `WebhookSigningSecret`, every outbound POST carries `X-AchievementBadges-Signature: sha256=<hex>` + `X-AchievementBadges-Timestamp: <unix>`. Receivers verify with `HMAC(secret, timestamp + "." + raw_body)` and reject stale timestamps to prevent replay. Same envelope as Stripe and GitHub. Empty secret = legacy unsigned behaviour (backward compatible).
+- **Audit log** — last 5,000 events with timestamps. `AdminAuditLogFilter` writes an entry on every `RequiresElevation` action — answer "who unlocked X for whom last Tuesday" without grepping runtime logs.
 - **Progress injection** — set arbitrary counter values for testing / gifting
+- **v2.0 testing tools** — grant score / power-up / cosmetic to a user, backfill milestones across all profiles
+- **Server-user picker** on the admin/config pages for easier multi-user testing
+- **Manual badge revoke (v1.9.8)** — un-award a specific badge from a specific user when needed
+- **Integrity test injection (v1.9.8)** — verify daily-cap and suspicious-rate audit flag end-to-end on a throwaway user
 - **Admin auth lockdown** — all admin endpoints require elevated permissions
 
 ### 🔒 Tracking
+
 - **Watch history backfill** — scans existing Jellyfin play history to retroactively award badges on install
 - **Auto-evaluation on startup** — new badges from plugin updates auto-unlock if your existing counters already satisfy them, no manual scan needed
 - **Live playback tracker** — unlocks fire during viewing, past the 80% completion threshold
+- **Real-watch credit gate (v1.9.8)** — playback events require ≥80% accumulated play ticks with seeks excluded; mark-as-played + seek-to-end + spam-click no longer credit badges
+- **60-second minimum runtime** filter so Projectionist prerolls and bumpers can't credit
+- **Daily credit cap** (default 200/user/day, configurable) + **`SuspiciousRatePerHour`** audit flag (default 30/h, configurable) for soft anti-abuse
 - **Rewatch detection** — dedupes within 6 hours, counts rewatches beyond that
 - **People metadata extraction** — uses `ILibraryManager.GetPeople()` for directors/actors
+
+---
+
+## 🛡️ Security & operations
+
+- **Default class-level rate limit** (`user-60-per-min`) on every controller route, with stricter overrides preserved on cooldown routes. Static-asset routes (CSS / JS / translations / video bgs) opt out via `[DisableRateLimiting]` so multi-user households behind a shared NAT don't collectively exhaust the limit.
+- **CSP** + `X-Content-Type-Options` + `X-Frame-Options` + `Referrer-Policy` + `Permissions-Policy` on the anonymous profile-card endpoint
+- **Per-user chat attachment quota** (200 files / 200 MB total) closes a disk-exhaustion vector
+- **SVG sanitizer** blocks `<animate>` / `<set>` SMIL elements that could mutate attributes mid-render
+- **Webhook URL DNS resolution** bounded at 3s (was OS default 5-30s)
+- **Audit-log endpoint limit** clamped to `[1, 1000]` at controller
+- **`MessagingService`** + **`AchievementBadgeService`** are `IDisposable` so the debounced-save Timer is released on plugin reload
+- **Unit security regression tests** — SSRF, IPv6 SSRF, scheme rejection, malformed URL rejection, dangerous SVG element rejection, on-event-handler rejection, external DTD rejection, oversized payload rejection, external `<use href>` rejection
+- **GitHub Actions CI** runs the tests + `dotnet list package --vulnerable` + `gitleaks` on every push, every PR, and weekly cron
+- **CodeQL** + **OpenSSF Scorecard** + **OpenSSF Best Practices Level 1** (project 12937)
+- **`SECURITY.md`** with full threat model, trust boundaries, defences-in-place inventory, continuous verification matrix, disclosure SLA, and safe-harbour for researchers
+- **Sigstore-signed + SLSA build-provenance attested release artifacts** — verify with `cosign verify-blob` or `gh attestation verify`
+- **Reproducible NuGet restore** — every transitive package locked by hash via `RestorePackagesWithLockFile`, CI runs in locked mode so drift fails fast
+
+### ⚡ Plugin-wide efficiency
+
+- **Debounced `Save()`** in `AchievementBadgeService` and `MessagingService` — coalesces back-to-back disk writes from playback and messaging hot paths into one flush per 1.5s
+- **`FriendsService.LastWatched` cache** — 90s TTL, invalidated on play, eliminates per-friend 50-item DB query on every friends-list call
+- **`WriteIndented = false`** on production stores (~50% smaller `badges.json`)
+- **Embedded resource cache** in `client-script` + `asset` routes — one read per process
+- **`Cache-Control: public, max-age=86400, immutable`** on assets with version-only cache busting; video backgrounds use HTTP Range so the browser only streams the bytes it needs to start playing
+- **`Cache-Control: no-cache, must-revalidate`** on translations (v2.0) so users always get fresh strings after a plugin update without hard-refreshing
+- Middleware marker fast-path (last-4KB scan instead of full body)
 
 ---
 
@@ -358,7 +427,7 @@ https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/mani
 5. Restart Jellyfin
 6. Go to **Dashboard → Plugins → Achievement Badges → Settings**
 7. Click **Scan watch history** (or **Scan all users**) to backfill from your existing play data
-8. Explore `#!/achievements` to see your profile
+8. Explore `#!/achievements` to see your profile — and the new **Loadout** tab
 
 ---
 
@@ -386,6 +455,7 @@ https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/mani
 | Runtime badges | Items with `RunTimeTicks` populated |
 | Library completion | At least one library folder with items |
 | Webhook notifications | A webhook URL (Discord, Slack, or generic) |
+| Animated video backgrounds | Modern browser with H.264 + `<video>` autoplay-muted support (all evergreen browsers) |
 
 ---
 
@@ -436,11 +506,19 @@ nixpkgs.overlays = [
 
 The plugin DLL serves the JS files from embedded resources — the three `<script>` tags just tell the browser to load them. Rebuild your NixOS config after adding the overlay and restart Jellyfin.
 
+### Video backgrounds don't play
+
+The 4 HD video cosmetics need browser MP4/H.264 + autoplay-muted support. Every evergreen browser handles this fine, but if you see a static page where there should be motion:
+- Check the browser's autoplay policy (Chrome: `chrome://flags/#autoplay-policy`)
+- The video element is set to `muted + playsinline` so it should autoplay everywhere; if your browser still blocks it, click anywhere on the page once
+- Low-end devices (old TVs, basic streamers) may stutter — switch to a CSS-only bg or "None" via Loadout → Cosmetics
+
 ---
 
 ## 📡 API endpoints
 
 ### User-facing (require auth)
+
 ```
 GET    /Plugins/AchievementBadges/users/{userId}                      — full badge list
 GET    /Plugins/AchievementBadges/users/{userId}/summary              — unlocked/total/score
@@ -450,9 +528,7 @@ POST   /Plugins/AchievementBadges/users/{userId}/equipped/{badgeId}
 DELETE /Plugins/AchievementBadges/users/{userId}/equipped/{badgeId}
 GET    /Plugins/AchievementBadges/users/{userId}/recap?period=week|month|year
 GET    /Plugins/AchievementBadges/users/{userId}/watch-calendar?days=90
-GET    /Plugins/AchievementBadges/users/{userId}/quests               — daily + weekly
-GET    /Plugins/AchievementBadges/users/{userId}/daily-quest
-GET    /Plugins/AchievementBadges/users/{userId}/weekly-quest
+GET    /Plugins/AchievementBadges/users/{userId}/quests               — daily + weekly + reroll state
 GET    /Plugins/AchievementBadges/users/{userId}/bank                 — score bank + prestige
 POST   /Plugins/AchievementBadges/users/{userId}/prestige
 POST   /Plugins/AchievementBadges/users/{userId}/buy-badge/{badgeId}
@@ -468,7 +544,23 @@ GET    /Plugins/AchievementBadges/leaderboard/{category}?limit=10     — score|
 GET    /Plugins/AchievementBadges/server/stats
 ```
 
+### v2.0 — Power-ups, Shop, Cosmetics, Quest reroll
+
+```
+GET    /Plugins/AchievementBadges/users/{userId}/powerups             — inventory + active state + ScoreBank
+POST   /Plugins/AchievementBadges/users/{userId}/powerups/use/{type}  — XpBoost | DoubleCredit (StreakFreeze auto-only)
+GET    /Plugins/AchievementBadges/shop/catalog                        — full shop catalog
+POST   /Plugins/AchievementBadges/users/{userId}/shop/purchase        — body: {"ItemId":"..."}
+GET    /Plugins/AchievementBadges/users/{userId}/cosmetics            — owned + equipped state + LifetimeScore
+POST   /Plugins/AchievementBadges/users/{userId}/cosmetics/equip      — body: {"CosmeticId":"..."}
+POST   /Plugins/AchievementBadges/users/{userId}/cosmetics/unequip?kind=ProfileTheme|BadgeFrame|RankTitle|Avatar|Background|ProfileBorder
+POST   /Plugins/AchievementBadges/users/{userId}/quests/daily/reroll
+POST   /Plugins/AchievementBadges/users/{userId}/quests/weekly/reroll
+GET    /Plugins/AchievementBadges/asset/{name}                        — animated background mp4s (range-enabled)
+```
+
 ### Admin-only (require `RequiresElevation`)
+
 ```
 POST   /Plugins/AchievementBadges/users/{userId}/backfill
 POST   /Plugins/AchievementBadges/backfill-all
@@ -481,17 +573,21 @@ GET/POST  /Plugins/AchievementBadges/admin/badge-catalog              — enable
 GET/POST  /Plugins/AchievementBadges/admin/custom-badges              — custom badge definitions
 GET/POST  /Plugins/AchievementBadges/admin/challenges                 — seasonal challenges
 GET       /Plugins/AchievementBadges/admin/challenge-templates        — one-click templates
-GET/POST  /Plugins/AchievementBadges/admin/webhook                    — webhook config
+GET/POST  /Plugins/AchievementBadges/admin/webhook                    — webhook config (incl. HMAC secret)
 GET/POST  /Plugins/AchievementBadges/admin/ui-features                — UI feature toggles
 GET       /Plugins/AchievementBadges/admin/audit-log?limit=200
 POST      /Plugins/AchievementBadges/admin/users/{userId}/inject-counters
-GET/POST  /Plugins/AchievementBadges/admin/feature-config              — feature kill switches + admin controls
-DELETE    /Plugins/AchievementBadges/admin/users/{userId}/reset         — wipe user's achievement progress
+GET/POST  /Plugins/AchievementBadges/admin/feature-config             — feature kill switches + admin controls
+DELETE    /Plugins/AchievementBadges/admin/users/{userId}/reset       — wipe user's achievement progress
+
+POST   /Plugins/AchievementBadges/admin/users/{userId}/test/inject-playbacks    — verify integrity caps end-to-end (v1.9.8)
+DELETE /Plugins/AchievementBadges/admin/users/{userId}/badges/{badgeId}          — manual badge revoke (v1.9.8)
+
+POST   /Plugins/AchievementBadges/admin/users/{userId}/grant-score              — v2.0 testing
+POST   /Plugins/AchievementBadges/admin/users/{userId}/grant-powerup/{type}     — v2.0 testing
+POST   /Plugins/AchievementBadges/admin/users/{userId}/grant-cosmetic           — v2.0 testing
+POST   /Plugins/AchievementBadges/admin/backfill-milestones                     — v2.0: retroactively unlock title milestones across all profiles
 ```
-
----
-
-See the [Releases page](https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases) for full notes.
 
 ---
 
@@ -507,7 +603,7 @@ Pops up during playback when a badge unlocks. Xbox circle pops in with pulse rin
 > **Live demo:** download [`achievement-combined.html`](assets/achievement-combined.html) (regular) or [`achievement-combined-rare.html`](assets/achievement-combined-rare.html) (rare with diamond) and open in a browser. Click anywhere to start the sound. Loops every 10.5s.
 
 ### The standalone Achievements page
-The full profile view, shown in the Jellyfin sidebar. Rank progress bar, day streak, score, completion percentage, and the tab bar for the seven sub-views (My Badges, Quests, Recap, Leaderboard, Compare, Activity, Wrapped, Stats).
+The full profile view, shown in the Jellyfin sidebar. Rank progress bar, day streak, score, completion percentage, and the tab bar (My Badges, Quests, Recap, Leaderboard, Compare, Activity, Wrapped, Stats, and the new **Loadout** tab from v2.0).
 
 <p align="center">
   <img alt="Achievements page" src="assets/screenshots/achievements-page.png" />
@@ -528,7 +624,7 @@ Genre specialist badges and streak extremes across all six rarity colors — Com
 </p>
 
 ### Daily and weekly quests
-Rotating quests from a template pool. Everyone on the server gets the same daily + weekly challenges so people can race each other. Completing them pays into the score bank.
+Rotating quests from a template pool. Everyone on the server gets the same daily + weekly challenges so people can race each other. Completing them pays into the score bank. In v2.0, each section header has a reroll button.
 
 <p align="center">
   <img alt="Daily and weekly quests" src="assets/screenshots/quests.png" />
@@ -536,6 +632,7 @@ Rotating quests from a template pool. Everyone on the server gets the same daily
 
 ### Recap
 Weekly, monthly and yearly breakdowns of what you've actually watched — total items, active days, top genres, top directors, and top actors.
+
 <p align="center">
   <img alt="Recap view" src="assets/screenshots/recap.png" />
 </p>
@@ -583,7 +680,7 @@ SVG spider chart showing your top-5 genre distribution, and a 24-hour polar char
 </p>
 
 ### Admin panel
-Every admin section is collapsible so the page stays clean: webhook notifications, toast preview, UI feature toggles, visual badge editor, challenge templates, audit log, progress injection, custom badges, seasonal challenges, and per-badge enable/disable.
+Every admin section is collapsible so the page stays clean: webhook notifications, toast preview, UI feature toggles, visual badge editor, challenge templates, audit log, progress injection, custom badges, seasonal challenges, per-badge enable/disable, and the v2.0 testing tools (grant score / power-up / cosmetic, backfill milestones).
 
 <p align="center">
   <img alt="Admin panel" src="assets/screenshots/admin-panel.png" />
@@ -602,6 +699,26 @@ Auto-injected into the Jellyfin nav menu — no theme changes required.
 <p align="center">
   <img alt="Sidebar entry" src="assets/screenshots/sidebar-entry.png" />
 </p>
+
+---
+
+## 📜 Release history
+
+Full per-version notes and signed binaries live on the GitHub Releases page:
+
+➡ **[github.com/ZL154/AchievementBadges_for_Jellyfin/releases](https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases)**
+
+Highlights:
+
+- **v2.0.0** — Choose Your Loadout: power-ups, score shop, 70+ cosmetics, 8 video backgrounds, full i18n
+- **v1.9.8** — Integrity release: closes playback-credit exploits (mark-as-played, seek-to-end, spam-click no longer credit), real-watch credit gate (≥80% accumulated play ticks with seeks excluded), 60s minimum runtime filter, daily credit cap, suspicious-rate audit flag, manual badge revoke
+- **v1.9.7** — Security-only: per-user chat attachment quota, profile-card CSP tightening, SVG sanitizer adds SMIL blocking, webhook DNS timeout
+- **v1.9.6** — Toast description fix, playback popups default-on, server-user picker on admin/config pages
+- **v1.9.5** — Chat attachment fix, security hardening
+- **v1.9.4** — 32 new badges (afternoon, prime time, holidays expansion, anime tier, studio specialists, pilot vs completer) + 8-language hand-tailored translations
+- **v1.9.0** — Revamp UI (Classic/Revamp toggle), Friends drawer Revamp, "Offline — last watched", HMAC webhook signing, security upgrade (rate limit, CSP, audit log filter, GitHub Actions CI)
+- **v1.8** — Full messaging suite (1:1 + groups, attachments, read receipts, edit/delete, block, notifications)
+- **v1.7** — Friends drawer foundation, hand-translated French by [@frenchyx24](https://github.com/frenchyx24)
 
 ---
 
@@ -651,6 +768,7 @@ Pull requests are welcome. By submitting a contribution you agree that your chan
 - **Jellyfin** (GPL-2.0) — this plugin is a third-party extension for [Jellyfin](https://jellyfin.org/) and is not affiliated with or endorsed by the Jellyfin project. At build time it references `Jellyfin.Controller` and `Jellyfin.Model` NuGet packages, which remain under their own GPL-2.0 license.
 - **Xbox-style unlock toast** — the animation style is inspired by [Adam Cosman's Xbox One Achievement codepen](https://codepen.io/AdamCosman/pen/eYpNYgy) and was reimplemented from scratch. No original assets from that codepen ship with this plugin.
 - **Material Icons** (Apache 2.0) — icon glyphs referenced in the UI are provided by Jellyfin's own web client and are licensed by Google.
+- **Background video assets (v2.0)** — sourced from public-domain / royalty-free stock and transcoded to H.264 1080p loops for embedding. No external CDN; all assets ship inside the plugin DLL.
 
 See [LICENSE](LICENSE) for the full license text and third-party notices.
 
