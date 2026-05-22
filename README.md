@@ -80,7 +80,7 @@ Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin
 
 ## 🚀 What's new in v2.0 — Choose Your Loadout
 
-The plugin transitions from a passive achievement tracker into an active progression game. **Earn score by watching, spend it in the shop on power-ups + cosmetics, equip them to express your viewing identity.** Drop-in upgrade from v1.9.8 with no data migration. DLL size: 4 MB → 35 MB (the extra is 8 embedded MP4 video backgrounds at 1080p H.264).
+The plugin transitions from a passive achievement tracker into an active progression game. **Earn score by watching, spend it in the shop on power-ups + cosmetics, equip them to express your viewing identity.**
 
 ### ⚡ Power-ups
 
