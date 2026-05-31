@@ -1635,7 +1635,7 @@ font-size:0.88em;
                     </div>
                 </details>
 
-                <details class="abAdminSection" id="abV2TestSection" open style="margin-top:1em;">
+                <details class="abAdminSection" id="abV2TestSection" style="margin-top:1em;">
                     <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
                         🎮 v2.0 testing tools (admin)
                     </summary>
@@ -2712,16 +2712,26 @@ font-size:0.88em;
 
         profileTitle.textContent = tr('achievements.profile_title', 'Achievement Profile');
 
-        return fetchJson('Plugins/AchievementBadges/users/' + userId).then(function (badges) {
-            return Promise.all([
-                loadSummary(userId),
-                loadEquipped(userId),
-                loadLeaderboard(),
-                loadServerStats()
-            ]).then(function () {
+        // v2.0.1 — render badges as soon as their fetch resolves; don't gate
+        // the main grid on the four ancillary loads. Earlier versions used
+        // Promise.all for [summary, equipped, leaderboard, server-stats]
+        // and only rendered badges after ALL four resolved. Any single
+        // rejection (leaderboard, server-stats, etc.) caused the outer
+        // catch to clear the grid — leaving the user with just the
+        // equipped row at the top. Each ancillary load now swallows its
+        // own error so a transient miss can't suppress the grid.
+        var badgesPromise = fetchJson('Plugins/AchievementBadges/users/' + userId).then(function (badges) {
+            return loadEquipped(userId).catch(function () {}).then(function () {
                 renderBadges(badges);
+                return badges;
             });
         });
+
+        var summaryPromise     = loadSummary(userId).catch(function () {});
+        var leaderboardPromise = loadLeaderboard().catch(function () {});
+        var serverStatsPromise = loadServerStats().catch(function () {});
+
+        return Promise.all([badgesPromise, summaryPromise, leaderboardPromise, serverStatsPromise]);
     }
 
     function loadBadges() {

@@ -51,7 +51,7 @@ public class WatchHistoryBackfillService
     {
         var results = new List<object>();
 
-        foreach (var user in _userManager.Users)
+        foreach (var user in _userManager.EnumerateAll())
         {
             var result = RunBackfillForUser(user.Id, user.Username);
             results.Add(result);

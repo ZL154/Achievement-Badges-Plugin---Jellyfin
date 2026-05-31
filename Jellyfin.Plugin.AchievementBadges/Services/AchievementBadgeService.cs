@@ -1493,13 +1493,28 @@ public class AchievementBadgeService : IDisposable
             {
                 var diff = today.DayNumber - counters.LastWatchDate.Value.DayNumber;
 
-                // v2.0 - Streak Freeze: if exactly one day was missed,
-                // consume a banked freeze and backfill the WatchDate for
-                // the missed day so the streak math treats the gap as
-                // filled. Skips when the user has zero freezes banked.
-                if (diff == 2 && _powerUps?.TryConsumeStreakFreeze(profile) == true)
+                // v2.0.1 - Streak Freeze: consume one banked freeze per
+                // missed day (up to the number banked) and backfill the
+                // WatchDate for each so the streak math treats the gap as
+                // filled. Earlier versions only handled a 1-day gap which
+                // meant a 2+ day gap never consumed any freezes, leaving
+                // banked freezes appearing to "persist forever". Multi-day
+                // gaps now spend freezes one-per-day; if there aren't
+                // enough to cover the whole gap, freezes still get spent
+                // for the days they can cover (matches Duolingo's model).
+                if (diff >= 2)
                 {
-                    counters.WatchDates.Add(counters.LastWatchDate.Value.AddDays(1).ToString("yyyy-MM-dd"));
+                    var missedDays = diff - 1;
+                    var consumed = 0;
+                    while (consumed < missedDays
+                           && _powerUps?.TryConsumeStreakFreeze(profile) == true)
+                    {
+                        counters.WatchDates.Add(
+                            counters.LastWatchDate.Value
+                                .AddDays(consumed + 1)
+                                .ToString("yyyy-MM-dd"));
+                        consumed++;
+                    }
                 }
 
                 if (diff >= 1)

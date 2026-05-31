@@ -92,7 +92,7 @@ public class LibraryCompletionService
     public Dictionary<string, Dictionary<string, int>> RecomputeAll()
     {
         var all = new Dictionary<string, Dictionary<string, int>>();
-        foreach (var user in _userManager.Users)
+        foreach (var user in _userManager.EnumerateAll())
         {
             all[user.Id.ToString("D")] = RecomputeForUser(user.Id);
         }

@@ -762,7 +762,7 @@ public class MessagingService : IDisposable
     {
         try
         {
-            var user = _userManager.Users.FirstOrDefault(u =>
+            var user = _userManager.EnumerateAll().FirstOrDefault(u =>
                 u.Id.ToString("N").Equals(userId, StringComparison.OrdinalIgnoreCase));
             if (user != null) return user.Username;
         }

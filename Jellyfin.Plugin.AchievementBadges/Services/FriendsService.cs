@@ -191,7 +191,7 @@ public class FriendsService
         {
             try
             {
-                friends = _userManager.Users
+                friends = _userManager.EnumerateAll()
                     .Where(u => u != null)
                     .Select(u => u.Id.ToString("N"))
                     .Where(uid => !string.Equals(uid, userId, StringComparison.OrdinalIgnoreCase))
