@@ -99,7 +99,7 @@ public class StandalonePageController : ControllerBase
 </head>
 <body>
   <div id=""achievement-root""></div>
-  <script src=""{origin}/Plugins/AchievementBadges/client-script/standalone.js""></script>
+  <script src=""{origin}/Plugins/AchievementBadges/client-script/standalone""></script>
 </body>
 </html>";
 
