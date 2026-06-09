@@ -3197,6 +3197,19 @@ public class AchievementBadgeService : IDisposable
     private Timer? _saveTimer;
     private bool _savePending;
 
+    /// <summary>[v2.1.0 "Open Library" M6] Public hook for services that
+    /// mutate badge state outside the normal RecordPlayback /
+    /// EvaluateBadges pipeline (e.g. <c>TimeWindowedRecomputeService</c>
+    /// cleanup). Forces an immediate persist to the badges.json sidecar
+    /// so admin-initiated changes survive a restart.</summary>
+    public void SaveExternallyChangedProfiles()
+    {
+        lock (_lock)
+        {
+            Save();
+        }
+    }
+
     private void Save()
     {
         if (_loadFailed)

@@ -28,6 +28,9 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         // detection + admin guidance for Linux bare-metal users whose
         // /usr/share/jellyfin/web isn't writable (issue #26, jojolll).
         serviceCollection.AddSingleton<JellyfinJsInjectorBridge>();
+        // [v2.1.0 "Open Library" M6] Audit + cleanup for time-windowed
+        // badges wrongly awarded by pre-v2.1.0 backfill (issue #27).
+        serviceCollection.AddSingleton<TimeWindowedRecomputeService>();
         serviceCollection.AddSingleton<PlaybackCompletionService>();
         serviceCollection.AddSingleton<WatchHistoryBackfillService>();
         serviceCollection.AddSingleton<LibraryCompletionService>();
