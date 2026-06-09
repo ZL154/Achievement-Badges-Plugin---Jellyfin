@@ -1791,18 +1791,21 @@ public class AchievementBadgeService : IDisposable
                 counters.WeekendSessions++;
             }
 
-            // v1.9.3 — Anime detection: any genre containing "anime"
-            // (case-insensitive). Mirrors the StarTrack plugin's classifier.
-            if (context.Genres is { Count: > 0 })
+            // [v2.1.0 "Open Library", issue #25] Anime detection — Daemon-
+            // Network reported false-negatives. Root cause: v2.0.x only read
+            // Genres on the item itself, but (a) many libraries classify
+            // anime via Tags rather than Genres, and (b) Episodes typically
+            // don't inherit Genres from their parent Series — so a Series
+            // tagged "Anime" produced Episodes with empty genre arrays at
+            // playback. v2.1.0 now checks BOTH Genres and Tags from BOTH
+            // the played item and its parent Series (the
+            // PlaybackCompletionTracker unions them via GetEffectiveGenres
+            // / GetEffectiveTags), AND admins can configure the matching
+            // strings + a library-name allowlist for libraries dedicated
+            // to anime that don't tag individual items.
+            if (IsAnimeContent(context))
             {
-                foreach (var g in context.Genres)
-                {
-                    if (!string.IsNullOrWhiteSpace(g) && g.IndexOf("anime", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        counters.AnimeItemsWatched++;
-                        break;
-                    }
-                }
+                counters.AnimeItemsWatched++;
             }
 
             // v1.9.3 — Studio specialists. Bumps a per-studio counter so
@@ -1901,7 +1904,19 @@ public class AchievementBadgeService : IDisposable
             // For historical backfills, use the original played date as the unlock stamp so the
             // toast poller's "UnlockedAt > LAST_SEEN" check won't match (stops scan-spam toasts).
             var unlockStamp = context.Silent ? timestamp : (DateTimeOffset?)null;
-            EvaluateBadges(profile, userId, silent: context.Silent, unlockTimestamp: unlockStamp);
+            // [v2.1.0 "Open Library", issue #27] When the call comes from
+            // the backfill scan (context.Silent = true) and the admin
+            // hasn't opted out via BackfillSkipTimeWindowedBadges, skip
+            // any badge with a TimeWindow set — see EvaluateBadges'
+            // skipTimeWindowed branch + the AchievementDefinitions
+            // InferTimeWindow mapping. Earn-source also stamps as
+            // Backfill so the M6 audit-cleanup tool can identify these
+            // as bulk-load awards rather than realtime earnings.
+            var inBackfill = context.Silent;
+            var skipTw = inBackfill && (Plugin.Instance?.Configuration?.BackfillSkipTimeWindowedBadges ?? true);
+            var src = inBackfill ? EarnSource.Backfill : EarnSource.RealTime;
+            EvaluateBadges(profile, userId, silent: context.Silent, unlockTimestamp: unlockStamp,
+                           skipTimeWindowed: skipTw, earnSource: src);
             Save();
 
             _logger.LogInformation(
@@ -2360,7 +2375,13 @@ public class AchievementBadgeService : IDisposable
             .ToList();
     }
 
-    private void EvaluateBadges(UserAchievementProfile profile, string userId, bool silent = false, DateTimeOffset? unlockTimestamp = null)
+    private void EvaluateBadges(
+        UserAchievementProfile profile,
+        string userId,
+        bool silent = false,
+        DateTimeOffset? unlockTimestamp = null,
+        bool skipTimeWindowed = false,
+        EarnSource earnSource = EarnSource.RealTime)
     {
         var newlyUnlocked = new List<AchievementBadge>();
         var stamp = unlockTimestamp ?? DateTimeOffset.UtcNow;
@@ -2369,6 +2390,17 @@ public class AchievementBadgeService : IDisposable
         foreach (var def in GetActiveDefinitions())
         {
             if (IsBadgeCategoryDisabled(def.Category, disabledCategories)) continue;
+
+            // [v2.1.0 "Open Library", issue #27] Skip time-windowed badges
+            // during the initial backfill scan. Backfill iterates lifetime
+            // totals; time-windowed metrics (max-in-single-day, etc) can't
+            // be correctly awarded against cumulative counts because the
+            // per-bucket maximum collapses to the overall total on a
+            // server whose userdata reports an inaccurate LastPlayedDate.
+            // jojolll's #27 reproduction. The M6 admin "Recompute time-
+            // windowed badges" tool walks history with proper day-
+            // bucketing for retroactive credit.
+            if (skipTimeWindowed && def.TimeWindow is not null) continue;
 
             var badge = profile.Badges.FirstOrDefault(b => b.Id.Equals(def.Id, StringComparison.OrdinalIgnoreCase));
             if (badge is null)
@@ -2386,7 +2418,11 @@ public class AchievementBadgeService : IDisposable
             {
                 badge.Unlocked = true;
                 badge.UnlockedAt = stamp;
-                _logger.LogInformation("Unlocked badge {BadgeId} for user {UserId} (silent={Silent})", def.Id, userId, silent);
+                // [v2.1.0 "Open Library"] Stamp the earn source so the M6
+                // audit-cleanup tool can tell apart genuine real-time
+                // earnings (RealTime) from backfill artefacts (Backfill).
+                badge.EarnSource = earnSource;
+                _logger.LogInformation("Unlocked badge {BadgeId} for user {UserId} (silent={Silent} source={Source})", def.Id, userId, silent, earnSource);
                 newlyUnlocked.Add(badge);
             }
 
@@ -3210,5 +3246,70 @@ public class AchievementBadgeService : IDisposable
             TargetValue = badge.TargetValue,
             Rarity = badge.Rarity
         };
+    }
+
+    /// <summary>[v2.1.0 "Open Library", issue #25] Decides whether a played
+    /// item counts as anime. Three signals, OR'd together:
+    /// <list type="bullet">
+    ///   <item>LibraryName matches any entry in <c>AnimeLibraries</c>
+    ///         (case-insensitive equality).</item>
+    ///   <item>Any of the item's Genres contains any of <c>AnimeGenres</c>
+    ///         as a case-insensitive substring (default: "anime").</item>
+    ///   <item>Any of the item's Tags contains any of <c>AnimeTags</c>
+    ///         as a case-insensitive substring (default: "anime").</item>
+    /// </list>
+    /// Genres / Tags include both the item's own values AND those of its
+    /// parent Series (unioned in <c>PlaybackCompletionTracker.GetEffective*</c>).
+    /// </summary>
+    private static bool IsAnimeContent(PlaybackContext context)
+    {
+        var cfg = Plugin.Instance?.Configuration;
+
+        // Library-name allowlist — case-insensitive equality.
+        var animeLibs = cfg?.AnimeLibraries;
+        if (animeLibs is { Count: > 0 } && !string.IsNullOrWhiteSpace(context.LibraryName))
+        {
+            foreach (var lib in animeLibs)
+            {
+                if (!string.IsNullOrWhiteSpace(lib)
+                    && string.Equals(context.LibraryName.Trim(), lib.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        // Substring match against Genres or Tags. v2.0.x only checked
+        // Genres with a hard-coded "anime" — v2.1.0 reads the
+        // admin-configured lists (default ["anime"] for both) and
+        // matches case-insensitively against both fields.
+        var animeGenreSubstrings = cfg?.AnimeGenres;
+        var animeTagSubstrings = cfg?.AnimeTags;
+
+        if (ContainsAnySubstring(context.Genres, animeGenreSubstrings)) return true;
+        if (ContainsAnySubstring(context.Tags, animeTagSubstrings)) return true;
+
+        return false;
+    }
+
+    /// <summary>[v2.1.0 "Open Library"] Case-insensitive substring sweep —
+    /// returns true when any value in <paramref name="haystack"/> contains
+    /// any of the <paramref name="needles"/>. Empty / null inputs return
+    /// false (no false-positives from missing config).</summary>
+    private static bool ContainsAnySubstring(System.Collections.Generic.IReadOnlyList<string>? haystack,
+                                             System.Collections.Generic.IReadOnlyList<string>? needles)
+    {
+        if (haystack is null || haystack.Count == 0) return false;
+        if (needles is null || needles.Count == 0) return false;
+        foreach (var hay in haystack)
+        {
+            if (string.IsNullOrWhiteSpace(hay)) continue;
+            foreach (var needle in needles)
+            {
+                if (string.IsNullOrWhiteSpace(needle)) continue;
+                if (hay.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            }
+        }
+        return false;
     }
 }

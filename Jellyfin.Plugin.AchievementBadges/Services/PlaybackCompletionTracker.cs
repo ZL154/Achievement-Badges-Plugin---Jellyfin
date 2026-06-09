@@ -276,7 +276,14 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
                 ProductionYear = item.ProductionYear,
                 ProductionLocations = item.ProductionLocations,
                 OriginalLanguage = GetOriginalLanguage(item),
-                Genres = item.Genres,
+                Genres = GetEffectiveGenres(item),
+                // [v2.1.0 "Open Library", issue #25] Pass Tags through so the
+                // anime detector + future tag-driven badges can match against
+                // them. Daemon-Network's setup uses Tags rather than Genres
+                // and v2.0.x only read Genres. Inherits from parent Series
+                // for Episodes since genres/tags typically live on the Series
+                // node, not on each Episode.
+                Tags = GetEffectiveTags(item),
                 RunTimeTicks = item.RunTimeTicks,
                 Directors = directors,
                 Actors = actors,
@@ -393,6 +400,63 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             _logger.LogDebug(ex, "[AchievementBadges] Failed to resolve collection folder for item {ItemId}.", item.Id);
             return null;
         }
+    }
+
+    // [v2.1.0 "Open Library", issue #25] Read Genres from the item AND its
+    // parent Series (for Episodes). Daemon-Network's anime classification
+    // sits on the Series node — Episodes deliver an empty Genres array at
+    // playback. Union of (item.Genres ∪ Series.Genres) gives the detector
+    // a complete picture. Same reflection-based safety as GetSeriesIdString.
+    private static IReadOnlyList<string>? GetEffectiveGenres(BaseItem item)
+    {
+        var own = item.Genres;
+        var parent = TryGetSeriesProperty<string[]>(item, "Genres");
+        return UnionStrings(own, parent);
+    }
+
+    /// <summary>[v2.1.0 "Open Library", issue #25] Same pattern as
+    /// <see cref="GetEffectiveGenres"/> but for Tags. v2.0.x didn't read Tags
+    /// at all; many users tag rather than genre-classify their anime.</summary>
+    private static IReadOnlyList<string>? GetEffectiveTags(BaseItem item)
+    {
+        var own = item.Tags;
+        var parent = TryGetSeriesProperty<string[]>(item, "Tags");
+        return UnionStrings(own, parent);
+    }
+
+    /// <summary>[v2.1.0 "Open Library"] Best-effort reflection read of a
+    /// property on the played item's parent Series (Episode → Series).
+    /// Returns null if the item isn't an Episode, the Series accessor
+    /// isn't present, or any access throws — anime detection just
+    /// falls back to the item's own value in that case.</summary>
+    private static T? TryGetSeriesProperty<T>(BaseItem item, string propertyName) where T : class
+    {
+        try
+        {
+            var seriesProp = item.GetType().GetProperty("Series");
+            if (seriesProp is null) return null;
+            var series = seriesProp.GetValue(item);
+            if (series is null) return null;
+            var targetProp = series.GetType().GetProperty(propertyName);
+            return targetProp?.GetValue(series) as T;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>[v2.1.0 "Open Library"] Combine two possibly-null string
+    /// arrays, de-dupe case-insensitively, and return a list. Returns null
+    /// if both sources are empty so PlaybackContext.Tags / Genres can keep
+    /// its v2.0.x nullable shape for callers that gate on null.</summary>
+    private static IReadOnlyList<string>? UnionStrings(IReadOnlyList<string>? a, string[]? b)
+    {
+        if ((a is null || a.Count == 0) && (b is null || b.Length == 0)) return null;
+        var set = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        if (a is not null) foreach (var s in a) if (!string.IsNullOrWhiteSpace(s)) set.Add(s);
+        if (b is not null) foreach (var s in b) if (!string.IsNullOrWhiteSpace(s)) set.Add(s);
+        return set.Count == 0 ? null : new System.Collections.Generic.List<string>(set);
     }
 
     // v1.9.3 — Read Episode.SeriesId via reflection to stay version-agnostic

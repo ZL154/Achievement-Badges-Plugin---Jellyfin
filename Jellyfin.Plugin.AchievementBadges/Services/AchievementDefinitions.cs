@@ -5,7 +5,44 @@ namespace Jellyfin.Plugin.AchievementBadges.Services;
 
 public static class AchievementDefinitions
 {
-    public static IReadOnlyList<AchievementDefinition> All { get; } = new List<AchievementDefinition>
+    public static IReadOnlyList<AchievementDefinition> All { get; } = BuildAll();
+
+    /// <summary>[v2.1.0 "Open Library", issue #27] Builds the built-in
+    /// catalog and post-processes each entry to set <c>TimeWindow</c>
+    /// based on the metric kind. Doing this centrally avoids touching
+    /// the ~20 individual badge definitions below — any badge whose
+    /// metric is intrinsically per-day automatically inherits
+    /// <see cref="BadgeTimeWindow.Daily"/>. Future Weekly / Monthly
+    /// metrics extend <c>InferTimeWindow</c> here.</summary>
+    private static IReadOnlyList<AchievementDefinition> BuildAll()
+    {
+        var list = BuildRawList();
+        foreach (var def in list)
+        {
+            if (def.TimeWindow is null)
+            {
+                def.TimeWindow = InferTimeWindow(def.Metric);
+            }
+        }
+        return list;
+    }
+
+    /// <summary>[v2.1.0 "Open Library", issue #27] Map a metric to the
+    /// time window it implies. Lifetime-cumulative metrics return null
+    /// (default — backfill processes them normally). The three
+    /// per-day-maximum metrics return Daily so
+    /// <c>WatchHistoryBackfillService</c> skips their badges during the
+    /// initial scan (lifetime-cumulative scans can't correctly award
+    /// per-day badges; see jojolll's #27 reproduction).</summary>
+    private static BadgeTimeWindow? InferTimeWindow(AchievementMetric metric) => metric switch
+    {
+        AchievementMetric.MaxMoviesInSingleDay => BadgeTimeWindow.Daily,
+        AchievementMetric.MaxEpisodesInSingleDay => BadgeTimeWindow.Daily,
+        AchievementMetric.MaxMinutesInSingleDay => BadgeTimeWindow.Daily,
+        _ => null
+    };
+
+    private static List<AchievementDefinition> BuildRawList() => new()
     {
         new() { Id = "first-contact", Key = "first_contact", Title = "First Contact", Description = "Watch your first item.", Icon = "play_circle", Category = "Getting Started", Rarity = "Common", Metric = AchievementMetric.TotalItemsWatched, TargetValue = 1 },
         new() { Id = "media-explorer", Key = "media_explorer", Title = "Media Explorer", Description = "Watch 3 items.", Icon = "travel_explore", Category = "Getting Started", Rarity = "Common", Metric = AchievementMetric.TotalItemsWatched, TargetValue = 3 },

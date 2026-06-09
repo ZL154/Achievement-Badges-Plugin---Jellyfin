@@ -18,6 +18,15 @@ public class PlaybackContext
     public IReadOnlyList<string>? ProductionLocations { get; set; }
     public string? OriginalLanguage { get; set; }
     public IReadOnlyList<string>? Genres { get; set; }
+
+    /// <summary>[v2.1.0 "Open Library", issue #25] Tags from the played item
+    /// AND inherited from its parent Series (for Episodes). Used by the
+    /// anime detector and any future tag-driven badges. Many users
+    /// classify their anime via Tags rather than Genres, and even those
+    /// who use Genres often set them only on the Series (not on each
+    /// Episode); the tracker now reads both fields from both levels.</summary>
+    public IReadOnlyList<string>? Tags { get; set; }
+
     public long? RunTimeTicks { get; set; }
 
     public bool IsRewatch { get; set; }

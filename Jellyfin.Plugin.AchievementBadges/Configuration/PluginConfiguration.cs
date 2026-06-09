@@ -20,6 +20,51 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public List<AchievementDefinition> Challenges { get; set; } = new();
 
+    // ─── v2.1.0 "Open Library" — anime detection (issue #25) ──────────
+    // Daemon-Network reported that anime badges didn't fire on his
+    // library despite items being tagged. Two root causes: (a) v2.0.x
+    // only checked Genres, never Tags; (b) Episodes typically don't
+    // inherit Genres from their parent Series in Jellyfin's metadata
+    // model, so an "Anime"-tagged Series produces episodes with empty
+    // genre arrays at playback. v2.1.0 fixes both, AND lets admins
+    // configure the heuristic explicitly in case their library shape
+    // is unusual.
+
+    /// <summary>Library names that should count every item as anime,
+    /// regardless of genres/tags. Default empty — fall back to the
+    /// genre/tag substring check. Useful for users who keep a dedicated
+    /// "Anime" library and don't tag individual items.</summary>
+    public List<string> AnimeLibraries { get; set; } = new();
+
+    /// <summary>Genre substrings (case-insensitive) that classify an item
+    /// as anime. Default: ["anime"] (matches "Anime", "Anime Movie", etc).
+    /// Add "animation" if you want all animated content counted.</summary>
+    public List<string> AnimeGenres { get; set; } = new() { "anime" };
+
+    /// <summary>Tag substrings (case-insensitive) that classify an item
+    /// as anime. Default: ["anime"]. Daemon-Network's setup uses Tags
+    /// rather than Genres, so reading both was the missing piece.</summary>
+    public List<string> AnimeTags { get; set; } = new() { "anime" };
+
+    // ─── v2.1.0 "Open Library" — audiobook counting policy (M2/M3) ────
+
+    /// <summary>How audiobook playback is attributed across the new
+    /// Music and Books metrics. Default <see cref="AudiobookCounting.BooksOnly"/>.
+    /// Admins who treat audiobooks as a music-flavoured activity (or
+    /// want generous double-credit) can switch in settings.</summary>
+    public AudiobookCounting AudiobookCounting { get; set; } = AudiobookCounting.BooksOnly;
+
+    // ─── v2.1.0 "Open Library" — issue #27 backfill safety ────────────
+
+    /// <summary>Skip time-windowed badges (Daily / Weekly / Monthly)
+    /// during the initial WatchHistoryBackfillService scan. v2.0.x
+    /// silently awarded these based on lifetime totals (jojolll's
+    /// reproduction in #27 — "Watch 10 films in one day" unlocked when
+    /// a user just had 10 films in history). Default true. The M6
+    /// admin "Recompute time-windowed badges" tool walks history with
+    /// proper day-bucketing for retroactive credit.</summary>
+    public bool BackfillSkipTimeWindowedBadges { get; set; } = true;
+
     public string? WebhookUrl { get; set; }
 
     public bool WebhookEnabled { get; set; }

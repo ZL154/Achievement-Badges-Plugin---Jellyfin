@@ -27,4 +27,12 @@ public class AchievementBadge
     public int TargetValue { get; set; }
 
     public string Rarity { get; set; } = "Common";
+
+    /// <summary>[v2.1.0 "Open Library"] Records how this unlock was earned.
+    /// Lets the M6 "Audit + clean wrongly-awarded daily badges" tool tell
+    /// apart genuine real-time earnings from backfill artefacts. Defaults
+    /// to <see cref="EarnSource.Initial"/> so v2.0.x user-profile JSON
+    /// files deserialize cleanly without migration — those pre-existing
+    /// unlocks are treated as opaque history and never auto-cleaned.</summary>
+    public EarnSource EarnSource { get; set; } = EarnSource.Initial;
 }
