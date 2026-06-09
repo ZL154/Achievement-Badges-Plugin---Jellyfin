@@ -1556,6 +1556,54 @@ public class AchievementBadgeService : IDisposable
                 counters.EpisodesByDate[dayKey] += creditMultiplier;
             }
 
+            // ── v2.1.0 "Open Library" — Music / Audiobook / Book increments ──
+            // Routes per PluginConfiguration.AudiobookCounting:
+            //   BooksOnly  → audiobook = book progress only
+            //   MusicOnly  → audiobook = music progress only
+            //   Both       → audiobook bumps both music + book counters
+            // Decade is computed from ProductionYear if available
+            // (defensive — some music files have no year metadata).
+            var audiobookPolicy = Plugin.Instance?.Configuration?.AudiobookCounting
+                ?? Configuration.AudiobookCounting.BooksOnly;
+            var creditAsMusic = context.IsMusic
+                || (context.IsAudiobook && audiobookPolicy != Configuration.AudiobookCounting.BooksOnly);
+            var creditAsBook = context.IsBook
+                || (context.IsAudiobook && audiobookPolicy != Configuration.AudiobookCounting.MusicOnly);
+
+            if (creditAsMusic)
+            {
+                counters.MusicPlays += creditMultiplier;
+                var listenSec = (context.RunTimeTicks ?? 0) / TimeSpan.TicksPerSecond;
+                counters.MusicListeningSeconds += listenSec * creditMultiplier;
+
+                if (!string.IsNullOrWhiteSpace(context.Album))
+                    counters.MusicAlbumsListened.Add(context.Album.Trim());
+
+                // Prefer AlbumArtists (canonical) then fall back to track Artists
+                foreach (var a in context.AlbumArtists ?? context.Artists ?? Array.Empty<string>())
+                    if (!string.IsNullOrWhiteSpace(a))
+                        counters.MusicArtistsListened.Add(a.Trim());
+
+                foreach (var g in context.Genres ?? Array.Empty<string>())
+                    if (!string.IsNullOrWhiteSpace(g))
+                        counters.MusicGenresListened.Add(g.Trim());
+
+                if (context.ProductionYear is int musicYear && musicYear > 0)
+                    counters.MusicDecadesListened.Add(musicYear / 10 * 10);
+            }
+
+            if (creditAsBook)
+            {
+                counters.BooksCompleted += creditMultiplier;
+                // Audiobook listening time also tracked separately so
+                // "listening hours" badges differentiate from ebook reads.
+                if (context.IsAudiobook)
+                {
+                    var aSec = (context.RunTimeTicks ?? 0) / TimeSpan.TicksPerSecond;
+                    counters.AudiobookListeningSeconds += aSec * creditMultiplier;
+                }
+            }
+
             if (context.SeriesCompleted)
             {
                 counters.SeriesCompleted++;
@@ -2599,6 +2647,18 @@ public class AchievementBadgeService : IDisposable
             AchievementMetric.AnimeItemsWatched => counters.AnimeItemsWatched,
             AchievementMetric.SeriesSampledOnly => counters.SeriesSampledOnlyCount,
             AchievementMetric.SeriesBingedAfterPilot => counters.SeriesBingedAfterPilotCount,
+
+            // ── v2.1.0 "Open Library" — Music + Book metrics ──────────
+            AchievementMetric.MusicPlaysTotal => counters.MusicPlays,
+            AchievementMetric.MusicListeningHours => counters.MusicListeningHours,
+            AchievementMetric.UniqueMusicAlbums => counters.UniqueMusicAlbumsCount,
+            AchievementMetric.UniqueMusicArtists => counters.UniqueMusicArtistsCount,
+            AchievementMetric.UniqueMusicGenres => counters.UniqueMusicGenresCount,
+            AchievementMetric.UniqueMusicDecades => counters.UniqueMusicDecadesCount,
+            AchievementMetric.BooksCompleted => counters.BooksCompleted,
+            AchievementMetric.AudiobookListeningHours => counters.AudiobookListeningHours,
+            AchievementMetric.UniqueBookSeriesCompleted => counters.BookSeriesCompleted.Count,
+
             _ => 0
         };
     }

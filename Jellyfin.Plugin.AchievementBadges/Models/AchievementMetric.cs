@@ -65,5 +65,18 @@ public enum AchievementMetric
     StudioItemsWatched,
     // v1.9.3 — Pilot vs completer behavior.
     SeriesSampledOnly,
-    SeriesBingedAfterPilot
+    SeriesBingedAfterPilot,
+
+    // ─── v2.1.0 "Open Library" — Music metrics (M2) ───────────────────
+    MusicPlaysTotal,
+    MusicListeningHours,
+    UniqueMusicAlbums,
+    UniqueMusicArtists,
+    UniqueMusicGenres,
+    UniqueMusicDecades,
+
+    // ─── v2.1.0 "Open Library" — Book metrics (M3) ────────────────────
+    BooksCompleted,
+    AudiobookListeningHours,
+    UniqueBookSeriesCompleted,
 }

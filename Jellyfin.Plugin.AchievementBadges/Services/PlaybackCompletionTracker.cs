@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -195,8 +196,17 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             var itemType = item.GetType().Name;
             var isMovie = string.Equals(itemType, "Movie", StringComparison.OrdinalIgnoreCase);
             var isEpisode = string.Equals(itemType, "Episode", StringComparison.OrdinalIgnoreCase);
+            // [v2.1.0 "Open Library", M2/M3] Multi-media — v2.0.x bailed
+            // on anything non-Movie/Episode here. Now route Audio (music
+            // tracks), AudioBook, and Book items through the same
+            // pipeline. Each gets its own IsMusic/IsAudiobook/IsBook
+            // flag on the resulting PlaybackContext so the achievement
+            // service can update the right counter group.
+            var isMusic = string.Equals(itemType, "Audio", StringComparison.OrdinalIgnoreCase);
+            var isAudiobook = string.Equals(itemType, "AudioBook", StringComparison.OrdinalIgnoreCase);
+            var isBook = string.Equals(itemType, "Book", StringComparison.OrdinalIgnoreCase);
 
-            if (!isMovie && !isEpisode)
+            if (!isMovie && !isEpisode && !isMusic && !isAudiobook && !isBook)
             {
                 return;
             }
@@ -270,6 +280,15 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
                 ItemId = itemId,
                 IsMovie = isMovie,
                 IsEpisode = isEpisode,
+                // [v2.1.0 "Open Library", M2/M3] Multi-media flags + music
+                // metadata. Reflection-safe so older Jellyfin SDKs that
+                // expose Album / Artists differently still build.
+                IsMusic = isMusic,
+                IsAudiobook = isAudiobook,
+                IsBook = isBook,
+                Album = isMusic || isAudiobook ? GetItemString(item, "Album") : null,
+                Artists = isMusic || isAudiobook ? GetItemStringList(item, "Artists") : null,
+                AlbumArtists = isMusic ? GetItemStringList(item, "AlbumArtists") : null,
                 SeriesCompleted = false,
                 LibraryName = libraryName,
                 PlayedAt = DateTimeOffset.Now,
@@ -422,6 +441,46 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         var own = item.Tags;
         var parent = TryGetSeriesProperty<string[]>(item, "Tags");
         return UnionStrings(own, parent);
+    }
+
+    /// <summary>[v2.1.0 "Open Library", M2] Safe reflection read of a
+    /// string property on a Jellyfin BaseItem (e.g. <c>Album</c>). Different
+    /// Jellyfin SDK ABIs expose music metadata fields slightly differently;
+    /// reflection lets the same DLL work across versions and avoid hard
+    /// compile-time deps on the music-specific subclasses (Audio, AudioBook).
+    /// Returns null on any failure — the music tracker treats missing
+    /// metadata as "still credit the play, just no album/artist progress".</summary>
+    private static string? GetItemString(BaseItem item, string propertyName)
+    {
+        try
+        {
+            var prop = item.GetType().GetProperty(propertyName);
+            return prop?.GetValue(item) as string;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>[v2.1.0 "Open Library", M2] Same pattern but for string[]
+    /// properties (Artists, AlbumArtists). Returns a copy as a readonly list
+    /// so the PlaybackContext consumer can't mutate Jellyfin's internal state.</summary>
+    private static IReadOnlyList<string>? GetItemStringList(BaseItem item, string propertyName)
+    {
+        try
+        {
+            var prop = item.GetType().GetProperty(propertyName);
+            if (prop?.GetValue(item) is string[] arr && arr.Length > 0)
+            {
+                return new List<string>(arr);
+            }
+        }
+        catch
+        {
+            // best-effort; missing metadata just means no per-artist progress
+        }
+        return null;
     }
 
     /// <summary>[v2.1.0 "Open Library"] Best-effort reflection read of a

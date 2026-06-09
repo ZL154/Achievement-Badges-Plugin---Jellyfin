@@ -9,6 +9,21 @@ public class PlaybackContext
     public string? ItemId { get; set; }
     public bool IsMovie { get; set; }
     public bool IsEpisode { get; set; }
+
+    // [v2.1.0 "Open Library", M2/M3] Multi-media expansion. v2.0.x only
+    // produced contexts for Movie and Episode items; M2+M3 extend the
+    // tracker to fire for Audio (music + audiobook) and Book items
+    // too. AudiobookCounting policy lives in PluginConfiguration and
+    // is enforced by AchievementBadgeService.RecordPlayback when
+    // routing the increments.
+    public bool IsMusic { get; set; }
+    public bool IsAudiobook { get; set; }
+    public bool IsBook { get; set; }
+
+    // Music-specific metadata (null on non-music plays).
+    public string? Album { get; set; }
+    public IReadOnlyList<string>? Artists { get; set; }
+    public IReadOnlyList<string>? AlbumArtists { get; set; }
     public bool SeriesCompleted { get; set; }
     public int CompletedSeriesEpisodeCount { get; set; }
     public string? LibraryName { get; set; }

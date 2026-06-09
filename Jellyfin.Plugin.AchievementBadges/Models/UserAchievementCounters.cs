@@ -60,6 +60,31 @@ public class UserAchievementCounters
     // as the StarTrack plugin's anime tab classifier).
     public int AnimeItemsWatched { get; set; }
 
+    // ─── v2.1.0 "Open Library" — Music + Book counters (M2/M3) ────────
+    // Music plays come from Jellyfin "Audio" items. Audiobooks come from
+    // "AudioBook" items and route per PluginConfiguration.AudiobookCounting
+    // (BooksOnly default, MusicOnly, or Both). Books come from "Book" items
+    // (ebooks — Jellyfin's playback model marks them as read on completion,
+    // no reading-time signal so the Book counters are limited to completions).
+
+    public int MusicPlays { get; set; }
+    public long MusicListeningSeconds { get; set; }
+    public HashSet<string> MusicAlbumsListened { get; set; } = new();
+    public HashSet<string> MusicArtistsListened { get; set; } = new();
+    public HashSet<string> MusicGenresListened { get; set; } = new();
+    public HashSet<int> MusicDecadesListened { get; set; } = new();
+
+    public int BooksCompleted { get; set; }
+    public long AudiobookListeningSeconds { get; set; }
+    public HashSet<string> BookSeriesCompleted { get; set; } = new();
+
+    public int UniqueMusicAlbumsCount => MusicAlbumsListened.Count;
+    public int UniqueMusicArtistsCount => MusicArtistsListened.Count;
+    public int UniqueMusicGenresCount => MusicGenresListened.Count;
+    public int UniqueMusicDecadesCount => MusicDecadesListened.Count;
+    public int MusicListeningHours => (int)(MusicListeningSeconds / 3600);
+    public int AudiobookListeningHours => (int)(AudiobookListeningSeconds / 3600);
+
     // v1.9.3 — Studio specialists. Mirrors GenreItemCounts: keyed by
     // studio name, value = number of finished items credited to that studio.
     public Dictionary<string, int> StudioItemCounts { get; set; } = new();
