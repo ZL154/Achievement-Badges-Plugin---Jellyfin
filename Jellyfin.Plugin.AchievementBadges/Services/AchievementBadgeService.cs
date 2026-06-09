@@ -38,6 +38,10 @@ public class AchievementBadgeService : IDisposable
     // runtime is treated as "no power-up effects, no shop milestones".
     private readonly PowerUpService? _powerUps;
     private readonly ShopService? _shop;
+    // [v2.1.0 "Open Library" M4] Admin-defined badges with compound
+    // criteria. Optional so existing constructors still resolve in tests
+    // that don't wire the service.
+    private readonly CustomBadgeService? _customBadges;
 
     public AchievementBadgeService(
         IApplicationPaths applicationPaths,
@@ -46,7 +50,8 @@ public class AchievementBadgeService : IDisposable
         AuditLogService auditLog,
         ILogger<AchievementBadgeService> logger,
         PowerUpService? powerUps = null,
-        ShopService? shop = null)
+        ShopService? shop = null,
+        CustomBadgeService? customBadges = null)
     {
         _logger = logger;
         _userManager = userManager;
@@ -54,6 +59,7 @@ public class AchievementBadgeService : IDisposable
         _auditLog = auditLog;
         _powerUps = powerUps;
         _shop = shop;
+        _customBadges = customBadges;
 
         var pluginDataPath = Path.Combine(applicationPaths.PluginConfigurationsPath, "achievementbadges");
         Directory.CreateDirectory(pluginDataPath);
@@ -2477,6 +2483,62 @@ public class AchievementBadgeService : IDisposable
             if (wasUnlocked && badge.UnlockedAt is null)
             {
                 badge.UnlockedAt = stamp;
+            }
+        }
+
+        // ── [v2.1.0 "Open Library" M4] Evaluate admin-defined custom badges ──
+        // Built-in evaluation above iterates AchievementDefinitions catalogue.
+        // Custom badges are stored separately (sidecar JSON via
+        // CustomBadgeService) with their own compound AND/OR criteria.
+        // Skip-time-windowed-during-backfill applies identically. On unlock
+        // we stamp the same EarnSource so the M6 audit-cleanup tool treats
+        // built-ins and custom badges uniformly.
+        if (_customBadges is not null)
+        {
+            foreach (var cb in _customBadges.GetEnabled())
+            {
+                if (skipTimeWindowed && cb.TimeWindow is not null) continue;
+
+                var badge = profile.Badges.FirstOrDefault(b => b.Id.Equals(cb.Id, StringComparison.OrdinalIgnoreCase));
+                if (badge is null)
+                {
+                    badge = new AchievementBadge
+                    {
+                        Id = cb.Id,
+                        UserId = userId,
+                        Key = cb.Id,
+                        Title = cb.Name,
+                        Description = cb.Description,
+                        Icon = string.IsNullOrEmpty(cb.IconUrl) ? "emoji_events" : cb.IconUrl,
+                        Category = "Custom",
+                        Rarity = cb.Rarity,
+                    };
+                    profile.Badges.Add(badge);
+                }
+                else
+                {
+                    // Keep display fields in sync with any admin edits.
+                    badge.Title = cb.Name;
+                    badge.Description = cb.Description;
+                    badge.Icon = string.IsNullOrEmpty(cb.IconUrl) ? "emoji_events" : cb.IconUrl;
+                    badge.Rarity = cb.Rarity;
+                }
+
+                int Getter(AchievementMetric m, string? p) => GetMetricValue(profile.Counters, m, p, profile);
+
+                var (current, target) = CustomBadgeService.ProgressSignal(cb.Criteria, Getter);
+                badge.CurrentValue = current;
+                badge.TargetValue = target;
+
+                if (!badge.Unlocked && CustomBadgeService.Evaluate(cb.Criteria, Getter))
+                {
+                    badge.Unlocked = true;
+                    badge.UnlockedAt = stamp;
+                    badge.EarnSource = earnSource;
+                    _logger.LogInformation("Unlocked custom badge {BadgeId} ({Name}) for user {UserId} (source={Source})",
+                        cb.Id, cb.Name, userId, earnSource);
+                    newlyUnlocked.Add(badge);
+                }
             }
         }
 

@@ -20,6 +20,10 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<WebhookNotifier>();
         serviceCollection.AddSingleton<AuditLogService>();
         serviceCollection.AddSingleton<AchievementBadgeService>();
+        // [v2.1.0 "Open Library" M4] Admin-defined custom badges with
+        // compound criteria. Sidecar JSON storage; evaluated alongside
+        // built-ins by AchievementBadgeService.EvaluateBadges.
+        serviceCollection.AddSingleton<CustomBadgeService>();
         serviceCollection.AddSingleton<PlaybackCompletionService>();
         serviceCollection.AddSingleton<WatchHistoryBackfillService>();
         serviceCollection.AddSingleton<LibraryCompletionService>();
