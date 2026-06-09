@@ -24,6 +24,10 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         // compound criteria. Sidecar JSON storage; evaluated alongside
         // built-ins by AchievementBadgeService.EvaluateBadges.
         serviceCollection.AddSingleton<CustomBadgeService>();
+        // [v2.1.0 "Open Library" M5] JS Injector plugin presence
+        // detection + admin guidance for Linux bare-metal users whose
+        // /usr/share/jellyfin/web isn't writable (issue #26, jojolll).
+        serviceCollection.AddSingleton<JellyfinJsInjectorBridge>();
         serviceCollection.AddSingleton<PlaybackCompletionService>();
         serviceCollection.AddSingleton<WatchHistoryBackfillService>();
         serviceCollection.AddSingleton<LibraryCompletionService>();

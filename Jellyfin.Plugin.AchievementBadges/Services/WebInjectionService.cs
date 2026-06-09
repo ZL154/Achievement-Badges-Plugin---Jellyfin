@@ -58,13 +58,26 @@ public class WebInjectionService : IHostedService
     public static string DiagPatchedPath { get; internal set; } = "none";
     public static string DiagLastError { get; internal set; } = "none";
 
+    // [v2.1.0 "Open Library" M5] When the on-disk patch fails (typically
+    // Linux bare-metal where /usr/share/jellyfin/web is owned by root),
+    // surface admin guidance describing how to load the badges UI via
+    // the JS Injector plugin instead. Empty string means either the
+    // patch succeeded or no guidance is needed yet.
+    public static string DiagJsInjectorGuidance { get; internal set; } = string.Empty;
+
     private readonly IApplicationPaths _appPaths;
     private readonly ILogger<WebInjectionService> _logger;
+    // [v2.1.0 "Open Library" M5] Optional — null when the DI container
+    // hasn't wired the bridge yet (older composition + tests).
+    private readonly JellyfinJsInjectorBridge? _injectorBridge;
 
-    public WebInjectionService(IApplicationPaths appPaths, ILogger<WebInjectionService> logger)
+    public WebInjectionService(IApplicationPaths appPaths,
+                               ILogger<WebInjectionService> logger,
+                               JellyfinJsInjectorBridge? injectorBridge = null)
     {
         _appPaths = appPaths;
         _logger = logger;
+        _injectorBridge = injectorBridge;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -200,6 +213,25 @@ public class WebInjectionService : IHostedService
                 DiagLastError = $"{path} - {ex.Message}";
                 _logger.LogWarning(ex, "[AchievementBadges] Patch attempt failed at {P}", path);
             }
+        }
+
+        // [v2.1.0 "Open Library" M5, issue #26] If we reach here without
+        // a successful patch, surface admin guidance describing how to
+        // load the badges UI via the JS Injector plugin (jojolll's
+        // recommendation). Idempotent — overwrites any previous guidance
+        // since the relevant state can change across restarts.
+        try
+        {
+            var guidance = _injectorBridge?.GetAdminGuidance(diskPatchSucceeded: DiagIndexPatched);
+            DiagJsInjectorGuidance = guidance ?? string.Empty;
+            if (!DiagIndexPatched && !string.IsNullOrEmpty(guidance))
+            {
+                _logger.LogWarning("[AchievementBadges] {Guidance}", guidance);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[AchievementBadges] Generating JS Injector guidance threw — non-fatal");
         }
     }
 }
