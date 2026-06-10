@@ -2671,7 +2671,11 @@ font-size:0.88em;
     }
 
     function loadEquipped(userId) {
-        return fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped').then(function (badges) {
+        // [v2.1.0] Pass the picker language so equipped/pinned badge names
+        // localize like the rest of the page.
+        var _lng = (typeof _currentLang === 'function' ? _currentLang() : '');
+        var _q = _lng ? ('?lang=' + encodeURIComponent(_lng)) : '';
+        return fetchJson('Plugins/AchievementBadges/users/' + userId + '/equipped' + _q).then(function (badges) {
             renderEquippedBadges(badges);
             renderShowcase(badges);
         });
@@ -2828,7 +2832,9 @@ font-size:0.88em;
         // catch to clear the grid — leaving the user with just the
         // equipped row at the top. Each ancillary load now swallows its
         // own error so a transient miss can't suppress the grid.
-        var badgesPromise = fetchJson('Plugins/AchievementBadges/users/' + userId).then(function (badges) {
+        var _gLng = (typeof _currentLang === 'function' ? _currentLang() : '');
+        var _gQ = _gLng ? ('?lang=' + encodeURIComponent(_gLng)) : '';
+        var badgesPromise = fetchJson('Plugins/AchievementBadges/users/' + userId + _gQ).then(function (badges) {
             return loadEquipped(userId).catch(function () {}).then(function () {
                 renderBadges(badges);
                 return badges;

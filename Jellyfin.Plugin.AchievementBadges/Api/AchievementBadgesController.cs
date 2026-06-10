@@ -291,9 +291,17 @@ public class AchievementBadgesController : ControllerBase
 
     [HttpGet("users/{userId}")]
     [ProducesResponseType(typeof(List<AchievementBadge>), StatusCodes.Status200OK)]
-    public ActionResult<List<AchievementBadge>> GetBadgesForUser([FromRoute] string userId)
+    public ActionResult<List<AchievementBadge>> GetBadgesForUser([FromRoute] string userId, [FromQuery] string? lang = null)
     {
         var badges = _badgeService.GetBadgesForUser(userId);
+        // [v2.1.0] Localize the returned clones (CloneBadge — safe, not the
+        // stored objects) when the caller passes ?lang=. The admin page's
+        // badge grid + equipped showcase pass the picker language so titles/
+        // descriptions match the rest of the UI instead of staying English.
+        if (!string.IsNullOrWhiteSpace(lang))
+        {
+            foreach (var b in badges) Helpers.BadgeLocalizer.Localize(b, lang);
+        }
         return Ok(badges);
     }
 
@@ -465,9 +473,16 @@ public class AchievementBadgesController : ControllerBase
 
     [HttpGet("users/{userId}/equipped")]
     [ProducesResponseType(typeof(List<AchievementBadge>), StatusCodes.Status200OK)]
-    public ActionResult<List<AchievementBadge>> GetEquipped([FromRoute] string userId)
+    public ActionResult<List<AchievementBadge>> GetEquipped([FromRoute] string userId, [FromQuery] string? lang = null)
     {
         var badges = _badgeService.GetEquippedBadges(userId);
+        // [v2.1.0] Localize equipped/pinned badge clones too (fixes the
+        // showcase strip showing English names while the picker is set to
+        // another language).
+        if (!string.IsNullOrWhiteSpace(lang))
+        {
+            foreach (var b in badges) Helpers.BadgeLocalizer.Localize(b, lang);
+        }
         return Ok(badges);
     }
 
