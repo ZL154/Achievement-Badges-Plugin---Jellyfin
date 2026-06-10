@@ -1479,8 +1479,13 @@ font-size:0.88em;
                                     <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/>
                                 </g>
                             </svg>
-                            <select id="abLangSelect" aria-label="Language"
-                                    style="background:transparent;color:inherit;border:none;outline:none;font-size:0.9em;cursor:pointer;color-scheme:dark;">
+                            <style>
+                                /* Dropdown popup options were rendering white-on-white on some
+                                   browsers/themes — force a dark surface + light text. */
+                                #abLangSelect { background:transparent; color:#f8fafc; border:none; outline:none; font-size:0.9em; cursor:pointer; color-scheme:dark; }
+                                #abLangSelect option { background:#05070a; color:#f8fafc; }
+                            </style>
+                            <select id="abLangSelect" aria-label="Language">
                                 <option value="en">English</option>
                                 <option value="fr">Français</option>
                                 <option value="es">Español</option>
@@ -2171,6 +2176,9 @@ font-size:0.88em;
     var _abAdminDict = {};
     function pickLang() {
         try {
+            // Sticky manual override (globe picker) wins over everything.
+            var manual = (window.localStorage && localStorage.getItem('achievementBadgesLangManual')) || '';
+            if (manual) return manual;
             var stored = (window.localStorage && localStorage.getItem('achievementBadgesLang')) || '';
             if (stored) return stored;
         } catch (e) { /* ignore */ }
@@ -2333,6 +2341,11 @@ font-size:0.88em;
                         .then(function (r) { return r.ok ? r.json() : null; });
                 })
                 .then(function (prefs) {
+                    // Sticky manual override (globe picker) wins over the
+                    // server/user-default resolution and must not be clobbered.
+                    var manual = '';
+                    try { manual = (window.localStorage && localStorage.getItem('achievementBadgesLangManual')) || ''; } catch (e) {}
+                    if (manual) { return loadForLang(manual, absUrl, authHeaders); }
                     var userLang = (prefs && (prefs.Language || prefs.language) || '').toLowerCase();
                     var effective = (!userLang || userLang === 'default') ? adminLang : userLang;
                     if (!effective) effective = pickLang();
@@ -2353,7 +2366,15 @@ font-size:0.88em;
     // resolves its own URL via ApiClient / resolvePluginBase.
     window.abSetLanguage = function (lang) {
         if (!lang) return;
-        try { if (window.localStorage) localStorage.setItem('achievementBadgesLang', lang); } catch (e) {}
+        try {
+            if (window.localStorage) {
+                localStorage.setItem('achievementBadgesLang', lang);
+                // Sticky manual override — survives reload and is NOT clobbered
+                // by the server-default resolution in resolveAndLoad (which
+                // otherwise resets to the admin DefaultLanguage on every load).
+                localStorage.setItem('achievementBadgesLangManual', lang);
+            }
+        } catch (e) {}
         try { loadForLang(lang).catch(function () {}); } catch (e) {}
         try { document.documentElement.setAttribute('data-ab-lang', lang); } catch (e) {}
     };
