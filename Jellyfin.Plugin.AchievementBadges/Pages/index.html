@@ -1685,34 +1685,34 @@ font-size:0.88em;
                 </details>
 
                 <details class="abAdminSection" id="abV2TestSection" style="margin-top:1em;">
-                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;" data-i18n="admin.section_v2test">
                         🎮 v2.0 testing tools (admin)
                     </summary>
                     <div style="margin-top:0.5em;">
-                        <p class="secondaryText" style="margin-top:0;">
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.v2test.intro">
                             Grant score, power-ups, or cosmetics to a user without waiting for real watch progress. Useful for verifying the Loadout UI on a test profile or backfilling milestone titles after the v2.0 release.
                         </p>
 
                         <label style="display:block; margin-bottom:0.75em;">
-                            <span>Target user ID:</span><br>
+                            <span data-i18n="admin.v2test.user_id">Target user ID:</span><br>
                             <input type="text" id="abV2UserId" placeholder="User GUID (e.g. ab1234...)" style="width:100%; max-width:420px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
-                            <span class="secondaryText" style="font-size:0.85em; display:block; margin-top:0.25em;">Find the user GUID via Jellyfin Admin → Users → click a user; their GUID is in the URL.</span>
+                            <span class="secondaryText" style="font-size:0.85em; display:block; margin-top:0.25em;" data-i18n="admin.v2test.user_id_hint">Find the user GUID via Jellyfin Admin → Users → click a user; their GUID is in the URL.</span>
                         </label>
 
                         <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 0.75em 0;">
-                            <legend style="padding:0 0.5em; font-weight:600;">Grant score</legend>
+                            <legend style="padding:0 0.5em; font-weight:600;" data-i18n="admin.v2test.grant_score_legend">Grant score</legend>
                             <label style="display:block; margin-bottom:0.5em;">
-                                <span>Amount (positive adds, negative subtracts):</span><br>
+                                <span data-i18n="admin.v2test.score_amount">Amount (positive adds, negative subtracts):</span><br>
                                 <input type="number" id="abV2GrantScoreAmt" value="1000" style="width:160px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                             </label>
-                            <button is="emby-button" type="button" class="raised" id="abV2GrantScoreBtn">Grant score</button>
+                            <button is="emby-button" type="button" class="raised" id="abV2GrantScoreBtn" data-i18n="admin.v2test.btn_grant_score">Grant score</button>
                             <div id="abV2GrantScoreStatus" class="secondaryText" style="margin-top:0.4em;"></div>
                         </fieldset>
 
                         <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 0.75em 0;">
-                            <legend style="padding:0 0.5em; font-weight:600;">Grant power-up</legend>
+                            <legend style="padding:0 0.5em; font-weight:600;" data-i18n="admin.v2test.grant_pu_legend">Grant power-up</legend>
                             <label style="display:block; margin-bottom:0.5em;">
-                                <span>Type:</span><br>
+                                <span data-i18n="admin.v2test.type">Type:</span><br>
                                 <select id="abV2GrantPuType" style="padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                                     <option value="XpBoost">XP Boost</option>
                                     <option value="DoubleCredit">Double Credit</option>
@@ -1720,31 +1720,31 @@ font-size:0.88em;
                                 </select>
                             </label>
                             <label style="display:block; margin-bottom:0.5em;">
-                                <span>Count:</span><br>
+                                <span data-i18n="admin.v2test.count">Count:</span><br>
                                 <input type="number" id="abV2GrantPuCount" value="1" min="1" max="20" style="width:120px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                             </label>
-                            <button is="emby-button" type="button" class="raised" id="abV2GrantPuBtn">Grant power-up</button>
+                            <button is="emby-button" type="button" class="raised" id="abV2GrantPuBtn" data-i18n="admin.v2test.btn_grant_pu">Grant power-up</button>
                             <div id="abV2GrantPuStatus" class="secondaryText" style="margin-top:0.4em;"></div>
                         </fieldset>
 
                         <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 0.75em 0;">
-                            <legend style="padding:0 0.5em; font-weight:600;">Grant cosmetic</legend>
+                            <legend style="padding:0 0.5em; font-weight:600;" data-i18n="admin.v2test.grant_cos_legend">Grant cosmetic</legend>
                             <label style="display:block; margin-bottom:0.5em;">
-                                <span>Cosmetic ID:</span><br>
+                                <span data-i18n="admin.v2test.cos_id">Cosmetic ID:</span><br>
                                 <select id="abV2GrantCosId" style="min-width:280px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                                     <option value="" disabled selected>— loading catalog —</option>
                                 </select>
                             </label>
-                            <button is="emby-button" type="button" class="raised" id="abV2GrantCosBtn">Grant cosmetic</button>
+                            <button is="emby-button" type="button" class="raised" id="abV2GrantCosBtn" data-i18n="admin.v2test.btn_grant_cos">Grant cosmetic</button>
                             <div id="abV2GrantCosStatus" class="secondaryText" style="margin-top:0.4em;"></div>
                         </fieldset>
 
                         <fieldset style="border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:0.75em 1em; margin:0 0 0.75em 0;">
-                            <legend style="padding:0 0.5em; font-weight:600;">Backfill milestones (server-wide)</legend>
-                            <p class="secondaryText" style="margin-top:0;">
-                                Iterates every known profile and runs the v2.0 shop milestone check against their <em>LifetimeScore</em>. Users already past Cinephile (1000) / Marathoner (2500) / Curator (5000) get those rank titles auto-granted now instead of waiting for their next watch event. Idempotent — safe to run multiple times.
+                            <legend style="padding:0 0.5em; font-weight:600;" data-i18n="admin.v2test.backfill_legend">Backfill milestones (server-wide)</legend>
+                            <p class="secondaryText" style="margin-top:0;" data-i18n="admin.v2test.backfill_intro">
+                                Iterates every known profile and runs the v2.0 shop milestone check against their LifetimeScore. Users already past Cinephile (1000) / Marathoner (2500) / Curator (5000) get those rank titles auto-granted now instead of waiting for their next watch event. Idempotent — safe to run multiple times.
                             </p>
-                            <button is="emby-button" type="button" class="raised" id="abV2BackfillBtn">Run backfill</button>
+                            <button is="emby-button" type="button" class="raised" id="abV2BackfillBtn" data-i18n="admin.v2test.btn_backfill">Run backfill</button>
                             <div id="abV2BackfillStatus" class="secondaryText" style="margin-top:0.4em;"></div>
                         </fieldset>
                     </div>
