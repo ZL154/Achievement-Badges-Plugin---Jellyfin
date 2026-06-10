@@ -832,6 +832,7 @@ font-size:0.88em;
         'admin.section_seasonal_challenges': { group: 3, icon: 'calendar' },
         'admin.section_quests':              { group: 3, icon: 'map' },
         'admin.section_audit_log':           { group: 4, icon: 'file' },
+        'admin.section_daily_audit':         { group: 4, icon: 'sync' },
         'admin.section_inject_progress':     { group: 4, icon: 'sync' }
     };
     var ADMIN_GROUPS = [
@@ -1467,8 +1468,51 @@ font-size:0.88em;
 
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:1em;flex-wrap:wrap;">
                     <h2 class="sectionTitle" style="margin:0;" data-i18n="admin.page_title">Achievements</h2>
-                    <div id="abStyleToggleHost" role="group" aria-label="Visual style"></div>
+                    <div style="display:flex;align-items:center;gap:0.75em;">
+                        <!-- [v2.1.0] Language picker — globe icon + dropdown. Persists to
+                             localStorage via window.abSetLanguage and re-applies translations live. -->
+                        <div id="abLangPicker" title="Language" style="display:flex;align-items:center;gap:0.4em;padding:0.3em 0.6em;border:1px solid rgba(255,255,255,0.15);border-radius:999px;background:rgba(255,255,255,0.04);">
+                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="flex:none;opacity:0.85;">
+                                <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="9"/>
+                                    <path d="M3 12h18"/>
+                                    <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/>
+                                </g>
+                            </svg>
+                            <select id="abLangSelect" aria-label="Language"
+                                    style="background:transparent;color:inherit;border:none;outline:none;font-size:0.9em;cursor:pointer;color-scheme:dark;">
+                                <option value="en">English</option>
+                                <option value="fr">Français</option>
+                                <option value="es">Español</option>
+                                <option value="de">Deutsch</option>
+                                <option value="it">Italiano</option>
+                                <option value="pt">Português</option>
+                                <option value="ja">日本語</option>
+                                <option value="zh">中文</option>
+                            </select>
+                        </div>
+                        <div id="abStyleToggleHost" role="group" aria-label="Visual style"></div>
+                    </div>
                 </div>
+                <script>
+                (function () {
+                    var sel = document.getElementById('abLangSelect');
+                    if (!sel) return;
+                    function cur() {
+                        try {
+                            if (typeof window.abCurrentLanguage === 'function') return window.abCurrentLanguage();
+                            return (window.localStorage && localStorage.getItem('achievementBadgesLang')) || 'en';
+                        } catch (e) { return 'en'; }
+                    }
+                    // Reflect the active language once the i18n layer has resolved it.
+                    function sync() { try { var c = cur(); if (c) sel.value = c; } catch (e) {} }
+                    sync();
+                    setTimeout(sync, 1200); // after the 3-stage resolveAndLoad settles
+                    sel.addEventListener('change', function () {
+                        if (typeof window.abSetLanguage === 'function') window.abSetLanguage(sel.value);
+                    });
+                })();
+                </script>
 
                 <div id="abProfileHero" class="abHero">
                     <div style="flex:1;min-width:280px;">
@@ -1891,6 +1935,22 @@ font-size:0.88em;
                 </details>
 
                 <details class="abAdminSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;" data-i18n="admin.section_daily_audit">
+                        Daily badge audit &amp; cleanup (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.daily_audit.intro">
+                            Scans every user for time-windowed badges (daily / weekly / monthly) that were wrongly awarded by the pre-v2.1.0 backfill. Review the list, then clean up — cleared badges can be re-earned organically.
+                        </p>
+                        <button is="emby-button" type="button" class="raised button-submit" id="abDailyAuditRunBtn" data-i18n="admin.daily_audit.run">Run audit</button>
+                        <div id="abDailyAuditSummary" class="secondaryText" style="margin-top:0.6em;"></div>
+                        <div id="abDailyAuditList" style="max-height:360px; overflow-y:auto; margin-top:0.6em; font-size:0.85em; display:none; border:1px solid rgba(255,255,255,0.08); border-radius:8px;"></div>
+                        <button is="emby-button" type="button" class="raised" id="abDailyAuditCleanupBtn" data-i18n="admin.daily_audit.cleanup" style="margin-top:0.6em; display:none; background:#d32f2f;">Clean up all suspicious unlocks</button>
+                        <div id="abDailyAuditStatus" class="secondaryText" style="margin-top:0.4em;"></div>
+                    </div>
+                </details>
+
+                <details class="abAdminSection" style="margin-top:1em;">
                     <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;" data-i18n="admin.section_inject_progress">
                         Inject progress (admin / debug)
                     </summary>
@@ -1913,16 +1973,26 @@ font-size:0.88em;
                     </summary>
                     <div style="margin-top:0.5em;">
                         <p class="secondaryText" style="margin-top:0;" data-i18n="admin.custom_badges.intro">
-                            Define your own badges tied to any existing metric. Paste a JSON array below.
+                            Define your own badges with simple or compound (AND/OR) criteria across any metric — film, TV, music, books and more.
                         </p>
                         <p class="secondaryText" style="margin-top:0;">
-                            📖 <strong>New in v2.1.0:</strong> compound AND/OR criteria, music &amp; book metrics, and import/export are documented with copy-paste templates in the
-                            <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin#custom-badges" target="_blank" rel="noopener" style="color:#ffd54a;">Custom Badges guide in the README</a>.
+                            📖 <strong data-i18n="admin.custom_badges.readme_lead">New in v2.1.0:</strong>
+                            <span data-i18n="admin.custom_badges.readme_body">compound AND/OR criteria, music &amp; book metrics, and import/export are documented with copy-paste templates in the</span>
+                            <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin#custom-badges" target="_blank" rel="noopener" style="color:#ffd54a;" data-i18n="admin.custom_badges.readme_link">Custom Badges guide in the README</a>.
                         </p>
-                        <textarea id="abCustomBadgesJson" rows="10" style="width:100%; font-family:monospace; font-size:0.85em; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></textarea>
-                        <div style="margin-top:0.5em;">
+
+                        <!-- Existing custom badges (new compound CustomBadgeService) -->
+                        <div style="display:flex;align-items:center;gap:0.5em;margin-top:0.75em;">
+                            <strong data-i18n="admin.custom_badges.existing">Existing custom badges</strong>
                             <button is="emby-button" type="button" class="raised" id="abCustomBadgesLoadBtn" data-i18n="admin.btn_reload">Reload</button>
-                            <button is="emby-button" type="button" class="raised button-submit" id="abCustomBadgesSaveBtn" data-i18n="admin.btn_save_custom_badges">Save custom badges</button>
+                        </div>
+                        <div id="abCustomBadgesList" style="margin-top:0.5em;"></div>
+
+                        <!-- Add a badge: paste a single-badge JSON template from the README -->
+                        <p class="secondaryText" style="margin-bottom:0.25em;margin-top:1em;" data-i18n="admin.custom_badges.add_label">Add a badge — paste one badge object (see README template):</p>
+                        <textarea id="abCustomBadgesJson" rows="10" placeholder='{ "name": "Cinephile", "description": "Watch 100 films.", "rarity": "Rare", "media": "Film", "enabled": true, "criteria": { "metric": "MoviesWatched", "threshold": 100 } }' style="width:100%; font-family:monospace; font-size:0.85em; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></textarea>
+                        <div style="margin-top:0.5em;">
+                            <button is="emby-button" type="button" class="raised button-submit" id="abCustomBadgesSaveBtn" data-i18n="admin.btn_add_custom_badge">Add badge</button>
                         </div>
                         <div id="abCustomBadgesStatus" class="secondaryText"></div>
                     </div>
@@ -2275,6 +2345,19 @@ font-size:0.88em;
             // localStorage/navigator anyway. No-op.
         });
     }
+
+    // [v2.1.0] Public language setter for the globe dropdown. Persists the
+    // chosen language to localStorage (so it survives reloads and is read
+    // by pickLang on the next visit) and immediately re-applies the
+    // translation dictionary without a full page reload. loadForLang
+    // resolves its own URL via ApiClient / resolvePluginBase.
+    window.abSetLanguage = function (lang) {
+        if (!lang) return;
+        try { if (window.localStorage) localStorage.setItem('achievementBadgesLang', lang); } catch (e) {}
+        try { loadForLang(lang).catch(function () {}); } catch (e) {}
+        try { document.documentElement.setAttribute('data-ab-lang', lang); } catch (e) {}
+    };
+    window.abCurrentLanguage = function () { return pickLang(); };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', resolveAndLoad);
@@ -3322,27 +3405,106 @@ font-size:0.88em;
          .catch(function (e) { uiStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
     });
 
-    // --- Custom badges ---
+    // --- Custom badges (v2.1.0 compound CustomBadgeService) ---
+    // Repointed from the legacy bulk-array endpoint (admin/custom-badges,
+    // which expected AchievementDefinition[] and 400'd on the new template
+    // shape) to the new per-badge compound API at /custom-badges. Supports
+    // the README's simple + compound (AND/OR) JSON templates.
     var customBadgesJsonEl = document.getElementById('abCustomBadgesJson');
     var customBadgesLoadBtn = document.getElementById('abCustomBadgesLoadBtn');
     var customBadgesSaveBtn = document.getElementById('abCustomBadgesSaveBtn');
     var customBadgesStatusEl = document.getElementById('abCustomBadgesStatus');
+    var customBadgesListEl = document.getElementById('abCustomBadgesList');
+
+    // This plugin's API serializes PascalCase (cf. audit log e.At/e.Type),
+    // but user-pasted JSON is lowercase — read both to be safe.
+    function _f(o, pascal, lower) {
+        if (!o) return undefined;
+        return o[pascal] != null ? o[pascal] : o[lower];
+    }
+    function summariseCriteria(c) {
+        if (!c) return '';
+        var op = _f(c, 'Operator', 'operator');
+        var kids = _f(c, 'Children', 'children');
+        if (op && kids && kids.length) {
+            return '(' + kids.map(summariseCriteria).join(' ' + String(op).toUpperCase() + ' ') + ')';
+        }
+        var metric = _f(c, 'Metric', 'metric');
+        var threshold = _f(c, 'Threshold', 'threshold');
+        var param = _f(c, 'MetricParameter', 'metricParameter');
+        if (metric != null && threshold != null) {
+            return metric + (param ? '[' + param + ']' : '') + ' ≥ ' + threshold;
+        }
+        return '';
+    }
+
+    function renderCustomBadges(badges) {
+        if (!customBadgesListEl) return;
+        if (!badges || !badges.length) {
+            customBadgesListEl.innerHTML = '<span class="secondaryText">' + tr('admin.custom_badges.none', 'No custom badges yet.') + '</span>';
+            return;
+        }
+        var html = '<div style="display:flex;flex-direction:column;gap:0.4em;">';
+        badges.forEach(function (b) {
+            var nm = _f(b, 'Name', 'name') || '(unnamed)';
+            var rar = _f(b, 'Rarity', 'rarity') || '';
+            var med = _f(b, 'Media', 'media') || '';
+            var desc = _f(b, 'Description', 'description') || '';
+            var crit = _f(b, 'Criteria', 'criteria');
+            var en = _f(b, 'Enabled', 'enabled');
+            var id = _f(b, 'Id', 'id') || '';
+            html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75em;padding:0.5em 0.65em;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(255,255,255,0.03);">' +
+                '<div style="min-width:0;">' +
+                    '<div style="font-weight:600;">' + escapeHtml(nm) + ' <span class="secondaryText" style="font-weight:400;">· ' + escapeHtml(rar) + ' · ' + escapeHtml(med) + (en === false ? ' · disabled' : '') + '</span></div>' +
+                    '<div class="secondaryText">' + escapeHtml(desc) + '</div>' +
+                    '<div class="secondaryText" style="font-family:monospace;font-size:0.8em;opacity:0.8;">' + escapeHtml(summariseCriteria(crit)) + '</div>' +
+                '</div>' +
+                '<button is="emby-button" type="button" class="raised" data-cb-del="' + escapeHtml(id) + '" style="flex:none;background:#d32f2f;">' + tr('admin.btn_delete', 'Delete') + '</button>' +
+            '</div>';
+        });
+        html += '</div>';
+        customBadgesListEl.innerHTML = html;
+        var delBtns = customBadgesListEl.querySelectorAll('[data-cb-del]');
+        for (var i = 0; i < delBtns.length; i++) {
+            delBtns[i].addEventListener('click', function () {
+                var id = this.getAttribute('data-cb-del');
+                if (!id) return;
+                if (!confirm(tr('admin.custom_badges.confirm_delete', 'Delete this custom badge?'))) return;
+                fetchJson('Plugins/AchievementBadges/custom-badges/' + encodeURIComponent(id), 'DELETE')
+                    .then(function () { customBadgesStatusEl.textContent = tr('admin.custom_badges.deleted', 'Deleted.'); loadCustomBadges(); reloadAll(); })
+                    .catch(function (e) { customBadgesStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
+            });
+        }
+    }
 
     function loadCustomBadges() {
-        fetchJson('Plugins/AchievementBadges/admin/custom-badges').then(function (r) {
-            customBadgesJsonEl.value = JSON.stringify(r || [], null, 2);
+        fetchJson('Plugins/AchievementBadges/custom-badges').then(function (r) {
+            renderCustomBadges(r || []);
+        }).catch(function (e) {
+            if (customBadgesListEl) customBadgesListEl.innerHTML = '<span class="secondaryText">' + tr('admin.msg.load_failed', 'Failed to load:') + ' ' + escapeHtml(e.message || String(e)) + '</span>';
         });
     }
     customBadgesLoadBtn.addEventListener('click', loadCustomBadges);
     customBadgesSaveBtn.addEventListener('click', function () {
+        var parsed;
         try {
-            var parsed = JSON.parse(customBadgesJsonEl.value || '[]');
-            fetchJson('Plugins/AchievementBadges/admin/custom-badges', 'POST', parsed)
-                .then(function (r) { customBadgesStatusEl.textContent = tr('admin.msg.saved_count', 'Saved') + ' ' + r.Count + ' ' + tr('admin.msg.custom_badges_suffix', 'custom badges.'); reloadAll(); })
-                .catch(function (e) { customBadgesStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
+            parsed = JSON.parse(customBadgesJsonEl.value || '{}');
         } catch (e) {
             customBadgesStatusEl.textContent = tr('admin.msg.invalid_json', 'Invalid JSON:') + ' ' + e.message;
+            return;
         }
+        if (Array.isArray(parsed)) {
+            customBadgesStatusEl.textContent = tr('admin.custom_badges.one_at_a_time', 'Paste a single badge object, not an array. Add badges one at a time.');
+            return;
+        }
+        fetchJson('Plugins/AchievementBadges/custom-badges', 'POST', parsed)
+            .then(function (saved) {
+                customBadgesStatusEl.textContent = tr('admin.custom_badges.added', 'Added:') + ' ' + (saved ? (_f(saved, 'Name', 'name') || '') : '');
+                customBadgesJsonEl.value = '';
+                loadCustomBadges();
+                reloadAll();
+            })
+            .catch(function (e) { customBadgesStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
     });
     loadCustomBadges();
 
@@ -3624,6 +3786,73 @@ font-size:0.88em;
     }
     auditReloadBtn.addEventListener('click', loadAudit);
     loadAudit();
+
+    // --- Daily badge audit & cleanup (v2.1.0, M6 time-windowed) ---
+    var dailyAuditRunBtn = document.getElementById('abDailyAuditRunBtn');
+    var dailyAuditSummary = document.getElementById('abDailyAuditSummary');
+    var dailyAuditList = document.getElementById('abDailyAuditList');
+    var dailyAuditCleanupBtn = document.getElementById('abDailyAuditCleanupBtn');
+    var dailyAuditStatus = document.getElementById('abDailyAuditStatus');
+    var _dailyAuditReport = null;
+
+    if (dailyAuditRunBtn) {
+        dailyAuditRunBtn.addEventListener('click', function () {
+            dailyAuditSummary.textContent = tr('admin.daily_audit.running', 'Running audit...');
+            dailyAuditList.style.display = 'none';
+            dailyAuditCleanupBtn.style.display = 'none';
+            dailyAuditStatus.textContent = '';
+            fetchJson('Plugins/AchievementBadges/time-windowed/audit').then(function (report) {
+                _dailyAuditReport = report || { Items: [], SuspiciousCount: 0 };
+                var items = _dailyAuditReport.Items || [];
+                if (!items.length) {
+                    dailyAuditSummary.textContent = tr('admin.daily_audit.none', '✓ No suspicious unlocks found.');
+                    return;
+                }
+                var users = {};
+                items.forEach(function (it) { users[it.UserId] = 1; });
+                dailyAuditSummary.textContent = '⚠ ' + items.length + ' ' +
+                    tr('admin.daily_audit.found_suffix', 'suspicious unlock(s) across') + ' ' + Object.keys(users).length + ' ' +
+                    tr('admin.daily_audit.users_suffix', 'user(s).');
+                var rows = '<table style="width:100%;border-collapse:collapse;">' +
+                    '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.15);">' +
+                    '<th style="text-align:left;padding:0.4em;">' + tr('admin.daily_audit.col_badge', 'Badge') + '</th>' +
+                    '<th style="text-align:left;padding:0.4em;">' + tr('admin.daily_audit.col_user', 'User') + '</th>' +
+                    '<th style="text-align:left;padding:0.4em;">' + tr('admin.daily_audit.col_earned', 'Earned') + '</th>' +
+                    '<th style="text-align:left;padding:0.4em;">' + tr('admin.daily_audit.col_source', 'Source') + '</th></tr></thead><tbody>';
+                items.forEach(function (it) {
+                    rows += '<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">' +
+                        '<td style="padding:0.4em;">' + escapeHtml(it.BadgeTitle || it.BadgeId) + '</td>' +
+                        '<td style="padding:0.4em;">' + escapeHtml(it.Username || it.UserId) + '</td>' +
+                        '<td style="padding:0.4em;">' + (it.UnlockedAt ? new Date(it.UnlockedAt).toLocaleDateString() : '-') + '</td>' +
+                        '<td style="padding:0.4em;">' + escapeHtml(it.EarnSource || '') + '</td></tr>';
+                });
+                rows += '</tbody></table>';
+                dailyAuditList.innerHTML = rows;
+                dailyAuditList.style.display = 'block';
+                dailyAuditCleanupBtn.style.display = 'inline-block';
+            }).catch(function (e) {
+                dailyAuditSummary.textContent = tr('admin.daily_audit.failed', 'Audit failed:') + ' ' + (e.message || e);
+            });
+        });
+    }
+
+    if (dailyAuditCleanupBtn) {
+        dailyAuditCleanupBtn.addEventListener('click', function () {
+            var items = _dailyAuditReport && _dailyAuditReport.Items || [];
+            if (!items.length) { dailyAuditStatus.textContent = tr('admin.daily_audit.run_first', 'Run an audit first.'); return; }
+            if (!confirm(tr('admin.daily_audit.confirm', 'Clear all suspicious unlocks? They can be re-earned organically.'))) return;
+            dailyAuditStatus.textContent = tr('admin.daily_audit.cleaning', 'Cleaning up...');
+            var payload = items.map(function (it) { return { BadgeId: it.BadgeId, UserId: it.UserId }; });
+            fetchJson('Plugins/AchievementBadges/time-windowed/cleanup', 'POST', payload).then(function (res) {
+                dailyAuditStatus.textContent = '✓ ' + tr('admin.daily_audit.cleared', 'Cleared') + ' ' + (res.cleared != null ? res.cleared : '?') + ' / ' + (res.requested != null ? res.requested : items.length) + '.';
+                dailyAuditCleanupBtn.style.display = 'none';
+                _dailyAuditReport = null;
+                reloadAll();
+            }).catch(function (e) {
+                dailyAuditStatus.textContent = tr('admin.daily_audit.failed', 'Audit failed:') + ' ' + (e.message || e);
+            });
+        });
+    }
 
     // --- Inject counters ---
     var injectBtn = document.getElementById('abInjectBtn');
