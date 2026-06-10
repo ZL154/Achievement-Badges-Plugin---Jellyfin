@@ -184,8 +184,6 @@ Standout sub-collections:
 
 ### ⚡ Power-ups & Score Shop
 
-*(See [What's new in v2.0](#-whats-new-in-v20--choose-your-loadout) above for the full breakdown.)*
-
 - **3 consumable power-ups** — XP Boost, Double Credit, Streak Freeze
 - **70+ cosmetic items** across 6 kinds — themes, frames, titles, avatars, backgrounds, borders
 - **Steam-style storefront** with featured carousel, live previews, milestone progress bars, "NEED N MORE SCORE" affordability indicators
@@ -193,8 +191,6 @@ Standout sub-collections:
 - All purchases audit-logged; admin testing tools to grant items without watch grinding
 
 ### 🎨 Profile customization
-
-*(See [What's new in v2.0](#-whats-new-in-v20--choose-your-loadout) above for the full catalog.)*
 
 - **14 Profile Themes** — repaint the whole achievements page in any of 14 styles
 - **7 Badge Frames** — animated edges on your equipped badges
