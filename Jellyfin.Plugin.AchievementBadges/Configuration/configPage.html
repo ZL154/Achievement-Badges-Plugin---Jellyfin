@@ -265,6 +265,114 @@
                     </div>
                 </details>
 
+                <!-- [v2.1.0 "Open Library" M4] Custom badges admin UI ─────── -->
+                <details>
+                    <summary>Custom Badges (v2.1.0)</summary>
+                    <div class="detailSection">
+                        <p style="color:rgba(255,255,255,.6);font-size:.9em;margin:0 0 .8em;">
+                            Admin-defined badges with simple criteria. For compound AND/OR criteria use the API directly (see release notes).
+                        </p>
+                        <div id="CustomBadgesList" style="margin-bottom:1em;color:rgba(255,255,255,.7);font-size:.9em;">
+                            Loading...
+                        </div>
+                        <button is="emby-button" type="button" class="raised emby-button"
+                                onclick="AchievementBadgesConfig.loadCustomBadges()" style="margin-bottom:1em;">
+                            <span>Refresh</span>
+                        </button>
+                        <hr style="border:none; border-top:1px solid rgba(255,255,255,.08); margin:1em 0;" />
+                        <h4 style="margin:.6em 0;">Create new badge</h4>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="NewBadgeName">Name</label>
+                            <input type="text" id="NewBadgeName" is="emby-input" placeholder="My Custom Badge" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="NewBadgeDescription">Description</label>
+                            <input type="text" id="NewBadgeDescription" is="emby-input" placeholder="Reach the goal." />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="NewBadgeRarity">Rarity</label>
+                            <select id="NewBadgeRarity" is="emby-select">
+                                <option value="Common">Common</option>
+                                <option value="Uncommon">Uncommon</option>
+                                <option value="Rare">Rare</option>
+                                <option value="Epic">Epic</option>
+                                <option value="Legendary">Legendary</option>
+                                <option value="Mythic">Mythic</option>
+                            </select>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="NewBadgeMedia">Media type</label>
+                            <select id="NewBadgeMedia" is="emby-select">
+                                <option value="Film">Film</option>
+                                <option value="TV">TV</option>
+                                <option value="Music">Music</option>
+                                <option value="Book">Book</option>
+                                <option value="Anime">Anime</option>
+                                <option value="Multi" selected>Multi</option>
+                            </select>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="NewBadgeMetric">Metric</label>
+                            <select id="NewBadgeMetric" is="emby-select">
+                                <option value="TotalItemsWatched">Total items watched</option>
+                                <option value="MoviesWatched">Movies watched</option>
+                                <option value="SeriesCompleted">Series completed</option>
+                                <option value="MusicPlaysTotal">Music plays (total)</option>
+                                <option value="MusicListeningHours">Music listening hours</option>
+                                <option value="UniqueMusicAlbums">Unique music albums</option>
+                                <option value="UniqueMusicArtists">Unique music artists</option>
+                                <option value="UniqueMusicGenres">Unique music genres</option>
+                                <option value="UniqueMusicDecades">Unique music decades</option>
+                                <option value="BooksCompleted">Books completed</option>
+                                <option value="AudiobookListeningHours">Audiobook listening hours</option>
+                                <option value="UniqueBookSeriesCompleted">Unique book series completed</option>
+                                <option value="AnimeItemsWatched">Anime items watched</option>
+                                <option value="DaysWatched">Days watched</option>
+                                <option value="CurrentWatchStreak">Current watch streak</option>
+                                <option value="BestWatchStreak">Best watch streak</option>
+                                <option value="UniqueGenresWatched">Unique genres watched</option>
+                                <option value="UniqueLanguagesWatched">Unique languages watched</option>
+                                <option value="UniqueCountriesWatched">Unique countries watched</option>
+                            </select>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="NewBadgeThreshold">Threshold</label>
+                            <input type="number" id="NewBadgeThreshold" is="emby-input" min="1" value="10" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="NewBadgeIconUrl">Icon URL (optional)</label>
+                            <input type="text" id="NewBadgeIconUrl" is="emby-input" placeholder="https://... or leave blank for default" />
+                        </div>
+                        <button is="emby-button" type="button" class="raised emby-button"
+                                onclick="AchievementBadgesConfig.createCustomBadge()">
+                            <span>Create badge</span>
+                        </button>
+                        <div id="CustomBadgesStatus" style="margin-top:.6em;color:rgba(255,255,255,.7);font-size:.9em;"></div>
+                    </div>
+                </details>
+
+                <!-- [v2.1.0 "Open Library" M6] Time-windowed audit + cleanup ── -->
+                <details>
+                    <summary>Audit + clean up wrongly-awarded daily badges (v2.1.0)</summary>
+                    <div class="detailSection">
+                        <p style="color:rgba(255,255,255,.6);font-size:.9em;margin:0 0 .8em;">
+                            Scans every user profile for daily / weekly / monthly badges that were incorrectly awarded by the pre-v2.1.0 backfill (issue #27). Review the report before clicking "Clean up".
+                        </p>
+                        <button is="emby-button" type="button" class="raised emby-button"
+                                onclick="AchievementBadgesConfig.runAudit()">
+                            <span>Run audit</span>
+                        </button>
+                        <div id="AuditReportSummary" style="margin-top:.8em;color:rgba(255,255,255,.7);font-size:.9em;"></div>
+                        <div id="AuditReportTable" style="margin-top:.8em;max-height:360px;overflow:auto;border:1px solid rgba(255,255,255,.08);padding:.5em;display:none;"></div>
+                        <button is="emby-button" type="button" class="raised emby-button" id="CleanupBtn"
+                                onclick="AchievementBadgesConfig.runCleanup()"
+                                style="margin-top:.8em;display:none;background:#d32f2f;">
+                            <span>Clean up all suspicious unlocks</span>
+                        </button>
+                        <div id="CleanupStatus" style="margin-top:.6em;color:rgba(255,255,255,.7);font-size:.9em;"></div>
+                    </div>
+                </details>
+
                 <div>
                     <button is="emby-button" type="button" class="raised button-submit block emby-button"
                             onclick="AchievementBadgesConfig.save()">
@@ -553,12 +661,198 @@
                     }
 
                     alert('Toast system is not loaded yet. Refresh the page and try again.');
+                },
+
+                // ───────── [v2.1.0 M4] Custom badges admin handlers ──────────
+                loadCustomBadges: function () {
+                    var list = document.getElementById('CustomBadgesList');
+                    if (!list) return;
+                    list.textContent = 'Loading...';
+                    fetch(this.getApiUrl('Plugins/AchievementBadges/custom-badges'), {
+                        headers: this.getAuthHeaders(),
+                        credentials: 'include'
+                    }).then(function (r) {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }).then(function (badges) {
+                        if (!badges || badges.length === 0) {
+                            list.innerHTML = '<em>No custom badges yet. Create one below.</em>';
+                            return;
+                        }
+                        var html = '<table style="width:100%;border-collapse:collapse;font-size:.9em;">';
+                        html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,.15);">';
+                        html += '<th style="text-align:left;padding:.4em;">Name</th><th style="text-align:left;padding:.4em;">Rarity</th><th style="text-align:left;padding:.4em;">Media</th><th style="text-align:left;padding:.4em;">Enabled</th><th style="text-align:left;padding:.4em;">Action</th>';
+                        html += '</tr></thead><tbody>';
+                        badges.forEach(function (b) {
+                            html += '<tr style="border-bottom:1px solid rgba(255,255,255,.06);">';
+                            html += '<td style="padding:.4em;">' + escapeHtml(b.Name) + '<br/><span style="color:rgba(255,255,255,.5);font-size:.85em;">' + escapeHtml(b.Description || '') + '</span></td>';
+                            html += '<td style="padding:.4em;">' + escapeHtml(b.Rarity || '') + '</td>';
+                            html += '<td style="padding:.4em;">' + escapeHtml(b.Media || '') + '</td>';
+                            html += '<td style="padding:.4em;">' + (b.Enabled ? '✓' : '✗') + '</td>';
+                            html += '<td style="padding:.4em;"><button is="emby-button" type="button" class="emby-button" onclick="AchievementBadgesConfig.deleteCustomBadge(\'' + escapeAttr(b.Id) + '\')" style="background:#d32f2f;padding:.3em .6em;">Delete</button></td>';
+                            html += '</tr>';
+                        });
+                        html += '</tbody></table>';
+                        list.innerHTML = html;
+                    }).catch(function (e) {
+                        list.textContent = 'Failed to load: ' + (e.message || e);
+                    });
+                },
+
+                createCustomBadge: function () {
+                    var status = document.getElementById('CustomBadgesStatus');
+                    var name = (document.getElementById('NewBadgeName').value || '').trim();
+                    var description = (document.getElementById('NewBadgeDescription').value || '').trim();
+                    var rarity = document.getElementById('NewBadgeRarity').value;
+                    var media = document.getElementById('NewBadgeMedia').value;
+                    var metric = document.getElementById('NewBadgeMetric').value;
+                    var threshold = parseInt(document.getElementById('NewBadgeThreshold').value, 10);
+                    var iconUrl = (document.getElementById('NewBadgeIconUrl').value || '').trim();
+
+                    if (!name) { status.textContent = 'Name required.'; return; }
+                    if (!threshold || threshold < 1) { status.textContent = 'Threshold must be a positive integer.'; return; }
+
+                    var payload = {
+                        Name: name,
+                        Description: description,
+                        Rarity: rarity,
+                        Media: media,
+                        IconUrl: iconUrl,
+                        IconIsHosted: false,
+                        Enabled: true,
+                        Criteria: { Metric: metric, Threshold: threshold }
+                    };
+
+                    status.textContent = 'Creating...';
+                    var headers = this.getAuthHeaders();
+                    headers['Content-Type'] = 'application/json';
+                    fetch(this.getApiUrl('Plugins/AchievementBadges/custom-badges'), {
+                        method: 'POST',
+                        headers: headers,
+                        credentials: 'include',
+                        body: JSON.stringify(payload)
+                    }).then(function (r) {
+                        if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || ('HTTP ' + r.status)); });
+                        return r.json();
+                    }).then(function (saved) {
+                        status.textContent = 'Created: ' + saved.Name + ' (id ' + saved.Id.substring(0, 8) + '...)';
+                        document.getElementById('NewBadgeName').value = '';
+                        document.getElementById('NewBadgeDescription').value = '';
+                        document.getElementById('NewBadgeIconUrl').value = '';
+                        AchievementBadgesConfig.loadCustomBadges();
+                    }).catch(function (e) {
+                        status.textContent = 'Failed: ' + (e.message || e);
+                    });
+                },
+
+                deleteCustomBadge: function (id) {
+                    if (!confirm('Delete this custom badge? User profiles will lose any unlock for it.')) return;
+                    var status = document.getElementById('CustomBadgesStatus');
+                    status.textContent = 'Deleting...';
+                    fetch(this.getApiUrl('Plugins/AchievementBadges/custom-badges/' + encodeURIComponent(id)), {
+                        method: 'DELETE',
+                        headers: this.getAuthHeaders(),
+                        credentials: 'include'
+                    }).then(function (r) {
+                        if (!r.ok && r.status !== 204) throw new Error('HTTP ' + r.status);
+                        status.textContent = 'Deleted.';
+                        AchievementBadgesConfig.loadCustomBadges();
+                    }).catch(function (e) {
+                        status.textContent = 'Failed: ' + (e.message || e);
+                    });
+                },
+
+                // ───────── [v2.1.0 M6] Audit + cleanup handlers ─────────────
+                _lastAuditReport: null,
+
+                runAudit: function () {
+                    var summary = document.getElementById('AuditReportSummary');
+                    var table = document.getElementById('AuditReportTable');
+                    var cleanupBtn = document.getElementById('CleanupBtn');
+                    summary.textContent = 'Running audit...';
+                    table.style.display = 'none';
+                    cleanupBtn.style.display = 'none';
+
+                    fetch(this.getApiUrl('Plugins/AchievementBadges/time-windowed/audit'), {
+                        headers: this.getAuthHeaders(),
+                        credentials: 'include'
+                    }).then(function (r) {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }).then(function (report) {
+                        AchievementBadgesConfig._lastAuditReport = report;
+                        if (!report.SuspiciousCount) {
+                            summary.textContent = '✓ No suspicious unlocks found across any profile.';
+                            return;
+                        }
+                        summary.textContent = '⚠ Found ' + report.SuspiciousCount + ' suspicious unlock(s) across ' +
+                            new Set(report.Items.map(function (i) { return i.UserId; })).size + ' user(s).';
+                        var html = '<table style="width:100%;border-collapse:collapse;font-size:.85em;">';
+                        html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.2);">';
+                        html += '<th style="text-align:left;padding:.4em;">Badge</th><th style="text-align:left;padding:.4em;">User</th><th style="text-align:left;padding:.4em;">Earned at</th><th style="text-align:left;padding:.4em;">Source</th>';
+                        html += '</tr></thead><tbody>';
+                        report.Items.forEach(function (it) {
+                            html += '<tr style="border-bottom:1px solid rgba(255,255,255,.06);">';
+                            html += '<td style="padding:.4em;">' + escapeHtml(it.BadgeTitle || it.BadgeId) + '</td>';
+                            html += '<td style="padding:.4em;">' + escapeHtml(it.Username) + '</td>';
+                            html += '<td style="padding:.4em;">' + (it.UnlockedAt ? new Date(it.UnlockedAt).toLocaleDateString() : '-') + '</td>';
+                            html += '<td style="padding:.4em;">' + escapeHtml(it.EarnSource) + '</td>';
+                            html += '</tr>';
+                        });
+                        html += '</tbody></table>';
+                        table.innerHTML = html;
+                        table.style.display = 'block';
+                        cleanupBtn.style.display = 'inline-block';
+                    }).catch(function (e) {
+                        summary.textContent = 'Audit failed: ' + (e.message || e);
+                    });
+                },
+
+                runCleanup: function () {
+                    var report = AchievementBadgesConfig._lastAuditReport;
+                    if (!report || !report.Items || !report.Items.length) {
+                        document.getElementById('CleanupStatus').textContent = 'Run an audit first.';
+                        return;
+                    }
+                    if (!confirm('This will clear ' + report.Items.length + ' badge unlock(s) across affected users. Re-earnable organically. Continue?')) return;
+
+                    var status = document.getElementById('CleanupStatus');
+                    status.textContent = 'Cleaning up...';
+                    var headers = this.getAuthHeaders();
+                    headers['Content-Type'] = 'application/json';
+                    var payload = report.Items.map(function (it) { return { BadgeId: it.BadgeId, UserId: it.UserId }; });
+                    fetch(this.getApiUrl('Plugins/AchievementBadges/time-windowed/cleanup'), {
+                        method: 'POST',
+                        headers: headers,
+                        credentials: 'include',
+                        body: JSON.stringify(payload)
+                    }).then(function (r) {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }).then(function (result) {
+                        status.textContent = '✓ Cleared ' + result.cleared + ' of ' + result.requested + ' requested unlocks. Affected users may need to re-load their profile.';
+                        document.getElementById('CleanupBtn').style.display = 'none';
+                        AchievementBadgesConfig._lastAuditReport = null;
+                    }).catch(function (e) {
+                        status.textContent = 'Cleanup failed: ' + (e.message || e);
+                    });
                 }
             };
+
+            // Tiny html-escape helpers used by the v2.1.0 admin tables.
+            function escapeHtml(s) {
+                return String(s == null ? '' : s)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+            function escapeAttr(s) {
+                return escapeHtml(s).replace(/\\/g, '\\\\');
+            }
 
             document.querySelector('#AchievementBadgesConfigPage')
                 .addEventListener('pageshow', function () {
                     AchievementBadgesConfig.load();
+                    AchievementBadgesConfig.loadCustomBadges();
                 });
         </script>
     </div>
