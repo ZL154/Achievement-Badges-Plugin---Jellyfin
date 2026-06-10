@@ -385,6 +385,98 @@ A gear icon on the achievements page opens a full settings panel with auto-save:
 
 ---
 
+## 🎨 Custom badges
+
+> Added in **v2.1.0 "Open Library"**. Admin-only. All endpoints require admin elevation.
+
+Define your own badges with **compound AND/OR criteria** the built-in catalog can't express. The plugin config page (Dashboard → Plugins → Achievement Badges → *Custom Badges*) has a form for **simple** badges (single metric + threshold). For **compound** criteria, icon control, and import/export, use the API below.
+
+### Criteria model
+
+A badge's `criteria` is a tree. A node is **either**:
+
+- a **leaf**: `{ "metric": "<Metric>", "threshold": <int>, "metricParameter": "<optional>" }` — true when the metric value ≥ threshold.
+- a **compound**: `{ "operator": "And" | "Or", "children": [ <node>, ... ] }` — true when And(all)/Or(any) of children are true.
+
+Limits: max depth **5**, max **64** nodes per badge, max **500** badges per instance.
+
+### Template — simple badge
+
+```jsonc
+// POST /Plugins/AchievementBadges/custom-badges
+{
+  "name": "Cinephile",
+  "description": "Watch 100 films.",
+  "rarity": "Rare",            // Common | Uncommon | Rare | Epic | Legendary | Mythic
+  "media": "Film",             // Film | TV | Music | Book | Anime | Multi
+  "iconUrl": "",               // optional external https URL; blank = default trophy
+  "enabled": true,
+  "criteria": { "metric": "MoviesWatched", "threshold": 100 }
+}
+```
+
+### Template — compound (AND / OR)
+
+```jsonc
+{
+  "name": "Renaissance Viewer",
+  "description": "Watch 100 films AND listen to 50 music tracks.",
+  "rarity": "Epic",
+  "media": "Multi",
+  "enabled": true,
+  "criteria": {
+    "operator": "And",
+    "children": [
+      { "metric": "MoviesWatched",   "threshold": 100 },
+      { "metric": "MusicPlaysTotal", "threshold": 50 }
+    ]
+  }
+}
+```
+
+Nested example — *"(finish 5 horror series OR 10h of audiobooks) AND watch 25 anime items"*:
+
+```jsonc
+{
+  "name": "Eclectic",
+  "description": "Genre-spanning dedication.",
+  "rarity": "Legendary",
+  "media": "Multi",
+  "enabled": true,
+  "criteria": {
+    "operator": "And",
+    "children": [
+      {
+        "operator": "Or",
+        "children": [
+          { "metric": "SeriesCompleted",         "threshold": 5,  "metricParameter": "Horror" },
+          { "metric": "AudiobookListeningHours",  "threshold": 10 }
+        ]
+      },
+      { "metric": "AnimeItemsWatched", "threshold": 25 }
+    ]
+  }
+}
+```
+
+### Endpoints
+
+| Method | Route | Purpose |
+|---|---|---|
+| `GET`    | `/Plugins/AchievementBadges/custom-badges`        | List all |
+| `GET`    | `/Plugins/AchievementBadges/custom-badges/{id}`   | Fetch one |
+| `POST`   | `/Plugins/AchievementBadges/custom-badges`        | Create (fresh id assigned) |
+| `PUT`    | `/Plugins/AchievementBadges/custom-badges/{id}`   | Update |
+| `DELETE` | `/Plugins/AchievementBadges/custom-badges/{id}`   | Delete |
+| `GET`    | `/Plugins/AchievementBadges/custom-badges/export` | Export all as JSON |
+| `POST`   | `/Plugins/AchievementBadges/custom-badges/import` | Bulk import (fresh ids) |
+
+### Common metrics
+
+`TotalItemsWatched`, `MoviesWatched`, `SeriesCompleted`, `AnimeItemsWatched`, `DaysWatched`, `CurrentWatchStreak`, `BestWatchStreak`, `UniqueGenresWatched`, `UniqueLanguagesWatched`, `UniqueCountriesWatched`, `MusicPlaysTotal`, `MusicListeningHours`, `UniqueMusicAlbums`, `UniqueMusicArtists`, `UniqueMusicGenres`, `UniqueMusicDecades`, `BooksCompleted`, `AudiobookListeningHours`, `UniqueBookSeriesCompleted`. (`metricParameter` applies to parameterized metrics like genre/studio counts.)
+
+---
+
 ## 🛡️ Security & operations
 
 - **Default class-level rate limit** (`user-60-per-min`) on every controller route, with stricter overrides preserved on cooldown routes. Static-asset routes (CSS / JS / translations / video bgs) opt out via `[DisableRateLimiting]` so multi-user households behind a shared NAT don't collectively exhaust the limit.
