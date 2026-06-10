@@ -1900,6 +1900,14 @@ font-size:0.88em;
                             </select>
                             <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;" data-i18n="admin.fc.lang_note">Badge titles/descriptions are not yet localized; only UI chrome is translated.</div>
                         </label>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.audiobook_counting">Audiobook plays count toward:</span><br>
+                            <select id="abFcAudiobookCounting" style="padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                                <option value="BooksOnly" data-i18n="admin.fc.audiobook_books_only">Books only (default)</option>
+                                <option value="MusicOnly" data-i18n="admin.fc.audiobook_music_only">Music only</option>
+                                <option value="Both" data-i18n="admin.fc.audiobook_both">Both books and music</option>
+                            </select>
+                            <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;" data-i18n="admin.fc.audiobook_note">Controls whether an audiobook play credits your Book badges, Music badges, or both. Pure music tracks always count as music; ebooks always count as books.</div>
+                        </label>
                         <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.custom_logo">Custom toast logo SVG (replaces the Xbox logo in the achievement toast):</span><br>
                             <textarea id="abFcCustomXboxLogoSvg" rows="5" placeholder="Paste SVG markup or base64 content. Leave blank to use the default Xbox logo." data-i18n-placeholder="admin.fc.custom_logo_placeholder" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px; font-family:monospace; font-size:0.82em;"></textarea>
                             <div style="margin-top:0.4em; display:flex; gap:0.5em; align-items:center;">
@@ -3917,6 +3925,8 @@ font-size:0.88em;
             document.getElementById('abFcWelcomeMessage').value = c.WelcomeMessage || '';
             var dlSel = document.getElementById('abFcDefaultLanguage');
             if (dlSel) dlSel.value = (c.DefaultLanguage || 'en');
+            var abcSel = document.getElementById('abFcAudiobookCounting');
+            if (abcSel) abcSel.value = (c.AudiobookCounting || 'BooksOnly');
             var xbEl = document.getElementById('abFcCustomXboxLogoSvg');
             if (xbEl) xbEl.value = c.CustomXboxLogoSvg || '';
             var redactEl = document.getElementById('abFcRedactUsernamesInAuditLog');
@@ -3980,6 +3990,7 @@ font-size:0.88em;
             DisabledBadgeCategories: categories,
             WelcomeMessage: document.getElementById('abFcWelcomeMessage').value || '',
             DefaultLanguage: (document.getElementById('abFcDefaultLanguage') || {}).value || 'en',
+            AudiobookCounting: (document.getElementById('abFcAudiobookCounting') || {}).value || 'BooksOnly',
             CustomXboxLogoSvg: (document.getElementById('abFcCustomXboxLogoSvg') || {}).value || '',
             RedactUsernamesInAuditLog: !!(document.getElementById('abFcRedactUsernamesInAuditLog') || {}).checked,
             ForceHideEquippedShowcase: !!(document.getElementById('abFcForceHideEquippedShowcase') || {}).checked,

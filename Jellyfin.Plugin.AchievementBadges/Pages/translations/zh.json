@@ -990,5 +990,10 @@
   "admin.v2test.btn_grant_cos": "授予装饰品",
   "admin.v2test.backfill_legend": "回填里程碑（全服务器）",
   "admin.v2test.backfill_intro": "遍历所有已知的个人资料，并根据其 LifetimeScore 运行 v2.0 商店里程碑检查。已超过影迷（1000）/ 马拉松者（2500）/ 策展人（5000）的用户会立即自动获得相应称号，而无需等到下一次观看事件。幂等操作 — 可安全地多次运行。",
-  "admin.v2test.btn_backfill": "运行回填"
+  "admin.v2test.btn_backfill": "运行回填",
+  "admin.fc.audiobook_counting": "有声书播放计入：",
+  "admin.fc.audiobook_books_only": "仅图书（默认）",
+  "admin.fc.audiobook_music_only": "仅音乐",
+  "admin.fc.audiobook_both": "图书和音乐",
+  "admin.fc.audiobook_note": "控制有声书播放是计入图书徽章、音乐徽章还是两者。纯音乐曲目始终计入音乐；电子书始终计入图书。"
 }

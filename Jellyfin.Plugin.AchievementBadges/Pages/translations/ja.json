@@ -990,5 +990,10 @@
   "admin.v2test.btn_grant_cos": "コスメティックを付与",
   "admin.v2test.backfill_legend": "マイルストーンのバックフィル（サーバー全体）",
   "admin.v2test.backfill_intro": "既知のすべてのプロフィールを走査し、各ユーザーの LifetimeScore に対して v2.0 ショップのマイルストーン判定を実行します。すでにシネフィル（1000）／マラソナー（2500）／キュレーター（5000）を超えているユーザーには、次の視聴イベントを待たずに今すぐ該当のランク称号が自動付与されます。冪等なので、複数回実行しても安全です。",
-  "admin.v2test.btn_backfill": "バックフィルを実行"
+  "admin.v2test.btn_backfill": "バックフィルを実行",
+  "admin.fc.audiobook_counting": "オーディオブックの再生は次にカウントされます：",
+  "admin.fc.audiobook_books_only": "本のみ（デフォルト）",
+  "admin.fc.audiobook_music_only": "音楽のみ",
+  "admin.fc.audiobook_both": "本と音楽の両方",
+  "admin.fc.audiobook_note": "オーディオブックの再生を本バッジ、音楽バッジ、または両方にカウントするかを制御します。純粋な音楽トラックは常に音楽としてカウントされ、電子書籍は常に本としてカウントされます。"
 }

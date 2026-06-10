@@ -2389,7 +2389,9 @@ public class AchievementBadgesController : ControllerBase
             RedactUsernamesInAuditLog = c?.RedactUsernamesInAuditLog ?? false,
             ForceHideEquippedShowcase = c?.ForceHideEquippedShowcase ?? false,
             FriendsEnabled = c?.FriendsEnabled ?? true,
-            FriendsSimpleMode = c?.FriendsSimpleMode ?? false
+            FriendsSimpleMode = c?.FriendsSimpleMode ?? false,
+            // [v2.1.0] Audiobook counting policy (BooksOnly default / MusicOnly / Both).
+            AudiobookCounting = (c?.AudiobookCounting ?? Configuration.AudiobookCounting.BooksOnly).ToString()
         });
     }
 
@@ -2413,6 +2415,7 @@ public class AchievementBadgesController : ControllerBase
         public bool ForceHideEquippedShowcase { get; set; } = false;
         public bool FriendsEnabled { get; set; } = true;
         public bool FriendsSimpleMode { get; set; } = false;
+        public string AudiobookCounting { get; set; } = "BooksOnly";
     }
 
     [HttpPost("admin/feature-config")]
@@ -2440,6 +2443,13 @@ public class AchievementBadgesController : ControllerBase
         var allowedLangs = new HashSet<string> { "en", "fr", "es", "de", "it", "pt", "zh", "ja" };
         if (!allowedLangs.Contains(lang)) lang = "en";
         config.DefaultLanguage = lang;
+
+        // [v2.1.0] Audiobook counting policy. Invalid/missing falls back to
+        // the current value (no silent reset to default).
+        if (Enum.TryParse<Configuration.AudiobookCounting>(request.AudiobookCounting, ignoreCase: true, out var abc))
+        {
+            config.AudiobookCounting = abc;
+        }
 
         // Custom Xbox logo SVG — sanitize before storing. We accept either a
         // raw SVG string or a base64-encoded one; store base64 so the frontend

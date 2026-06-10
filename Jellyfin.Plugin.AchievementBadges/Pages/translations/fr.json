@@ -990,5 +990,10 @@
   "admin.v2test.btn_grant_cos": "Accorder le cosmétique",
   "admin.v2test.backfill_legend": "Rattrapage des jalons (tout le serveur)",
   "admin.v2test.backfill_intro": "Parcourt chaque profil connu et exécute la vérification des jalons de la boutique v2.0 sur leur LifetimeScore. Les utilisateurs ayant déjà dépassé Cinephile (1000) / Marathoner (2500) / Curator (5000) reçoivent ces titres de rang immédiatement au lieu d'attendre leur prochain événement de visionnage. Idempotent — peut être exécuté plusieurs fois sans risque.",
-  "admin.v2test.btn_backfill": "Lancer le rattrapage"
+  "admin.v2test.btn_backfill": "Lancer le rattrapage",
+  "admin.fc.audiobook_counting": "Les écoutes de livres audio comptent pour :",
+  "admin.fc.audiobook_books_only": "Livres uniquement (par défaut)",
+  "admin.fc.audiobook_music_only": "Musique uniquement",
+  "admin.fc.audiobook_both": "Livres et musique",
+  "admin.fc.audiobook_note": "Détermine si l'écoute d'un livre audio crédite vos badges Livres, vos badges Musique, ou les deux. Les pistes purement musicales comptent toujours comme musique ; les ebooks comptent toujours comme livres."
 }

@@ -998,5 +998,10 @@
   "admin.v2test.btn_grant_cos": "Grant cosmetic",
   "admin.v2test.backfill_legend": "Backfill milestones (server-wide)",
   "admin.v2test.backfill_intro": "Iterates every known profile and runs the v2.0 shop milestone check against their LifetimeScore. Users already past Cinephile (1000) / Marathoner (2500) / Curator (5000) get those rank titles auto-granted now instead of waiting for their next watch event. Idempotent — safe to run multiple times.",
-  "admin.v2test.btn_backfill": "Run backfill"
+  "admin.v2test.btn_backfill": "Run backfill",
+  "admin.fc.audiobook_counting": "Audiobook plays count toward:",
+  "admin.fc.audiobook_books_only": "Books only (default)",
+  "admin.fc.audiobook_music_only": "Music only",
+  "admin.fc.audiobook_both": "Both books and music",
+  "admin.fc.audiobook_note": "Controls whether an audiobook play credits your Book badges, Music badges, or both. Pure music tracks always count as music; ebooks always count as books."
 }

@@ -990,5 +990,10 @@
   "admin.v2test.btn_grant_cos": "Kosmetik vergeben",
   "admin.v2test.backfill_legend": "Meilensteine nachtragen (serverweit)",
   "admin.v2test.backfill_intro": "Durchläuft jedes bekannte Profil und führt die v2.0-Shop-Meilenstein-Prüfung gegen dessen LifetimeScore aus. Benutzer, die Cinephile (1000) / Marathoner (2500) / Curator (5000) bereits überschritten haben, erhalten diese Rang-Titel sofort automatisch, statt auf ihr nächstes Wiedergabe-Ereignis zu warten. Idempotent — kann gefahrlos mehrfach ausgeführt werden.",
-  "admin.v2test.btn_backfill": "Nachtragen starten"
+  "admin.v2test.btn_backfill": "Nachtragen starten",
+  "admin.fc.audiobook_counting": "Hörbuch-Wiedergaben zählen für:",
+  "admin.fc.audiobook_books_only": "Nur Bücher (Standard)",
+  "admin.fc.audiobook_music_only": "Nur Musik",
+  "admin.fc.audiobook_both": "Bücher und Musik",
+  "admin.fc.audiobook_note": "Steuert, ob eine Hörbuch-Wiedergabe deinen Buch-Abzeichen, Musik-Abzeichen oder beiden gutgeschrieben wird. Reine Musiktitel zählen immer als Musik; E-Books zählen immer als Bücher."
 }

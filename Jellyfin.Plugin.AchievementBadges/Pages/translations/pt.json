@@ -990,5 +990,10 @@
   "admin.v2test.btn_grant_cos": "Conceder cosmético",
   "admin.v2test.backfill_legend": "Preencher marcos retroativamente (todo o servidor)",
   "admin.v2test.backfill_intro": "Itera por todos os perfis conhecidos e executa a verificação de marcos da loja v2.0 contra o LifetimeScore de cada um. Usuários que já passaram de Cinéfilo (1000) / Maratonista (2500) / Curador (5000) recebem esses títulos de rank automaticamente agora, em vez de esperar pelo próximo evento de visualização. Idempotente — seguro executar várias vezes.",
-  "admin.v2test.btn_backfill": "Executar preenchimento"
+  "admin.v2test.btn_backfill": "Executar preenchimento",
+  "admin.fc.audiobook_counting": "As reproduções de audiolivros contam para:",
+  "admin.fc.audiobook_books_only": "Apenas livros (padrão)",
+  "admin.fc.audiobook_music_only": "Apenas música",
+  "admin.fc.audiobook_both": "Livros e música",
+  "admin.fc.audiobook_note": "Controla se a reprodução de um audiolivro conta para suas medalhas de Livros, de Música ou ambas. Faixas de música pura sempre contam como música; ebooks sempre contam como livros."
 }

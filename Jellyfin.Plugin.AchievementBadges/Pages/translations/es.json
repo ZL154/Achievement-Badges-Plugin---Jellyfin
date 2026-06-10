@@ -990,5 +990,10 @@
   "admin.v2test.btn_grant_cos": "Otorgar cosmético",
   "admin.v2test.backfill_legend": "Relleno retroactivo de hitos (en todo el servidor)",
   "admin.v2test.backfill_intro": "Recorre todos los perfiles conocidos y ejecuta la comprobación de hitos de la tienda de v2.0 contra su LifetimeScore. Los usuarios que ya superaron Cinéfilo (1000) / Maratonista (2500) / Curador (5000) reciben esos títulos de rango automáticamente ahora, en lugar de esperar a su próximo evento de visionado. Idempotente — seguro de ejecutar varias veces.",
-  "admin.v2test.btn_backfill": "Ejecutar relleno retroactivo"
+  "admin.v2test.btn_backfill": "Ejecutar relleno retroactivo",
+  "admin.fc.audiobook_counting": "Las reproducciones de audiolibros cuentan para:",
+  "admin.fc.audiobook_books_only": "Solo libros (por defecto)",
+  "admin.fc.audiobook_music_only": "Solo música",
+  "admin.fc.audiobook_both": "Libros y música",
+  "admin.fc.audiobook_note": "Controla si la reproducción de un audiolibro acredita tus insignias de Libros, las de Música, o ambas. Las pistas de música pura siempre cuentan como música; los ebooks siempre cuentan como libros."
 }

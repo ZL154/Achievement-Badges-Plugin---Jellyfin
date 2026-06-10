@@ -990,5 +990,10 @@
   "admin.v2test.btn_grant_cos": "Assegna cosmetico",
   "admin.v2test.backfill_legend": "Recupero traguardi (su tutto il server)",
   "admin.v2test.backfill_intro": "Scorre ogni profilo conosciuto ed esegue il controllo dei traguardi del negozio v2.0 sul rispettivo LifetimeScore. Gli utenti che hanno già superato Cinephile (1000) / Marathoner (2500) / Curator (5000) ricevono subito quei titoli di rango in automatico, invece di aspettare il loro prossimo evento di visione. Idempotente — sicuro da eseguire più volte.",
-  "admin.v2test.btn_backfill": "Esegui recupero"
+  "admin.v2test.btn_backfill": "Esegui recupero",
+  "admin.fc.audiobook_counting": "Le riproduzioni di audiolibri contano per:",
+  "admin.fc.audiobook_books_only": "Solo libri (predefinito)",
+  "admin.fc.audiobook_music_only": "Solo musica",
+  "admin.fc.audiobook_both": "Sia libri che musica",
+  "admin.fc.audiobook_note": "Controlla se la riproduzione di un audiolibro accredita le tue medaglie Libri, le medaglie Musica o entrambe. I brani di sola musica contano sempre come musica; gli ebook contano sempre come libri."
 }
