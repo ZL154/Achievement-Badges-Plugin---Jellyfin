@@ -31,14 +31,14 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd meets Steam profile customization, built natively into your media server.
 
-> **Status:** Active development — **v2.0.0 "Choose Your Loadout"** is live. The plugin transitions from a passive achievement tracker into an active progression game: earn score by watching, spend it in the Shop on power-ups + 70+ cosmetics (themes, frames, avatars, animated video backgrounds, profile borders, custom rank titles), and equip them to express your viewing identity.
+> **Status:** Active development — **v2.1.0 "Open Library"** is live. Achievements now span **music and books** alongside film & TV, admins can author **custom badges with compound AND/OR criteria**, and the whole admin page is localized in 8 languages with a live language picker. Built on the v2.0 "Choose Your Loadout" progression game (score economy, Shop, power-ups, 70+ cosmetics).
 
 ---
 
 ## 📑 Table of contents
 
 - [Overview](#-overview)
-- [What's new in v2.0 — Choose Your Loadout](#-whats-new-in-v20--choose-your-loadout) — power-ups, shop, 70+ cosmetics, video backgrounds, i18n
+- [What's new in v2.1.0 — Open Library](#-whats-new-in-v210--open-library) — music + books, custom badges, JS Injector fallback, anime/daily-badge fixes, language picker
 - [Core features](#-core-features)
   - [Badge system](#-badge-system) — 200+ achievements, 35+ categories, 6 rarities
   - [Rank system](#-rank-system) — 10 tiers from Rookie to Immortal
@@ -78,74 +78,37 @@ Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin
 
 ---
 
-## 🚀 What's new in v2.0 — Choose Your Loadout
+## 🚀 What's new in v2.1.0 — Open Library
 
-The plugin transitions from a passive achievement tracker into an active progression game. **Earn score by watching, spend it in the shop on power-ups + cosmetics, equip them to express your viewing identity.**
+Achievements expand beyond film & TV, and admins get real badge-authoring power. **Drop-in upgrade from v2.0.x — no schema breakage, no data migration.**
 
-### ⚡ Power-ups
+### 🎵 Music achievements
 
-Three consumable boosts you can earn from the daily login bonus or buy from the Shop:
+**18 built-in music badges** driven by real listening — total plays, listening hours, and unique **albums / artists / genres / decades**. Audio items now flow through the same playback-credit pipeline (80% real-listen gate) as films and episodes.
 
-- **XP Boost** — doubles score gains for 60 minutes. Re-applying refreshes the timer.
-- **Double Credit** — your next watched item counts 2× toward badge progress (`TotalItemsWatched` / `MoviesWatched` / `EpisodesByDate`).
-- **Streak Freeze** — auto-protects your watch streak from one missed day. Max 1 banked.
+### 📚 Book achievements
 
-Inventory cap of 20 per type. Live MM:SS countdown in the Loadout hero for active XP Boost. Multi-pill stack when several boosts run at once.
+**8 book badges** — books completed, audiobook listening hours, and book series completed. An **audiobook-counting policy** lets admins choose whether audiobook plays count toward Books only (default), Music only, or Both.
 
-### 🛒 Score Shop
+### 🛠️ Custom badge builder
 
-Steam-style storefront with a **featured carousel**, color-graded hero cards, hover lift, milestone progress bars for auto-unlock items, and "NEED N MORE SCORE" pills when you can't afford something yet. Pricing curve is reachable but meaningful — most users earn 100-500 score/week from passive playback; cheap cosmetics are 1-2 weeks of play, premium milestone titles are months.
+Define your own badges with **compound AND/OR criteria** across any metric — film, TV, music, books and more. Simple badges via the admin form; compound criteria, icons, and import/export via the API. Full guide + copy-paste templates: [Custom badges](#-custom-badges).
 
-### 🎨 Profile customization (60+ cosmetics)
+### 🌐 JS Injector fallback (issue #26)
 
-Six cosmetic kinds. Equipping is instant — no reload required.
+On bare-metal Linux where `/usr/share/jellyfin/web` isn't writable, the on-disk UI injection used to fail silently. The plugin now detects the [JavaScript Injector plugin](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector) and surfaces the exact script URLs to paste in. Details: [Troubleshooting](#-troubleshooting).
 
-- **14 Profile Themes** — paint the whole page (background gradient, panel cards, active tabs, accents): Default / Sunset / Cyberpunk / Pastel / Monochrome / Noir / Aurora / Crimson / Vaporwave / Galaxy / Forest / Ocean / Rose Gold / Midnight
-- **7 Badge Frames** — applied to your equipped badges: Default / Gilded (gold glow) / Holographic (iridescent gradient that shifts on hover) / Frosted (cool blue rim) / Obsidian (red ember glow) / Emerald (jade) / Neon (hot-pink electric outline)
-- **10 Custom Rank Titles** — replace your auto-generated tier name. 3 auto-unlock by lifetime-score milestone (*Cinephile* @ 1,000, *Marathoner* @ 2,500, *Curator* @ 5,000), the rest are shop-only (*Night Owl*, *Archivist*, *Tastemaker*, *Binge King*, *Aficionado*, *Legend* @ 7,500, *Completionist* @ 10,000)
-- **14 Avatars** — emoji swap for the rank-medal icon: 🏅 Medal / 🏆 Trophy / 👑 Crown / 🎬 Clapperboard / 🔥 Flame / 🦉 Night Owl / 💎 Diamond / 🚀 Rocket / 🍿 Popcorn / 👻 Ghost / 🦄 Unicorn / 🐉 Dragon / ⭐ Star / 🎮 Controller
-- **8 Animated Backgrounds** — 4 CSS-only (Starfield / Aurora-CSS / Fireflies-CSS / *None*) and **4 embedded HD video loops** at 1080p (Black Hole / Nebula / Galaxy / Moonlit Village / Rainy Station / Live Matrix / Live Aurora / Live Fireflies). Videos autoplay-muted, fixed to viewport with a dimming overlay so UI text stays legible. Browser-cached `immutable` so first equip is the only network cost.
-- **6 Profile Borders** — animated edge effects on the hero card: Gold Shimmer (sweeping gradient) / Plasma (color-cycling neon) / Ember (pulsing red halo) / Holo Edge (iridescent rainbow with specular sweep) / Crystal (cool-blue refractive)
+### 🇯🇵 Anime detection fix (issue #25)
 
-### 🎯 Daily + Weekly quest reroll
+Anime is now detected from **Genres *and* Tags**, read from both the item **and its parent Series**, with admin-configurable libraries / genres / tags — fixing anime badges that never fired when the classification lived on the Series or in Tags.
 
-- **Daily reroll** — 1 per UTC day, swaps the daily set
-- **Weekly reroll** — 1 per ISO week
-- Disabled "REROLLED TODAY" / "REROLLED THIS WEEK" pill shows you've used yours; tooltip says when it comes back
+### 🗓️ Daily-badge backfill fix + audit tool (issue #27)
 
-### 🎁 Daily login bonus
+Time-windowed badges (daily / weekly / monthly) are now **skipped during the initial history scan**, so they no longer false-unlock from lifetime totals. A new admin **audit + cleanup tool** finds and clears badges wrongly awarded by pre-v2.1.0 backfills (re-earnable organically afterward).
 
-First ≥80% real watch of each UTC day grants **+10 score + one random power-up** (XP Boost / Double Credit / Streak Freeze). Integrity-consistent with v1.9.8's playback-credit gate — only real watches qualify.
+### 🌍 Globe language picker + full admin localization
 
-### 🤫 8 hidden / easter-egg badges
-
-Discovered only after unlock — they don't appear in the catalog until you earn them:
-
-| Badge | Trigger | Rarity |
-|---|---|---|
-| First Anniversary | Watch on 365 separate days | Legendary |
-| Late-Night Sage | 100 late-night sessions | Mythic |
-| Quadruple Feature | 4 films in a single day | Epic |
-| Dawn Chorus | 50 early-morning sessions | Legendary |
-| Universal Watcher | 15 different genres | Legendary |
-| Archivist Supreme | 100 series completed | Mythic |
-| Deep Cut | items from 10 different decades | Mythic |
-| Saga Marathon | single item over 5 hours | Mythic |
-
-### 🌐 Full i18n for the new surfaces
-
-~1,500 new translation entries across **English, Français, Español, Deutsch, Italiano, Português, 中文 (简体), 日本語** covering every cosmetic name + description, every shop button, every power-up label, the new Loadout tab, settings toggles, and the welcome toast. Per-user language picker; admin sets the server-wide default.
-
-### 🛠️ Admin testing tools
-
-Inside the plugin config page: **grant score**, **grant power-up**, **grant cosmetic**, **backfill milestones** across all profiles (one-shot to retroactively unlock title milestones for users who crossed thresholds before v2.0 shipped). All elevation-gated, audit-logged.
-
-### ✨ Polish
-
-- One-time **v2.0 welcome toast** points new users at the Loadout tab on first visit (dismissable, `localStorage` flag so it never re-shows)
-- Inline reroll buttons on quest cards
-- Bulletproof root coverage so the host's "page not found" shell can't bleed through the standalone page
-- 14 new REST endpoints, all elevation-gated where applicable and audit-logged
+A **globe dropdown** on the admin page switches the UI language live and persists across reloads, and the **entire admin page** — including the Integrity and testing-tools sections — is now localized across all **8 languages**.
 
 ---
 
@@ -155,6 +118,10 @@ Inside the plugin config page: **grant score**, **grant power-up**, **grant cosm
 
 - **200+ built-in achievements** across categories: Films, Series, Binge, Night Watching, Morning, Afternoon (12-17h), Prime Time (19-22h), Weekend, Exploration, Streaks, Episode/Film Marathons, Eras, World, Languages, Genres, Runtime, Total Time, Holidays (Christmas, New Year, Halloween, Eid, Valentine's, Easter, Lunar New Year, Diwali, US Thanksgiving, Independence Day, Bonfire Night, Boxing Day, Mother's Day, Father's Day), Library Completion, Loyalty, People, Rewatch, Anime, Studio Specialist, Pilot vs Completer, and Hidden categories
 - **8 v2.0 easter-egg badges** — *First Anniversary, Late-Night Sage, Quadruple Feature, Dawn Chorus, Universal Watcher, Archivist Supreme, Deep Cut, Saga Marathon* (don't appear until unlocked)
+- **18 music badges (v2.1.0)** — plays, listening hours, and unique albums / artists / genres / decades. Audio plays pass the same 80% real-listen gate as video.
+- **8 book badges (v2.1.0)** — books completed, audiobook listening hours, and series completed. Audiobook plays route per the **audiobook-counting policy** (Books-only default / Music-only / Both).
+- **Improved anime detection (v2.1.0, #25)** — matches **Genres *and* Tags** on the item *and its parent Series*, with admin-configurable libraries / genres / tags.
+- **Admin-authored custom badges (v2.1.0)** — compound AND/OR criteria across any metric; see [Custom badges](#-custom-badges).
 - **6 rarity tiers** — Common, Uncommon, Rare, Epic, Legendary, Mythic
 - **Hidden/secret badges** displayed as `???` until unlocked
 - **Library completion milestones** that auto-scale to any library structure
@@ -346,7 +313,9 @@ A gear icon on the achievements page opens a full settings panel with auto-save:
 - **Badge categories + rarities** also localised ("Binge" → "Marathon", "Legendary" → "Légendaire", etc.)
 - **All v2.0 cosmetic names + descriptions** translated — Cinephile / 影迷 / シネフィル / Cinéphile, every theme, every avatar, every background
 - **Per-user language picker** in preferences; admin can set a server-wide default
-- Translations loaded client-side + server-side (`BadgeLocalizer`) so both UI chrome and badge titles on the leaderboard / showcase localise together
+- **Globe language picker (v2.1.0)** — a globe dropdown in the admin-page header switches the UI language live and persists across reloads
+- **Fully localized admin page (v2.1.0)** — the Integrity & anti-abuse and v2.0 testing-tools sections (previously English-only) are now translated across all 8 locales, as are the new music + book badges
+- Translations loaded client-side + server-side (`BadgeLocalizer`) so both UI chrome and badge titles on the leaderboard / showcase / admin grid / equipped showcase localise together
 
 ### 🛠️ Admin features
 
@@ -359,6 +328,8 @@ A gear icon on the achievements page opens a full settings panel with auto-save:
 - **Reset User Progress** — wipe a specific user's badges via admin endpoint
 - **Enable/disable individual badges** — useful if your server can't satisfy some criteria
 - **Visual badge editor** — form-based creator for custom badges
+- **Custom badge builder (v2.1.0)** — simple badges via an admin form, or **compound AND/OR criteria** + import/export via the `/Plugins/AchievementBadges/custom-badges` API. See [Custom badges](#-custom-badges)
+- **Daily-badge audit & cleanup (v2.1.0, #27)** — scans every profile for time-windowed badges wrongly awarded by pre-v2.1.0 backfills and clears them (re-earnable organically); audit-logged
 - **JSON editor** alternative for power users
 - **Seasonal challenges** — time-limited goals with start/end dates
 - **Challenge templates** — one-click add for Monthly Marathon, October Horror, New Year, Summer Blockbuster
@@ -573,6 +544,16 @@ sudo chown -R jellyfin:jellyfin /usr/share/jellyfin/web/
 ```
 
 Then restart Jellyfin. The plugin will patch `index.html` on the next startup.
+
+**Can't (or won't) make the web dir writable? Use the JavaScript Injector plugin (v2.1.0, #26).** On bare-metal Linux where `/usr/share/jellyfin/web` is owned by root, install the [JavaScript Injector plugin](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector). On the next startup, when the on-disk patch fails, Achievement Badges **detects** that plugin and writes the exact script URLs you need into the `/Plugins/AchievementBadges/test` diagnostics (`DiagJsInjectorGuidance`) and the server log. Paste these three into JS Injector's settings — one per entry:
+
+```
+/Plugins/AchievementBadges/client-script/sidebar
+/Plugins/AchievementBadges/client-script/standalone
+/Plugins/AchievementBadges/client-script/enhance
+```
+
+Restart Jellyfin and the UI loads through JS Injector — no writable web directory required. (The plugin doesn't call JS Injector's API directly, so this keeps working across JS Injector versions; the on-disk patch remains the default when the dir *is* writable.)
 
 **Still broken?** The plugin has a middleware fallback that rewrites `index.html` at runtime (no disk write needed). If that's also failing, check whether a reverse proxy (nginx/Caddy) is caching a stale `index.html` from before the plugin was installed. Clear the proxy cache or restart it.
 
@@ -802,6 +783,7 @@ Full per-version notes and signed binaries live on the GitHub Releases page:
 
 Highlights:
 
+- **v2.1.0** — Open Library: music + book achievements, custom badge builder (compound AND/OR), JS Injector fallback (#26), anime detection via Genres+Tags+Series (#25), daily-badge backfill fix + audit/cleanup tool (#27), globe language picker + full admin-page localization
 - **v2.0.0** — Choose Your Loadout: power-ups, score shop, 70+ cosmetics, 8 video backgrounds, full i18n
 - **v1.9.8** — Integrity release: closes playback-credit exploits (mark-as-played, seek-to-end, spam-click no longer credit), real-watch credit gate (≥80% accumulated play ticks with seeks excluded), 60s minimum runtime filter, daily credit cap, suspicious-rate audit flag, manual badge revoke
 - **v1.9.7** — Security-only: per-user chat attachment quota, profile-card CSP tightening, SVG sanitizer adds SMIL blocking, webhook DNS timeout
