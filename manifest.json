@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "2.1.1.0",
+        "changelog": "v2.1.1 'Open Library' (patch) - completes a v2.1.0 feature that shipped without its UI control. FIXED: the audiobook-counting policy is now adjustable in the admin UI. v2.1.0 added the setting that decides whether an audiobook play credits Book badges, Music badges, or both, but the control was missing from the admin page, so it was stuck at the default (Books only) unless you hand-edited PluginConfiguration.xml. There is now an 'Audiobook plays count toward:' dropdown in Feature Controls (Books only / Music only / Both), wired to load + save and localized across all 8 languages. Pure music tracks always count as Music and ebooks always count as Books - the policy only governs audiobooks. README was also reorganized around the v2.1.0 'Open Library' feature set. Drop-in from v2.1.0 / v2.0.x, no schema breakage, no data migration. 43/43 tests pass on .NET 9 / Jellyfin 10.11.x. Sigstore-signed + SLSA build-provenance attested.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v2.1.1/Jellyfin.Plugin.AchievementBadges_2.1.1.0.zip",
+        "checksum": "D48B79A48A1ED37AB76AE22938AB7ED6",
+        "timestamp": "2026-06-10T15:54:07Z"
+      },
+      {
         "version": "2.1.0.0",
         "changelog": "v2.1.0 'Open Library' - Music + Books achievements, custom badge builder, JS Injector fallback, plus anime and daily-badge fixes. NEW: 18 music badges (plays, listening hours, unique albums / artists / genres / decades) and 8 book badges (completions, audiobook hours, series), with an audiobook-counting policy (Books-only default, Music-only, or Both). Custom badge builder with compound AND/OR criteria, admin UI, and import/export at /Plugins/AchievementBadges/custom-badges. JS Injector hybrid (#26): detects the JavaScript Injector plugin and surfaces paste-in script URLs when /usr/share/jellyfin/web is not writable. Anime detection (#25) now reads Genres AND Tags from the item and its parent Series, with admin-configurable libraries / genres / tags. Daily / weekly / monthly badges are skipped during the initial backfill scan to stop false unlocks, plus an admin audit + cleanup tool for pre-2.1.0 wrongly-awarded badges (#27). Globe language picker on the admin page and full admin-page localization across all 8 locales. Drop-in upgrade from v2.0.x, no schema breakage, no data migration. 43/43 tests pass on .NET 9 / Jellyfin 10.11.x. Sigstore-signed + SLSA build-provenance attested.",
         "targetAbi": "10.11.0.0",
