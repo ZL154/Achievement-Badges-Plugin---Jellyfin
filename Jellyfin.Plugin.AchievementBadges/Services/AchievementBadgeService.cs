@@ -1483,6 +1483,22 @@ public class AchievementBadgeService : IDisposable
             var dayKey = timestamp.ToString("yyyy-MM-dd");
             var today = DateOnly.FromDateTime(timestamp.DateTime);
 
+            // [v2.1.x, issue #27] During the initial watch-history backfill we
+            // cannot reconstruct per-day timing reliably — on older Jellyfin
+            // servers per-item LastPlayedDate is missing, so every backfilled
+            // item falls back to "now" (see WatchHistoryBackfillService.GetPlayedDate)
+            // and clusters into a single day. That inflates the
+            // MoviesByDate/EpisodesByDate/MinutesByDate buckets that back the
+            // MaxXInSingleDay daily badges, and would falsely unlock
+            // "watch N in one day" badges on the next real-time event even
+            // though the award itself is skipped during the scan. So when
+            // backfilling with time-windowed skipping enabled (default), don't
+            // write the per-day buckets at all; real-time playback fills them
+            // correctly going forward and the recompute tool can rebuild them
+            // from true timestamps.
+            var skipDailyBuckets = context.Silent
+                && (Plugin.Instance?.Configuration?.BackfillSkipTimeWindowedBadges ?? true);
+
             // v2.0 - Consume pending Double Credit so this single playback
             // counts twice toward the main per-item counters. Multiplier is
             // 1 (normal) or 2 (DoubleCredit consumed).
@@ -1544,15 +1560,18 @@ public class AchievementBadgeService : IDisposable
             {
                 counters.MoviesWatched += creditMultiplier;
 
-                if (!counters.MoviesByDate.ContainsKey(dayKey))
+                if (!skipDailyBuckets)
                 {
-                    counters.MoviesByDate[dayKey] = 0;
-                }
+                    if (!counters.MoviesByDate.ContainsKey(dayKey))
+                    {
+                        counters.MoviesByDate[dayKey] = 0;
+                    }
 
-                counters.MoviesByDate[dayKey] += creditMultiplier;
+                    counters.MoviesByDate[dayKey] += creditMultiplier;
+                }
             }
 
-            if (context.IsEpisode)
+            if (context.IsEpisode && !skipDailyBuckets)
             {
                 if (!counters.EpisodesByDate.ContainsKey(dayKey))
                 {
@@ -1644,8 +1663,8 @@ public class AchievementBadgeService : IDisposable
             counters.DayOfWeekItemCounts.TryGetValue(dowKey, out var dowCount);
             counters.DayOfWeekItemCounts[dowKey] = dowCount + 1;
 
-            // Per-day total minutes
-            if (context.RunTimeTicks is long rtTicks && rtTicks > 0)
+            // Per-day total minutes (skip during backfill — see skipDailyBuckets, issue #27)
+            if (!skipDailyBuckets && context.RunTimeTicks is long rtTicks && rtTicks > 0)
             {
                 var minutes = (int)(rtTicks / TimeSpan.TicksPerMinute);
                 counters.MinutesByDate.TryGetValue(dayKey, out var dayMins);
