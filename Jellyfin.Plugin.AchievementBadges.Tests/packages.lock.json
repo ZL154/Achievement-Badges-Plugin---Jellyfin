@@ -2,6 +2,35 @@
   "version": 1,
   "dependencies": {
     "net9.0": {
+      "Jellyfin.Controller": {
+        "type": "Direct",
+        "requested": "[10.11.6, )",
+        "resolved": "10.11.6",
+        "contentHash": "6xlCWmIi/B2j4pXCWJ5NVZDnEIp2VgCyMBxsgAvhSYdYcwIDJ/98PMZ3i/0sxFGfOuOHnEvvXwm/Mjk8JJGohQ==",
+        "dependencies": {
+          "BitFaster.Caching": "2.5.4",
+          "Jellyfin.Common": "10.11.6",
+          "Jellyfin.MediaEncoding.Keyframes": "10.11.6",
+          "Jellyfin.Model": "10.11.6",
+          "Jellyfin.Naming": "10.11.6",
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.11",
+          "Microsoft.Extensions.Configuration.Binder": "9.0.11",
+          "System.Threading.Tasks.Dataflow": "9.0.11"
+        }
+      },
+      "Jellyfin.Model": {
+        "type": "Direct",
+        "requested": "[10.11.6, )",
+        "resolved": "10.11.6",
+        "contentHash": "G9Fbbx0mlJtKI6xd/9hwDxpm6lQAR+bIK3z08PG4x1TbeyKHcHI38GBt8huemKxS/KThW/zo4NY7Y+JpnVFZEQ==",
+        "dependencies": {
+          "Jellyfin.Data": "10.11.6",
+          "Jellyfin.Extensions": "10.11.6",
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.11",
+          "System.Globalization": "4.3.0",
+          "System.Text.Json": "9.0.11"
+        }
+      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[17.11.1, )",
@@ -10,6 +39,15 @@
         "dependencies": {
           "Microsoft.CodeCoverage": "17.11.1",
           "Microsoft.TestPlatform.TestHost": "17.11.1"
+        }
+      },
+      "Moq": {
+        "type": "Direct",
+        "requested": "[4.20.72, )",
+        "resolved": "4.20.72",
+        "contentHash": "EA55cjyNn8eTNWrgrdZJH5QLFp2L43oxl1tlkoYUKIE9pRwL784OWiTXeCV5ApS+AMYEAlt7Fo03A2XfouvHmQ==",
+        "dependencies": {
+          "Castle.Core": "5.1.1"
         }
       },
       "xunit": {
@@ -33,6 +71,14 @@
         "type": "Transitive",
         "resolved": "2.5.4",
         "contentHash": "1QroTY1PVCZOSG9FnkkCrmCKk/+bZCgI/YXq376HnYwUDJ4Ho0EaV4YaA/5v5WYLnwIwIO7RZkdWbg9pxIpueQ=="
+      },
+      "Castle.Core": {
+        "type": "Transitive",
+        "resolved": "5.1.1",
+        "contentHash": "rpYtIczkzGpf+EkZgDr9CClTdemhsrwA/W5hMoPjLkRFnXzH44zDLoovXeKtmxb1ykXK9aJVODSpiJml8CTw2g==",
+        "dependencies": {
+          "System.Diagnostics.EventLog": "6.0.0"
+        }
       },
       "Diacritics": {
         "type": "Transitive",
@@ -71,21 +117,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.11"
         }
       },
-      "Jellyfin.Controller": {
-        "type": "Transitive",
-        "resolved": "10.11.6",
-        "contentHash": "6xlCWmIi/B2j4pXCWJ5NVZDnEIp2VgCyMBxsgAvhSYdYcwIDJ/98PMZ3i/0sxFGfOuOHnEvvXwm/Mjk8JJGohQ==",
-        "dependencies": {
-          "BitFaster.Caching": "2.5.4",
-          "Jellyfin.Common": "10.11.6",
-          "Jellyfin.MediaEncoding.Keyframes": "10.11.6",
-          "Jellyfin.Model": "10.11.6",
-          "Jellyfin.Naming": "10.11.6",
-          "Microsoft.Extensions.Configuration.Abstractions": "9.0.11",
-          "Microsoft.Extensions.Configuration.Binder": "9.0.11",
-          "System.Threading.Tasks.Dataflow": "9.0.11"
-        }
-      },
       "Jellyfin.Data": {
         "type": "Transitive",
         "resolved": "10.11.6",
@@ -120,18 +151,6 @@
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "9.0.11",
           "NEbml": "1.1.0.5"
-        }
-      },
-      "Jellyfin.Model": {
-        "type": "Transitive",
-        "resolved": "10.11.6",
-        "contentHash": "G9Fbbx0mlJtKI6xd/9hwDxpm6lQAR+bIK3z08PG4x1TbeyKHcHI38GBt8huemKxS/KThW/zo4NY7Y+JpnVFZEQ==",
-        "dependencies": {
-          "Jellyfin.Data": "10.11.6",
-          "Jellyfin.Extensions": "10.11.6",
-          "Microsoft.Extensions.Logging.Abstractions": "9.0.11",
-          "System.Globalization": "4.3.0",
-          "System.Text.Json": "9.0.11"
         }
       },
       "Jellyfin.Naming": {
@@ -310,6 +329,11 @@
         "type": "Transitive",
         "resolved": "8.6.5",
         "contentHash": "t+sUVrIwvo7UmsgHGgOG9F0GDZSRIm47u2ylH17Gvcv1q5hNEwgD5GoBlFyc0kh/pebmPyrAgvGsR/65ZBaXlg=="
+      },
+      "System.Diagnostics.EventLog": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "lcyUiXTsETK2ALsZrX+nWuHSIQeazhqPphLfaRxzdGaG93+0kELqpgEHtwWOlQe7+jSFnKwaCAgL4kjeZCQJnw=="
       },
       "System.Globalization": {
         "type": "Transitive",

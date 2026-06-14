@@ -239,15 +239,45 @@ public class PlaybackCompletionService
     /// UserDataSaved hook; backfill uses RecordPlayback the same way.</summary>
     public void RecordBookCompletion(PlaybackContext context)
     {
-        if (context is null)
+        if (context is null || string.IsNullOrWhiteSpace(context.UserId))
         {
             return;
         }
 
+        var itemId = context.ItemId ?? string.Empty;
+        var playedAt = context.PlayedAt ?? DateTimeOffset.Now;
+        context.PlayedAt = playedAt;
+
+        // [v2.1.x, issue #24] Per-item dedup. Ebooks bypass RecordCompletion's
+        // completion-percent gate, so they also skip its re-credit guard —
+        // meaning toggling a book's "played" flag off→on (or re-marking a
+        // book that was already counted) would inflate BooksCompleted every
+        // time. Reuse the same RecentlyCompletedItemIds 6h window that
+        // movies/episodes use so rapid re-toggles don't double-count, while a
+        // genuine re-read days later still credits (matches the existing
+        // rewatch convention).
+        lock (_lock)
+        {
+            var state = GetOrCreateState(context.UserId);
+            CleanupOldEntries(state, playedAt);
+
+            if (!string.IsNullOrWhiteSpace(itemId)
+                && state.RecentlyCompletedItemIds.TryGetValue(itemId, out var lastSeen)
+                && playedAt - lastSeen < TimeSpan.FromHours(6))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(itemId))
+            {
+                state.RecentlyCompletedItemIds[itemId] = playedAt;
+                Save();
+            }
+        }
+
         _achievementBadgeService.RecordPlayback(context);
 
-        if (!string.IsNullOrWhiteSpace(context.UserId)
-            && Guid.TryParse(context.UserId, out var bookUserGuid))
+        if (Guid.TryParse(context.UserId, out var bookUserGuid))
         {
             FriendsService.InvalidateLastWatched(bookUserGuid);
         }

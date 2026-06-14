@@ -15,8 +15,21 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.9.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <!-- The main plugin csproj references the Jellyfin packages with
+       ExcludeAssets=runtime (the host provides them at runtime, so they're
+       kept out of the shipped zip). The test runner has no Jellyfin host, so
+       it needs the real runtime assemblies on disk to instantiate the
+       services under test. Reference them here WITH runtime assets — this is
+       test-only and never affects the plugin artifact. Versions must match
+       the main csproj (10.11.6). -->
+  <ItemGroup>
+    <PackageReference Include="Jellyfin.Controller" Version="10.11.6" />
+    <PackageReference Include="Jellyfin.Model" Version="10.11.6" />
   </ItemGroup>
 
   <ItemGroup>
