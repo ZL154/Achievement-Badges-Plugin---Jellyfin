@@ -231,6 +231,28 @@ public class PlaybackCompletionService
         return true;
     }
 
+    /// <summary>[v2.1.x, issue #24] Record a finished/read ebook. Ebooks never
+    /// emit playback sessions, so they can't go through RecordCompletion's
+    /// completion-percent gate — being "marked read" (IsPlayed) IS the
+    /// completion signal. Credit directly so Book badges (BooksCompleted)
+    /// actually track. Real-time entry from PlaybackCompletionTracker's
+    /// UserDataSaved hook; backfill uses RecordPlayback the same way.</summary>
+    public void RecordBookCompletion(PlaybackContext context)
+    {
+        if (context is null)
+        {
+            return;
+        }
+
+        _achievementBadgeService.RecordPlayback(context);
+
+        if (!string.IsNullOrWhiteSpace(context.UserId)
+            && Guid.TryParse(context.UserId, out var bookUserGuid))
+        {
+            FriendsService.InvalidateLastWatched(bookUserGuid);
+        }
+    }
+
     public UserPlaybackState GetState(string userId)
     {
         lock (_lock)

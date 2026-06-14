@@ -66,6 +66,7 @@ public class WatchHistoryBackfillService
         var moviesWatched = 0;
         var episodesWatched = 0;
         var seriesCompleted = 0;
+        var booksCompleted = 0;
         var librariesFound = new HashSet<string>();
 
         try
@@ -121,6 +122,43 @@ public class WatchHistoryBackfillService
                     Actors = moviesActors,
                     // v1.9.3 — Studio specialists (Studio Ghibli, A24, etc).
                     Studios = movie.Studios,
+                    Silent = true
+                });
+            }
+
+            // [v2.1.x, issue #24] Query all "read" books. Ebooks never emit
+            // playback sessions (you don't "play" a book), so PlaybackStopped
+            // never fires for them and they were never tracked. They're
+            // credited here via the IsPlayed flag — the same backfill model as
+            // movies — so existing read books count toward Book badges.
+            var bookQuery = new InternalItemsQuery(user)
+            {
+                IsPlayed = true,
+                IncludeItemTypes = new[] { BaseItemKind.Book },
+                Recursive = true,
+                EnableTotalRecordCount = false
+            };
+
+            var books = _libraryManager.GetItemsResult(bookQuery).Items;
+            booksCompleted = books.Count;
+
+            foreach (var book in books)
+            {
+                var bookLibrary = GetLibraryName(book);
+                if (!string.IsNullOrEmpty(bookLibrary))
+                {
+                    librariesFound.Add(bookLibrary);
+                }
+
+                _achievementBadgeService.RecordPlayback(new PlaybackContext
+                {
+                    UserId = userId,
+                    ItemId = book.Id.ToString("D"),
+                    IsBook = true,
+                    LibraryName = bookLibrary,
+                    PlayedAt = GetPlayedDate(user, book),
+                    ProductionYear = book.ProductionYear,
+                    Genres = book.Genres,
                     Silent = true
                 });
             }
@@ -227,8 +265,8 @@ public class WatchHistoryBackfillService
             }
 
             _logger.LogInformation(
-                "[AchievementBadges] Backfill done for {Username}: {Movies} movies, {Episodes} episodes, {Series} series, {Libraries} libraries.",
-                username, moviesWatched, episodesWatched, seriesCompleted, librariesFound.Count);
+                "[AchievementBadges] Backfill done for {Username}: {Movies} movies, {Episodes} episodes, {Series} series, {Books} books, {Libraries} libraries.",
+                username, moviesWatched, episodesWatched, seriesCompleted, booksCompleted, librariesFound.Count);
 
             return new
             {
@@ -237,6 +275,7 @@ public class WatchHistoryBackfillService
                 MoviesWatched = moviesWatched,
                 EpisodesWatched = episodesWatched,
                 SeriesCompleted = seriesCompleted,
+                BooksCompleted = booksCompleted,
                 LibrariesVisited = librariesFound.Count,
                 Success = true
             };

@@ -17,6 +17,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
 {
     private readonly ISessionManager _sessionManager;
     private readonly ILibraryManager _libraryManager;
+    private readonly IUserDataManager _userDataManager;
     private readonly PlaybackCompletionService _playbackCompletionService;
     private readonly ILogger<PlaybackCompletionTracker> _logger;
     private bool _subscribed;
@@ -49,11 +50,13 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     public PlaybackCompletionTracker(
         ISessionManager sessionManager,
         ILibraryManager libraryManager,
+        IUserDataManager userDataManager,
         PlaybackCompletionService playbackCompletionService,
         ILogger<PlaybackCompletionTracker> logger)
     {
         _sessionManager = sessionManager;
         _libraryManager = libraryManager;
+        _userDataManager = userDataManager;
         _playbackCompletionService = playbackCompletionService;
         _logger = logger;
     }
@@ -64,8 +67,12 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         {
             _sessionManager.PlaybackProgress += OnPlaybackProgress;
             _sessionManager.PlaybackStopped += OnPlaybackStopped;
+            // [v2.1.x, issue #24] Ebooks don't emit playback sessions, so the
+            // only signal a book was finished is its UserData being marked
+            // played. Hook UserDataSaved to credit Book completions.
+            _userDataManager.UserDataSaved += OnUserDataSaved;
             _subscribed = true;
-            _logger.LogInformation("[AchievementBadges] PlaybackCompletionTracker started, subscribed to session events.");
+            _logger.LogInformation("[AchievementBadges] PlaybackCompletionTracker started, subscribed to session + userdata events.");
         }
 
         return Task.CompletedTask;
@@ -86,7 +93,56 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
 
         _sessionManager.PlaybackProgress -= OnPlaybackProgress;
         _sessionManager.PlaybackStopped -= OnPlaybackStopped;
+        _userDataManager.UserDataSaved -= OnUserDataSaved;
         _subscribed = false;
+    }
+
+    // [v2.1.x, issue #24] Credit a finished ebook. Ebooks (BaseItemKind.Book)
+    // are read, not "played", so they never raise PlaybackStopped — the only
+    // completion signal is UserData being marked played. Audio / AudioBook
+    // (music + audiobooks) DO play through sessions and are handled by
+    // OnPlaybackStopped, so they're excluded here. Gated on the played-toggle
+    // / playback-finished reason so unrelated userdata saves (favourite,
+    // rating, resume position) don't falsely credit a book.
+    private void OnUserDataSaved(object? sender, UserDataSaveEventArgs e)
+    {
+        try
+        {
+            var item = e?.Item;
+            if (item is null) return;
+            if (!string.Equals(item.GetType().Name, "Book", StringComparison.OrdinalIgnoreCase)) return;
+            if (e!.UserData is null || !e.UserData.Played) return;
+
+            var reason = e.SaveReason.ToString();
+            if (!reason.Equals("TogglePlayed", StringComparison.OrdinalIgnoreCase)
+                && !reason.Equals("PlaybackFinished", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (e.UserId == Guid.Empty) return;
+
+            var context = new PlaybackContext
+            {
+                UserId = e.UserId.ToString("D"),
+                ItemId = item.Id.ToString("D"),
+                IsBook = true,
+                LibraryName = ResolveLibraryName(item),
+                PlayedAt = DateTimeOffset.Now,
+                ProductionYear = item.ProductionYear,
+                Genres = GetEffectiveGenres(item),
+                Tags = GetEffectiveTags(item),
+            };
+
+            _playbackCompletionService.RecordBookCompletion(context);
+            _logger.LogInformation(
+                "[AchievementBadges] Book marked read: user={UserId} item={ItemId} reason={Reason}",
+                e.UserId, item.Id, reason);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AchievementBadges] Failed to process book completion from UserDataSaved.");
+        }
     }
 
     private void OnPlaybackProgress(object? sender, PlaybackProgressEventArgs e)
