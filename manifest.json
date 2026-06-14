@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/assets/achievement.png",
     "versions": [
       {
+        "version": "2.1.2.0",
+        "changelog": "v2.1.2 'Open Library' (patch) - hardens two v2.1.0 features that didn't fully work in the field. FIXED (#27): daily badges no longer false-unlock from a watch-history scan. On servers where Jellyfin doesn't store a per-item last-played date, the initial backfill dated every item to 'now', clustering the whole library into one day and inflating the 'in a single day' counters (Film / Episode Marathons, Endurance). v2.1.0 skipped awarding those badges during the scan, but the inflated counts survived and tripped the badge on the next real play. The scan now leaves the per-day buckets untouched entirely, so daily badges only ever reflect a genuine single day's viewing; re-run the backfill to clear any already-wrongly-awarded daily badges. FIXED (#24): books now actually track. Ebooks don't emit playback sessions like movies and episodes, so completed-book badges never moved. Marking a book played now credits Book badges in real time, and the watch-history backfill counts books already finished (re-marking the same book within 6 hours won't double-count). Audiobooks and music were already tracked in v2.1.0; this patch is about ebooks. Drop-in from v2.1.x / v2.0.x, no schema breakage, no data migration. 50/50 tests pass on .NET 9 / Jellyfin 10.11.x. Sigstore-signed + SLSA build-provenance attested.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/download/v2.1.2/Jellyfin.Plugin.AchievementBadges_2.1.2.0.zip",
+        "checksum": "7A2E85661B0F00D6C93D19B647C3631B",
+        "timestamp": "2026-06-14T01:26:42Z"
+      },
+      {
         "version": "2.1.1.0",
         "changelog": "v2.1.1 'Open Library' (patch) - completes a v2.1.0 feature that shipped without its UI control. FIXED: the audiobook-counting policy is now adjustable in the admin UI. v2.1.0 added the setting that decides whether an audiobook play credits Book badges, Music badges, or both, but the control was missing from the admin page, so it was stuck at the default (Books only) unless you hand-edited PluginConfiguration.xml. There is now an 'Audiobook plays count toward:' dropdown in Feature Controls (Books only / Music only / Both), wired to load + save and localized across all 8 languages. Pure music tracks always count as Music and ebooks always count as Books - the policy only governs audiobooks. README was also reorganized around the v2.1.0 'Open Library' feature set. Drop-in from v2.1.0 / v2.0.x, no schema breakage, no data migration. 43/43 tests pass on .NET 9 / Jellyfin 10.11.x. Sigstore-signed + SLSA build-provenance attested.",
         "targetAbi": "10.11.0.0",
