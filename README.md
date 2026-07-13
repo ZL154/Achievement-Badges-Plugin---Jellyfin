@@ -31,7 +31,7 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd meets Steam profile customization, built natively into your media server.
 
-> **Status:** Active development — **v2.1.0 "Open Library"** is live. Achievements now span **music and books** alongside film & TV, admins can author **custom badges with compound AND/OR criteria**, and the whole admin page is localized in 8 languages with a live language picker. Built on the v2.0 "Choose Your Loadout" progression game (score economy, Shop, power-ups, 70+ cosmetics).
+> **Status:** Active development — **v2.1.3 (Open Library)** is live. Achievements span **music and books** alongside film & TV, admins can author **custom badges with compound AND/OR criteria** (now including **genre-filtered music badges**), and the whole admin page is localized in 8 languages with a live language picker. v2.1.3 is a bug-fix patch (per-genre music tracking, custom-badge delete, header-injection resilience, category labels) with a full builder-localization pass — see [What's new in v2.1.3](#-whats-new-in-v213). Built on the v2.0 "Choose Your Loadout" progression game (score economy, Shop, power-ups, 70+ cosmetics).
 
 ---
 
@@ -75,6 +75,18 @@ A full progression, gamification and achievement system for Jellyfin that reward
 Over **200 built-in achievements** across 35+ categories, a 10-tier rank ladder from Rookie to Immortal, a full score economy with combos, prestige, daily/weekly quests, a **Score Shop with 70+ cosmetics**, power-up consumables, a Friends drawer with messaging, plus admin power features like custom badges, seasonal challenges, webhook notifications, and a full audit log.
 
 Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin, ElegantFin, or StarTrack.
+
+---
+
+## 🚀 What's new in v2.1.3
+
+A bug-fix patch resolving the outstanding reports from #24 and #36, plus a full builder-localization pass. **Drop-in upgrade from v2.1.x / v2.0.x — no schema breakage; a one-time, ID-preserving custom-badge migration runs automatically.**
+
+- **Genre-filtered music badges now actually filter by genre (#24).** Music plays and listening time are tracked **per genre** (case-insensitive), so a "play 50 disco tracks" badge no longer ticks up when you listen to metal. Three new builder metrics — *Music plays of a genre*, *Music hours of a genre*, *Items watched of a genre* — reveal a genre field when picked.
+- **Custom badges fully delete (#24).** The visual builder, the badge list, and delete now share one store (they were previously split, so builder-made badges couldn't be removed), and deleting a badge purges its earned + equipped copies from every user profile. Pre-existing badges are migrated on first startup with their IDs preserved.
+- **Header UI survives another header-injecting plugin (#36).** When a second plugin (e.g. Ratings) stripped the badge scripts from `index.html`, the plugin used to think it was still patched and never re-injected. The guard now keys on the actual script tag, so a stripped page is always repaired.
+- **Badge category labels fixed (#24).** Categories like *Studio Specialist* and *Books* no longer show as raw `category.*` keys, and every built-in category is now translated.
+- **Full builder localization.** The badge-builder metric list, quest builder, power-up + cosmetic pickers, and status messages are now translated across all 8 languages (en/fr/es/de/it/pt/zh/ja).
 
 ---
 
