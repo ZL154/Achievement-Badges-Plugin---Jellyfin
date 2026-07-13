@@ -32,6 +32,24 @@ public class SafeStartupRunner : IHostedService
 
                 _logger.LogInformation("AchievementBadges: Injection complete.");
 
+                // [issue #24] One-time migration: fold legacy visual-builder
+                // custom badges (config.CustomBadges) into the sidecar store the
+                // management UI reads, so pre-update badges become visible and
+                // deletable. Runs before re-evaluation so migrated badges are
+                // scored in the same pass. Idempotent (clears the legacy list).
+                try
+                {
+                    var moved = _badgeService.MigrateLegacyConfigCustomBadges();
+                    if (moved > 0)
+                    {
+                        _logger.LogInformation("[AchievementBadges] Legacy custom-badge migration moved {Count} badge(s) into the sidecar store.", moved);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[AchievementBadges] Legacy custom-badge migration failed.");
+                }
+
                 // Re-evaluate every user's badges against the current definitions so that
                 // any new badges added in this release auto-unlock for users whose counters
                 // already satisfy them, without requiring them to open their achievements page.

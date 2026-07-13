@@ -191,6 +191,79 @@ public class BadgeBehaviorTests : IDisposable
         Assert.Equal(2, Counters().BooksCompleted);
     }
 
+    // ============================================================
+    // Issue #24 — per-genre MUSIC play counts (so genre-filtered
+    // custom badges like "play 50 disco tracks" actually filter).
+    // ============================================================
+
+    [Fact]
+    public void MusicPlays_TrackedPerGenre_WithListeningSeconds()
+    {
+        var t = new DateTimeOffset(2026, 6, 14, 12, 0, 0, TimeSpan.Zero);
+        // 3 Disco tracks + 2 Metal tracks, 200s each.
+        for (var i = 0; i < 3; i++)
+        {
+            _badges.RecordPlayback(new PlaybackContext
+            {
+                UserId = UserId,
+                ItemId = $"disco-{i}",
+                IsMusic = true,
+                Genres = new[] { "Disco" },
+                RunTimeTicks = 200L * TimeSpan.TicksPerSecond,
+                PlayedAt = t,
+            });
+        }
+
+        for (var i = 0; i < 2; i++)
+        {
+            _badges.RecordPlayback(new PlaybackContext
+            {
+                UserId = UserId,
+                ItemId = $"metal-{i}",
+                IsMusic = true,
+                Genres = new[] { "Metal" },
+                RunTimeTicks = 200L * TimeSpan.TicksPerSecond,
+                PlayedAt = t,
+            });
+        }
+
+        var c = Counters();
+        Assert.Equal(5, c.MusicPlays);                            // total across genres
+        Assert.Equal(3, c.MusicGenrePlayCounts["Disco"]);         // per-genre isolation
+        Assert.Equal(2, c.MusicGenrePlayCounts["Metal"]);
+        Assert.False(c.MusicGenrePlayCounts.ContainsKey("Jazz")); // untouched genres absent
+        Assert.Equal(600, c.MusicGenreListeningSeconds["Disco"]); // 3 * 200s
+        Assert.Equal(400, c.MusicGenreListeningSeconds["Metal"]); // 2 * 200s
+    }
+
+    // ============================================================
+    // Issue #24 — deleting a custom badge must purge its earned +
+    // equipped copies from every user profile (not just the sidecar
+    // definition), else users keep seeing the deleted badge.
+    // ============================================================
+
+    [Fact]
+    public void PurgeCustomBadge_RemovesEarnedAndEquipped_KeepsOthers()
+    {
+        var profile = _badges.GetOrCreateProfileDirect(UserId);
+        profile.Badges.Add(new AchievementBadge { Id = "custom-x", Key = "custom-x", Title = "Deleted", Unlocked = true });
+        profile.Badges.Add(new AchievementBadge { Id = "keep-me", Key = "keep-me", Title = "Kept", Unlocked = true });
+        profile.EquippedBadgeIds.Add("custom-x");
+        profile.EquippedBadgeIds.Add("keep-me");
+        profile.EquippedTitleBadgeId = "custom-x";
+        _badges.SaveProfileDirect(profile);
+
+        var affected = _badges.PurgeCustomBadge("custom-x");
+
+        Assert.Equal(1, affected);
+        var p = _badges.PeekProfile(UserId)!;
+        Assert.DoesNotContain(p.Badges, b => b.Id == "custom-x");     // earned copy gone
+        Assert.Contains(p.Badges, b => b.Id == "keep-me");            // others untouched
+        Assert.DoesNotContain("custom-x", p.EquippedBadgeIds);        // un-equipped
+        Assert.Contains("keep-me", p.EquippedBadgeIds);
+        Assert.Null(p.EquippedTitleBadgeId);                          // title badge cleared
+    }
+
     [Fact]
     public void RecordBookCompletion_GenuineReReadAfterWindow_CountsAgain()
     {

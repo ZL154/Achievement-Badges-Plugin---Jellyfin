@@ -175,7 +175,18 @@ public class WebInjectionService : IHostedService
                 var html = await File.ReadAllTextAsync(path).ConfigureAwait(false);
 
                 // Already patched AT THIS VERSION? Idempotent no-op.
-                if (html.Contains(CurrentStamp, StringComparison.Ordinal))
+                // [issue #36] Key this on the actual versioned <script> tag, NOT
+                // just the version-stamp comment. The stamp sits OUTSIDE the
+                // achievementbadges-bootstrap marker block, so an external actor
+                // — another header-injecting plugin (e.g. the Ratings plugin),
+                // a partial web-asset regeneration, or an uninstall/reinstall —
+                // can strip the script block while leaving the stamp behind.
+                // The old stamp-only check then short-circuited to a no-op, so
+                // the header UI never came back and reinstalling didn't fix it
+                // (index.html was stuck "stamped but scriptless"). Checking the
+                // real sidebar tag means a scriptless file always gets repaired.
+                var currentSidebarTag = "client-script/sidebar" + VerTag;
+                if (html.Contains(currentSidebarTag, StringComparison.Ordinal))
                 {
                     DiagIndexPatched = true;
                     DiagPatchedPath = path;

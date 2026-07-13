@@ -921,6 +921,132 @@ public class AchievementBadgeService : IDisposable
         }
     }
 
+    // [issue #24] Remove a deleted custom badge's earned + equipped records
+    // from every user profile. The evaluator persists each custom badge into a
+    // user's profile.Badges (keyed by the badge Id) when it's first seen /
+    // unlocked; deleting only the sidecar definition previously left those
+    // per-user copies behind, so users kept seeing badges the admin had
+    // removed. Called by the custom-badge delete endpoint AFTER the definition
+    // is removed from the store (so re-evaluation can't resurrect it). Returns
+    // the number of profiles changed.
+    public int PurgeCustomBadge(string badgeId)
+    {
+        if (string.IsNullOrWhiteSpace(badgeId))
+        {
+            return 0;
+        }
+
+        var affected = 0;
+        lock (_lock)
+        {
+            foreach (var profile in _userProfiles.Values)
+            {
+                var changed = profile.Badges.RemoveAll(
+                    b => string.Equals(b.Id, badgeId, StringComparison.OrdinalIgnoreCase)) > 0;
+
+                changed |= profile.EquippedBadgeIds.RemoveAll(
+                    id => string.Equals(id, badgeId, StringComparison.OrdinalIgnoreCase)) > 0;
+
+                if (string.Equals(profile.EquippedTitleBadgeId, badgeId, StringComparison.OrdinalIgnoreCase))
+                {
+                    profile.EquippedTitleBadgeId = null;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    affected++;
+                }
+            }
+
+            if (affected > 0)
+            {
+                Save();
+            }
+        }
+
+        return affected;
+    }
+
+    // [issue #24] One-time migration that folds legacy admin-defined custom
+    // badges out of PluginConfiguration.CustomBadges (the old flat
+    // AchievementDefinition store the visual builder used to POST to) and into
+    // the sidecar CustomBadgeService store that the management list/delete UI
+    // reads. Before this, badges created via the visual builder landed in a
+    // store the list couldn't see or delete — the reporter's "custom badges
+    // won't fully delete". Ids are PRESERVED so any earned copies already in
+    // user profiles stay linked to the migrated definition. Naturally
+    // idempotent: config.CustomBadges is cleared on success, so a later boot
+    // finds nothing to migrate. Best-effort per badge — one malformed legacy
+    // definition can't abort the whole migration.
+    public int MigrateLegacyConfigCustomBadges()
+    {
+        if (_customBadges is null)
+        {
+            return 0;
+        }
+
+        var plugin = Plugin.Instance;
+        var config = plugin?.Configuration;
+        var legacy = config?.CustomBadges;
+        if (plugin is null || config is null || legacy is null || legacy.Count == 0)
+        {
+            return 0;
+        }
+
+        var migrated = 0;
+        foreach (var def in legacy)
+        {
+            if (def is null || string.IsNullOrWhiteSpace(def.Id) || string.IsNullOrWhiteSpace(def.Title))
+            {
+                continue;
+            }
+
+            try
+            {
+                _customBadges.Upsert(new Models.CustomBadge
+                {
+                    Id = def.Id, // preserve so earned profile copies stay linked
+                    Name = def.Title,
+                    Description = def.Description,
+                    Rarity = string.IsNullOrWhiteSpace(def.Rarity) ? "Common" : def.Rarity,
+                    IconUrl = string.IsNullOrWhiteSpace(def.Icon) ? string.Empty : def.Icon,
+                    Media = def.Media,
+                    Enabled = true,
+                    TimeWindow = def.TimeWindow,
+                    Criteria = new Models.CustomBadgeCriteria
+                    {
+                        Metric = def.Metric,
+                        Threshold = Math.Max(1, def.TargetValue),
+                        MetricParameter = string.IsNullOrWhiteSpace(def.MetricParameter) ? null : def.MetricParameter,
+                    },
+                });
+                migrated++;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[AchievementBadges] Failed to migrate legacy custom badge {Id} ({Title}); leaving it in place.", def.Id, def.Title);
+            }
+        }
+
+        // Only clear the legacy store once every convertible badge moved across.
+        // If some failed to migrate we keep the whole legacy list so the admin
+        // doesn't silently lose definitions; they can be retried next boot.
+        var convertible = legacy.Count(d => d is not null && !string.IsNullOrWhiteSpace(d.Id) && !string.IsNullOrWhiteSpace(d.Title));
+        if (migrated > 0 && migrated == convertible)
+        {
+            config.CustomBadges = new List<AchievementDefinition>();
+            plugin.UpdateConfiguration(config);
+            _logger.LogInformation("[AchievementBadges] Migrated {Count} legacy custom badge(s) into the sidecar store and cleared the legacy config list.", migrated);
+        }
+        else if (migrated > 0)
+        {
+            _logger.LogWarning("[AchievementBadges] Migrated {Migrated}/{Convertible} legacy custom badges; kept the legacy list for a retry next boot.", migrated, convertible);
+        }
+
+        return migrated;
+    }
+
     public object PrestigeReset(string userId)
     {
         userId = NormalizeUserId(userId);
@@ -1610,8 +1736,18 @@ public class AchievementBadgeService : IDisposable
                         counters.MusicArtistsListened.Add(a.Trim());
 
                 foreach (var g in context.Genres ?? Array.Empty<string>())
-                    if (!string.IsNullOrWhiteSpace(g))
-                        counters.MusicGenresListened.Add(g.Trim());
+                {
+                    if (string.IsNullOrWhiteSpace(g)) continue;
+                    var gt = g.Trim();
+                    counters.MusicGenresListened.Add(gt);
+                    // [issue #24] Per-genre play count + listening seconds so
+                    // genre-specific music badges ("play 50 disco tracks") can
+                    // actually filter, instead of the distinct-genre set only.
+                    counters.MusicGenrePlayCounts.TryGetValue(gt, out var gPlays);
+                    counters.MusicGenrePlayCounts[gt] = gPlays + creditMultiplier;
+                    counters.MusicGenreListeningSeconds.TryGetValue(gt, out var gSecs);
+                    counters.MusicGenreListeningSeconds[gt] = gSecs + (listenSec * creditMultiplier);
+                }
 
                 if (context.ProductionYear is int musicYear && musicYear > 0)
                     counters.MusicDecadesListened.Add(musicYear / 10 * 10);
@@ -2594,6 +2730,32 @@ public class AchievementBadgeService : IDisposable
         }
     }
 
+    // [issue #24] Genre-name lookup that tolerates casing differences between
+    // the badge's parameter ("disco") and the library's tag ("Disco"). Fast
+    // exact-match first, then a one-pass case-insensitive scan. Overloaded for
+    // the int (play-count) and long (listening-seconds) counter dictionaries.
+    private static int LookupGenreCountCaseInsensitive(Dictionary<string, int> dict, string key)
+    {
+        if (dict.TryGetValue(key, out var exact)) return exact;
+        foreach (var kv in dict)
+        {
+            if (string.Equals(kv.Key, key, StringComparison.OrdinalIgnoreCase)) return kv.Value;
+        }
+
+        return 0;
+    }
+
+    private static long LookupGenreCountCaseInsensitive(Dictionary<string, long> dict, string key)
+    {
+        if (dict.TryGetValue(key, out var exact)) return exact;
+        foreach (var kv in dict)
+        {
+            if (string.Equals(kv.Key, key, StringComparison.OrdinalIgnoreCase)) return kv.Value;
+        }
+
+        return 0;
+    }
+
     private static int GetMetricValue(UserAchievementCounters counters, AchievementMetric metric, string? parameter = null, UserAchievementProfile? profile = null)
     {
         if (metric == AchievementMetric.PrestigeLevel)
@@ -2647,6 +2809,19 @@ public class AchievementBadgeService : IDisposable
         if (metric == AchievementMetric.GenreItemsWatched && !string.IsNullOrWhiteSpace(parameter))
         {
             return counters.GenreItemCounts.TryGetValue(parameter, out var g) ? g : 0;
+        }
+
+        // [issue #24] Parametrized MUSIC-genre metrics. Case-insensitive so a
+        // "disco" badge unlocks against a "Disco"-tagged library — genre casing
+        // is a common footgun and the admin shouldn't have to match it exactly.
+        if (metric == AchievementMetric.MusicGenrePlays && !string.IsNullOrWhiteSpace(parameter))
+        {
+            return LookupGenreCountCaseInsensitive(counters.MusicGenrePlayCounts, parameter!);
+        }
+
+        if (metric == AchievementMetric.MusicGenreListeningHours && !string.IsNullOrWhiteSpace(parameter))
+        {
+            return (int)(LookupGenreCountCaseInsensitive(counters.MusicGenreListeningSeconds, parameter!) / 3600);
         }
 
         // v1.9.3 — Studio specialists. Parameter is the studio name as it

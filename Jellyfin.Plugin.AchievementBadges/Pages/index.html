@@ -1651,7 +1651,7 @@ font-size:0.88em;
                             </p>
                             <label style="display:block; margin-bottom:0.5em;"><span data-i18n="admin.integrity.test_user">Target user:</span><br>
                                 <select id="abIntTestUser" style="width:100%; max-width:360px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
-                                    <option value="">Loading users…</option>
+                                    <option value="" data-i18n="admin.user_picker_loading">Loading users…</option>
                                 </select>
                             </label>
                             <label style="display:block; margin-bottom:0.5em;"><span data-i18n="admin.integrity.test_count">How many events:</span><br>
@@ -1671,7 +1671,7 @@ font-size:0.88em;
                             </p>
                             <label style="display:block; margin-bottom:0.5em;"><span data-i18n="admin.integrity.revoke_user">User:</span><br>
                                 <select id="abIntRevokeUser" style="width:100%; max-width:360px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
-                                    <option value="">Loading users…</option>
+                                    <option value="" data-i18n="admin.user_picker_loading">Loading users…</option>
                                 </select>
                             </label>
                             <label style="display:block; margin-bottom:0.5em;"><span data-i18n="admin.integrity.revoke_badge">Badge to revoke (id):</span><br>
@@ -1714,9 +1714,9 @@ font-size:0.88em;
                             <label style="display:block; margin-bottom:0.5em;">
                                 <span data-i18n="admin.v2test.type">Type:</span><br>
                                 <select id="abV2GrantPuType" style="padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
-                                    <option value="XpBoost">XP Boost</option>
-                                    <option value="DoubleCredit">Double Credit</option>
-                                    <option value="StreakFreeze">Streak Freeze</option>
+                                    <option value="XpBoost" data-i18n="powerup.XpBoost">XP Boost</option>
+                                    <option value="DoubleCredit" data-i18n="powerup.DoubleCredit">Double Credit</option>
+                                    <option value="StreakFreeze" data-i18n="powerup.StreakFreeze">Streak Freeze</option>
                                 </select>
                             </label>
                             <label style="display:block; margin-bottom:0.5em;">
@@ -1732,7 +1732,7 @@ font-size:0.88em;
                             <label style="display:block; margin-bottom:0.5em;">
                                 <span data-i18n="admin.v2test.cos_id">Cosmetic ID:</span><br>
                                 <select id="abV2GrantCosId" style="min-width:280px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
-                                    <option value="" disabled selected>— loading catalog —</option>
+                                    <option value="" disabled selected data-i18n="admin.cosmetics.loading_catalog">— loading catalog —</option>
                                 </select>
                             </label>
                             <button is="emby-button" type="button" class="raised" id="abV2GrantCosBtn" data-i18n="admin.v2test.btn_grant_cos">Grant cosmetic</button>
@@ -1801,19 +1801,41 @@ font-size:0.88em;
                             <label><span data-i18n="admin.vb.category">Category</span><br><input type="text" id="abVbCategory" value="Custom" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
                             <label><span data-i18n="admin.vb.metric">Metric</span><br>
                                 <select id="abVbMetric" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
-                                    <option>TotalItemsWatched</option><option>MoviesWatched</option><option>SeriesCompleted</option>
-                                    <option>LateNightSessions</option><option>EarlyMorningSessions</option><option>WeekendSessions</option>
-                                    <option>UniqueLibrariesVisited</option><option>DaysWatched</option><option>BestWatchStreak</option>
-                                    <option>MaxEpisodesInSingleDay</option><option>MaxMoviesInSingleDay</option>
-                                    <option>UniqueDecadesWatched</option><option>UniqueCountriesWatched</option>
-                                    <option>UniqueLanguagesWatched</option><option>UniqueGenresWatched</option>
-                                    <option>TotalMinutesWatched</option><option>LongestItemMinutes</option>
-                                    <option>ShortItemsWatched</option><option>RewatchCount</option>
-                                    <option>LongSeriesCompleted</option><option>VeryLongSeriesCompleted</option>
-                                    <option>DaysLoggedIn</option><option>CurrentLoginStreak</option>
-                                    <option>LibraryCompletionPercent</option>
+                                    <!-- [i18n] explicit value= keeps the enum name stable when data-i18n
+                                         swaps the visible label (a bare <option>'s value follows its text). -->
+                                    <option value="TotalItemsWatched" data-i18n="metric.TotalItemsWatched">Total items watched</option>
+                                    <option value="MoviesWatched" data-i18n="metric.MoviesWatched">Movies watched</option>
+                                    <option value="SeriesCompleted" data-i18n="metric.SeriesCompleted">Series completed</option>
+                                    <option value="LateNightSessions" data-i18n="metric.LateNightSessions">Late-night sessions</option>
+                                    <option value="EarlyMorningSessions" data-i18n="metric.EarlyMorningSessions">Early-morning sessions</option>
+                                    <option value="WeekendSessions" data-i18n="metric.WeekendSessions">Weekend sessions</option>
+                                    <option value="UniqueLibrariesVisited" data-i18n="metric.UniqueLibrariesVisited">Unique libraries visited</option>
+                                    <option value="DaysWatched" data-i18n="metric.DaysWatched">Days watched</option>
+                                    <option value="BestWatchStreak" data-i18n="metric.BestWatchStreak">Best watch streak</option>
+                                    <option value="MaxEpisodesInSingleDay" data-i18n="metric.MaxEpisodesInSingleDay">Max episodes in a single day</option>
+                                    <option value="MaxMoviesInSingleDay" data-i18n="metric.MaxMoviesInSingleDay">Max movies in a single day</option>
+                                    <option value="UniqueDecadesWatched" data-i18n="metric.UniqueDecadesWatched">Unique decades watched</option>
+                                    <option value="UniqueCountriesWatched" data-i18n="metric.UniqueCountriesWatched">Unique countries watched</option>
+                                    <option value="UniqueLanguagesWatched" data-i18n="metric.UniqueLanguagesWatched">Unique languages watched</option>
+                                    <option value="UniqueGenresWatched" data-i18n="metric.UniqueGenresWatched">Unique genres watched</option>
+                                    <option value="TotalMinutesWatched" data-i18n="metric.TotalMinutesWatched">Total minutes watched</option>
+                                    <option value="LongestItemMinutes" data-i18n="metric.LongestItemMinutes">Longest item (minutes)</option>
+                                    <option value="ShortItemsWatched" data-i18n="metric.ShortItemsWatched">Short items watched</option>
+                                    <option value="RewatchCount" data-i18n="metric.RewatchCount">Rewatch count</option>
+                                    <option value="LongSeriesCompleted" data-i18n="metric.LongSeriesCompleted">Long series completed</option>
+                                    <option value="VeryLongSeriesCompleted" data-i18n="metric.VeryLongSeriesCompleted">Very long series completed</option>
+                                    <option value="DaysLoggedIn" data-i18n="metric.DaysLoggedIn">Days logged in</option>
+                                    <option value="CurrentLoginStreak" data-i18n="metric.CurrentLoginStreak">Current login streak</option>
+                                    <option value="LibraryCompletionPercent" data-i18n="metric.LibraryCompletionPercent">Library completion %</option>
+                                    <!-- [issue #24] Parameterized (genre-filtered) metrics. data-param="genre"
+                                         reveals the genre-filter field below and routes the value into
+                                         Criteria.MetricParameter so the badge counts ONLY that genre. -->
+                                    <option value="MusicGenrePlays" data-param="genre" data-i18n="admin.vb.metric_music_genre_plays">Music plays of a genre&hellip;</option>
+                                    <option value="MusicGenreListeningHours" data-param="genre" data-i18n="admin.vb.metric_music_genre_hours">Music hours of a genre&hellip;</option>
+                                    <option value="GenreItemsWatched" data-param="genre" data-i18n="admin.vb.metric_genre_items">Items watched of a genre&hellip;</option>
                                 </select>
                             </label>
+                            <label id="abVbParamRow" style="display:none;"><span data-i18n="admin.vb.genre_filter">Genre filter</span><br><input type="text" id="abVbParam" placeholder="e.g. Disco" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
                             <label><span data-i18n="admin.vb.target_value">Target value</span><br><input type="number" id="abVbTarget" value="1" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;"></label>
                             <label><span data-i18n="admin.vb.rarity">Rarity</span><br>
                                 <select id="abVbRarity" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
@@ -3071,7 +3093,11 @@ font-size:0.88em;
         if (!cat) return '';
         var k = 'category.' + cat;
         var v = tr(k, null);
-        return v || cat;
+        // [issue #24] tr() returns the raw key when a translation is missing
+        // (categories with no category.<Name> entry, or admin custom-badge
+        // categories). Guard so we show the plain category name ("Studio
+        // Specialist") instead of leaking the key ("category.Studio Specialist").
+        return (v && v !== k) ? v : cat;
     }
     function _trRarity(r) {
         if (!r) return '';
@@ -3367,7 +3393,7 @@ font-size:0.88em;
         // Populate the cosmetic dropdown from the shop catalog.
         fetchJson('Plugins/AchievementBadges/shop/catalog').then(function (c) {
             if (!cosSel) return;
-            cosSel.innerHTML = '<option value="" disabled selected>— pick a cosmetic —</option>';
+            cosSel.innerHTML = '<option value="" disabled selected>' + escapeHtml(tr('admin.cosmetics.pick', '— pick a cosmetic —')) + '</option>';
             (c.Cosmetics || []).forEach(function (it) {
                 var opt = document.createElement('option');
                 opt.value = it.Id;
@@ -3609,7 +3635,8 @@ font-size:0.88em;
     function questCardHtml(q, idx, kind) {
         q = q || {};
         var metrics = QUEST_METRICS.map(function (m) {
-            return '<option value="' + m + '"' + (q.Metric === m ? ' selected' : '') + '>' + m + '</option>';
+            // [i18n] value stays the enum name; only the visible label is translated.
+            return '<option value="' + m + '"' + (q.Metric === m ? ' selected' : '') + '>' + escapeHtml(tr('metric.' + m, m)) + '</option>';
         }).join('');
         return '<div class="ab-quest-card" data-quest-idx="' + idx + '" data-quest-kind="' + kind + '" style="border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:0.75em; margin-bottom:0.5em; background:rgba(255,255,255,0.02);">' +
             '<div style="display:flex; gap:0.5em; flex-wrap:wrap; margin-bottom:0.4em;">' +
@@ -3752,27 +3779,48 @@ font-size:0.88em;
     // --- Visual badge editor ---
     var vbAddBtn = document.getElementById('abVbAddBtn');
     var vbStatus = document.getElementById('abVbStatus');
+    var vbMetricEl = document.getElementById('abVbMetric');
+    var vbParamRow = document.getElementById('abVbParamRow');
+    var vbParamEl = document.getElementById('abVbParam');
+    // [issue #24] Reveal the genre-filter field only for parameterized metrics
+    // (their <option> carries data-param). Clear it when hidden so a stale
+    // genre can't leak onto a non-genre badge.
+    function abVbToggleParam() {
+        var opt = vbMetricEl.options[vbMetricEl.selectedIndex];
+        var needs = !!(opt && opt.getAttribute('data-param'));
+        vbParamRow.style.display = needs ? '' : 'none';
+        if (!needs && vbParamEl) { vbParamEl.value = ''; }
+    }
+    vbMetricEl.addEventListener('change', abVbToggleParam);
+    abVbToggleParam();
     vbAddBtn.addEventListener('click', function () {
+        var opt = vbMetricEl.options[vbMetricEl.selectedIndex];
+        var needsParam = !!(opt && opt.getAttribute('data-param'));
+        var metricParam = ((vbParamEl && vbParamEl.value) || '').trim();
+        var title = document.getElementById('abVbTitle').value.trim();
+        if (!title) { vbStatus.textContent = tr('admin.vb.title_required', 'Title is required.'); return; }
+        if (needsParam && !metricParam) { vbStatus.textContent = tr('admin.vb.genre_required', 'Enter a genre for this metric.'); return; }
+        // [issue #24] Unified onto the compound CustomBadge store (same endpoint
+        // as the JSON box + the list/delete UI). Previously the form POSTed a
+        // flat AchievementDefinition to the legacy admin/custom-badges bulk
+        // endpoint, so form-created badges never appeared in the list below and
+        // couldn't be deleted ("custom badges won't fully delete"). Single-leaf
+        // Criteria carries Metric + Threshold + optional genre MetricParameter.
         var newBadge = {
-            Id: document.getElementById('abVbId').value.trim(),
-            Title: document.getElementById('abVbTitle').value.trim(),
+            Name: title,
             Description: document.getElementById('abVbDesc').value.trim(),
-            Category: document.getElementById('abVbCategory').value.trim() || 'Custom',
-            Metric: document.getElementById('abVbMetric').value,
-            TargetValue: parseInt(document.getElementById('abVbTarget').value, 10) || 1,
             Rarity: document.getElementById('abVbRarity').value,
-            Icon: document.getElementById('abVbIcon').value.trim() || 'emoji_events',
-            Key: (document.getElementById('abVbId').value.trim() || 'custom').replace(/-/g, '_'),
-            IsSecret: document.getElementById('abVbSecret').checked,
-            IsCustom: true
+            IconUrl: document.getElementById('abVbIcon').value.trim() || 'emoji_events',
+            Enabled: true,
+            Criteria: {
+                Metric: vbMetricEl.value,
+                Threshold: parseInt(document.getElementById('abVbTarget').value, 10) || 1,
+                MetricParameter: needsParam ? metricParam : null
+            }
         };
-        if (!newBadge.Id || !newBadge.Title) { vbStatus.textContent = tr('admin.msg.id_title_required', 'Id and Title are required.'); return; }
-        fetchJson('Plugins/AchievementBadges/admin/custom-badges').then(function (list) {
-            list = Array.isArray(list) ? list : [];
-            list.push(newBadge);
-            return fetchJson('Plugins/AchievementBadges/admin/custom-badges', 'POST', list);
-        }).then(function (res) {
-            vbStatus.textContent = tr('admin.msg.added_total', 'Added. Total custom badges:') + ' ' + res.Count;
+        fetchJson('Plugins/AchievementBadges/custom-badges', 'POST', newBadge).then(function (saved) {
+            vbStatus.textContent = tr('admin.custom_badges.added', 'Added:') + ' ' + (saved ? (_f(saved, 'Name', 'name') || title) : title);
+            if (vbParamEl) { vbParamEl.value = ''; }
             loadCustomBadges();
             reloadAll();
         }).catch(function (e) { vbStatus.textContent = tr('admin.msg.failed_generic', 'Failed:') + ' ' + (e.message || e); });

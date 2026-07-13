@@ -90,6 +90,8 @@ Achievements expand beyond film & TV, and admins get real badge-authoring power.
 
 **8 book badges** — books completed, audiobook listening hours, and book series completed. An **audiobook-counting policy** lets admins choose whether audiobook plays count toward Books only (default), Music only, or Both.
 
+> **How ebook completion is detected (important):** Jellyfin has no "finished reading an ebook" signal — unlike audiobooks and music, which stream through a session and track listening time automatically, an ebook is text with no runtime. So an **ebook counts once it's marked _Played_** (the ✓ / "Mark as watched" toggle on the item). Simply reaching the last page in Jellyfin's reader does **not** auto-mark it, so book badges won't move until the book is marked played. This is a Jellyfin limitation, not something the plugin can detect on its own.
+
 ### 🛠️ Custom badge builder
 
 Define your own badges with **compound AND/OR criteria** across any metric — film, TV, music, books and more. Simple badges via the admin form; compound criteria, icons, and import/export via the API. Full guide + copy-paste templates: [Custom badges](#-custom-badges).
@@ -440,7 +442,7 @@ Nested example — *"(finish 5 horror series OR 10h of audiobooks) AND watch 25 
 
 ### Common metrics
 
-`TotalItemsWatched`, `MoviesWatched`, `SeriesCompleted`, `AnimeItemsWatched`, `DaysWatched`, `CurrentWatchStreak`, `BestWatchStreak`, `UniqueGenresWatched`, `UniqueLanguagesWatched`, `UniqueCountriesWatched`, `MusicPlaysTotal`, `MusicListeningHours`, `UniqueMusicAlbums`, `UniqueMusicArtists`, `UniqueMusicGenres`, `UniqueMusicDecades`, `BooksCompleted`, `AudiobookListeningHours`, `UniqueBookSeriesCompleted`. (`metricParameter` applies to parameterized metrics like genre/studio counts.)
+`TotalItemsWatched`, `MoviesWatched`, `SeriesCompleted`, `AnimeItemsWatched`, `DaysWatched`, `CurrentWatchStreak`, `BestWatchStreak`, `UniqueGenresWatched`, `UniqueLanguagesWatched`, `UniqueCountriesWatched`, `MusicPlaysTotal`, `MusicListeningHours`, `UniqueMusicAlbums`, `UniqueMusicArtists`, `UniqueMusicGenres`, `UniqueMusicDecades`, `BooksCompleted`, `AudiobookListeningHours`, `UniqueBookSeriesCompleted`, `MusicGenrePlays`, `MusicGenreListeningHours`, `GenreItemsWatched`. (`metricParameter` applies to parameterized metrics — e.g. `MusicGenrePlays` with `metricParameter` = `"disco"` counts only disco tracks, matched case-insensitively.)
 
 ---
 
@@ -779,6 +781,7 @@ Full per-version notes and signed binaries live on the GitHub Releases page:
 
 Highlights:
 
+- **v2.1.3** — Open Library patch: per-genre music badges so genre filters actually filter (#24), custom badges fully delete + purge earned copies + ID-preserving migration (#24), header UI survives another header-injecting plugin (#36), badge-category label fix, and full localization of the badge/quest builders across all 8 languages
 - **v2.1.0** — Open Library: music + book achievements, custom badge builder (compound AND/OR), JS Injector fallback (#26), anime detection via Genres+Tags+Series (#25), daily-badge backfill fix + audit/cleanup tool (#27), globe language picker + full admin-page localization
 - **v2.0.0** — Choose Your Loadout: power-ups, score shop, 70+ cosmetics, 8 video backgrounds, full i18n
 - **v1.9.8** — Integrity release: closes playback-credit exploits (mark-as-played, seek-to-end, spam-click no longer credit), real-watch credit gate (≥80% accumulated play ticks with seeks excluded), 60s minimum runtime filter, daily credit cap, suspicious-rate audit flag, manual badge revoke

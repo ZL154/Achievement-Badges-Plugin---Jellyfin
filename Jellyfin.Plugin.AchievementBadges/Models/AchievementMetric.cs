@@ -79,4 +79,12 @@ public enum AchievementMetric
     BooksCompleted,
     AudiobookListeningHours,
     UniqueBookSeriesCompleted,
+
+    // [issue #24] Parametrized MUSIC-genre metrics. The badge's
+    // MetricParameter carries the genre name (e.g. "disco"); matched
+    // case-insensitively against MusicGenrePlayCounts /
+    // MusicGenreListeningSeconds. Appended at the end so existing
+    // serialized ordinals are unchanged.
+    MusicGenrePlays,
+    MusicGenreListeningHours,
 }

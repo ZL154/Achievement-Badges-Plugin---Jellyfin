@@ -25,11 +25,13 @@ public class CustomBadgesController : ControllerBase
 {
     private readonly CustomBadgeService _customBadges;
     private readonly AuditLogService _auditLog;
+    private readonly AchievementBadgeService _badges;
 
-    public CustomBadgesController(CustomBadgeService customBadges, AuditLogService auditLog)
+    public CustomBadgesController(CustomBadgeService customBadges, AuditLogService auditLog, AchievementBadgeService badges)
     {
         _customBadges = customBadges;
         _auditLog = auditLog;
+        _badges = badges;
     }
 
     [HttpGet]
@@ -108,12 +110,18 @@ public class CustomBadgesController : ControllerBase
         if (badge is null) return NotFound();
         var ok = _customBadges.Delete(id);
         if (!ok) return NotFound();
+        // [issue #24] Remove the badge's earned + equipped copies from every
+        // user profile. Without this the deleted badge kept appearing for users
+        // (the evaluator had persisted it into each profile by Id). Runs AFTER
+        // the definition is removed so a concurrent re-evaluation can't re-add it.
+        var profilesPurged = _badges.PurgeCustomBadge(id);
         var deleter = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
         _auditLog.Log(deleter, deleter, "custom_badge_deleted",
             System.Text.Json.JsonSerializer.Serialize(new
             {
                 badgeId = id,
                 badgeName = badge.Name,
+                profilesPurged,
             }));
         return NoContent();
     }

@@ -326,6 +326,8 @@
                                 <option value="UniqueMusicArtists">Unique music artists</option>
                                 <option value="UniqueMusicGenres">Unique music genres</option>
                                 <option value="UniqueMusicDecades">Unique music decades</option>
+                                <option value="MusicGenrePlays" data-param="genre">Music plays of a genre&hellip;</option>
+                                <option value="MusicGenreListeningHours" data-param="genre">Music hours of a genre&hellip;</option>
                                 <option value="BooksCompleted">Books completed</option>
                                 <option value="AudiobookListeningHours">Audiobook listening hours</option>
                                 <option value="UniqueBookSeriesCompleted">Unique book series completed</option>
@@ -334,9 +336,15 @@
                                 <option value="CurrentWatchStreak">Current watch streak</option>
                                 <option value="BestWatchStreak">Best watch streak</option>
                                 <option value="UniqueGenresWatched">Unique genres watched</option>
+                                <option value="GenreItemsWatched" data-param="genre">Items watched of a genre&hellip;</option>
                                 <option value="UniqueLanguagesWatched">Unique languages watched</option>
                                 <option value="UniqueCountriesWatched">Unique countries watched</option>
                             </select>
+                        </div>
+                        <div class="inputContainer" id="NewBadgeParamRow" style="display:none;">
+                            <label class="inputLabel" for="NewBadgeParam">Genre filter</label>
+                            <input type="text" id="NewBadgeParam" is="emby-input" placeholder="e.g. Disco" />
+                            <div class="fieldDescription" style="color:rgba(255,255,255,.5);font-size:.85em;margin-top:.2em;">The genre to filter by (case-insensitive) &mdash; must match how it's tagged in your library.</div>
                         </div>
                         <div class="inputContainer">
                             <label class="inputLabel" for="NewBadgeThreshold">Threshold</label>
@@ -708,12 +716,24 @@
                     var description = (document.getElementById('NewBadgeDescription').value || '').trim();
                     var rarity = document.getElementById('NewBadgeRarity').value;
                     var media = document.getElementById('NewBadgeMedia').value;
-                    var metric = document.getElementById('NewBadgeMetric').value;
+                    var metricEl = document.getElementById('NewBadgeMetric');
+                    var metric = metricEl.value;
                     var threshold = parseInt(document.getElementById('NewBadgeThreshold').value, 10);
                     var iconUrl = (document.getElementById('NewBadgeIconUrl').value || '').trim();
 
+                    // [issue #24] Parametrized metrics (genre filters) carry a
+                    // MetricParameter. The <option data-param="..."> marks which
+                    // metrics require one (e.g. "play 50 tracks of genre Disco").
+                    var metricOpt = metricEl.options[metricEl.selectedIndex];
+                    var needsParam = !!(metricOpt && metricOpt.getAttribute('data-param'));
+                    var metricParam = (document.getElementById('NewBadgeParam').value || '').trim();
+
                     if (!name) { status.textContent = 'Name required.'; return; }
                     if (!threshold || threshold < 1) { status.textContent = 'Threshold must be a positive integer.'; return; }
+                    if (needsParam && !metricParam) { status.textContent = 'This metric needs a genre filter value (e.g. Disco).'; return; }
+
+                    var criteria = { Metric: metric, Threshold: threshold };
+                    if (needsParam) { criteria.MetricParameter = metricParam; }
 
                     var payload = {
                         Name: name,
@@ -723,7 +743,7 @@
                         IconUrl: iconUrl,
                         IconIsHosted: false,
                         Enabled: true,
-                        Criteria: { Metric: metric, Threshold: threshold }
+                        Criteria: criteria
                     };
 
                     status.textContent = 'Creating...';
@@ -742,6 +762,7 @@
                         document.getElementById('NewBadgeName').value = '';
                         document.getElementById('NewBadgeDescription').value = '';
                         document.getElementById('NewBadgeIconUrl').value = '';
+                        document.getElementById('NewBadgeParam').value = '';
                         AchievementBadgesConfig.loadCustomBadges();
                     }).catch(function (e) {
                         status.textContent = 'Failed: ' + (e.message || e);
@@ -852,10 +873,28 @@
                 return escapeHtml(s).replace(/\\/g, '\\\\');
             }
 
+            // [issue #24] Show the genre-filter field only for parametrized
+            // metrics (those with a data-param option attribute).
+            function toggleBadgeParamRow() {
+                var el = document.getElementById('NewBadgeMetric');
+                if (!el) return;
+                var opt = el.options[el.selectedIndex];
+                var needs = !!(opt && opt.getAttribute('data-param'));
+                var row = document.getElementById('NewBadgeParamRow');
+                if (row) { row.style.display = needs ? '' : 'none'; }
+                if (!needs) { var p = document.getElementById('NewBadgeParam'); if (p) { p.value = ''; } }
+            }
+
             document.querySelector('#AchievementBadgesConfigPage')
                 .addEventListener('pageshow', function () {
                     AchievementBadgesConfig.load();
                     AchievementBadgesConfig.loadCustomBadges();
+                    var m = document.getElementById('NewBadgeMetric');
+                    if (m && !m._abParamWired) {
+                        m.addEventListener('change', toggleBadgeParamRow);
+                        m._abParamWired = true;
+                    }
+                    toggleBadgeParamRow();
                 });
         </script>
     </div>

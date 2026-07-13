@@ -74,6 +74,16 @@ public class UserAchievementCounters
     public HashSet<string> MusicGenresListened { get; set; } = new();
     public HashSet<int> MusicDecadesListened { get; set; } = new();
 
+    // [v2.1.x, issue #24] Per-genre MUSIC play counts + listening seconds.
+    // The distinct-genre set above (MusicGenresListened) only answers "how
+    // many genres explored"; a per-genre PLAY COUNT / LISTENING TIME is what
+    // genre-specific custom badges ("play 50 disco tracks", "listen 10 hours
+    // of jazz") need. Keyed by the genre name as tagged on the track; the
+    // metric getter matches the badge's parameter case-insensitively so a
+    // "disco" badge unlocks against a "Disco"-tagged library.
+    public Dictionary<string, int> MusicGenrePlayCounts { get; set; } = new();
+    public Dictionary<string, long> MusicGenreListeningSeconds { get; set; } = new();
+
     public int BooksCompleted { get; set; }
     public long AudiobookListeningSeconds { get; set; }
     public HashSet<string> BookSeriesCompleted { get; set; } = new();
