@@ -55,6 +55,10 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         // where the web directory isn't writable.
         serviceCollection.AddHostedService<WebInjectionService>();
 
+        // Optional compatibility adapter. It uses reflection so Achievement
+        // Badges never acquires a hard dependency on the Plugin Pages plugin.
+        serviceCollection.AddHostedService<PluginPagesIntegrationService>();
+
         serviceCollection.AddTransient<IStartupFilter, SidebarInjectionStartup>();
 
         // ---------- Rate limiting (F7) ------------------------------------

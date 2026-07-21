@@ -22,6 +22,13 @@ public class AchievementBadge
 
     public DateTimeOffset? UnlockedAt { get; set; }
 
+    /// <summary>
+    /// Jellyfin device id responsible for the real-time playback unlock.
+    /// Null for legacy, backfill, manual, ebook-toggle, and other originless
+    /// unlocks so existing profile JSON remains migration-free.
+    /// </summary>
+    public string? UnlockDeviceId { get; set; }
+
     public int CurrentValue { get; set; }
 
     public int TargetValue { get; set; }

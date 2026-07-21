@@ -46,6 +46,45 @@
                 </details>
 
                 <details>
+                    <summary>Page integrations</summary>
+                    <div class="detailSection">
+                        <p class="fieldDescription" style="margin-top:0;">
+                            These optional hosts reuse the stock Achievements page. The stock page always remains available.
+                        </p>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="EnableCustomTabsIntegration" is="emby-checkbox" />
+                                <span>Enable Custom Tabs host</span>
+                            </label>
+                            <div class="fieldDescription">Saving installs or repairs one Achievements entry in Custom Tabs. Existing tabs are preserved; restart Jellyfin afterward.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="CustomTabsMarker">Custom Tabs HTML</label>
+                            <textarea id="CustomTabsMarker" is="emby-input" rows="2" readonly>&lt;div data-achievement-badges-host="custom-tabs"&gt;&lt;/div&gt;</textarea>
+                            <button is="emby-button" type="button" class="raised emby-button" style="margin-top:.5em;"
+                                    onclick="AchievementBadgesConfig.copyCustomTabsMarker()">
+                                <span>Copy marker</span>
+                            </button>
+                            <span id="CustomTabsCopyStatus" class="fieldDescription" style="margin-left:.5em;"></span>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="EnablePluginPagesIntegration" is="emby-checkbox" />
+                                <span>Register with Plugin Pages</span>
+                            </label>
+                            <div class="fieldDescription">Requires the Plugin Pages plugin. Restart Jellyfin after changing this option.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" id="EnableUserMenuShortcut" is="emby-checkbox" />
+                                <span>Add an Achievements shortcut near the user/profile menu</span>
+                            </label>
+                            <div class="fieldDescription">Adds a small trophy shortcut in Jellyfin's header without replacing any stock menu item.</div>
+                        </div>
+                    </div>
+                </details>
+
+                <details>
                     <summary>Toasts &amp; Widgets</summary>
                     <div class="detailSection">
                         <div class="inputContainer">
@@ -67,11 +106,17 @@
                             </label>
                         </div>
                         <div class="inputContainer">
-                            <button is="emby-button" type="button" class="raised emby-button"
-                                    onclick="AchievementBadgesConfig.testDescriptionToast()">
-                                <span>Test description toast</span>
-                            </button>
-                            <div class="fieldDescription">Preview the unlock toast title stage rolling into the badge description stage.</div>
+                            <div style="display:flex;gap:.65em;flex-wrap:wrap;">
+                                <button is="emby-button" type="button" class="raised emby-button"
+                                        onclick="AchievementBadgesConfig.testDescriptionToast()">
+                                    <span>Test description toast</span>
+                                </button>
+                                <button is="emby-button" type="button" class="raised emby-button"
+                                        onclick="AchievementBadgesConfig.testUnlockBatch()">
+                                    <span>Test 10 unlocks</span>
+                                </button>
+                            </div>
+                            <div class="fieldDescription">Preview one description toast, or send ten synthetic unlocks through the current admin user's grouped/individual toast setting. Test unlocks do not change achievement data.</div>
                         </div>
                     </div>
                 </details>
@@ -409,6 +454,43 @@
         <script type="text/javascript">
             var AchievementBadgesConfig = {
                 pluginId: 'd9f4b7d2-6c4d-4d7e-9d2d-1c6b4f8e2a11',
+                customTabsPluginId: 'fbacd0b6-fd46-4a05-b0a4-2045d6a135b0',
+                customTabsMarker: '<div data-achievement-badges-host="custom-tabs"></div>',
+
+                ensureCustomTabsEntry: function () {
+                    if (!document.getElementById('EnableCustomTabsIntegration').checked) return Promise.resolve();
+                    var marker = this.customTabsMarker;
+                    return ApiClient.getPluginConfiguration(this.customTabsPluginId).then(function (config) {
+                        config = config || {};
+                        var sourceTabs = Array.isArray(config.Tabs) ? config.Tabs : (Array.isArray(config.tabs) ? config.tabs : []);
+                        var nextTabs = [];
+                        var found = false;
+                        var changed = false;
+                        sourceTabs.forEach(function (tab) {
+                            var content = String((tab && (tab.ContentHtml != null ? tab.ContentHtml : tab.contentHtml)) || '');
+                            if (content.trim() !== marker) {
+                                nextTabs.push(tab);
+                                return;
+                            }
+                            if (found) { changed = true; return; }
+                            found = true;
+                            var title = String((tab && (tab.Title != null ? tab.Title : tab.title)) || '');
+                            if (title !== 'Achievements' || content !== marker) changed = true;
+                            nextTabs.push({ Title: 'Achievements', ContentHtml: marker });
+                        });
+                        if (!found) {
+                            nextTabs.push({ Title: 'Achievements', ContentHtml: marker });
+                            changed = true;
+                        }
+                        if (!changed) return null;
+                        config.Tabs = nextTabs;
+                        delete config.tabs;
+                        return ApiClient.updatePluginConfiguration(AchievementBadgesConfig.customTabsPluginId, config);
+                    }).catch(function (error) {
+                        console.warn('Achievement Badges: Custom Tabs install/repair was skipped.', error);
+                        return null;
+                    });
+                },
 
                 getAuthHeaders: function () {
                     var headers = {};
@@ -508,6 +590,9 @@
                         document.getElementById('ShowOnUserHome').checked = config.ShowOnUserHome;
                         document.getElementById('EnableDebugEndpoints').checked = config.EnableDebugEndpoints;
                         document.getElementById('MinimumPlaySecondsForCompletion').value = config.MinimumPlaySecondsForCompletion;
+                        document.getElementById('EnableCustomTabsIntegration').checked = config.EnableCustomTabsIntegration === true;
+                        document.getElementById('EnablePluginPagesIntegration').checked = config.EnablePluginPagesIntegration === true;
+                        document.getElementById('EnableUserMenuShortcut').checked = config.EnableUserMenuShortcut === true;
                         document.getElementById('EnableUnlockToasts').checked = config.EnableUnlockToasts;
                         document.getElementById('EnableHomeWidget').checked = config.EnableHomeWidget;
                         document.getElementById('EnableItemDetailRibbon').checked = config.EnableItemDetailRibbon;
@@ -584,6 +669,9 @@
                         config.ShowOnUserHome = document.getElementById('ShowOnUserHome').checked;
                         config.EnableDebugEndpoints = document.getElementById('EnableDebugEndpoints').checked;
                         config.MinimumPlaySecondsForCompletion = parseInt(document.getElementById('MinimumPlaySecondsForCompletion').value, 10) || 300;
+                        config.EnableCustomTabsIntegration = document.getElementById('EnableCustomTabsIntegration').checked;
+                        config.EnablePluginPagesIntegration = document.getElementById('EnablePluginPagesIntegration').checked;
+                        config.EnableUserMenuShortcut = document.getElementById('EnableUserMenuShortcut').checked;
                         config.EnableUnlockToasts = document.getElementById('EnableUnlockToasts').checked;
                         config.EnableHomeWidget = document.getElementById('EnableHomeWidget').checked;
                         config.EnableItemDetailRibbon = document.getElementById('EnableItemDetailRibbon').checked;
@@ -610,10 +698,30 @@
                         config.EnableSuspiciousActivityFlag = document.getElementById('EnableSuspiciousActivityFlag').checked;
                         config.SuspiciousRatePerHour = parseInt(document.getElementById('SuspiciousRatePerHour').value, 10) || 30;
 
-                        ApiClient.updatePluginConfiguration(AchievementBadgesConfig.pluginId, config).then(function () {
-                            Dashboard.processPluginConfigurationUpdateResult();
+                        ApiClient.updatePluginConfiguration(AchievementBadgesConfig.pluginId, config).then(function (result) {
+                            return AchievementBadgesConfig.ensureCustomTabsEntry().then(function () {
+                                Dashboard.processPluginConfigurationUpdateResult(result);
+                            });
                         });
                     });
+                },
+
+                copyCustomTabsMarker: function () {
+                    var field = document.getElementById('CustomTabsMarker');
+                    var status = document.getElementById('CustomTabsCopyStatus');
+                    if (!field) return;
+                    var done = function () { if (status) status.textContent = 'Copied.'; };
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(field.value).then(done).catch(function () {
+                            field.select();
+                            document.execCommand('copy');
+                            done();
+                        });
+                    } else {
+                        field.select();
+                        document.execCommand('copy');
+                        done();
+                    }
                 },
 
                 // v1.9.8 — Run the test-injection endpoint against a picked user.
@@ -668,6 +776,15 @@
                 testDescriptionToast: function () {
                     if (window.abAchievementTestToast) {
                         window.abAchievementTestToast('legendary');
+                        return;
+                    }
+
+                    alert('Toast system is not loaded yet. Refresh the page and try again.');
+                },
+
+                testUnlockBatch: function () {
+                    if (window.abAchievementTestBatch) {
+                        window.abAchievementTestBatch(10);
                         return;
                     }
 

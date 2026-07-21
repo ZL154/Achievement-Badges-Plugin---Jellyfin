@@ -90,6 +90,19 @@
         return '';
     }
 
+    function getDeviceId() {
+        var api = getApi(); if (!api) return '';
+        try {
+            if (typeof api.deviceId === 'function') {
+                var id = api.deviceId();
+                if (id) return String(id);
+            }
+            if (api._deviceId) return String(api._deviceId);
+            if (api._serverInfo && api._serverInfo.DeviceId) return String(api._serverInfo.DeviceId);
+        } catch (e) { }
+        return '';
+    }
+
     function buildUrl(p) {
         var api = getApi(); var c = p.replace(/^\/+/, '');
         return (api && typeof api.getUrl === 'function') ? api.getUrl(c) : '/' + c;
@@ -175,6 +188,42 @@
         epic: '#a78bfa', legendary: '#fbbf24', mythic: '#f43f5e'
     };
 
+    function getToastNavigation(badge) {
+        if (!badge || badge.IsSyntheticTest === true || badge.isSyntheticTest === true) return null;
+        var mode = badge.ToastNavigation || badge.toastNavigation || 'badge';
+        if (mode === 'recent') {
+            return {
+                hash: '#/achievements?filter=recent&fromToast=' + Date.now(),
+                label: tr('toast.view_recent_unlocks', 'View recent unlocks')
+            };
+        }
+        var badgeId = badge.Id || badge.id;
+        if (!badgeId) return null;
+        return {
+            hash: '#/achievements?badge=' + encodeURIComponent(badgeId) + '&fromToast=' + Date.now(),
+            label: tr('toast.view_achievement', 'View achievement')
+        };
+    }
+
+    function makeToastActionable(item, badge) {
+        var navigation = getToastNavigation(badge);
+        if (!navigation) return;
+        item.classList.add('ab-xb-actionable');
+        item.setAttribute('role', 'link');
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('aria-label', navigation.label);
+        item.setAttribute('title', navigation.label);
+        function openAchievement() {
+            window.location.hash = navigation.hash;
+        }
+        item.addEventListener('click', openAchievement);
+        item.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            openAchievement();
+        });
+    }
+
     function showToast(badge) {
         // Per-user opt-out: while watching, suppress the toast entirely.
         // The sound is checked separately further down (some users might
@@ -193,7 +242,7 @@
         var shades = rarityShades[rarity] || rarityShades.common;
         var color = shades.base;
         var isRare = rarity !== 'common' && rarity !== 'uncommon';
-        var scorePts = rarityScorePts[rarity] || 10;
+        var scorePts = badge.ScorePoints || badge.scorePoints || rarityScorePts[rarity] || 10;
         var label = isRare ? tr('toast.rare_achievement_unlocked', 'Rare achievement unlocked') : tr('toast.achievement_unlocked', 'Achievement unlocked');
         var title = badge.Title || badge.title || '';
         var desc = badge.Description || badge.description || tr('toast.description_fallback', 'Keep watching to unlock more achievements.');
@@ -242,6 +291,7 @@
                     '</div>' +
                 '</div>' +
             '</div>';
+        makeToastActionable(item, badge);
         c.appendChild(item);
 
         // Play achievement sound (rare sound for rare/epic/legendary/mythic).
@@ -358,6 +408,47 @@
 
     function escape(s) { var d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML; }
 
+    function showUnlockBatch(badges, prefs) {
+        if (!badges || !badges.length) return;
+        var grouping = (prefs && (prefs.UnlockToastGrouping || prefs.unlockToastGrouping)) || 'grouped';
+        if (grouping === 'individual' || badges.length === 1) {
+            badges.forEach(function (badge) { showToast(badge); });
+            return;
+        }
+
+        var rarityOrder = { common:0, uncommon:1, rare:2, epic:3, legendary:4, mythic:5 };
+        var highest = badges[0];
+        var totalScore = 0;
+        badges.forEach(function (badge) {
+            var rarity = (badge.Rarity || 'common').toLowerCase();
+            var highestRarity = (highest.Rarity || 'common').toLowerCase();
+            if ((rarityOrder[rarity] || 0) > (rarityOrder[highestRarity] || 0)) highest = badge;
+            totalScore += rarityScorePts[rarity] || 10;
+        });
+
+        var visibleNames = badges.slice(0, 3).map(function (badge) { return badge.Title || badge.title || ''; });
+        var remaining = badges.length - visibleNames.length;
+        var description = visibleNames.join(', ');
+        if (remaining > 0) {
+            description += ' ' + tr('toast.grouped_more', '+{count} more').replace('{count}', remaining);
+        }
+
+        var syntheticBatch = badges.every(function (badge) {
+            return badge.IsSyntheticTest === true || badge.isSyntheticTest === true;
+        });
+        showToast({
+            Id: 'grouped-' + Date.now(),
+            Title: tr('toast.grouped_title', '{count} achievements unlocked').replace('{count}', badges.length),
+            Description: description,
+            Rarity: highest.Rarity || 'Common',
+            Icon: 'emoji_events',
+            ScorePoints: totalScore,
+            UnlockedAt: new Date().toISOString(),
+            IsSyntheticTest: syntheticBatch,
+            ToastNavigation: syntheticBatch ? '' : 'recent'
+        });
+    }
+
     var userPrefs = null;
     var userPrefsFetchedAt = 0;
 
@@ -392,13 +483,17 @@
 
         ensureUserPrefs(uid).then(function (prefs) {
             if (prefs.EnableUnlockToasts === false) return null;
-            return fetchJson('Plugins/AchievementBadges/users/' + uid + '/unlocks-since?since=' + encodeURIComponent(since));
+            var deviceId = getDeviceId();
+            var path = 'Plugins/AchievementBadges/users/' + uid + '/unlocks-since?since=' + encodeURIComponent(since);
+            if (deviceId) path += '&deviceId=' + encodeURIComponent(deviceId);
+            return fetchJson(path);
         }).then(function (res) {
             if (!res) return null;
             if (res.Badges) {
                 var _rarityOrder = {common:0, uncommon:1, rare:2, epic:3, legendary:4, mythic:5};
                 var _minRarity = (userPrefs && (userPrefs.minimumToastRarity || userPrefs.MinimumToastRarity)) || 'all';
                 var _minOrder = _minRarity === 'all' ? 0 : (_rarityOrder[_minRarity] || 0);
+                var eligible = [];
                 res.Badges.forEach(function (b) {
                     var key = b.Id + '|' + (b.UnlockedAt || '');
                     if (!shown[key]) {
@@ -407,10 +502,11 @@
                             markShown(key);
                             return; // below minimum rarity threshold, skip toast
                         }
-                        showToast(b);
+                        eligible.push(b);
                         markShown(key);
                     }
                 });
+                showUnlockBatch(eligible, userPrefs);
             }
             if (res.Now) { localStorage.setItem(LAST_SEEN_KEY, res.Now); }
             if (userPrefs && userPrefs.EnableMilestoneToasts === false) return null;
@@ -487,13 +583,56 @@
             Description: descriptions[key] || descriptions.common,
             Rarity: key.charAt(0).toUpperCase() + key.slice(1),
             Icon: 'emoji_events',
-            UnlockedAt: new Date().toISOString()
+            UnlockedAt: new Date().toISOString(),
+            IsSyntheticTest: true
+        });
+    };
+
+    // Admin-only UI helper: exercise the same batch renderer used by real
+    // unlock polling without writing synthetic unlocks to any user profile.
+    // The current signed-in admin's saved grouping preference decides whether
+    // this becomes one grouped summary or ten queued individual animations.
+    window.abAchievementTestBatch = function (count) {
+        var requested = parseInt(count, 10);
+        var total = isNaN(requested) ? 10 : Math.max(1, Math.min(25, requested));
+        var rarities = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic'];
+        var testBadges = [];
+        for (var i = 0; i < total; i++) {
+            testBadges.push({
+                Id: 'test-batch-' + Date.now() + '-' + i,
+                Title: 'Test Unlock ' + (i + 1),
+                Description: 'Synthetic notification ' + (i + 1) + ' of ' + total + '. No achievement data was changed.',
+                Rarity: rarities[i % rarities.length],
+                Icon: 'emoji_events',
+                UnlockedAt: new Date().toISOString(),
+                IsSyntheticTest: true
+            });
+        }
+
+        var uid = getUserId();
+        userPrefs = null;
+        userPrefsFetchedAt = 0;
+        var prefsPromise = uid
+            ? ensureUserPrefs(uid)
+            : Promise.resolve({ UnlockToastGrouping: 'grouped' });
+        return prefsPromise.then(function (prefs) {
+            showUnlockBatch(testBadges, prefs);
+            return {
+                Count: total,
+                Grouping: (prefs && (prefs.UnlockToastGrouping || prefs.unlockToastGrouping)) || 'grouped'
+            };
         });
     };
 
     function start() {
         // Kick off translation load early so toasts use the user's language.
         loadEnhanceTranslations();
+        try {
+            window.addEventListener('ab:notification-preferences-changed', function () {
+                userPrefs = null;
+                userPrefsFetchedAt = 0;
+            });
+        } catch (e) { }
         var style = document.createElement('style');
         style.textContent =
             // Hide our injected header/sidebar badges + toasts when the video player is active
@@ -514,6 +653,8 @@
             // ===== Xbox-style achievement toast (Uenify CodePen port) =====
             // Container: .animation equivalent
             '.ab-xb{position:relative;width:355px;height:110px;padding:5px 0;font-family:"Segoe UI",system-ui,sans-serif;pointer-events:none;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;}' +
+            '.ab-xb-actionable{pointer-events:auto;cursor:pointer;border-radius:14px;outline:none;}' +
+            '.ab-xb-actionable:focus-visible{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--ab-color),0 10px 34px rgba(0,0,0,0.55);}' +
             '.ab-xb *{box-sizing:border-box;}' +
             // Circle: sphere gradient (3D look) - maps to .circle
             '.ab-xb-circle{width:75px;height:75px;top:0;opacity:0;margin:0 auto;border-radius:100%;' +

@@ -2125,7 +2125,8 @@ public class AchievementBadgeService : IDisposable
             var skipTw = inBackfill && (Plugin.Instance?.Configuration?.BackfillSkipTimeWindowedBadges ?? true);
             var src = inBackfill ? EarnSource.Backfill : EarnSource.RealTime;
             EvaluateBadges(profile, userId, silent: context.Silent, unlockTimestamp: unlockStamp,
-                           skipTimeWindowed: skipTw, earnSource: src);
+                           skipTimeWindowed: skipTw, earnSource: src,
+                           unlockDeviceId: context.Silent ? null : context.OriginDeviceId);
             Save();
 
             _logger.LogInformation(
@@ -2590,7 +2591,8 @@ public class AchievementBadgeService : IDisposable
         bool silent = false,
         DateTimeOffset? unlockTimestamp = null,
         bool skipTimeWindowed = false,
-        EarnSource earnSource = EarnSource.RealTime)
+        EarnSource earnSource = EarnSource.RealTime,
+        string? unlockDeviceId = null)
     {
         var newlyUnlocked = new List<AchievementBadge>();
         var stamp = unlockTimestamp ?? DateTimeOffset.UtcNow;
@@ -2627,6 +2629,9 @@ public class AchievementBadgeService : IDisposable
             {
                 badge.Unlocked = true;
                 badge.UnlockedAt = stamp;
+                badge.UnlockDeviceId = string.IsNullOrWhiteSpace(unlockDeviceId)
+                    ? null
+                    : unlockDeviceId.Trim();
                 // [v2.1.0 "Open Library"] Stamp the earn source so the M6
                 // audit-cleanup tool can tell apart genuine real-time
                 // earnings (RealTime) from backfill artefacts (Backfill).
@@ -2689,6 +2694,9 @@ public class AchievementBadgeService : IDisposable
                 {
                     badge.Unlocked = true;
                     badge.UnlockedAt = stamp;
+                    badge.UnlockDeviceId = string.IsNullOrWhiteSpace(unlockDeviceId)
+                        ? null
+                        : unlockDeviceId.Trim();
                     badge.EarnSource = earnSource;
                     _logger.LogInformation("Unlocked custom badge {BadgeId} ({Name}) for user {UserId} (source={Source})",
                         cb.Id, cb.Name, userId, earnSource);
@@ -3571,6 +3579,7 @@ public class AchievementBadgeService : IDisposable
             Category = badge.Category,
             Unlocked = badge.Unlocked,
             UnlockedAt = badge.UnlockedAt,
+            UnlockDeviceId = badge.UnlockDeviceId,
             CurrentValue = badge.CurrentValue,
             TargetValue = badge.TargetValue,
             Rarity = badge.Rarity

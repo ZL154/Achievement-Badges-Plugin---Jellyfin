@@ -1,7 +1,10 @@
 using System;
 using System.IO;
+using System.Text.Json;
+using Jellyfin.Plugin.AchievementBadges.Configuration;
 using Jellyfin.Plugin.AchievementBadges.Models;
 using Jellyfin.Plugin.AchievementBadges.Services;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -59,6 +62,116 @@ public class BadgeBehaviorTests : IDisposable
 
     private UserAchievementCounters Counters(string userId = UserId)
         => _badges.PeekProfile(userId)!.Counters;
+
+    [Fact]
+    public void PageIntegrations_AreOptInByDefault()
+    {
+        var config = new PluginConfiguration();
+
+        Assert.False(config.EnableCustomTabsIntegration);
+        Assert.False(config.EnablePluginPagesIntegration);
+        Assert.False(config.EnableUserMenuShortcut);
+    }
+
+    [Fact]
+    public void PageIntegrationAssets_ArePackagedWithSharedHostContract()
+    {
+        var assembly = typeof(Plugin).Assembly;
+        using var scriptStream = assembly.GetManifestResourceStream(
+            "Jellyfin.Plugin.AchievementBadges.Pages.standalone.js");
+        using var configStream = assembly.GetManifestResourceStream(
+            "Jellyfin.Plugin.AchievementBadges.Configuration.configPage.html");
+        using var adminStream = assembly.GetManifestResourceStream(
+            "Jellyfin.Plugin.AchievementBadges.Pages.index.html");
+        using var enhanceStream = assembly.GetManifestResourceStream(
+            "Jellyfin.Plugin.AchievementBadges.Pages.enhance.js");
+
+        Assert.NotNull(scriptStream);
+        Assert.NotNull(configStream);
+        Assert.NotNull(adminStream);
+        Assert.NotNull(enhanceStream);
+        using var scriptReader = new StreamReader(scriptStream!);
+        using var configReader = new StreamReader(configStream!);
+        using var adminReader = new StreamReader(adminStream!);
+        using var enhanceReader = new StreamReader(enhanceStream!);
+        var script = scriptReader.ReadToEnd();
+        var configPage = configReader.ReadToEnd();
+        var adminPage = adminReader.ReadToEnd();
+        var enhanceScript = enhanceReader.ReadToEnd();
+
+        Assert.Contains("data-achievement-badges-host", script, StringComparison.Ordinal);
+        Assert.Contains("data-ab-embedded", script, StringComparison.Ordinal);
+        Assert.Contains("data-achievement-badges-host=\"custom-tabs\"", configPage, StringComparison.Ordinal);
+        Assert.Contains("data-achievement-badges-host=\"custom-tabs\"", adminPage, StringComparison.Ordinal);
+        Assert.Contains("fbacd0b6-fd46-4a05-b0a4-2045d6a135b0", configPage, StringComparison.Ordinal);
+        Assert.Contains("fbacd0b6-fd46-4a05-b0a4-2045d6a135b0", adminPage, StringComparison.Ordinal);
+        Assert.Contains("ShowCustomTabsEntry", script, StringComparison.Ordinal);
+        Assert.Contains("ShowPluginPagesEntry", script, StringComparison.Ordinal);
+        Assert.Contains("ShowUserMenuShortcut", script, StringComparison.Ordinal);
+        Assert.Contains("Test 10 unlocks", configPage, StringComparison.Ordinal);
+        Assert.Contains("testUnlockBatch()", configPage, StringComparison.Ordinal);
+        Assert.Contains("id=\"abTestToastBatchBtn\"", adminPage, StringComparison.Ordinal);
+        Assert.Contains("window.abAchievementTestBatch", enhanceScript, StringComparison.Ordinal);
+        Assert.Contains("showUnlockBatch(testBadges, prefs)", enhanceScript, StringComparison.Ordinal);
+        Assert.Contains("ToastNavigation", enhanceScript, StringComparison.Ordinal);
+        Assert.Contains("IsSyntheticTest", enhanceScript, StringComparison.Ordinal);
+        Assert.Contains("applyAchievementRouteTarget", script, StringComparison.Ordinal);
+        Assert.Contains("data-badge-id", script, StringComparison.Ordinal);
+        Assert.Contains("ab-toast-focus", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NavigationIntegrationPreferences_AreIndependentAndDefaultOn()
+    {
+        var defaults = new UserNotificationPreferences();
+        Assert.True(defaults.ShowCustomTabsEntry);
+        Assert.True(defaults.ShowPluginPagesEntry);
+        Assert.True(defaults.ShowUserMenuShortcut);
+
+        _badges.SaveUserPreferences(UserId, new UserNotificationPreferences
+        {
+            ShowCustomTabsEntry = false,
+            ShowPluginPagesEntry = true,
+            ShowUserMenuShortcut = false
+        });
+
+        var stored = _badges.GetUserPreferences(UserId);
+        Assert.False(stored.ShowCustomTabsEntry);
+        Assert.True(stored.ShowPluginPagesEntry);
+        Assert.False(stored.ShowUserMenuShortcut);
+    }
+
+    [Fact]
+    public void NavigationIntegrationTranslations_ArePresentInEveryUiLocale()
+    {
+        var assembly = typeof(Plugin).Assembly;
+        var locales = new[] { "en", "de", "fr", "es", "it", "pt", "zh", "ja" };
+        var keys = new[]
+        {
+            "settings.navigation_integrations",
+            "settings.show_custom_tabs_entry",
+            "settings.show_plugin_pages_entry",
+            "settings.show_user_menu_shortcut",
+            "admin.page_integrations.saved_custom_tabs_unavailable",
+            "admin.test_toast.batch_button",
+            "admin.test_toast.batch_help",
+            "admin.msg.firing_batch",
+            "toast.view_achievement",
+            "toast.view_recent_unlocks"
+        };
+
+        foreach (var locale in locales)
+        {
+            using var stream = assembly.GetManifestResourceStream(
+                $"Jellyfin.Plugin.AchievementBadges.Pages.translations.{locale}.json");
+            Assert.NotNull(stream);
+            using var document = JsonDocument.Parse(stream!);
+            foreach (var key in keys)
+            {
+                Assert.True(document.RootElement.TryGetProperty(key, out _), $"Missing {key} in {locale}.json");
+            }
+        }
+    }
 
     // ============================================================
     // Issue #27 — backfill must not poison the per-day buckets that
@@ -276,5 +389,81 @@ public class BadgeBehaviorTests : IDisposable
         { UserId = UserId, ItemId = "book-1", IsBook = true, PlayedAt = t.AddHours(7) });
 
         Assert.Equal(2, Counters().BooksCompleted);
+    }
+
+    // ============================================================
+    // Issues #37/#38 — notification policy and device provenance.
+    // ============================================================
+
+    [Theory]
+    [InlineData(null, UnlockNotificationPolicy.Grouped)]
+    [InlineData("unknown", UnlockNotificationPolicy.Grouped)]
+    [InlineData("GROUPED", UnlockNotificationPolicy.Grouped)]
+    [InlineData(" individual ", UnlockNotificationPolicy.Individual)]
+    public void UnlockGrouping_NormalizesToSupportedValues(string? input, string expected)
+    {
+        Assert.Equal(expected, UnlockNotificationPolicy.NormalizeGrouping(input));
+    }
+
+    [Theory]
+    [InlineData(null, UnlockNotificationPolicy.AllDevices)]
+    [InlineData("unknown", UnlockNotificationPolicy.AllDevices)]
+    [InlineData("ALL-DEVICES", UnlockNotificationPolicy.AllDevices)]
+    [InlineData(" originating-device ", UnlockNotificationPolicy.OriginatingDevice)]
+    public void UnlockDeviceScope_NormalizesToSupportedValues(string? input, string expected)
+    {
+        Assert.Equal(expected, UnlockNotificationPolicy.NormalizeDeviceScope(input));
+    }
+
+    [Fact]
+    public void OriginatingDevicePolicy_RequiresMatchingStampedDevice()
+    {
+        var badge = new AchievementBadge { UnlockDeviceId = "living-room-tv" };
+
+        Assert.True(UnlockNotificationPolicy.ShouldDeliver(
+            badge, UnlockNotificationPolicy.AllDevices, null));
+        Assert.True(UnlockNotificationPolicy.ShouldDeliver(
+            badge, UnlockNotificationPolicy.OriginatingDevice, "LIVING-ROOM-TV"));
+        Assert.False(UnlockNotificationPolicy.ShouldDeliver(
+            badge, UnlockNotificationPolicy.OriginatingDevice, "bedroom-tv"));
+        Assert.False(UnlockNotificationPolicy.ShouldDeliver(
+            new AchievementBadge(), UnlockNotificationPolicy.OriginatingDevice, "living-room-tv"));
+    }
+
+    [Fact]
+    public void RecordPlayback_StampsOriginDeviceOnNewUnlock()
+    {
+        _badges.RecordPlayback(new PlaybackContext
+        {
+            UserId = UserId,
+            ItemId = "device-stamp-1",
+            OriginDeviceId = "web-client-123",
+            IsMovie = true,
+            PlayedAt = new DateTimeOffset(2026, 7, 20, 20, 0, 0, TimeSpan.Zero),
+        });
+
+        var firstContact = _badges.GetBadgesForUser(UserId)
+            .Single(b => b.Id == "first-contact");
+        Assert.True(firstContact.Unlocked);
+        Assert.Equal("web-client-123", firstContact.UnlockDeviceId);
+    }
+
+    [Fact]
+    public void SilentBackfill_DoesNotStampOriginDevice()
+    {
+        _badges.RecordPlayback(new PlaybackContext
+        {
+            UserId = UserId,
+            ItemId = "backfill-device-stamp-1",
+            OriginDeviceId = "should-not-persist",
+            IsMovie = true,
+            Silent = true,
+            PlayedAt = new DateTimeOffset(2025, 1, 2, 20, 0, 0, TimeSpan.Zero),
+        });
+
+        var firstContact = _badges.GetBadgesForUser(UserId)
+            .Single(b => b.Id == "first-contact");
+        Assert.True(firstContact.Unlocked);
+        Assert.Null(firstContact.UnlockDeviceId);
     }
 }

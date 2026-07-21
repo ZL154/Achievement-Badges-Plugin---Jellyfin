@@ -543,6 +543,8 @@
             '#' + ROOT_ID + ' .ab-panel{margin-top:1.5em;}' +
             '#' + ROOT_ID + ' .ab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1em;margin-top:1em;}' +
             '#' + ROOT_ID + ' .ab-card{padding:1em;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);}' +
+            '#' + ROOT_ID + ' .ab-card.ab-toast-focus{outline:3px solid #fbbf24;outline-offset:4px;animation:abToastFocusPulse 1.15s ease-in-out 3;}' +
+            '@keyframes abToastFocusPulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,0.2);}50%{box-shadow:0 0 0 10px rgba(251,191,36,0.28),0 12px 34px rgba(0,0,0,0.38);}}' +
             '#' + ROOT_ID + ' .ab-card-h{display:flex;gap:0.8em;align-items:center;margin-bottom:0.7em;}' +
             '#' + ROOT_ID + ' .ab-card-icon{width:42px;height:42px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);font-size:1.2em;flex-shrink:0;}' +
             '#' + ROOT_ID + ' .ab-card-title{font-size:1.05em;font-weight:700;}' +
@@ -1141,18 +1143,23 @@
             '#' + ROOT_ID + ' .ab-cos-action.equip{background:linear-gradient(180deg,#75b022,#5c7e10);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.4);}' +
             '#' + ROOT_ID + ' .ab-cos-action.equip:hover{filter:brightness(1.15);box-shadow:0 0 16px rgba(140,195,74,0.45);}' +
             '#' + ROOT_ID + ' .ab-cos-action.unequip{background:rgba(239,68,68,0.18);color:#fca5a5;border:1px solid rgba(239,68,68,0.45);}' +
-            '#' + ROOT_ID + ' .ab-cos-action.unequip:hover{background:rgba(239,68,68,0.3);}';
+            '#' + ROOT_ID + ' .ab-cos-action.unequip:hover{background:rgba(239,68,68,0.3);}' +
+            // Custom Tabs / Plugin Pages reuse this root inside their own
+            // content area instead of presenting the stock full-screen overlay.
+            '#' + ROOT_ID + '[data-ab-embedded="true"]{position:relative !important;inset:auto !important;width:100% !important;height:auto !important;min-height:70vh !important;max-height:none !important;z-index:auto !important;padding:1.5em !important;}';
         document.head.appendChild(s);
     }
 
     var userId = '';
     var root = null;
+    var activeHost = null;
 
     function el(id) { return root ? root.querySelector('#' + id) : null; }
 
-    function createRoot() {
+    function createRoot(embedded) {
         var r = document.getElementById(ROOT_ID);
         if (r) { r.innerHTML = ''; } else { r = document.createElement('div'); r.id = ROOT_ID; }
+        r.setAttribute('data-ab-embedded', embedded ? 'true' : 'false');
         r.innerHTML =
             '<div class="ab-wrap">' +
                 '<div id="abSaWelcomeBanner" class="ab-welcome-banner" style="display:none;"></div>' +
@@ -2341,11 +2348,17 @@
     // is across this server's user base.
     var rarityPctMap = {};
     var publicConfigGlobal = {};
+    var publicConfigPromise = null;
+    var navigationPreferencesGlobal = {};
+    var navigationPreferencesPromise = null;
+    var navigationPreferencesUserId = '';
+    var nativeNavigationSettingsMountPromise = null;
     var currentSearch = '';
     var currentFilter = 'all';
     var currentCategory = '';
     var currentSort = 'default';
     var currentPrestige = 0;
+    var lastHandledAchievementRoute = '';
 
     var rarityRank = { 'common': 1, 'uncommon': 2, 'rare': 3, 'epic': 4, 'legendary': 5, 'mythic': 6 };
     var rarityScore = { 'common': 10, 'uncommon': 20, 'rare': 35, 'epic': 60, 'legendary': 100, 'mythic': 150 };
@@ -2437,6 +2450,96 @@
         renderBadges(sorted, equippedIdsGlobal);
         var empty = el('abSaEmptyFilter');
         if (empty) empty.style.display = (sorted.length === 0 && allBadges.length > 0) ? 'block' : 'none';
+    }
+
+    function readAchievementRouteTarget() {
+        var hash = window.location.hash || '';
+        var queryAt = hash.indexOf('?');
+        if (queryAt < 0) return null;
+        try {
+            var params = new URLSearchParams(hash.substring(queryAt + 1));
+            var badgeId = params.get('badge');
+            if (badgeId) return { type: 'badge', badgeId: badgeId, routeKey: hash };
+            if (params.get('filter') === 'recent') return { type: 'recent', routeKey: hash };
+        } catch (e) { }
+        return null;
+    }
+
+    function resetBadgeRouteControls(filterValue) {
+        currentSearch = '';
+        currentCategory = '';
+        currentFilter = filterValue || 'all';
+        currentSort = 'default';
+        var search = el('abSaSearch'); if (search) search.value = '';
+        var category = el('abSaCategoryFilter'); if (category) category.value = '';
+        var filter = el('abSaFilter'); if (filter) filter.value = currentFilter;
+        var sort = el('abSaSort'); if (sort) sort.value = 'default';
+    }
+
+    function findRenderedBadgeCard(badgeId) {
+        var cards = document.querySelectorAll('#abSaGrid .ab-card[data-badge-id]');
+        for (var i = 0; i < cards.length; i++) {
+            if (cards[i].getAttribute('data-badge-id') === badgeId) return cards[i];
+        }
+        return null;
+    }
+
+    function prefersReducedMotion() {
+        try {
+            if (localStorage.getItem('ab-reduced-motion') === 'true') return true;
+            return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        } catch (e) { return false; }
+    }
+
+    function focusAchievementCard(card) {
+        if (!card) return;
+        var previous = document.querySelector('#abSaGrid .ab-toast-focus');
+        if (previous && previous !== card) previous.classList.remove('ab-toast-focus');
+        card.classList.add('ab-toast-focus');
+        card.setAttribute('tabindex', '-1');
+        try {
+            card.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
+            card.focus({ preventScroll: true });
+        } catch (e) {
+            try { card.scrollIntoView(); card.focus(); } catch (ignored) { }
+        }
+        setTimeout(function () {
+            card.classList.remove('ab-toast-focus');
+            card.removeAttribute('tabindex');
+        }, 6000);
+    }
+
+    function applyAchievementRouteTarget() {
+        var target = readAchievementRouteTarget();
+        if (!target || target.routeKey === lastHandledAchievementRoute) return false;
+        if (!root || !allBadges.length) return false;
+        lastHandledAchievementRoute = target.routeKey;
+        setTab('badges');
+
+        if (target.type === 'recent') {
+            resetBadgeRouteControls('recent');
+            applyFilter();
+            var grid = el('abSaGrid');
+            if (grid) {
+                try { grid.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' }); }
+                catch (e) { try { grid.scrollIntoView(); } catch (ignored) { } }
+            }
+            return true;
+        }
+
+        resetBadgeRouteControls('all');
+        applyFilter();
+        var card = findRenderedBadgeCard(target.badgeId);
+        if (card) {
+            focusAchievementCard(card);
+            return true;
+        }
+
+        // A stale client cache should still land somewhere useful rather than
+        // on an empty target: show the user's latest unlocks as a fallback.
+        resetBadgeRouteControls('recent');
+        applyFilter();
+        return true;
     }
 
     function loadRecap(period) {
@@ -3249,6 +3352,7 @@
             var pct = tar > 0 ? Math.min(cur / tar * 100, 100) : 0;
             var eq = equippedIds && equippedIds[b.Id];
             var c = document.createElement('div'); c.className = 'ab-card';
+            c.setAttribute('data-badge-id', b.Id);
             var pts = scoreForBadge(b);
             var isPinned = !!pinnedIdsGlobal[b.Id];
             var isTitleEquipped = equippedTitleId && equippedTitleId === b.Id;
@@ -3420,6 +3524,8 @@
         }
 
         var minRarity = prefs.minimumToastRarity || prefs.MinimumToastRarity || 'all';
+        var toastGrouping = (prefs.unlockToastGrouping || prefs.UnlockToastGrouping || 'grouped').toString().toLowerCase();
+        var toastDeviceScope = (prefs.unlockToastDeviceScope || prefs.UnlockToastDeviceScope || 'all-devices').toString().toLowerCase();
         var pageTheme = prefs.achievementPageTheme || prefs.AchievementPageTheme || 'default';
         var slots = prefs.equippedBadgeSlots || prefs.EquippedBadgeSlots || 5;
         var prefLang = (prefs.language || prefs.Language || 'default').toString().toLowerCase();
@@ -3492,6 +3598,17 @@
               '</div>'
             : toggle('extremeSpoilerMode', tr('settings.extreme_spoiler_mode', 'Extreme spoiler mode'), tr('settings.extreme_spoiler_mode_desc', 'Completely hide locked badges (not just descriptions)'), prefs.extremeSpoilerMode === true || prefs.ExtremeSpoilerMode === true);
 
+        var navigationSectionHtml =
+            '<div class="ab-settings-section">' +
+                '<div class="ab-eyebrow">' + tr('settings.navigation_integrations', 'Navigation integrations') + '</div>' +
+                '<div class="ab-muted" style="font-size:0.85em; margin-bottom:0.65em;">' + tr('settings.navigation_integrations_desc', 'Choose where Achievements appears for your account. Server administrators control which integrations are available.') + '</div>' +
+                '<div class="ab-settings-grid">' +
+                    toggle('showCustomTabsEntry', tr('settings.show_custom_tabs_entry', 'Show Custom Tabs entry'), tr('settings.show_custom_tabs_entry_desc', 'Show Achievements in Jellyfin\'s Home tab bar when the Custom Tabs integration is enabled'), prefs.showCustomTabsEntry !== false && prefs.ShowCustomTabsEntry !== false) +
+                    toggle('showPluginPagesEntry', tr('settings.show_plugin_pages_entry', 'Show Plugin Pages entry'), tr('settings.show_plugin_pages_entry_desc', 'Show Achievements in the Plugin Pages navigation when that integration is enabled'), prefs.showPluginPagesEntry !== false && prefs.ShowPluginPagesEntry !== false) +
+                    toggle('showUserMenuShortcut', tr('settings.show_user_menu_shortcut', 'Show header shortcut'), tr('settings.show_user_menu_shortcut_desc', 'Show the Achievements trophy beside your user/profile control'), prefs.showUserMenuShortcut !== false && prefs.ShowUserMenuShortcut !== false) +
+                '</div>' +
+            '</div>';
+
         var html =
             '<div class="ab-settings-section">' +
                 '<div class="ab-eyebrow">' + tr('settings.toast_sound_section', 'Toast & Sound') + '</div>' +
@@ -3500,6 +3617,20 @@
                     toggle('enableSound', tr('settings.enable_sound', 'Enable toast sound'), tr('settings.enable_sound_desc', 'Play a sound effect with notifications'), prefs.enableSound !== false && prefs.EnableSound !== false) +
                     toggle('enableConfetti', tr('settings.confetti', 'Enable confetti'), tr('settings.confetti_desc', 'Particle burst effects on rare+ unlocks'), prefs.enableConfetti !== false && prefs.EnableConfetti !== false) +
                     toggle('enableMilestoneToasts', tr('settings.enable_milestone_toasts', 'Enable milestone toasts'), tr('settings.enable_milestone_toasts_desc', 'Celebrate 25/50/75/100% completion'), prefs.enableMilestoneToasts !== false && prefs.EnableMilestoneToasts !== false) +
+                    '<div class="ab-setting-row">' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.toast_grouping', 'Unlock toast style') + '</div><div class="ab-toggle-desc">' + tr('settings.toast_grouping_desc', 'Group unlock bursts into one notification or play every achievement separately') + '</div></div>' +
+                        '<select class="ab-select" data-settings-select="unlockToastGrouping">' +
+                            '<option value="grouped"' + (toastGrouping === 'grouped' ? ' selected' : '') + '>' + tr('settings.toast_grouped', 'Grouped summary') + '</option>' +
+                            '<option value="individual"' + (toastGrouping === 'individual' ? ' selected' : '') + '>' + tr('settings.toast_individual', 'Individual animations') + '</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="ab-setting-row">' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.toast_device_scope', 'Toast device scope') + '</div><div class="ab-toggle-desc">' + tr('settings.toast_device_scope_desc', 'Show unlocks on every signed-in device or only the device that earned them') + '</div></div>' +
+                        '<select class="ab-select" data-settings-select="unlockToastDeviceScope">' +
+                            '<option value="all-devices"' + (toastDeviceScope === 'all-devices' ? ' selected' : '') + '>' + tr('settings.toast_all_devices', 'All signed-in devices') + '</option>' +
+                            '<option value="originating-device"' + (toastDeviceScope === 'originating-device' ? ' selected' : '') + '>' + tr('settings.toast_originating_device', 'Unlocking device only') + '</option>' +
+                        '</select>' +
+                    '</div>' +
                     '<div class="ab-setting-row">' +
                         '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.minimum_rarity', 'Minimum toast rarity') + '</div><div class="ab-toggle-desc">' + tr('settings.minimum_rarity_desc', 'Only show toasts for badges at or above this rarity') + '</div></div>' +
                         '<select class="ab-select" data-settings-select="minimumToastRarity">' +
@@ -3514,6 +3645,7 @@
                 '</div>' +
             '</div>' +
             privacySectionHtml +
+            navigationSectionHtml +
             '<div class="ab-settings-section">' +
                 '<div class="ab-eyebrow">' + tr('settings.display_features', 'Display & Features') + '</div>' +
                 '<div class="ab-settings-grid">' +
@@ -3704,6 +3836,8 @@
             return fetchJson('Plugins/AchievementBadges/users/' + userId + '/preferences', 'POST', payload).then(function (res) {
                 // Tell the sidebar's messaging module to re-read prefs next poll.
                 try { if (window.__abInvalidateMsgPrefs) window.__abInvalidateMsgPrefs(); } catch (e) {}
+                try { window.dispatchEvent(new CustomEvent('ab:notification-preferences-changed')); } catch (e) {}
+                try { window.dispatchEvent(new CustomEvent('ab:navigation-preferences-changed')); } catch (e) {}
                 return res;
             });
         }).catch(function () { });
@@ -4087,6 +4221,7 @@
             if (equipped) equipped.forEach(function (b) { eqIds[b.Id] = true; });
             equippedIdsGlobal = eqIds;
             applyFilter();
+            applyAchievementRouteTarget();
 
             var lbBox = el('abSaLb');
             if (lbBox) {
@@ -4260,15 +4395,292 @@
         }
     }
 
-    function mountRoute() {
+    function getPublicConfig() {
+        if (publicConfigPromise) return publicConfigPromise;
+        publicConfigPromise = fetchJson('Plugins/AchievementBadges/public-config').then(function (cfg) {
+            publicConfigGlobal = cfg || {};
+            return publicConfigGlobal;
+        }).catch(function () {
+            publicConfigPromise = null;
+            return publicConfigGlobal || {};
+        });
+        return publicConfigPromise;
+    }
+
+    function navigationPreferenceEnabled(prefs, pascalName, camelName) {
+        prefs = prefs || {};
+        return prefs[pascalName] !== false && prefs[camelName] !== false;
+    }
+
+    function getNavigationPreferences(forceRefresh) {
+        if (forceRefresh) {
+            navigationPreferencesPromise = null;
+            navigationPreferencesUserId = '';
+        }
+        if (navigationPreferencesPromise) return navigationPreferencesPromise;
+        navigationPreferencesPromise = getCurrentUserId().then(function (id) {
+            if (!id) return {};
+            if (!forceRefresh && navigationPreferencesUserId === id && navigationPreferencesGlobal) {
+                return navigationPreferencesGlobal;
+            }
+            return fetchJson('Plugins/AchievementBadges/users/' + id + '/preferences').then(function (prefs) {
+                navigationPreferencesUserId = id;
+                navigationPreferencesGlobal = prefs || {};
+                return navigationPreferencesGlobal;
+            });
+        }).catch(function () {
+            return navigationPreferencesGlobal || {};
+        }).then(function (prefs) {
+            return prefs || {};
+        });
+        return navigationPreferencesPromise;
+    }
+
+    function isNativeUserSettingsRoute() {
+        return (window.location.hash || '').toLowerCase().indexOf('/mypreferencesmenu') !== -1;
+    }
+
+    function findNativeUserSettingsHost() {
+        var page = document.getElementById('myPreferencesMenuPage');
+        if (!page || !page.isConnected || page.offsetParent === null) return null;
+        var content = page.querySelector('.readOnlyContent');
+        if (!content) return null;
+        return {
+            content: content,
+            insertAfter: content.querySelector('.verticalSection')
+        };
+    }
+
+    function setNativeNavigationSettingsStatus(message, isError) {
+        var status = document.getElementById('abNavigationPreferencesStatus');
+        if (!status) return;
+        status.textContent = message || '';
+        status.style.color = isError ? '#ff8a80' : 'var(--primary-accent-color, #00a4dc)';
+    }
+
+    function saveNativeNavigationPreference(input) {
+        if (!input) return;
+        var camelName = input.getAttribute('data-ab-navigation-preference') || '';
+        if (!camelName) return;
+        var pascalName = toPascalCase(camelName);
+        var requestedValue = input.checked;
+        var previousValue = !requestedValue;
+        input.disabled = true;
+        setNativeNavigationSettingsStatus('', false);
+
+        getCurrentUserId().then(function (id) {
+            if (!id) throw new Error('No current user');
+            return fetchJson('Plugins/AchievementBadges/users/' + id + '/preferences').then(function (existing) {
+                var payload = existing || {};
+                delete payload[camelName];
+                delete payload[pascalName];
+                payload[pascalName] = requestedValue;
+                return fetchJson('Plugins/AchievementBadges/users/' + id + '/preferences', 'POST', payload).then(function () {
+                    navigationPreferencesUserId = id;
+                    navigationPreferencesGlobal = payload;
+                    navigationPreferencesPromise = Promise.resolve(payload);
+                    try { window.dispatchEvent(new CustomEvent('ab:navigation-preferences-changed')); } catch (e) {}
+                    setNativeNavigationSettingsStatus(tr('settings.saved', 'Settings saved.'), false);
+                });
+            });
+        }).catch(function () {
+            input.checked = previousValue;
+            setNativeNavigationSettingsStatus(tr('settings.save_failed', 'Failed to save settings.'), true);
+        }).then(function () {
+            input.disabled = false;
+        });
+    }
+
+    function renderNativeNavigationSettings(host, prefs) {
+        if (!host || !host.content || !isNativeUserSettingsRoute()) return;
+        var existing = document.getElementById('abNavigationPreferencesUserSettings');
+        if (existing) return;
+
+        var section = document.createElement('div');
+        section.id = 'abNavigationPreferencesUserSettings';
+        section.className = 'verticalSection verticalSection-extrabottompadding';
+        section.setAttribute('data-achievement-badges-owned', 'navigation-settings');
+        section.innerHTML =
+            '<style>' +
+                '#abNavigationPreferencesUserSettings .ab-native-nav-description{margin:.25em .25em 1em;opacity:.72;line-height:1.45;}' +
+                '#abNavigationPreferencesUserSettings .ab-native-nav-row{display:flex;align-items:center;gap:1em;padding:.85em .5em;cursor:pointer;}' +
+                '#abNavigationPreferencesUserSettings .ab-native-nav-copy{flex:1;min-width:0;}' +
+                '#abNavigationPreferencesUserSettings .ab-native-nav-title{font-size:1em;line-height:1.35;}' +
+                '#abNavigationPreferencesUserSettings .ab-native-nav-detail{font-size:.86em;line-height:1.4;opacity:.65;margin-top:.15em;}' +
+                '#abNavigationPreferencesUserSettings .ab-native-nav-checkbox{width:1.35em;height:1.35em;flex:0 0 auto;accent-color:var(--primary-accent-color,#00a4dc);cursor:pointer;}' +
+                '#abNavigationPreferencesStatus{min-height:1.4em;margin:.5em .25em 0;font-size:.86em;}' +
+            '</style>' +
+            '<h2 class="sectionTitle headerUsername" style="padding-left:.25em;">' + escapeHtml(tr('achievements.title', 'Achievements')) + '</h2>' +
+            '<div class="ab-native-nav-description">' + escapeHtml(tr('settings.navigation_integrations_desc', 'Choose where Achievements appears for your account. Server administrators control which integrations are available.')) + '</div>' +
+            nativeNavigationPreferenceRow('showCustomTabsEntry', tr('settings.show_custom_tabs_entry', 'Show Custom Tabs entry'), tr('settings.show_custom_tabs_entry_desc', 'Show Achievements in Jellyfin\'s Home tab bar when the Custom Tabs integration is enabled'), navigationPreferenceEnabled(prefs, 'ShowCustomTabsEntry', 'showCustomTabsEntry')) +
+            nativeNavigationPreferenceRow('showPluginPagesEntry', tr('settings.show_plugin_pages_entry', 'Show Plugin Pages entry'), tr('settings.show_plugin_pages_entry_desc', 'Show Achievements in the Plugin Pages navigation when that integration is enabled'), navigationPreferenceEnabled(prefs, 'ShowPluginPagesEntry', 'showPluginPagesEntry')) +
+            nativeNavigationPreferenceRow('showUserMenuShortcut', tr('settings.show_user_menu_shortcut', 'Show header shortcut'), tr('settings.show_user_menu_shortcut_desc', 'Show the Achievements trophy beside your user/profile control'), navigationPreferenceEnabled(prefs, 'ShowUserMenuShortcut', 'showUserMenuShortcut')) +
+            '<div id="abNavigationPreferencesStatus" role="status" aria-live="polite"></div>';
+
+        if (host.insertAfter && host.insertAfter.parentNode === host.content) {
+            host.content.insertBefore(section, host.insertAfter.nextSibling);
+        } else {
+            host.content.appendChild(section);
+        }
+        section.querySelectorAll('input[data-ab-navigation-preference]').forEach(function (input) {
+            input.addEventListener('change', function () { saveNativeNavigationPreference(input); });
+        });
+    }
+
+    function nativeNavigationPreferenceRow(key, label, description, checked) {
+        return '<label class="listItem-border ab-native-nav-row">' +
+            '<span class="material-icons listItemIcon listItemIcon-transparent" aria-hidden="true">emoji_events</span>' +
+            '<span class="ab-native-nav-copy"><span class="ab-native-nav-title">' + escapeHtml(label) + '</span>' +
+            '<span class="ab-native-nav-detail" style="display:block;">' + escapeHtml(description) + '</span></span>' +
+            '<input class="ab-native-nav-checkbox" type="checkbox" data-ab-navigation-preference="' + key + '"' + (checked ? ' checked' : '') + '>' +
+            '</label>';
+    }
+
+    function syncNativeNavigationSettings() {
+        if (!isNativeUserSettingsRoute()) return;
+        if (document.getElementById('abNavigationPreferencesUserSettings')) return;
+        var host = findNativeUserSettingsHost();
+        if (!host || nativeNavigationSettingsMountPromise) return;
+
+        nativeNavigationSettingsMountPromise = Promise.all([getPublicConfig(), getNavigationPreferences(false)]).then(function (values) {
+            var cfg = values[0] || {};
+            var prefs = values[1] || {};
+            var chosen = (prefs.Language || prefs.language || 'default').toString().toLowerCase();
+            var adminLanguage = (cfg.DefaultLanguage || cfg.defaultLanguage || 'en').toString().toLowerCase();
+            var effectiveLanguage = !chosen || chosen === 'default' ? adminLanguage : chosen;
+            return loadTranslations(effectiveLanguage).catch(function () { return {}; }).then(function () {
+                renderNativeNavigationSettings(findNativeUserSettingsHost(), prefs);
+            });
+        }).catch(function () {
+            renderNativeNavigationSettings(findNativeUserSettingsHost(), navigationPreferencesGlobal || {});
+        }).then(function () {
+            nativeNavigationSettingsMountPromise = null;
+        }, function () {
+            nativeNavigationSettingsMountPromise = null;
+        });
+    }
+
+    function setOwnedElementVisible(node, visible) {
+        if (!node) return;
+        if (visible) {
+            if (node.getAttribute('data-ab-navigation-hidden') === 'true') {
+                var previousDisplay = node.getAttribute('data-ab-navigation-display') || '';
+                var previousPriority = node.getAttribute('data-ab-navigation-display-priority') || '';
+                if (previousDisplay) node.style.setProperty('display', previousDisplay, previousPriority);
+                else node.style.removeProperty('display');
+                node.removeAttribute('hidden');
+                node.removeAttribute('aria-hidden');
+                node.removeAttribute('data-ab-navigation-hidden');
+                node.removeAttribute('data-ab-navigation-display');
+                node.removeAttribute('data-ab-navigation-display-priority');
+            }
+        } else {
+            if (node.getAttribute('data-ab-navigation-hidden') !== 'true') {
+                node.setAttribute('data-ab-navigation-display', node.style.getPropertyValue('display') || '');
+                node.setAttribute('data-ab-navigation-display-priority', node.style.getPropertyPriority('display') || '');
+            }
+            node.style.setProperty('display', 'none', 'important');
+            node.setAttribute('hidden', 'hidden');
+            node.setAttribute('aria-hidden', 'true');
+            node.setAttribute('data-ab-navigation-hidden', 'true');
+        }
+    }
+
+    function returnToStockHome() {
+        var homeButton = document.querySelector('.emby-tabs-slider .emby-tab-button[data-index="0"], .emby-tabs-slider button[data-index="0"]');
+        if (homeButton && typeof homeButton.click === 'function') {
+            homeButton.click();
+        }
+    }
+
+    function applyCustomTabsVisibility(cfg, prefs) {
+        var adminEnabled = cfg.EnableCustomTabsIntegration === true || cfg.enableCustomTabsIntegration === true;
+        var userEnabled = navigationPreferenceEnabled(prefs, 'ShowCustomTabsEntry', 'showCustomTabsEntry');
+        var visible = adminEnabled && userEnabled;
+        var markers = document.querySelectorAll('[data-achievement-badges-host="custom-tabs"]');
+        for (var i = 0; i < markers.length; i++) {
+            var panel = markers[i].closest ? markers[i].closest('[id^="customTab_"]') : markers[i].parentNode;
+            if (!panel || !/^customTab_\d+$/.test(panel.id || '')) continue;
+            var index = panel.id.substring('customTab_'.length);
+            var button = document.getElementById('customTabButton_' + index);
+            if (!visible && root && panel.contains(root) && root.style.display !== 'none') returnToStockHome();
+            setOwnedElementVisible(button, visible);
+            setOwnedElementVisible(panel, visible);
+        }
+    }
+
+    function applyPluginPagesVisibility(cfg, prefs) {
+        var adminEnabled = cfg.EnablePluginPagesIntegration === true || cfg.enablePluginPagesIntegration === true;
+        var userEnabled = navigationPreferenceEnabled(prefs, 'ShowPluginPagesEntry', 'showPluginPagesEntry');
+        var visible = adminEnabled && userEnabled;
+        var links = document.querySelectorAll('a[data-itemid="achievement-badges"], a[href*="pageUrl=/Plugins/AchievementBadges/embedded-page"]');
+        for (var i = 0; i < links.length; i++) setOwnedElementVisible(links[i], visible);
+    }
+
+    function applyNavigationIntegrationVisibility(cfg, prefs) {
+        cfg = cfg || {};
+        prefs = prefs || {};
+        applyCustomTabsVisibility(cfg, prefs);
+        applyPluginPagesVisibility(cfg, prefs);
+        injectUserMenuShortcut(cfg, prefs);
+    }
+
+    function findIntegrationHost() {
+        var hosts = document.querySelectorAll('[data-achievement-badges-host]');
+        for (var i = 0; i < hosts.length; i++) {
+            if (hosts[i].isConnected && hosts[i].offsetParent !== null) return hosts[i];
+        }
+        return null;
+    }
+
+    function integrationEnabled(host, cfg, prefs) {
+        if (!host) return false;
+        var kind = (host.getAttribute('data-achievement-badges-host') || '').toLowerCase();
+        if (kind === 'custom-tabs') {
+            return (cfg.EnableCustomTabsIntegration === true || cfg.enableCustomTabsIntegration === true) &&
+                navigationPreferenceEnabled(prefs, 'ShowCustomTabsEntry', 'showCustomTabsEntry');
+        }
+        if (kind === 'plugin-pages') {
+            return (cfg.EnablePluginPagesIntegration === true || cfg.enablePluginPagesIntegration === true) &&
+                navigationPreferenceEnabled(prefs, 'ShowPluginPagesEntry', 'showPluginPagesEntry');
+        }
+        return false;
+    }
+
+    function injectUserMenuShortcut(cfg, prefs) {
+        var existing = document.getElementById('abUserMenuShortcut');
+        var enabled = (cfg.EnableUserMenuShortcut === true || cfg.enableUserMenuShortcut === true) &&
+            navigationPreferenceEnabled(prefs, 'ShowUserMenuShortcut', 'showUserMenuShortcut');
+        if (!enabled) {
+            if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+            return;
+        }
+        if (existing) return;
+        var header = document.querySelector('.headerRight, .headerRightElements, .headerRightContent');
+        if (!header) return;
+        var link = document.createElement('a');
+        link.id = 'abUserMenuShortcut';
+        link.className = 'paper-icon-button-light';
+        link.href = '#/achievements';
+        link.title = tr('achievements.title', 'Achievements');
+        link.setAttribute('aria-label', tr('achievements.title', 'Achievements'));
+        link.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:3em;height:3em;color:inherit;text-decoration:none;';
+        link.innerHTML = '<span class="material-icons" aria-hidden="true">emoji_events</span>';
+        var userButton = header.querySelector('.headerUserButton, .btnUserMenu, [data-action="user"]');
+        header.insertBefore(link, userButton || null);
+    }
+
+    function mountRoute(host) {
         injectStyles();
+        var target = host || document.body;
         root = document.getElementById(ROOT_ID);
         if (!root) {
-            root = createRoot();
-            document.body.appendChild(root);
+            root = createRoot(!!host);
         } else {
-            root = createRoot();
+            root = createRoot(!!host);
         }
+        if (root.parentNode !== target) target.appendChild(root);
+        activeHost = host || null;
         root.style.display = 'block';
 
         /* v1.8.47: apply the persisted Classic/Revamp preference + wire toggle. */
@@ -4396,6 +4808,7 @@
     function unmountRoute() {
         var r = document.getElementById(ROOT_ID);
         if (r) r.style.display = 'none';
+        activeHost = null;
     }
 
     function isAchievementsRoute() {
@@ -4403,12 +4816,39 @@
         return hash.indexOf(ROUTE_MATCH) !== -1;
     }
 
+    function routeAlreadyMounted(host) {
+        var mountedRoot = document.getElementById(ROOT_ID);
+        var target = host || document.body;
+        return !!mountedRoot && mountedRoot.style.display !== 'none' &&
+            mountedRoot.parentNode === target && activeHost === (host || null);
+    }
+
     function onRouteChange() {
+        syncNativeNavigationSettings();
         if (isAchievementsRoute()) {
+            if (routeAlreadyMounted(null)) {
+                applyAchievementRouteTarget();
+                return;
+            }
             mountRoute();
-        } else {
-            unmountRoute();
+            return;
         }
+        var host = findIntegrationHost();
+        if (!host) { unmountRoute(); return; }
+        Promise.all([getPublicConfig(), getNavigationPreferences(false)]).then(function (values) {
+            var cfg = values[0] || {};
+            var prefs = values[1] || {};
+            applyNavigationIntegrationVisibility(cfg, prefs);
+            if (isAchievementsRoute()) {
+                if (!routeAlreadyMounted(null)) mountRoute();
+                return;
+            }
+            var currentHost = findIntegrationHost();
+            if (currentHost && integrationEnabled(currentHost, cfg, prefs)) {
+                if (!routeAlreadyMounted(currentHost)) mountRoute(currentHost);
+            }
+            else unmountRoute();
+        });
     }
 
     window.addEventListener('hashchange', onRouteChange);
@@ -4421,24 +4861,35 @@
     // aren't. Cheap (every 1.5s, only does work if the route state mismatches).
     setInterval(function () {
         try {
-            if (!isAchievementsRoute()) return;
             var r = document.getElementById(ROOT_ID);
-            if (!r) {
-                onRouteChange();
-                return;
+            if (isAchievementsRoute()) {
+                if (!r || r.style.display === 'none' || r.parentNode !== document.body) onRouteChange();
+            } else {
+                var host = findIntegrationHost();
+                var shouldMount = host && integrationEnabled(host, publicConfigGlobal || {}, navigationPreferencesGlobal || {});
+                if (shouldMount && (!r || r.style.display === 'none' || r.parentNode !== host || activeHost !== host)) onRouteChange();
+                if (!shouldMount && r && r.style.display !== 'none') unmountRoute();
             }
-            if (r.style.display === 'none' || getComputedStyle(r).display === 'none') {
-                r.style.display = 'block';
-            }
-            if (r.parentNode !== document.body) {
-                document.body.appendChild(r);
-            }
+            applyNavigationIntegrationVisibility(publicConfigGlobal || {}, navigationPreferencesGlobal || {});
+            syncNativeNavigationSettings();
         } catch (e) { /* swallow — recovery is best-effort */ }
     }, 1500);
+
+    window.addEventListener('ab:navigation-preferences-changed', function () {
+        getNavigationPreferences(true).then(function (prefs) {
+            applyNavigationIntegrationVisibility(publicConfigGlobal || {}, prefs || {});
+            onRouteChange();
+        });
+    });
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', onRouteChange);
     } else {
         onRouteChange();
     }
+    Promise.all([getPublicConfig(), getNavigationPreferences(false)]).then(function (values) {
+        applyNavigationIntegrationVisibility(values[0] || {}, values[1] || {});
+        syncNativeNavigationSettings();
+        onRouteChange();
+    });
 })();

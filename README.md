@@ -31,7 +31,7 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd meets Steam profile customization, built natively into your media server.
 
-> **Status:** Active development — **v2.1.3 (Open Library)** is live. Achievements span **music and books** alongside film & TV, admins can author **custom badges with compound AND/OR criteria** (now including **genre-filtered music badges**), and the whole admin page is localized in 8 languages with a live language picker. v2.1.3 is a bug-fix patch (per-genre music tracking, custom-badge delete, header-injection resilience, category labels) with a full builder-localization pass — see [What's new in v2.1.3](#-whats-new-in-v213). Built on the v2.0 "Choose Your Loadout" progression game (score economy, Shop, power-ups, 70+ cosmetics).
+> **Status:** Active development — **v2.2.0 (Your Screen, Your Rules)** is live. Achievement navigation is now modular per user, optional Custom Tabs and Plugin Pages hosts reuse the stock page, unlock bursts can be grouped or shown individually, notifications can stay on the device that earned them, and real unlock toasts open the exact achievement. See [What's new in v2.2.0](#-whats-new-in-v220). Built on the v2.1 "Open Library" expansion and v2.0 "Choose Your Loadout" progression game.
 
 ---
 
@@ -75,6 +75,21 @@ A full progression, gamification and achievement system for Jellyfin that reward
 Over **200 built-in achievements** across 35+ categories, a 10-tier rank ladder from Rookie to Immortal, a full score economy with combos, prestige, daily/weekly quests, a **Score Shop with 70+ cosmetics**, power-up consumables, a Friends drawer with messaging, plus admin power features like custom badges, seasonal challenges, webhook notifications, and a full audit log.
 
 Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin, ElegantFin, or StarTrack.
+
+---
+
+## 🚀 What's new in v2.2.0 — Your Screen, Your Rules
+
+This release makes Achievement Badges fit each user's Jellyfin layout and notification preferences while keeping the stock Achievements page available at all times. **Drop-in upgrade from v2.1.x / v2.0.x — no schema breakage or manual migration.**
+
+- **Optional Custom Tabs and Plugin Pages hosts (#37).** Admins can opt into either integration independently. Both reuse the same Achievements surface instead of maintaining duplicate pages, and compatibility failures stay isolated so they cannot prevent Jellyfin from starting.
+- **Per-user navigation controls (#37).** Each user can independently show or hide the Custom Tabs entry, Plugin Pages entry, and header trophy from Achievement settings or Jellyfin's native user settings. Hiding navigation never disables tracking, notifications, or the stock page.
+- **Grouped or individual unlock bursts (#38).** Simultaneous unlocks can collapse into one summary with a combined score, or play one at a time using the existing queue.
+- **Device-scoped unlock notifications (#38).** Users can keep the default delivery to every signed-in client or restrict a toast to the Jellyfin device that earned it. The server validates the originating device instead of trusting the browser alone.
+- **Unlock toasts now lead somewhere useful.** Click a real single unlock (or focus it and press Enter/Space) to open My Badges, clear filters, scroll to the exact badge, and briefly highlight it. Grouped summaries open Recently unlocked. Synthetic admin previews remain deliberately non-navigating and never write achievement data.
+- **Better notification testing.** A new **Test 10 unlocks** admin control exercises the saved grouping preference without creating unlocks or modifying a profile.
+- **Fresh client assets on every build.** Script cache keys now include the compiled module ID, preventing browsers from retaining an older same-version UI during testing or deployment.
+- **Full localization.** Every new option, help message, navigation label, and toast action is translated across all 8 UI languages (English, French, Spanish, German, Italian, Portuguese, Chinese, Japanese).
 
 ---
 
@@ -288,10 +303,13 @@ Xbox-Guide-style chat built into the Friends drawer. No external service, no Web
 - **Xbox-style unlock toasts** with per-rarity colors (6 tiers), Xbox logo → trophy swap, shimmer sweep, and confetti on rare+ unlocks
 - **Achievement sound** — Xbox 360 chime for common/uncommon, rare Xbox One chime for rare/epic/legendary/mythic
 - **Diamond spritesheet** for legendary/mythic unlocks (147-frame rotating crystal animation)
-- **One-at-a-time toast queue** — multiple simultaneous unlocks play sequentially so each gets its full animation
+- **Configurable unlock bursts** — group simultaneous unlocks into one score/count summary (default), or play each achievement animation separately
+- **Per-device toast delivery** — choose all signed-in devices (default) or only the Jellyfin device that earned the achievement
 - **Toasts during playback** — unlocks fire within ~1s of earning via playback event hooks + DOM fallback
 - **Admin toast preview** — test buttons for each rarity tier
 - **Standalone achievements page** at `#!/achievements` with the new **Loadout tab (v2.0)** for managing power-ups, shop, and cosmetics
+- **Optional page hosts** — reuse the same page inside Custom Tabs or register it with Plugin Pages; both are admin opt-in and the stock page always remains available
+- **Modular per-user navigation** — independently show or hide the Custom Tabs entry, Plugin Pages entry, and header trophy without affecting achievement tracking or each other
 - **Shareable profile card** — server-rendered HTML at `/Plugins/AchievementBadges/users/{id}/profile-card`
 - **Classic / Revamp toggle** — every screen the plugin renders has a Classic/Revamp toggle (`ab-style-pref` localStorage):
   - **Revamp** — magazine-spread hero with massive Geist 700 rank name, 220px conic completion donut, asymmetric stats grid, chapter-numbered tabs (`01 / MY BADGES`, `02 / QUESTS`…), control-panel filter strip, ambient drift orb, film grain overlay, day-streak pulse, rank-name shimmer, full page entrance cascade
@@ -304,8 +322,11 @@ Xbox-Guide-style chat built into the Friends drawer. No external service, no Web
 A gear icon on the achievements page opens a full settings panel with auto-save:
 
 - **Toast controls** — enable/disable toasts, sound, confetti, milestone toasts
+- **Unlock toast style** — grouped summary or individual animations
+- **Toast device scope** — every signed-in client or only the device that triggered the unlock
 - **Minimum toast rarity** — filter out common spam (All / Rare+ / Epic+ / Legendary+)
 - **Privacy** — hide from leaderboard, compare profiles, activity feed, prestige board
+- **Navigation integrations** — independently show/hide the Custom Tabs entry, Plugin Pages entry, and header/profile trophy shortcut
 - **Achievement page theme** — Default, Dark, or Light (legacy site-wide theme, separate from v2.0's profile-theme cosmetics)
 - **Spoiler mode** — hides locked badge descriptions with "???" so you discover them naturally
 - **Equipped badge slots** — choose how many badges show in your showcase (1-10)
@@ -513,12 +534,15 @@ https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/mani
 
 - **Proper metadata provider** (TMDb, OMDb) — required for Director/Actor badges to populate. Badges based on `item.People` will stay empty if your library doesn't have people scraped
 - **Home Screen Sections plugin** — lets the achievement home widget inject more reliably
+- **Custom Tabs or Plugin Pages** — optional alternative hosts for the Achievements page; enable the matching integration under **Page integrations** in plugin settings. Saving installs/repairs the owned Custom Tabs entry without changing existing tabs; restart Jellyfin afterward.
 
 ### What each feature needs
 
 | Feature | Depends on |
 |---|---|
 | Sidebar + header injection | Nothing (works standalone) |
+| Custom Tabs page host | Custom Tabs plugin + enable the integration, save, and restart Jellyfin |
+| Plugin Pages page host | Plugin Pages plugin + Jellyfin restart after enabling integration |
 | Watch history backfill | Played flag on items (Jellyfin default) |
 | Genre badges | Items with `Genres` metadata |
 | Director/Actor badges | Items with `People` metadata (TMDb/OMDb scrape) |
@@ -619,11 +643,12 @@ POST   /Plugins/AchievementBadges/users/{userId}/gift/{toUserId}?amount=N
 GET    /Plugins/AchievementBadges/users/{userId}/chase/{badgeId}      — items to watch to finish a badge
 GET    /Plugins/AchievementBadges/users/{userId}/recommendations      — top 3 closest-to-unlock
 GET    /Plugins/AchievementBadges/users/{userId}/profile-card         — HTML profile card
-GET    /Plugins/AchievementBadges/users/{userId}/unlocks-since?since=ISO
+GET    /Plugins/AchievementBadges/users/{userId}/unlocks-since?since=ISO&deviceId=ID
 GET    /Plugins/AchievementBadges/users/{userId}/library-completion
 POST   /Plugins/AchievementBadges/users/{userId}/login-ping
 GET    /Plugins/AchievementBadges/leaderboard?limit=10
 GET    /Plugins/AchievementBadges/leaderboard/{category}?limit=10     — score|movies|episodes|hours|streak|series
+GET    /Plugins/AchievementBadges/embedded-page                       — Plugin Pages host fragment
 GET    /Plugins/AchievementBadges/server/stats
 ```
 
@@ -793,6 +818,7 @@ Full per-version notes and signed binaries live on the GitHub Releases page:
 
 Highlights:
 
+- **v2.2.0** — Your Screen, Your Rules: optional Custom Tabs + Plugin Pages hosts and independent per-user navigation controls (#37); grouped/individual and all-device/origin-device unlock notification modes (#38); clickable, keyboard-accessible real unlock toasts; 10-toast admin grouping preview; build-specific client cache keys; full 8-language coverage
 - **v2.1.3** — Open Library patch: per-genre music badges so genre filters actually filter (#24), custom badges fully delete + purge earned copies + ID-preserving migration (#24), header UI survives another header-injecting plugin (#36), badge-category label fix, and full localization of the badge/quest builders across all 8 languages
 - **v2.1.0** — Open Library: music + book achievements, custom badge builder (compound AND/OR), JS Injector fallback (#26), anime detection via Genres+Tags+Series (#25), daily-badge backfill fix + audit/cleanup tool (#27), globe language picker + full admin-page localization
 - **v2.0.0** — Choose Your Loadout: power-ups, score shop, 70+ cosmetics, 8 video backgrounds, full i18n

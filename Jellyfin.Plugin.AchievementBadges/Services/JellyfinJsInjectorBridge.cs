@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using MediaBrowser.Common.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -71,7 +72,7 @@ public class JellyfinJsInjectorBridge
 
     public IReadOnlyList<string> GetScriptUrls()
     {
-        var ver = typeof(WebInjectionService).Assembly.GetName().Version?.ToString() ?? "0";
+        var ver = ClientAssetVersion.Value;
         return new[]
         {
             $"/Plugins/AchievementBadges/client-script/sidebar?v={ver}",

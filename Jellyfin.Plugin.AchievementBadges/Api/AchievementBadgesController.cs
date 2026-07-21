@@ -1164,6 +1164,9 @@ public class AchievementBadgesController : ControllerBase
         prefs.MinimumToastRarity = string.IsNullOrWhiteSpace(prefs.MinimumToastRarity) || !allowedRarities.Contains(prefs.MinimumToastRarity)
             ? "all" : prefs.MinimumToastRarity.ToLowerInvariant();
 
+        prefs.UnlockToastGrouping = UnlockNotificationPolicy.NormalizeGrouping(prefs.UnlockToastGrouping);
+        prefs.UnlockToastDeviceScope = UnlockNotificationPolicy.NormalizeDeviceScope(prefs.UnlockToastDeviceScope);
+
         prefs.EquippedBadgeSlots = Math.Clamp(prefs.EquippedBadgeSlots, 1, 10);
 
         // FriendsButtonCorner allowlist — bottom-left is the default.
@@ -1319,7 +1322,10 @@ public class AchievementBadgesController : ControllerBase
 
     [HttpGet("users/{userId}/unlocks-since")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult GetUnlocksSince([FromRoute] string userId, [FromQuery] string? since = null)
+    public ActionResult GetUnlocksSince(
+        [FromRoute] string userId,
+        [FromQuery] string? since = null,
+        [FromQuery] string? deviceId = null)
     {
         var cutoff = DateTimeOffset.MinValue;
         if (!string.IsNullOrWhiteSpace(since) && DateTimeOffset.TryParse(since, out var parsed))
@@ -1327,8 +1333,18 @@ public class AchievementBadgesController : ControllerBase
             cutoff = parsed;
         }
 
+        if (deviceId?.Length > 256)
+        {
+            deviceId = deviceId[..256];
+        }
+
+        var preferences = _badgeService.GetUserPreferences(userId);
         var badges = _badgeService.GetBadgesForUser(userId)
             .Where(b => b.Unlocked && b.UnlockedAt.HasValue && b.UnlockedAt.Value > cutoff)
+            .Where(b => UnlockNotificationPolicy.ShouldDeliver(
+                b,
+                preferences.UnlockToastDeviceScope,
+                deviceId))
             .OrderByDescending(b => b.UnlockedAt)
             .ToList();
 
@@ -2358,8 +2374,23 @@ public class AchievementBadgesController : ControllerBase
             CustomXboxLogoSvg = c?.CustomXboxLogoSvg ?? "",
             ForceHideEquippedShowcase = c?.ForceHideEquippedShowcase ?? false,
             FriendsEnabled = c?.FriendsEnabled ?? true,
-            FriendsSimpleMode = c?.FriendsSimpleMode ?? false
+            FriendsSimpleMode = c?.FriendsSimpleMode ?? false,
+            EnableCustomTabsIntegration = c?.EnableCustomTabsIntegration ?? false,
+            EnablePluginPagesIntegration = c?.EnablePluginPagesIntegration ?? false,
+            EnableUserMenuShortcut = c?.EnableUserMenuShortcut ?? false
         });
+    }
+
+    // Shared, authenticated fragment consumed by the optional Plugin Pages
+    // host. standalone.js detects this marker and mounts the same UI used by
+    // the stock page; no duplicate page implementation is maintained.
+    [HttpGet("embedded-page")]
+    [Produces("text/html")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ContentResult GetEmbeddedPage()
+    {
+        Response.Headers.CacheControl = "no-store";
+        return Content("<div data-achievement-badges-host=\"plugin-pages\"></div>", "text/html");
     }
 
     // ---------- Admin: Feature config -----------------------------------
@@ -2390,6 +2421,9 @@ public class AchievementBadgesController : ControllerBase
             ForceHideEquippedShowcase = c?.ForceHideEquippedShowcase ?? false,
             FriendsEnabled = c?.FriendsEnabled ?? true,
             FriendsSimpleMode = c?.FriendsSimpleMode ?? false,
+            EnableCustomTabsIntegration = c?.EnableCustomTabsIntegration ?? false,
+            EnablePluginPagesIntegration = c?.EnablePluginPagesIntegration ?? false,
+            EnableUserMenuShortcut = c?.EnableUserMenuShortcut ?? false,
             // [v2.1.0] Audiobook counting policy (BooksOnly default / MusicOnly / Both).
             AudiobookCounting = (c?.AudiobookCounting ?? Configuration.AudiobookCounting.BooksOnly).ToString()
         });
@@ -2415,6 +2449,9 @@ public class AchievementBadgesController : ControllerBase
         public bool ForceHideEquippedShowcase { get; set; } = false;
         public bool FriendsEnabled { get; set; } = true;
         public bool FriendsSimpleMode { get; set; } = false;
+        public bool EnableCustomTabsIntegration { get; set; } = false;
+        public bool EnablePluginPagesIntegration { get; set; } = false;
+        public bool EnableUserMenuShortcut { get; set; } = false;
         public string AudiobookCounting { get; set; } = "BooksOnly";
     }
 
@@ -2461,6 +2498,9 @@ public class AchievementBadgesController : ControllerBase
         config.ForceHideEquippedShowcase = request.ForceHideEquippedShowcase;
         config.FriendsEnabled = request.FriendsEnabled;
         config.FriendsSimpleMode = request.FriendsSimpleMode;
+        config.EnableCustomTabsIntegration = request.EnableCustomTabsIntegration;
+        config.EnablePluginPagesIntegration = request.EnablePluginPagesIntegration;
+        config.EnableUserMenuShortcut = request.EnableUserMenuShortcut;
 
         // Surface the specific sanitizer error so the admin knows what to
         // fix instead of seeing a generic "rejected" message.
