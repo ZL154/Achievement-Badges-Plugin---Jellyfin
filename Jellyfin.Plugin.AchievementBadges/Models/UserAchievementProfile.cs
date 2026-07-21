@@ -165,6 +165,21 @@ public class UserNotificationPreferences
     [JsonPropertyName("EnableConfetti")]
     public bool EnableConfetti { get; set; } = true;
 
+    /// <summary>
+    /// "grouped" collapses a burst into one summary animation; "individual"
+    /// preserves the legacy one-animation-per-badge queue.
+    /// </summary>
+    [JsonPropertyName("UnlockToastGrouping")]
+    public string UnlockToastGrouping { get; set; } = "grouped";
+
+    /// <summary>
+    /// "all-devices" preserves cross-client delivery. "originating-device"
+    /// delivers only when the polling client matches the device that earned
+    /// the unlock; originless unlocks intentionally do not toast in that mode.
+    /// </summary>
+    [JsonPropertyName("UnlockToastDeviceScope")]
+    public string UnlockToastDeviceScope { get; set; } = "all-devices";
+
     [JsonPropertyName("AppearInActivityFeed")]
     public bool AppearInActivityFeed { get; set; } = true;
 
@@ -238,6 +253,18 @@ public class UserNotificationPreferences
     // profile card). Default true.
     [JsonPropertyName("ShowEquippedShowcase")]
     public bool ShowEquippedShowcase { get; set; } = true;
+
+    // Navigation integrations are intentionally independent. The admin-level
+    // plugin configuration remains the ceiling, while each user can hide only
+    // the optional surface they do not want without disabling achievements.
+    [JsonPropertyName("ShowCustomTabsEntry")]
+    public bool ShowCustomTabsEntry { get; set; } = true;
+
+    [JsonPropertyName("ShowPluginPagesEntry")]
+    public bool ShowPluginPagesEntry { get; set; } = true;
+
+    [JsonPropertyName("ShowUserMenuShortcut")]
+    public bool ShowUserMenuShortcut { get; set; } = true;
 
     // ---- Messaging preferences (v1.8.1) ----------------------------------
 

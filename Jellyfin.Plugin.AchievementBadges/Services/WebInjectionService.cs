@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using MediaBrowser.Common.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -31,11 +32,10 @@ public class WebInjectionService : IHostedService
     // toast + polling loop. Wrapped in versioned start/end markers so we
     // can safely strip and replace on subsequent plugin upgrades.
     //
-    // The `?v=<plugin-version>` suffix is a cache-buster — after a plugin
-    // upgrade the URL changes so browsers can't serve stale cached JS
-    // (users were seeing "fix X still doesn't work" because their browser
-    // kept returning the pre-upgrade sidebar.js from disk cache).
-    private static readonly string VerTag = "?v=" + (typeof(WebInjectionService).Assembly.GetName().Version?.ToString() ?? "0");
+    // Include the compiled module id as well as the release version. Multiple
+    // test builds can legitimately share one release version; the client-script
+    // endpoint is immutable-cached, so a version-only URL can keep stale JS.
+    private static readonly string VerTag = ClientAssetVersion.QueryTag;
     private static readonly string ScriptBlock =
         MarkerStart +
         "<script src=\"/Plugins/AchievementBadges/client-script/sidebar" + VerTag + "\"></script>" +

@@ -334,6 +334,9 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             {
                 UserId = userId,
                 ItemId = itemId,
+                OriginDeviceId = !string.IsNullOrWhiteSpace(e.DeviceId)
+                    ? e.DeviceId
+                    : e.Session?.DeviceId,
                 IsMovie = isMovie,
                 IsEpisode = isEpisode,
                 // [v2.1.0 "Open Library", M2/M3] Multi-media flags + music

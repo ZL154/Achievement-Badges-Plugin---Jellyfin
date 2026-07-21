@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -21,8 +22,7 @@ public class SidebarInjectionMiddleware
     // the showcase UI unconditionally, which ignored both flags — the disk
     // patch (WebInjectionService) was correctly gated but middleware-only
     // installs saw header dots / sidebar pills even when disabled.
-    private static readonly string VerTag =
-        "?v=" + (typeof(SidebarInjectionMiddleware).Assembly.GetName().Version?.ToString() ?? "0");
+    private static readonly string VerTag = ClientAssetVersion.QueryTag;
 
     private static readonly string InjectionScript =
         "<!-- achievementbadges-bootstrap -->" +

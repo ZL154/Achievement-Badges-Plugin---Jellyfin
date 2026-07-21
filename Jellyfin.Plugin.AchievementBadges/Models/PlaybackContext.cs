@@ -7,6 +7,12 @@ public class PlaybackContext
 {
     public string UserId { get; set; } = string.Empty;
     public string? ItemId { get; set; }
+
+    /// <summary>
+    /// Jellyfin client device that produced this real-time completion. Used
+    /// only as notification provenance; it is never treated as authorization.
+    /// </summary>
+    public string? OriginDeviceId { get; set; }
     public bool IsMovie { get; set; }
     public bool IsEpisode { get; set; }
 

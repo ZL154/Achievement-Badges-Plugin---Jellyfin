@@ -88,6 +88,14 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public bool EnableItemDetailRibbon { get; set; } = false;
 
+    // Optional page hosts requested in issues #37/#38. The built-in
+    // IHasWebPages entry remains registered regardless of these settings.
+    public bool EnableCustomTabsIntegration { get; set; } = false;
+
+    public bool EnablePluginPagesIntegration { get; set; } = false;
+
+    public bool EnableUserMenuShortcut { get; set; } = false;
+
     // Feature kill switches
     public bool LeaderboardEnabled { get; set; } = true;
     public bool CompareEnabled { get; set; } = true;

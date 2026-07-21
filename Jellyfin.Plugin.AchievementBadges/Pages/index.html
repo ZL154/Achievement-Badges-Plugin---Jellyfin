@@ -1591,6 +1591,39 @@ font-size:0.88em;
                     </div>
                 </details>
 
+                <details class="abAdminSection" id="abPageIntegrationsSection" style="margin-top:1em;">
+                    <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;" data-i18n="admin.section_page_integrations">
+                        Page integrations (admin)
+                    </summary>
+                    <div style="margin-top:0.5em;">
+                        <p class="secondaryText" style="margin-top:0;" data-i18n="admin.page_integrations.intro">
+                            Reuse the Achievements page in optional navigation plugins. The stock page always remains available.
+                        </p>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.35em;">
+                            <input type="checkbox" id="abPiCustomTabs">
+                            <span data-i18n="admin.page_integrations.custom_tabs">Enable Custom Tabs host</span>
+                        </label>
+                        <div class="secondaryText" style="margin:0 0 0.6em 1.7em;" data-i18n="admin.page_integrations.custom_tabs_desc">Saving installs or repairs one Achievements entry in Custom Tabs. Existing tabs are preserved; restart Jellyfin afterward.</div>
+                        <div style="display:flex; align-items:center; gap:0.5em; margin:0 0 0.9em 1.7em; flex-wrap:wrap;">
+                            <code id="abPiCustomTabsMarker" style="padding:0.55em 0.7em; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:4px; user-select:all;">&lt;div data-achievement-badges-host="custom-tabs"&gt;&lt;/div&gt;</code>
+                            <button is="emby-button" type="button" class="raised" id="abPiCopyMarkerBtn" data-i18n="admin.page_integrations.copy_marker">Copy marker</button>
+                            <span id="abPiCopyStatus" class="secondaryText"></span>
+                        </div>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.35em;">
+                            <input type="checkbox" id="abPiPluginPages">
+                            <span data-i18n="admin.page_integrations.plugin_pages">Register with Plugin Pages</span>
+                        </label>
+                        <div class="secondaryText" style="margin:0 0 0.75em 1.7em;" data-i18n="admin.page_integrations.plugin_pages_desc">Requires the Plugin Pages plugin and a Jellyfin restart after changing this option.</div>
+                        <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.35em;">
+                            <input type="checkbox" id="abPiUserMenuShortcut">
+                            <span data-i18n="admin.page_integrations.user_menu">Add an Achievements shortcut beside the user/profile control</span>
+                        </label>
+                        <div class="secondaryText" style="margin:0 0 0.75em 1.7em;" data-i18n="admin.page_integrations.user_menu_desc">Adds a trophy shortcut without replacing any stock navigation.</div>
+                        <button is="emby-button" type="button" class="raised button-submit" id="abPiSaveBtn" data-i18n="admin.page_integrations.save">Save page integrations</button>
+                        <div id="abPiStatus" class="secondaryText"></div>
+                    </div>
+                </details>
+
                 <details class="abAdminSection" style="margin-top:1em;">
                     <summary style="cursor:pointer; font-weight:600; padding:0.5em 0;" data-i18n="admin.section_webhook">
                         Webhook notifications (admin)
@@ -1765,7 +1798,9 @@ font-size:0.88em;
                             <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="epic" style="background:rgba(167,139,250,0.2); border:1px solid #a78bfa; color:#a78bfa;" data-i18n="rarity.epic">Epic</button>
                             <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="legendary" style="background:rgba(251,191,36,0.2); border:1px solid #fbbf24; color:#fbbf24;" data-i18n="rarity.legendary">Legendary</button>
                             <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="mythic" style="background:rgba(244,63,94,0.2); border:1px solid #f43f5e; color:#f43f5e;" data-i18n="rarity.mythic">Mythic</button>
+                            <button is="emby-button" type="button" class="raised button-submit" id="abTestToastBatchBtn" data-i18n="admin.test_toast.batch_button">Test 10 unlocks</button>
                         </div>
+                        <p class="secondaryText" style="margin:.6em 0 0;" data-i18n="admin.test_toast.batch_help">Uses your saved grouped/individual toast style and creates no real achievement data.</p>
                         <div id="abTestToastStatus" class="secondaryText" style="margin-top:0.5em;"></div>
                     </div>
                 </details>
@@ -3466,6 +3501,103 @@ font-size:0.88em;
          .catch(function (e) { uiStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
     });
 
+    // --- Optional page hosts (issue #37) ---
+    (function () {
+        var customTabs = document.getElementById('abPiCustomTabs');
+        var pluginPages = document.getElementById('abPiPluginPages');
+        var userMenu = document.getElementById('abPiUserMenuShortcut');
+        var saveBtn = document.getElementById('abPiSaveBtn');
+        var status = document.getElementById('abPiStatus');
+        var copyBtn = document.getElementById('abPiCopyMarkerBtn');
+        var marker = '<div data-achievement-badges-host="custom-tabs"></div>';
+        var customTabsPluginId = 'fbacd0b6-fd46-4a05-b0a4-2045d6a135b0';
+
+        function ensureCustomTabsEntry() {
+            if (!customTabs.checked) return Promise.resolve({ Installed: false, Changed: false });
+            if (!window.ApiClient || typeof ApiClient.getPluginConfiguration !== 'function' || typeof ApiClient.updatePluginConfiguration !== 'function') {
+                return Promise.resolve({ Installed: false, Changed: false, Unavailable: true });
+            }
+            return ApiClient.getPluginConfiguration(customTabsPluginId).then(function (config) {
+                config = config || {};
+                var sourceTabs = Array.isArray(config.Tabs) ? config.Tabs : (Array.isArray(config.tabs) ? config.tabs : []);
+                var nextTabs = [];
+                var found = false;
+                var changed = false;
+                sourceTabs.forEach(function (tab) {
+                    var content = String((tab && (tab.ContentHtml != null ? tab.ContentHtml : tab.contentHtml)) || '');
+                    if (content.trim() !== marker) {
+                        nextTabs.push(tab);
+                        return;
+                    }
+                    if (found) {
+                        changed = true;
+                        return;
+                    }
+                    found = true;
+                    var title = String((tab && (tab.Title != null ? tab.Title : tab.title)) || '');
+                    if (title !== 'Achievements' || content !== marker) changed = true;
+                    nextTabs.push({ Title: 'Achievements', ContentHtml: marker });
+                });
+                if (!found) {
+                    nextTabs.push({ Title: 'Achievements', ContentHtml: marker });
+                    changed = true;
+                }
+                if (!changed) return { Installed: true, Changed: false };
+                config.Tabs = nextTabs;
+                delete config.tabs;
+                return ApiClient.updatePluginConfiguration(customTabsPluginId, config).then(function () {
+                    return { Installed: true, Changed: true };
+                });
+            }).catch(function () {
+                return { Installed: false, Changed: false, Unavailable: true };
+            });
+        }
+
+        function load() {
+            return fetchJson('Plugins/AchievementBadges/admin/feature-config').then(function (c) {
+                customTabs.checked = c.EnableCustomTabsIntegration === true;
+                pluginPages.checked = c.EnablePluginPagesIntegration === true;
+                userMenu.checked = c.EnableUserMenuShortcut === true;
+                return c;
+            });
+        }
+
+        copyBtn.addEventListener('click', function () {
+            var done = function () { document.getElementById('abPiCopyStatus').textContent = tr('admin.page_integrations.copied', 'Copied.'); };
+            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(marker).then(done).catch(function () { done(); });
+            else {
+                var area = document.createElement('textarea');
+                area.value = marker;
+                document.body.appendChild(area);
+                area.select();
+                document.execCommand('copy');
+                area.remove();
+                done();
+            }
+        });
+
+        saveBtn.addEventListener('click', function () {
+            saveBtn.disabled = true;
+            status.textContent = tr('admin.msg.saving', 'Saving...');
+            fetchJson('Plugins/AchievementBadges/admin/feature-config').then(function (c) {
+                c.EnableCustomTabsIntegration = customTabs.checked;
+                c.EnablePluginPagesIntegration = pluginPages.checked;
+                c.EnableUserMenuShortcut = userMenu.checked;
+                return fetchJson('Plugins/AchievementBadges/admin/feature-config', 'POST', c);
+            }).then(function () {
+                return ensureCustomTabsEntry();
+            }).then(function (customTabsResult) {
+                status.textContent = customTabsResult && customTabsResult.Unavailable
+                    ? tr('admin.page_integrations.saved_custom_tabs_unavailable', 'Achievement Badges settings were saved, but Custom Tabs is not installed or unavailable.')
+                    : tr('admin.page_integrations.saved_restart', 'Saved. Restart Jellyfin to apply Custom Tabs and Plugin Pages changes.');
+            }).catch(function (e) {
+                status.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e);
+            }).finally(function () { saveBtn.disabled = false; });
+        });
+
+        load().catch(function (e) { status.textContent = tr('admin.msg.feature_config_load_failed', 'Failed to load feature config:') + ' ' + (e.message || e); });
+    })();
+
     // --- Custom badges (v2.1.0 compound CustomBadgeService) ---
     // Repointed from the legacy bulk-array endpoint (admin/custom-badges,
     // which expected AchievementDefinition[] and 400'd on the new template
@@ -3775,6 +3907,29 @@ font-size:0.88em;
             }
         });
     });
+    var testToastBatchBtn = document.getElementById('abTestToastBatchBtn');
+    if (testToastBatchBtn) {
+        testToastBatchBtn.addEventListener('click', function () {
+            if (typeof window.abAchievementTestBatch !== 'function') {
+                if (testToastStatus) testToastStatus.textContent = tr('admin.msg.toast_system_missing', 'Toast system not loaded. Try refreshing the page (enhance.js needs to be active).');
+                return;
+            }
+            testToastBatchBtn.disabled = true;
+            Promise.resolve(window.abAchievementTestBatch(10)).then(function (result) {
+                var count = result && result.Count ? result.Count : 10;
+                var grouping = result && result.Grouping ? result.Grouping : 'grouped';
+                if (testToastStatus) {
+                    testToastStatus.textContent = tr('admin.msg.firing_batch', 'Firing {count} synthetic unlocks as {grouping}...')
+                        .replace('{count}', count)
+                        .replace('{grouping}', grouping);
+                }
+            }).catch(function (error) {
+                if (testToastStatus) testToastStatus.textContent = tr('admin.msg.toast_system_missing', 'Toast system not loaded. Try refreshing the page (enhance.js needs to be active).') + ' ' + (error && error.message ? error.message : error);
+            }).then(function () {
+                testToastBatchBtn.disabled = false;
+            });
+        });
+    }
 
     // --- Visual badge editor ---
     var vbAddBtn = document.getElementById('abVbAddBtn');
