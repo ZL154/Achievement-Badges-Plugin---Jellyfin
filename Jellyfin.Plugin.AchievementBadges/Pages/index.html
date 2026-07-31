@@ -1641,6 +1641,12 @@ font-size:0.88em;
                         <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.webhook.template">Message template:</span><br>
                             <input type="text" id="abWebhookTemplate" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                         </label>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.webhook.headers">Extra request headers:</span><br>
+                            <textarea id="abWebhookHeaders" rows="3" placeholder="Authorization: Bearer abc123&#10;X-Source: jellyfin" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px; font-family:monospace;"></textarea>
+                            <div class="fieldDescription" data-i18n="admin.webhook.headers_desc">
+                                One <code>Name: value</code> per line. Leave empty for Discord and Slack, which carry their secret in the URL. Needed for endpoints that authenticate with a header. Content-* and X-AchievementBadges-* are ignored.
+                            </div>
+                        </label>
                         <button is="emby-button" type="button" class="raised button-submit" id="abWebhookSaveBtn" data-i18n="admin.btn_save_webhook">Save webhook config</button>
                         <div id="abWebhookStatus" class="secondaryText"></div>
                     </div>
@@ -3275,6 +3281,7 @@ font-size:0.88em;
     var webhookEnabledEl = document.getElementById('abWebhookEnabled');
     var webhookUrlEl = document.getElementById('abWebhookUrl');
     var webhookTemplateEl = document.getElementById('abWebhookTemplate');
+    var webhookHeadersEl = document.getElementById('abWebhookHeaders');
     var webhookSaveBtn = document.getElementById('abWebhookSaveBtn');
     var webhookStatusEl = document.getElementById('abWebhookStatus');
 
@@ -3283,13 +3290,15 @@ font-size:0.88em;
             webhookEnabledEl.checked = !!c.WebhookEnabled;
             webhookUrlEl.value = c.WebhookUrl || '';
             webhookTemplateEl.value = c.WebhookMessageTemplate || '';
+            if (webhookHeadersEl) webhookHeadersEl.value = c.WebhookHeaders || '';
         });
     }
     webhookSaveBtn.addEventListener('click', function () {
         fetchJson('Plugins/AchievementBadges/admin/webhook', 'POST', {
             WebhookEnabled: webhookEnabledEl.checked,
             WebhookUrl: webhookUrlEl.value,
-            WebhookMessageTemplate: webhookTemplateEl.value
+            WebhookMessageTemplate: webhookTemplateEl.value,
+            WebhookHeaders: webhookHeadersEl ? webhookHeadersEl.value : ''
         }).then(function () { webhookStatusEl.textContent = tr('admin.msg.saved', 'Saved.'); })
          .catch(function (e) { webhookStatusEl.textContent = tr('admin.msg.save_failed', 'Save failed:') + ' ' + (e.message || e); });
     });

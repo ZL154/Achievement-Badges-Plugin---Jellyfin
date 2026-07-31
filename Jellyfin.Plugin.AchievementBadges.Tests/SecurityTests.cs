@@ -164,4 +164,62 @@ public class SecurityTests
         var ok = SvgSanitizer.TryValidate(svg, out var error);
         Assert.False(ok, $"Expected external <use href> to be rejected. Error was: {error}");
     }
+
+    // ============================================================
+    // WebhookHeaderParser — admin-supplied outbound headers
+    // ============================================================
+
+    [Fact]
+    public void WebhookHeaders_ParsesOneNameValuePerLine()
+    {
+        var parsed = WebhookHeaderParser.Parse("Authorization: Bearer abc123\nX-Source: jellyfin");
+
+        Assert.Equal(2, parsed.Count);
+        Assert.Equal(("Authorization", "Bearer abc123"), parsed[0]);
+        Assert.Equal(("X-Source", "jellyfin"), parsed[1]);
+    }
+
+    [Fact]
+    public void WebhookHeaders_SplitOnFirstColonOnly()
+    {
+        // Values legitimately contain colons: bearer tokens, URLs, times.
+        var parsed = WebhookHeaderParser.Parse("X-Callback: https://example.org:8443/hook");
+
+        Assert.Single(parsed);
+        Assert.Equal(("X-Callback", "https://example.org:8443/hook"), parsed[0]);
+    }
+
+    [Fact]
+    public void WebhookHeaders_IgnoresBlanksCommentsAndMalformedLines()
+    {
+        var parsed = WebhookHeaderParser.Parse("\n  \n# a comment\nnot-a-header\n: novalue\nX-Ok: 1\n");
+
+        Assert.Single(parsed);
+        Assert.Equal(("X-Ok", "1"), parsed[0]);
+    }
+
+    [Fact]
+    public void WebhookHeaders_DropsReservedNames()
+    {
+        // Content-* would be silently refused by HttpRequestMessage.Headers,
+        // and the signature envelope must not be forgeable from this box.
+        var parsed = WebhookHeaderParser.Parse(
+            "Content-Type: text/plain\n" +
+            "content-length: 0\n" +
+            "X-AchievementBadges-Signature: sha256=deadbeef\n" +
+            "x-achievementbadges-timestamp: 1\n" +
+            "X-Kept: yes");
+
+        Assert.Single(parsed);
+        Assert.Equal(("X-Kept", "yes"), parsed[0]);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   \n  \n")]
+    public void WebhookHeaders_EmptyInputSendsNothingExtra(string? raw)
+    {
+        Assert.Empty(WebhookHeaderParser.Parse(raw));
+    }
 }

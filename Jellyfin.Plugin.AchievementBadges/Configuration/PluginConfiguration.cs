@@ -82,6 +82,19 @@ public class PluginConfiguration : BasePluginConfiguration
     // (preserves legacy behaviour for users who haven't generated one yet).
     public string WebhookSigningSecret { get; set; } = string.Empty;
 
+    // Extra request headers for outbound webhook POSTs, one "Name: value" per
+    // line. Discord and Slack carry their secret in the URL, so they never
+    // needed this, but endpoints that authenticate with a header (n8n, Home
+    // Assistant, an internal gateway) reject every delivery with 401/403 and
+    // the only workaround is an unauthenticated endpoint with the secret
+    // smuggled into the path. Empty = send nothing extra, which is the
+    // existing behaviour.
+    //
+    // Safe to carry credentials here because the client is created with
+    // AllowAutoRedirect = false, so a hostile receiver cannot 302 us into
+    // replaying the header somewhere else.
+    public string WebhookHeaders { get; set; } = string.Empty;
+
     public bool EnableUnlockToasts { get; set; } = true;
 
     public bool EnableHomeWidget { get; set; } = false;

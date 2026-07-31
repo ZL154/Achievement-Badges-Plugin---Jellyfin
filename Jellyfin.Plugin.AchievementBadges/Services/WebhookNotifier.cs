@@ -71,6 +71,7 @@ public class WebhookNotifier
         }
 
         var signingSecret = config.WebhookSigningSecret ?? string.Empty;
+        var extraHeaders = WebhookHeaderParser.Parse(config.WebhookHeaders);
 
         _ = Task.Run(async () =>
         {
@@ -94,6 +95,11 @@ public class WebhookNotifier
                     var sig = ComputeSignature(signingSecret, timestamp, json);
                     req.Headers.TryAddWithoutValidation("X-AchievementBadges-Signature", "sha256=" + sig);
                     req.Headers.TryAddWithoutValidation("X-AchievementBadges-Timestamp", timestamp);
+                }
+
+                foreach (var (name, value) in extraHeaders)
+                {
+                    req.Headers.TryAddWithoutValidation(name, value);
                 }
 
                 using var res = await _http.SendAsync(req).ConfigureAwait(false);

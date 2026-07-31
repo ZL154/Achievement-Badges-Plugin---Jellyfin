@@ -1639,6 +1639,7 @@ public class AchievementBadgesController : ControllerBase
         public string? WebhookUrl { get; set; }
         public bool WebhookEnabled { get; set; }
         public string? WebhookMessageTemplate { get; set; }
+        public string? WebhookHeaders { get; set; }
     }
 
     [HttpGet("admin/webhook")]
@@ -1651,7 +1652,8 @@ public class AchievementBadgesController : ControllerBase
         {
             WebhookUrl = c?.WebhookUrl,
             WebhookEnabled = c?.WebhookEnabled ?? false,
-            WebhookMessageTemplate = c?.WebhookMessageTemplate
+            WebhookMessageTemplate = c?.WebhookMessageTemplate,
+            WebhookHeaders = c?.WebhookHeaders
         });
     }
 
@@ -1675,6 +1677,10 @@ public class AchievementBadgesController : ControllerBase
         {
             config.WebhookMessageTemplate = request.WebhookMessageTemplate!;
         }
+
+        // Assigned unconditionally, unlike the template above: clearing the
+        // box has to be able to remove the headers again.
+        config.WebhookHeaders = request?.WebhookHeaders ?? string.Empty;
         plugin.UpdateConfiguration(config);
         return Ok(new { Success = true });
     }
