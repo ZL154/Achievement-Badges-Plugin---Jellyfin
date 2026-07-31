@@ -1207,7 +1207,13 @@
         if (!fBox || !rBox) return;
         fBox.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">hourglass_empty</span><div>' + tr('common.loading', 'Loading...') + '</div></div>';
         fetch(buildUrl('Plugins/AchievementBadges/users/'+uid+'/friends'), { headers: authHeaders(), credentials: 'include' })
-            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(r){
+                // A failed request must not become an empty friends list. The
+                // two are drawn identically, so users read a 401 as "my pending
+                // requests were deleted" and send them again.
+                if (!r.ok) throw new Error('friends request failed: ' + r.status);
+                return r.json();
+            })
             .then(function(data){
                 data = data || { Friends: [], Incoming: [], Outgoing: [] };
                 var friends = data.Friends || [];
@@ -1341,8 +1347,14 @@
                 [friends, incoming, outgoing].forEach(function(arr){
                     arr.forEach(function(f){ window.__abFriendIds[String(f.UserId||'').toLowerCase().replace(/-/g,'')] = true; });
                 });
-            }).catch(function(){
-                fBox.innerHTML = '<div class="ab-fd-empty"><span class="material-icons">error_outline</span><div>' + tr('friends.load_failed', 'Failed to load friends.') + '</div></div>';
+            }).catch(function(err){
+                // Both panes have to say so. Reporting only in the friends
+                // pane left the requests pane looking like an empty inbox,
+                // which is exactly the state users mistake for lost data.
+                var msg = '<div class="ab-fd-empty"><span class="material-icons">error_outline</span><div>' + tr('friends.load_failed', 'Failed to load friends.') + '</div></div>';
+                fBox.innerHTML = msg;
+                rBox.innerHTML = msg;
+                console.warn('[AchievementBadges] friends load failed', err);
             });
     }
 

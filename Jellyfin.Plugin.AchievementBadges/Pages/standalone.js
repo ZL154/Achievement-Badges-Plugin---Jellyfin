@@ -1588,8 +1588,15 @@
             renderQuestCards(res && res.Weekly, 'abSaWeeklyQuest');
             renderRerollSlot('abSaDailyRerollSlot', 'daily', dRem);
             renderRerollSlot('abSaWeeklyRerollSlot', 'weekly', wRem);
-        }).catch(function () {
-            var d = el('abSaDailyQuest'); if (d) d.innerHTML = '<div class="ab-muted">' + tr('quests.load_failed', 'Failed to load quests.') + '</div>';
+        }).catch(function (err) {
+            // Both panels own a "Loading..." placeholder, so both have to be
+            // overwritten. Writing only into the daily one left the weekly
+            // panel saying "Loading..." forever, which reads as a slow request
+            // rather than a failed one.
+            var msg = '<div class="ab-muted">' + tr('quests.load_failed', 'Failed to load quests.') + '</div>';
+            var d = el('abSaDailyQuest'); if (d) d.innerHTML = msg;
+            var w = el('abSaWeeklyQuest'); if (w) w.innerHTML = msg;
+            console.warn('[AchievementBadges] quests load failed', err);
         });
     }
 
