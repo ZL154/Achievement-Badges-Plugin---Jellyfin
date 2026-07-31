@@ -1571,11 +1571,85 @@ public class AchievementBadgeService : IDisposable
         userId = NormalizeUserId(userId);
         lock (_lock)
         {
+            _userProfiles.TryGetValue(userId, out var previous);
+
             var profile = CreateProfile(userId);
+            if (previous is not null)
+            {
+                PreserveNonDerivedState(previous, profile);
+            }
+
             _userProfiles[userId] = profile;
             Save();
             _logger.LogInformation("Reset badges for user {UserId}", userId);
             return profile.Badges.Select(CloneBadge).ToList();
+        }
+    }
+
+    /// <summary>
+    /// Carry over everything a watch-history rebuild cannot reconstruct.
+    /// <para>
+    /// The reset exists so the backfill can recompute counters from playback
+    /// history. Counters are therefore left to be rebuilt, which is the point.
+    /// Everything else in the profile was never derived from playback: the
+    /// social graph, the shop inventory, the deliberate showcase, the user's
+    /// settings. Dropping it turns a scan into silent data loss, and the loss
+    /// is unrecoverable because the source it would be rebuilt from does not
+    /// exist.
+    /// </para>
+    /// <para>
+    /// Unlocks are carried over too. An unlock is a historical event, and
+    /// media that has since been deleted from the library can never be
+    /// counted again, so a rebuild would revoke badges the user genuinely
+    /// earned. Admins who need to un-award a badge have <c>RevokeBadge</c>
+    /// and the audit cleanup tool, which are explicit about it.
+    /// </para>
+    /// </summary>
+    private static void PreserveNonDerivedState(UserAchievementProfile previous, UserAchievementProfile profile)
+    {
+        profile.Preferences = previous.Preferences;
+
+        // Deliberate presentation choices.
+        profile.EquippedBadgeIds = new List<string>(previous.EquippedBadgeIds);
+        profile.PinnedBadgeIds = new List<string>(previous.PinnedBadgeIds);
+        profile.EquippedTitleBadgeId = previous.EquippedTitleBadgeId;
+        profile.EquippedThemeId = previous.EquippedThemeId;
+        profile.EquippedBadgeFrameId = previous.EquippedBadgeFrameId;
+        profile.EquippedCustomTitleId = previous.EquippedCustomTitleId;
+        profile.EquippedAvatarId = previous.EquippedAvatarId;
+        profile.EquippedBackgroundId = previous.EquippedBackgroundId;
+        profile.EquippedProfileBorderId = previous.EquippedProfileBorderId;
+
+        // Purchases and prestige. Spending happened; it cannot be replayed.
+        profile.OwnedCosmetics = new List<string>(previous.OwnedCosmetics);
+        profile.BoughtBadgeIds = new List<string>(previous.BoughtBadgeIds);
+        profile.PowerUpInventory = new Dictionary<string, int>(previous.PowerUpInventory);
+        profile.LifetimeScoreSpent = previous.LifetimeScoreSpent;
+        profile.StreakFreezesBanked = previous.StreakFreezesBanked;
+        profile.PrestigeLevel = previous.PrestigeLevel;
+
+        // Social graph. Nothing here comes from playback.
+        profile.Friends = new List<string>(previous.Friends);
+        profile.FriendRequestsSent = new List<string>(previous.FriendRequestsSent);
+        profile.FriendRequestsReceived = new List<string>(previous.FriendRequestsReceived);
+        profile.CompareHistory = new List<CompareHistoryEntry>(previous.CompareHistory);
+
+        // Already-earned badges stay earned.
+        var earned = previous.Badges
+            .Where(b => b.Unlocked)
+            .ToDictionary(b => b.Id, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var badge in profile.Badges)
+        {
+            if (!earned.TryGetValue(badge.Id, out var before))
+            {
+                continue;
+            }
+
+            badge.Unlocked = true;
+            badge.UnlockedAt = before.UnlockedAt;
+            badge.UnlockDeviceId = before.UnlockDeviceId;
+            badge.EarnSource = before.EarnSource;
         }
     }
 
