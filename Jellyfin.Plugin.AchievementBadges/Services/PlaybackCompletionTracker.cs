@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Jellyfin.Plugin.AchievementBadges.Models;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
@@ -46,6 +47,10 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         public int ProgressEventCount;
     }
     private readonly ConcurrentDictionary<string, SessionWatchState> _sessions = new();
+
+    // Watch time carried across sessions for the same item, so a stream that
+    // breaks and reconnects is measured as one viewing. See WatchCarryStore.
+    private readonly WatchCarryStore _carried = new();
 
     public PlaybackCompletionTracker(
         ISessionManager sessionManager,
@@ -302,6 +307,24 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
                 progressEventCount = session.ProgressEventCount;
             }
 
+            // Fold in anything watched for this item in an earlier session that
+            // ended without credit, so a stream that broke and reconnected is
+            // measured as one viewing. See WatchCarryStore for why this is safe.
+            var now = DateTimeOffset.UtcNow;
+            var carriedTicks = _carried.Peek(userId, itemId, now);
+            if (carriedTicks > 0)
+            {
+                _logger.LogInformation(
+                    "[AchievementBadges] {Source} for user {UserId} item {ItemId}: adding {Carried}s carried from an earlier session of the same item to this session's {Session}s.",
+                    source,
+                    userId,
+                    itemId,
+                    carriedTicks / TimeSpan.TicksPerSecond,
+                    accumulatedPlayTicks / TimeSpan.TicksPerSecond);
+
+                accumulatedPlayTicks += carriedTicks;
+            }
+
             double completionPercent;
             if (runTimeTicks > 0)
             {
@@ -378,12 +401,20 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
 
             if (success)
             {
+                // Credited, so a later viewing of the same item starts clean.
+                _carried.Clear(userId, itemId);
+
                 _logger.LogInformation(
                     "[AchievementBadges] Recorded playback from {Source} user={UserId} item={ItemId} library={Library} completion={Completion:0.##}%",
                     source, userId, itemId, libraryName ?? "(none)", completionPercent);
             }
             else
             {
+                // Not credited: remember what was genuinely watched so a
+                // reconnect can pick up where this session left off instead of
+                // starting from zero.
+                _carried.Remember(userId, itemId, accumulatedPlayTicks, now);
+
                 _logger.LogDebug(
                     "[AchievementBadges] Skipped playback from {Source} user={UserId} item={ItemId} reason={Reason}",
                     source, userId, itemId, message);
