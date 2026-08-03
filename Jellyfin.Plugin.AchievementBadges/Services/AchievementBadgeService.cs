@@ -3150,7 +3150,12 @@ public class AchievementBadgeService : IDisposable
         return result;
     }
 
-    private static int GetCurrentWatchStreak(UserAchievementCounters counters)
+    /// <summary>
+    /// Consecutive days of watch activity ending at the most recent one.
+    /// Public so QuestService can read the same number the profile shows
+    /// instead of substituting the all-time best.
+    /// </summary>
+    public static int GetCurrentWatchStreak(UserAchievementCounters counters)
     {
         if (counters.WatchDates.Count == 0)
         {
