@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "Jellyfin.Plugin.AchievementBadges/2.2.0.5": {
+        "runtime": {
+          "Jellyfin.Plugin.AchievementBadges.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Jellyfin.Plugin.AchievementBadges/2.2.0.5": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
