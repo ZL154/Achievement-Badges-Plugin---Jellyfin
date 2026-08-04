@@ -27,7 +27,37 @@ public class WebhookNotifier
         _logger = logger;
     }
 
+    /// <summary>
+    /// Milestone cosmetics are earned the same way badges are, from the user's
+    /// point of view, so they go out through the same template and the same
+    /// endpoint. Rarity has no meaning for a cosmetic, so the milestone score
+    /// that unlocked it takes that slot, which is the interesting number.
+    /// </summary>
+    public void NotifyCosmeticUnlock(string userName, CosmeticItem cosmetic, int milestoneScore)
+    {
+        if (cosmetic is null)
+        {
+            return;
+        }
+
+        Notify(
+            userName,
+            cosmetic.DisplayName,
+            milestoneScore.ToString(System.Globalization.CultureInfo.InvariantCulture) + " score",
+            cosmetic.Description);
+    }
+
     public void NotifyUnlock(string userName, AchievementBadge badge)
+    {
+        if (badge is null)
+        {
+            return;
+        }
+
+        Notify(userName, badge.Title, badge.Rarity, badge.Description);
+    }
+
+    private void Notify(string userName, string title, string rarity, string description)
     {
         var config = Plugin.Instance?.Configuration;
         if (config is null || !config.WebhookEnabled || string.IsNullOrWhiteSpace(config.WebhookUrl))
@@ -48,9 +78,9 @@ public class WebhookNotifier
             : config.WebhookMessageTemplate!;
 
         var safeUser = Sanitize(userName);
-        var safeTitle = Sanitize(badge.Title);
-        var safeRarity = Sanitize(badge.Rarity);
-        var safeDescription = Sanitize(badge.Description);
+        var safeTitle = Sanitize(title);
+        var safeRarity = Sanitize(rarity);
+        var safeDescription = Sanitize(description);
 
         var content = template
             .Replace("{user}", string.IsNullOrEmpty(safeUser) ? "Someone" : safeUser, StringComparison.OrdinalIgnoreCase)

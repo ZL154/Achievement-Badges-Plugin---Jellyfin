@@ -2108,7 +2108,23 @@ public class AchievementBadgeService : IDisposable
             // v2.0 - Score-milestone cosmetic auto-unlocks (Cinephile at
             // 1000, Marathoner at 2500, Curator at 5000). Idempotent;
             // already-owned cosmetics are skipped.
-            _shop?.CheckMilestones(profile, profile.ScoreBank);
+            var grantedCosmetics = _shop?.CheckMilestones(profile, profile.ScoreBank);
+
+            // Tell the user. These are gated behind months of play and used to
+            // arrive with no signal at all, so the only way to discover one was
+            // to notice it later in the inventory. Gated on !Silent for the
+            // same reason badge unlocks are: a backfill re-grants every
+            // milestone the user has ever crossed, and announcing those would
+            // mean a burst of messages per rebuild.
+            if (grantedCosmetics is { Count: > 0 } && !context.Silent)
+            {
+                var cosmeticUserName = ResolveUserName(userId);
+                foreach (var cosmetic in grantedCosmetics)
+                {
+                    _webhookNotifier?.NotifyCosmeticUnlock(cosmeticUserName, cosmetic, profile.ScoreBank);
+                    _auditLog?.Log(userId, cosmeticUserName, "cosmetic-unlock", cosmetic.DisplayName);
+                }
+            }
 
             // For historical backfills, use the original played date as the unlock stamp so the
             // toast poller's "UnlockedAt > LAST_SEEN" check won't match (stops scan-spam toasts).

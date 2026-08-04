@@ -539,10 +539,17 @@ public class ShopService
     /// Run the score-milestone check whenever a user gains score. Any
     /// cosmetics whose MilestoneScore the user has now crossed get added
     /// to OwnedCosmetics. Idempotent (already-owned cosmetics are skipped).
+    /// <para>
+    /// Returns what was granted on this call, so the caller can tell the user
+    /// about it. Premium titles are gated behind months of play, and until
+    /// v2.2 they arrived with no toast, webhook or feed entry: the only trace
+    /// was the log line below, which no user reads.
+    /// </para>
     /// </summary>
-    public void CheckMilestones(UserAchievementProfile profile, int currentScore)
+    public List<CosmeticItem> CheckMilestones(UserAchievementProfile profile, int currentScore)
     {
-        if (profile is null) return;
+        var granted = new List<CosmeticItem>();
+        if (profile is null) return granted;
         EnsureDefaultsOwned(profile);
         foreach (var c in _cosmeticItems)
         {
@@ -551,11 +558,14 @@ public class ShopService
             if (!profile.OwnedCosmetics.Contains(c.Id))
             {
                 profile.OwnedCosmetics.Add(c.Id);
+                granted.Add(c);
                 _logger.LogInformation(
                     "[AchievementBadges] Auto-unlocked milestone cosmetic {Id} for user {UserId} at score {Score}.",
                     c.Id, profile.UserId, currentScore);
             }
         }
+
+        return granted;
     }
 
     /// <summary>
