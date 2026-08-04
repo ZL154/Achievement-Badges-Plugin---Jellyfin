@@ -1,4 +1,5 @@
 using System;
+using Jellyfin.Plugin.AchievementBadges;
 using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Xunit;
 
@@ -105,5 +106,161 @@ public class WatchCarryTests
         store.Remember(User, Item, 0, Now);
 
         Assert.Equal(0, store.Count);
+    }
+
+    // ─── A long item watched across the day, not across a reconnect ───────
+    //
+    // The reconnect case above spans seconds. The pattern that actually costs
+    // users their credit spans hours: a two-hour episode watched in pieces
+    // between other things. A six-hour window was sized for the reconnect and
+    // silently drops these, so an item genuinely watched end to end is refused.
+
+    private const string LongItem = "95a4e374-411e-2fa2-c601-116b4b59a10e";
+
+    [Fact]
+    public void ItemWatchedInPiecesAcrossTheDay_StillCredits()
+    {
+        // Real timeline: a 8283s episode, five sittings from 09:47 to 21:01.
+        const long runtime = 8283L * TimeSpan.TicksPerSecond;
+        var store = new WatchCarryStore();
+        var morning = new DateTimeOffset(2026, 8, 3, 9, 47, 0, TimeSpan.Zero);
+
+        store.Remember(User, LongItem, Seconds(1105), morning);
+        store.Remember(User, LongItem, Seconds(2554), morning.AddHours(1.5));
+        store.Remember(User, LongItem, Seconds(2957), morning.AddHours(2.6));
+        store.Remember(User, LongItem, Seconds(4426), morning.AddHours(4.4));
+
+        // The last sitting ended 6h49m after the one before it.
+        var lastStop = morning.AddHours(11.2);
+        var carried = store.Peek(User, LongItem, lastStop);
+        var total = carried + Seconds(5000);
+
+        Assert.True(
+            total * 100d / runtime >= 80d,
+            $"an episode watched to the end across the day must credit, got {total * 100d / runtime:0.##}%");
+    }
+
+    [Fact]
+    public void SixHourWindow_WasTooShortForThatPattern()
+    {
+        // Pins why the default changed: the same timeline under the old window
+        // discards everything watched before the gap.
+        var store = new WatchCarryStore(TimeSpan.FromHours(6));
+        var start = new DateTimeOffset(2026, 8, 3, 14, 12, 0, TimeSpan.Zero);
+        store.Remember(User, LongItem, Seconds(4426), start);
+
+        Assert.Equal(0, store.Peek(User, LongItem, start.AddHours(6.82)));
+    }
+
+    [Fact]
+    public void DefaultWindow_CoversAnItemLeftAndResumedDaysLater()
+    {
+        // Also real: one episode spread over 29/07, 30/07 and 01/08.
+        var store = new WatchCarryStore();
+        store.Remember(User, LongItem, Seconds(3000), Now);
+
+        Assert.Equal(Seconds(3000), store.Peek(User, LongItem, Now.AddDays(3)));
+        Assert.Equal(Seconds(3000), store.Peek(User, LongItem, Now.AddDays(6)));
+        Assert.Equal(0, store.Peek(User, LongItem, Now.AddDays(8)));
+    }
+
+    // ─── Surviving a restart ──────────────────────────────────────────────
+    //
+    // The store lived only in memory, so restarting Jellyfin threw away every
+    // partial viewing on the server. Over a window measured in days that is no
+    // longer an acceptable loss.
+
+    private static string TempFile() =>
+        System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ab-carry-" + Guid.NewGuid().ToString("N") + ".json");
+
+    // Reading the file back drops entries that expired while the server was
+    // down, and it can only judge that against the real clock. These cases are
+    // therefore anchored to now rather than to a fixed date, which would start
+    // failing on its own once the date fell outside the window.
+    private static readonly DateTimeOffset Recently = DateTimeOffset.UtcNow.AddHours(-1);
+
+    [Fact]
+    public void Carry_SurvivesARestart()
+    {
+        var path = TempFile();
+        try
+        {
+            var before = new WatchCarryStore(persistPath: path);
+            before.Remember(User, LongItem, Seconds(4426), Recently);
+
+            var afterRestart = new WatchCarryStore(persistPath: path);
+
+            Assert.Equal(Seconds(4426), afterRestart.Peek(User, LongItem, Recently.AddHours(8)));
+        }
+        finally
+        {
+            System.IO.File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void RestartDoesNotResurrectExpiredCarry()
+    {
+        var path = TempFile();
+        try
+        {
+            var before = new WatchCarryStore(TimeSpan.FromHours(6), path);
+            before.Remember(User, LongItem, Seconds(4426), Recently.AddHours(-9));
+
+            var afterRestart = new WatchCarryStore(TimeSpan.FromHours(6), path);
+
+            Assert.Equal(0, afterRestart.Peek(User, LongItem, Recently));
+            Assert.Equal(0, afterRestart.Count);
+        }
+        finally
+        {
+            System.IO.File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void CreditedItem_StaysClearedAcrossARestart()
+    {
+        var path = TempFile();
+        try
+        {
+            var before = new WatchCarryStore(persistPath: path);
+            before.Remember(User, LongItem, Seconds(4426), Recently);
+            before.Clear(User, LongItem);
+
+            var afterRestart = new WatchCarryStore(persistPath: path);
+
+            Assert.Equal(0, afterRestart.Peek(User, LongItem, Recently));
+        }
+        finally
+        {
+            System.IO.File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void RetentionDefaultsToSevenDays()
+    {
+        Assert.Equal(7, new Configuration.PluginConfiguration().WatchCarryRetentionDays);
+    }
+
+    [Fact]
+    public void UnreadableCarryFile_StartsEmptyInsteadOfThrowing()
+    {
+        var path = TempFile();
+        try
+        {
+            System.IO.File.WriteAllText(path, "{ this is not json");
+
+            var store = new WatchCarryStore(persistPath: path);
+
+            Assert.Equal(0, store.Count);
+            store.Remember(User, LongItem, Seconds(60), Recently);
+            Assert.Equal(Seconds(60), new WatchCarryStore(persistPath: path).Peek(User, LongItem, Recently));
+        }
+        finally
+        {
+            System.IO.File.Delete(path);
+        }
     }
 }

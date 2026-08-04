@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
 
 namespace Jellyfin.Plugin.AchievementBadges.Helpers;
 
@@ -17,6 +20,14 @@ namespace Jellyfin.Plugin.AchievementBadges.Helpers;
 /// credit was given for a full viewing.
 /// </para>
 /// <para>
+/// The same discarding hits a much more ordinary habit: a long episode watched
+/// in pieces between other things. A two-hour episode taken in five sittings
+/// across a day, or left and resumed two days later, is one viewing to the
+/// person watching it, and every sitting but the last was being thrown away.
+/// The window is therefore measured in days, and the carry is persisted, since
+/// over that span a restart is expected rather than exceptional.
+/// </para>
+/// <para>
 /// This does not weaken the anti-abuse gate. Only genuinely advanced playback
 /// time is ever accumulated, because seeks are excluded before the ticks get
 /// here; the carry expires after the window; and it is dropped as soon as the
@@ -27,25 +38,50 @@ public sealed class WatchCarryStore
 {
     private sealed class Entry
     {
-        public long Ticks;
-        public DateTimeOffset UpdatedAt;
+        public string UserId { get; set; } = string.Empty;
+
+        public string ItemId { get; set; } = string.Empty;
+
+        public long Ticks { get; set; }
+
+        public DateTimeOffset UpdatedAt { get; set; }
     }
+
+    private sealed class CarryFile
+    {
+        public List<Entry> Entries { get; set; } = new();
+    }
+
+    private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = true };
 
     private readonly ConcurrentDictionary<string, Entry> _entries = new(StringComparer.OrdinalIgnoreCase);
     private readonly TimeSpan _window;
+    private readonly string? _persistPath;
+    private readonly object _fileLock = new();
 
     /// <summary>
-    /// Creates a store. The default window is six hours: long enough to cover
-    /// a viewing interrupted by repeated reconnects, short enough that an
-    /// unrelated viewing days later starts clean.
+    /// Creates a store. The default window is seven days: long enough for an
+    /// item taken up over several evenings, short enough that an unrelated
+    /// viewing weeks later starts clean. Pass <paramref name="persistPath"/> to
+    /// keep the carry across restarts.
     /// </summary>
-    public WatchCarryStore(TimeSpan? window = null)
+    public WatchCarryStore(TimeSpan? window = null, string? persistPath = null)
     {
-        _window = window ?? TimeSpan.FromHours(6);
+        _window = window ?? TimeSpan.FromDays(7);
+        _persistPath = persistPath;
+        Load();
     }
 
     /// <summary>Number of entries currently held. Diagnostics and tests.</summary>
     public int Count => _entries.Count;
+
+    /// <summary>
+    /// Why the last read or write of the carry file failed, or null when the
+    /// last one succeeded. Callers surface this instead of the store swallowing
+    /// it: a persistence layer that fails quietly loses data without anyone
+    /// noticing, which is the very failure this store exists to prevent.
+    /// </summary>
+    public string? LastPersistError { get; private set; }
 
     private static string Key(string userId, string itemId) => userId + "|" + itemId;
 
@@ -80,23 +116,128 @@ public sealed class WatchCarryStore
             return;
         }
 
-        _entries[Key(userId, itemId)] = new Entry { Ticks = ticks, UpdatedAt = now };
+        _entries[Key(userId, itemId)] = new Entry
+        {
+            UserId = userId,
+            ItemId = itemId,
+            Ticks = ticks,
+            UpdatedAt = now
+        };
+
+        Persist();
     }
 
     /// <summary>Drops the carry, called once the item has been credited.</summary>
     public void Clear(string userId, string itemId)
     {
-        _entries.TryRemove(Key(userId, itemId), out _);
+        if (_entries.TryRemove(Key(userId, itemId), out _))
+        {
+            Persist();
+        }
     }
 
     private void Prune(DateTimeOffset now)
     {
+        var removed = false;
         foreach (var pair in _entries)
         {
             if (now - pair.Value.UpdatedAt > _window)
             {
-                _entries.TryRemove(pair.Key, out _);
+                removed |= _entries.TryRemove(pair.Key, out _);
             }
+        }
+
+        if (removed)
+        {
+            Persist();
+        }
+    }
+
+    private void Load()
+    {
+        if (string.IsNullOrWhiteSpace(_persistPath) || !File.Exists(_persistPath))
+        {
+            return;
+        }
+
+        try
+        {
+            CarryFile? file;
+            lock (_fileLock)
+            {
+                file = JsonSerializer.Deserialize<CarryFile>(File.ReadAllText(_persistPath));
+            }
+
+            if (file?.Entries is null)
+            {
+                return;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            foreach (var entry in file.Entries)
+            {
+                // An entry that expired while the server was down must not come
+                // back to life just because it was on disk.
+                if (entry is null
+                    || entry.Ticks <= 0
+                    || string.IsNullOrWhiteSpace(entry.UserId)
+                    || string.IsNullOrWhiteSpace(entry.ItemId)
+                    || now - entry.UpdatedAt > _window)
+                {
+                    continue;
+                }
+
+                _entries[Key(entry.UserId, entry.ItemId)] = entry;
+            }
+
+            LastPersistError = null;
+        }
+        catch (Exception ex)
+        {
+            // A carry file we cannot read costs partial viewings, not data the
+            // user owns, so starting empty is the right call. It is reported
+            // rather than hidden, and the next write replaces the bad file.
+            LastPersistError = "read " + _persistPath + ": " + ex.Message;
+        }
+    }
+
+    private void Persist()
+    {
+        if (string.IsNullOrWhiteSpace(_persistPath))
+        {
+            return;
+        }
+
+        try
+        {
+            var file = new CarryFile();
+            foreach (var pair in _entries)
+            {
+                file.Entries.Add(pair.Value);
+            }
+
+            var json = JsonSerializer.Serialize(file, SerializerOptions);
+
+            lock (_fileLock)
+            {
+                var directory = Path.GetDirectoryName(_persistPath);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                // Written aside and moved into place so a shutdown mid-write
+                // cannot leave a truncated file to be discarded on boot.
+                var temporary = _persistPath + ".tmp";
+                File.WriteAllText(temporary, json);
+                File.Move(temporary, _persistPath, overwrite: true);
+            }
+
+            LastPersistError = null;
+        }
+        catch (Exception ex)
+        {
+            LastPersistError = "write " + _persistPath + ": " + ex.Message;
         }
     }
 }
