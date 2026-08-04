@@ -71,6 +71,14 @@ public class PluginConfiguration : BasePluginConfiguration
     /// name. Zero disables snapshots. Default 14.</summary>
     public int SnapshotRetentionDays { get; set; } = 14;
 
+    /// <summary>For how many days watch time on an item that was not credited
+    /// is carried into the next session of that same item, so a long item taken
+    /// up over several sittings is measured as one viewing. Only genuinely
+    /// advanced playback is ever carried, and the carry is dropped the moment
+    /// the item is credited. Zero disables carrying. Default 7. Applied when
+    /// the tracker starts, so a change takes effect on the next restart.</summary>
+    public int WatchCarryRetentionDays { get; set; } = 7;
+
     public string? WebhookUrl { get; set; }
 
     public bool WebhookEnabled { get; set; }

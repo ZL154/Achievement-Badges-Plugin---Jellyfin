@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Jellyfin.Plugin.AchievementBadges.Models;
+using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Session;
@@ -47,7 +50,15 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     }
     private readonly ConcurrentDictionary<string, SessionWatchState> _sessions = new();
 
+    // Watch time carried across sessions for the same item, so an item taken up
+    // over several sittings, or a stream that breaks and reconnects, is
+    // measured as one viewing. Persisted, because over a window measured in
+    // days a restart is expected rather than exceptional. See WatchCarryStore.
+    private readonly WatchCarryStore _carried;
+    private string? _reportedCarryError;
+
     public PlaybackCompletionTracker(
+        IApplicationPaths applicationPaths,
         ISessionManager sessionManager,
         ILibraryManager libraryManager,
         IUserDataManager userDataManager,
@@ -59,6 +70,39 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         _userDataManager = userDataManager;
         _playbackCompletionService = playbackCompletionService;
         _logger = logger;
+
+        var days = Plugin.Instance?.Configuration?.WatchCarryRetentionDays ?? 7;
+        _carried = days > 0
+            ? new WatchCarryStore(
+                TimeSpan.FromDays(days),
+                Path.Combine(applicationPaths.PluginConfigurationsPath, "achievementbadges", "watch-carry.json"))
+            : new WatchCarryStore(TimeSpan.Zero);
+    }
+
+    /// <summary>
+    /// Surfaces a carry file that could not be read or written. Reported once
+    /// per distinct error so a failing disk does not flood the log, but never
+    /// swallowed: silence here would mean partial viewings quietly stop being
+    /// carried and nobody finds out until credit goes missing.
+    /// </summary>
+    private void ReportCarryPersistError()
+    {
+        var error = _carried.LastPersistError;
+        if (error is null)
+        {
+            _reportedCarryError = null;
+            return;
+        }
+
+        if (string.Equals(error, _reportedCarryError, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _reportedCarryError = error;
+        _logger.LogWarning(
+            "[AchievementBadges] Could not persist carried watch time ({Error}). Partial viewings will not survive a restart until this is fixed.",
+            error);
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -302,6 +346,24 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
                 progressEventCount = session.ProgressEventCount;
             }
 
+            // Fold in anything watched for this item in an earlier session that
+            // ended without credit, so a stream that broke and reconnected is
+            // measured as one viewing. See WatchCarryStore for why this is safe.
+            var now = DateTimeOffset.UtcNow;
+            var carriedTicks = _carried.Peek(userId, itemId, now);
+            if (carriedTicks > 0)
+            {
+                _logger.LogInformation(
+                    "[AchievementBadges] {Source} for user {UserId} item {ItemId}: adding {Carried}s carried from an earlier session of the same item to this session's {Session}s.",
+                    source,
+                    userId,
+                    itemId,
+                    carriedTicks / TimeSpan.TicksPerSecond,
+                    accumulatedPlayTicks / TimeSpan.TicksPerSecond);
+
+                accumulatedPlayTicks += carriedTicks;
+            }
+
             double completionPercent;
             if (runTimeTicks > 0)
             {
@@ -378,12 +440,22 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
 
             if (success)
             {
+                // Credited, so a later viewing of the same item starts clean.
+                _carried.Clear(userId, itemId);
+                ReportCarryPersistError();
+
                 _logger.LogInformation(
                     "[AchievementBadges] Recorded playback from {Source} user={UserId} item={ItemId} library={Library} completion={Completion:0.##}%",
                     source, userId, itemId, libraryName ?? "(none)", completionPercent);
             }
             else
             {
+                // Not credited: remember what was genuinely watched so the next
+                // sitting picks up where this one left off instead of starting
+                // from zero.
+                _carried.Remember(userId, itemId, accumulatedPlayTicks, now);
+                ReportCarryPersistError();
+
                 _logger.LogDebug(
                     "[AchievementBadges] Skipped playback from {Source} user={UserId} item={ItemId} reason={Reason}",
                     source, userId, itemId, message);
