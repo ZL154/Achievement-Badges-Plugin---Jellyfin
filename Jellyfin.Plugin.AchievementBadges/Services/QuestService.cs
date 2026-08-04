@@ -347,7 +347,12 @@ public class QuestService
             AchievementMetric.UniqueGenresWatched => counters.UniqueGenresWatched,
             AchievementMetric.RewatchCount => counters.RewatchCount,
             AchievementMetric.TotalMinutesWatched => counters.TotalMinutesWatched > int.MaxValue ? int.MaxValue : (int)counters.TotalMinutesWatched,
-            AchievementMetric.CurrentWatchStreak => counters.BestWatchStreak,
+            // Read the live streak, not the all-time best. Quest progress is
+            // the metric minus the value captured when the period began, and
+            // BestWatchStreak only rises above its own captured value on a new
+            // personal record, so this quest asked the user to beat their own
+            // record by the target rather than to hold a streak of it.
+            AchievementMetric.CurrentWatchStreak => AchievementBadgeService.GetCurrentWatchStreak(counters),
             AchievementMetric.SeriesCompleted => counters.SeriesCompleted,
             AchievementMetric.LongestItemMinutes => counters.LongestItemMinutes,
             AchievementMetric.ShortItemsWatched => counters.ShortItemsWatched,
