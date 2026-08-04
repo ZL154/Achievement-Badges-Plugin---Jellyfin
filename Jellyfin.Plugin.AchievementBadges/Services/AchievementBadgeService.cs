@@ -2463,6 +2463,15 @@ public class AchievementBadgeService : IDisposable
 
     private UserAchievementProfile GetOrCreateProfile(string userId)
     {
+        // Normalise before the lookup. The store is keyed by the hyphenated
+        // GUID and every other entry point calls NormalizeUserId first; this
+        // one trusted its caller. FriendsService and MessagingService hand out
+        // ids as Id.ToString("N") and the client strips hyphens the same way,
+        // so the compact form reaches create-on-demand routinely, misses the
+        // live profile and writes an empty one beside it. The duplicates then
+        // collapse on the next load, where the empty twin can win.
+        userId = NormalizeUserId(userId);
+
         if (!_userProfiles.TryGetValue(userId, out var profile))
         {
             profile = CreateProfile(userId);
