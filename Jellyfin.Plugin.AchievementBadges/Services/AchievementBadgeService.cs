@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -1571,11 +1572,133 @@ public class AchievementBadgeService : IDisposable
         userId = NormalizeUserId(userId);
         lock (_lock)
         {
+            _userProfiles.TryGetValue(userId, out var previous);
+
             var profile = CreateProfile(userId);
+            if (previous is not null)
+            {
+                PreserveNonDerivedState(previous, profile);
+            }
+
             _userProfiles[userId] = profile;
             Save();
             _logger.LogInformation("Reset badges for user {UserId}", userId);
             return profile.Badges.Select(CloneBadge).ToList();
+        }
+    }
+
+    /// <summary>
+    /// Deep copies the current counters for a user, or null when the user has
+    /// no profile yet. Taken by the backfill right before it resets a profile
+    /// so the rebuilt counters can be floored at their pre scan values (fork
+    /// companion to issue #48, see <see cref="CounterFloor"/>).
+    /// </summary>
+    public UserAchievementCounters? SnapshotCountersForUser(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userId, out var profile))
+            {
+                return null;
+            }
+
+            var json = JsonSerializer.Serialize(profile.Counters, _jsonOptions);
+            return JsonSerializer.Deserialize<UserAchievementCounters>(json, _jsonOptions);
+        }
+    }
+
+    /// <summary>
+    /// Floors the user's counters at a snapshot taken before a rebuild, so a
+    /// watch history scan can only move totals forward. Deliberately does not
+    /// re evaluate badge unlocks here: unlocked badges already survive the
+    /// reset, and still locked badges will unlock on the next genuine
+    /// playback event that touches their counter.
+    /// </summary>
+    public void ApplyCounterFloor(string userId, UserAchievementCounters? previous)
+    {
+        if (previous is null)
+        {
+            return;
+        }
+
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userId, out var profile))
+            {
+                return;
+            }
+
+            CounterFloor.Apply(previous, profile.Counters);
+            Save();
+        }
+    }
+
+    /// <summary>
+    /// Carry over everything a watch-history rebuild cannot reconstruct.
+    /// <para>
+    /// The reset exists so the backfill can recompute counters from playback
+    /// history. Counters are therefore left to be rebuilt, which is the point.
+    /// Everything else in the profile was never derived from playback: the
+    /// social graph, the shop inventory, the deliberate showcase, the user's
+    /// settings. Dropping it turns a scan into silent data loss, and the loss
+    /// is unrecoverable because the source it would be rebuilt from does not
+    /// exist.
+    /// </para>
+    /// <para>
+    /// Unlocks are carried over too. An unlock is a historical event, and
+    /// media that has since been deleted from the library can never be
+    /// counted again, so a rebuild would revoke badges the user genuinely
+    /// earned. Admins who need to un-award a badge have <c>RevokeBadge</c>
+    /// and the audit cleanup tool, which are explicit about it.
+    /// </para>
+    /// </summary>
+    private static void PreserveNonDerivedState(UserAchievementProfile previous, UserAchievementProfile profile)
+    {
+        profile.Preferences = previous.Preferences;
+
+        // Deliberate presentation choices.
+        profile.EquippedBadgeIds = new List<string>(previous.EquippedBadgeIds);
+        profile.PinnedBadgeIds = new List<string>(previous.PinnedBadgeIds);
+        profile.EquippedTitleBadgeId = previous.EquippedTitleBadgeId;
+        profile.EquippedThemeId = previous.EquippedThemeId;
+        profile.EquippedBadgeFrameId = previous.EquippedBadgeFrameId;
+        profile.EquippedCustomTitleId = previous.EquippedCustomTitleId;
+        profile.EquippedAvatarId = previous.EquippedAvatarId;
+        profile.EquippedBackgroundId = previous.EquippedBackgroundId;
+        profile.EquippedProfileBorderId = previous.EquippedProfileBorderId;
+
+        // Purchases and prestige. Spending happened; it cannot be replayed.
+        profile.OwnedCosmetics = new List<string>(previous.OwnedCosmetics);
+        profile.BoughtBadgeIds = new List<string>(previous.BoughtBadgeIds);
+        profile.PowerUpInventory = new Dictionary<string, int>(previous.PowerUpInventory);
+        profile.LifetimeScoreSpent = previous.LifetimeScoreSpent;
+        profile.StreakFreezesBanked = previous.StreakFreezesBanked;
+        profile.PrestigeLevel = previous.PrestigeLevel;
+
+        // Social graph. Nothing here comes from playback.
+        profile.Friends = new List<string>(previous.Friends);
+        profile.FriendRequestsSent = new List<string>(previous.FriendRequestsSent);
+        profile.FriendRequestsReceived = new List<string>(previous.FriendRequestsReceived);
+        profile.CompareHistory = new List<CompareHistoryEntry>(previous.CompareHistory);
+
+        // Already-earned badges stay earned.
+        var earned = previous.Badges
+            .Where(b => b.Unlocked)
+            .ToDictionary(b => b.Id, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var badge in profile.Badges)
+        {
+            if (!earned.TryGetValue(badge.Id, out var before))
+            {
+                continue;
+            }
+
+            badge.Unlocked = true;
+            badge.UnlockedAt = before.UnlockedAt;
+            badge.UnlockDeviceId = before.UnlockDeviceId;
+            badge.EarnSource = before.EarnSource;
         }
     }
 
@@ -3561,7 +3684,66 @@ public class AchievementBadgeService : IDisposable
         }
         catch { /* backup is best-effort; don't block the real save */ }
 
+        // Once per UTC day, keep a dated copy of the previous state
+        // under {pluginData}/backups. The .bak above rotates on every save,
+        // so its recovery window is minutes; the dated snapshots let an
+        // accidental scan or a corrupted write be rolled back days later.
+        try
+        {
+            WriteDailySnapshot();
+        }
+        catch { /* snapshot housekeeping must never block the real save */ }
+
         File.Move(tmp, _dataFilePath, overwrite: true);
+    }
+
+    private void WriteDailySnapshot()
+    {
+        var retention = Plugin.Instance?.Configuration?.SnapshotRetentionDays ?? 14;
+        WriteDailySnapshotCore(_dataFilePath, DateOnly.FromDateTime(DateTime.UtcNow), retention);
+    }
+
+    /// <summary>
+    /// Testable core of the daily snapshot: copies the current data file to
+    /// backups/badges-yyyy-MM-dd.json at most once per day, then prunes
+    /// snapshots older than the retention window. Pruning matches by file
+    /// name date, never by file timestamps, so copied or restored files
+    /// behave predictably. A retention of zero disables the feature.
+    /// </summary>
+    public static void WriteDailySnapshotCore(string dataFilePath, DateOnly today, int retentionDays)
+    {
+        if (retentionDays <= 0 || !File.Exists(dataFilePath))
+        {
+            return;
+        }
+
+        var parent = Path.GetDirectoryName(dataFilePath);
+        if (string.IsNullOrEmpty(parent))
+        {
+            return;
+        }
+
+        var dir = Path.Combine(parent, "backups");
+        var snapshot = Path.Combine(dir, "badges-" + today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + ".json");
+        if (File.Exists(snapshot))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(dir);
+        File.Copy(dataFilePath, snapshot);
+
+        var cutoff = today.AddDays(-retentionDays);
+        foreach (var file in Directory.GetFiles(dir, "badges-*.json"))
+        {
+            var stem = Path.GetFileNameWithoutExtension(file);
+            var datePart = stem.Length > 7 ? stem[7..] : string.Empty;
+            if (DateOnly.TryParseExact(datePart, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var fileDate)
+                && fileDate < cutoff)
+            {
+                File.Delete(file);
+            }
+        }
     }
 
     private static int CalendarDaysSinceFirstWatch(UserAchievementCounters c)

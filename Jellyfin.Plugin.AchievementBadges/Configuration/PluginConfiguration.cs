@@ -65,6 +65,12 @@ public class PluginConfiguration : BasePluginConfiguration
     /// proper day-bucketing for retroactive credit.</summary>
     public bool BackfillSkipTimeWindowedBadges { get; set; } = true;
 
+    /// <summary>How many days of daily badges.json snapshots to keep
+    /// under {pluginData}/backups. A snapshot is written at most once per UTC
+    /// day, on the first save of the day, and pruned by the date in the file
+    /// name. Zero disables snapshots. Default 14.</summary>
+    public int SnapshotRetentionDays { get; set; } = 14;
+
     public string? WebhookUrl { get; set; }
 
     public bool WebhookEnabled { get; set; }

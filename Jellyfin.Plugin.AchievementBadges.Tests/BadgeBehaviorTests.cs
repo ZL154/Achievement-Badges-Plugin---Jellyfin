@@ -466,4 +466,57 @@ public class BadgeBehaviorTests : IDisposable
         Assert.True(firstContact.Unlocked);
         Assert.Null(firstContact.UnlockDeviceId);
     }
+
+    /// <summary>
+    /// Regression test for the data loss described in issue #48.
+    /// <para>
+    /// ResetBadgesForUser exists so the watch-history backfill can recompute
+    /// counters. Counters are therefore expected to go back to zero. Nothing
+    /// else in the profile comes from playback, so nothing else may be lost:
+    /// media that has since been deleted can never be counted again, which
+    /// means a rebuild would otherwise revoke badges the user really earned
+    /// and hand back a showcase they never chose.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void ResetBadgesForUser_KeepsWhatWatchHistoryCannotRebuild()
+    {
+        _badges.RecordPlayback(UserId, isMovie: true, libraryName: "Movies");
+
+        var before = _badges.PeekProfile(UserId)!;
+        var earned = before.Badges.Where(b => b.Unlocked).Select(b => b.Id).ToList();
+        Assert.NotEmpty(earned);
+
+        before.EquippedBadgeIds.Clear();
+        before.EquippedBadgeIds.Add(earned[0]);
+        before.OwnedCosmetics.Add("title-curator");
+        before.FriendRequestsSent.Add("22222222-2222-2222-2222-222222222222");
+        before.PowerUpInventory["streak-freeze"] = 2;
+        before.PrestigeLevel = 3;
+        before.LifetimeScoreSpent = 450;
+        before.Preferences.Language = "pt-br";
+
+        _badges.ResetBadgesForUser(UserId);
+
+        var after = _badges.PeekProfile(UserId)!;
+
+        // The one thing the backfill does rebuild.
+        Assert.Equal(0, after.Counters.TotalItemsWatched);
+
+        // Everything it cannot.
+        Assert.Equal(new[] { earned[0] }, after.EquippedBadgeIds);
+        Assert.Contains("title-curator", after.OwnedCosmetics);
+        Assert.Contains("22222222-2222-2222-2222-222222222222", after.FriendRequestsSent);
+        Assert.Equal(2, after.PowerUpInventory["streak-freeze"]);
+        Assert.Equal(3, after.PrestigeLevel);
+        Assert.Equal(450, after.LifetimeScoreSpent);
+        Assert.Equal("pt-br", after.Preferences.Language);
+
+        foreach (var id in earned)
+        {
+            Assert.True(
+                after.Badges.Single(b => b.Id == id).Unlocked,
+                $"badge {id} was earned before the reset and must stay earned");
+        }
+    }
 }

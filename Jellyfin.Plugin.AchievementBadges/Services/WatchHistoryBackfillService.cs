@@ -102,6 +102,13 @@ public class WatchHistoryBackfillService
                 return new { UserId = userId, Username = username, Success = false, Error = "User not found." };
             }
 
+            // Issue #48 companion: capture the counters before the
+            // reset so the rebuild can never move a lifetime total backwards.
+            // Media deleted since it was watched is invisible to the replay
+            // below, and without a floor every total it once fed would
+            // silently shrink.
+            var preScanCounters = _achievementBadgeService.SnapshotCountersForUser(userId);
+
             // Reset badges so we rebuild from watch history
             _achievementBadgeService.ResetBadgesForUser(userId);
 
@@ -286,6 +293,10 @@ public class WatchHistoryBackfillService
                     _logger.LogWarning(ex, "[AchievementBadges] Failed to check series completion for series {SeriesId}.", seriesId);
                 }
             }
+
+            // Issue #48 companion: floor the rebuilt counters at their
+            // pre scan values so deleted media never shrinks lifetime totals.
+            _achievementBadgeService.ApplyCounterFloor(userId, preScanCounters);
 
             _logger.LogInformation(
                 "[AchievementBadges] Backfill done for {Username}: {Movies} movies, {Episodes} episodes, {Series} series, {Books} books, {Libraries} libraries.",
