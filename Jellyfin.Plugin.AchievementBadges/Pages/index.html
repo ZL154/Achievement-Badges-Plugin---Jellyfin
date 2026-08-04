@@ -2906,9 +2906,26 @@ font-size:0.88em;
             });
         });
 
-        var summaryPromise     = loadSummary(userId).catch(function () {});
-        var leaderboardPromise = loadLeaderboard().catch(function () {});
-        var serverStatsPromise = loadServerStats().catch(function () {});
+        // Isolating the ancillary loads is right, but discarding their errors
+        // is not: each one owns a placeholder, and an empty catch leaves that
+        // placeholder as the terminal state. The profile header in particular
+        // sat on "Loading profile..." indefinitely, indistinguishable from a
+        // slow request, while reloadAll's own error path already had the
+        // correct message and could never fire. Keep the isolation, report
+        // the failure.
+        var summaryPromise = loadSummary(userId).catch(function (err) {
+            profileSubtitle.textContent = tr('admin.msg.profile_failed', 'Could not load profile.');
+            setSummary({ Unlocked: 0, Total: 0, Percentage: 0, EquippedCount: 0 });
+            console.warn('[AchievementBadges] summary load failed', err);
+        });
+        var leaderboardPromise = loadLeaderboard().catch(function (err) {
+            leaderboardBox.textContent = tr('admin.msg.lb_failed', 'Failed to load leaderboard.');
+            console.warn('[AchievementBadges] leaderboard load failed', err);
+        });
+        var serverStatsPromise = loadServerStats().catch(function (err) {
+            serverStatsBox.textContent = tr('admin.msg.server_stats_failed', 'Failed to load server stats.');
+            console.warn('[AchievementBadges] server stats load failed', err);
+        });
 
         return Promise.all([badgesPromise, summaryPromise, leaderboardPromise, serverStatsPromise]);
     }
