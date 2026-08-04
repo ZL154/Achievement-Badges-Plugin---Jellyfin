@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Jellyfin.Data.Enums;
@@ -11,6 +12,18 @@ namespace Jellyfin.Plugin.AchievementBadges.Services;
 
 public class WatchHistoryBackfillService
 {
+    /// <summary>
+    /// One gate per user, so two overlapping invocations can never interleave
+    /// their <c>ResetBadgesForUser</c> and accumulation passes over the same
+    /// profile. Without this, a double click on the admin page's scan button
+    /// (or a per-user scan issued while a scan-all is in flight) resets the
+    /// profile twice and counts part of the history twice, producing inflated
+    /// counters and badges unlocked on thresholds that were never really met.
+    /// The second caller waits and then performs its own clean pass, which is
+    /// safe because a single isolated backfill is idempotent.
+    /// </summary>
+    private readonly ConcurrentDictionary<Guid, object> _userGates = new();
+
     private readonly ILibraryManager _libraryManager;
     private readonly IUserManager _userManager;
     private readonly IUserDataManager _userDataManager;
@@ -61,6 +74,16 @@ public class WatchHistoryBackfillService
     }
 
     private object RunBackfillForUser(Guid userGuid, string username)
+    {
+        // Serialise per user. See _userGates for why.
+        var gate = _userGates.GetOrAdd(userGuid, static _ => new object());
+        lock (gate)
+        {
+            return RunBackfillForUserCore(userGuid, username);
+        }
+    }
+
+    private object RunBackfillForUserCore(Guid userGuid, string username)
     {
         var userId = userGuid.ToString("D");
         var moviesWatched = 0;
