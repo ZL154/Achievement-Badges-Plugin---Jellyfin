@@ -67,16 +67,33 @@ public class SidebarInjectionMiddleware
             var contentType = context.Response.ContentType;
             var contentEncoding = context.Response.Headers["Content-Encoding"].ToString();
 
-            // Only rewrite uncompressed text/html. If the response is gzip/br,
-            // streaming through our buffer as plain UTF-8 would mangle bytes,
-            // so pass it through untouched.
+            // Rewrite text/html whether or not it arrived compressed. Treating
+            // compressed bytes as UTF-8 would mangle them, so a gzip/br body is
+            // decoded first and re-encoded afterwards in the same format, which
+            // leaves the client seeing exactly what it negotiated.
+            //
+            // This used to bail out on any Content-Encoding. Every browser
+            // sends Accept-Encoding: gzip, so that branch was the only one
+            // browsers ever took and the scripts were never delivered to them.
+            // The injection only appeared to work because curl without
+            // --compressed takes the other branch.
             var isHtml = contentType != null && contentType.Contains("text/html", StringComparison.OrdinalIgnoreCase);
-            var isCompressed = !string.IsNullOrEmpty(contentEncoding);
+            var encoding = ResponseCompression.Normalize(contentEncoding);
+            var isCompressed = encoding.Length > 0;
+            var canRewrite = isHtml && (!isCompressed || ResponseCompression.CanRoundTrip(encoding));
 
-            if (isHtml && !isCompressed)
+            if (canRewrite)
             {
-                using var reader = new StreamReader(buffer, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
-                var html = await reader.ReadToEndAsync();
+                string html;
+                if (isCompressed)
+                {
+                    html = Encoding.UTF8.GetString(ResponseCompression.Decompress(buffer.ToArray(), encoding));
+                }
+                else
+                {
+                    using var reader = new StreamReader(buffer, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true);
+                    html = await reader.ReadToEndAsync();
+                }
 
                 // v1.9.0: marker fast-path. The injection marker
                 // <!-- achievementbadges-bootstrap --> is always emitted
@@ -105,6 +122,13 @@ public class SidebarInjectionMiddleware
                         StringComparison.OrdinalIgnoreCase);
 
                     var bytes = Encoding.UTF8.GetBytes(html);
+                    if (isCompressed)
+                    {
+                        // Re-encode in the same format, so Content-Encoding
+                        // stays truthful and the client decodes as usual.
+                        bytes = ResponseCompression.Compress(bytes, encoding);
+                    }
+
                     // Clear Content-Length so the framework re-derives it from the new body.
                     // Setting it to bytes.Length first caused a race on some Kestrel paths.
                     context.Response.ContentLength = null;
