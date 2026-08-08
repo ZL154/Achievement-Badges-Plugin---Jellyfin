@@ -203,4 +203,58 @@ public class DataResilienceTests : IDisposable
     {
         Assert.Equal(14, new PluginConfiguration().SnapshotRetentionDays);
     }
+
+    private const string BankUserId = "44444444-4444-4444-4444-444444444444";
+    private const string UnknownUserId = "55555555-5555-5555-5555-555555555555";
+
+    [Fact]
+    public void ScoreBankFloor_EmptyReplay_KeepsTheBalance()
+    {
+        // The reported case. Every item this user watched has since been
+        // deleted, so the replay observes nothing at all and the rebuilt bank
+        // is zero, even though the reset carried all their badges over.
+        var profile = _badges.GetOrCreateProfileDirect(BankUserId);
+        profile.ScoreBank = 15;
+        _badges.SaveProfileDirect(profile);
+
+        var preScan = _badges.SnapshotScoreBankForUser(BankUserId);
+        _badges.ResetBadgesForUser(BankUserId);
+        Assert.Equal(0, _badges.PeekProfile(BankUserId)!.ScoreBank);
+
+        _badges.ApplyScoreBankFloor(BankUserId, preScan);
+
+        Assert.Equal(15, _badges.PeekProfile(BankUserId)!.ScoreBank);
+    }
+
+    [Fact]
+    public void ScoreBankFloor_RicherRebuild_KeepsTheLargerValue()
+    {
+        // The floor must not cap growth: a replay that legitimately earns more
+        // than the user had banked keeps its own result.
+        var profile = _badges.GetOrCreateProfileDirect(BankUserId);
+        profile.ScoreBank = 120;
+        _badges.SaveProfileDirect(profile);
+
+        var preScan = _badges.SnapshotScoreBankForUser(BankUserId);
+
+        var rebuilt = _badges.GetOrCreateProfileDirect(BankUserId);
+        rebuilt.ScoreBank = 5707;
+        _badges.SaveProfileDirect(rebuilt);
+
+        _badges.ApplyScoreBankFloor(BankUserId, preScan);
+
+        Assert.Equal(5707, _badges.PeekProfile(BankUserId)!.ScoreBank);
+    }
+
+    [Fact]
+    public void ScoreBankFloor_UnknownUserOrEmptyBank_IsANoOp()
+    {
+        // A first-ever scan has nothing to floor against, and asking must not
+        // materialise a profile as a side effect.
+        Assert.Equal(0, _badges.SnapshotScoreBankForUser(UnknownUserId));
+
+        _badges.ApplyScoreBankFloor(UnknownUserId, 0);
+
+        Assert.Null(_badges.PeekProfile(UnknownUserId));
+    }
 }

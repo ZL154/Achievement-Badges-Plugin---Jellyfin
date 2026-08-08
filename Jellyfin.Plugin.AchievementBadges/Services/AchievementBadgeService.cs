@@ -1636,6 +1636,53 @@ public class AchievementBadgeService : IDisposable
     }
 
     /// <summary>
+    /// Reads the user's current score bank, or zero when the user has no
+    /// profile yet. Companion to <see cref="SnapshotCountersForUser"/>, taken
+    /// by the backfill right before it resets a profile.
+    /// </summary>
+    public int SnapshotScoreBankForUser(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            return _userProfiles.TryGetValue(userId, out var profile) ? profile.ScoreBank : 0;
+        }
+    }
+
+    /// <summary>
+    /// Floors the user's score bank at a snapshot taken before a rebuild.
+    /// <para>
+    /// The bank is not derived from badges, so carrying unlocks over does not
+    /// carry it: it accrues per watched item, which means a rebuild recomputes
+    /// it from whatever playback the replay can still see. Media deleted since
+    /// it was watched is invisible to that replay, so without a floor a scan
+    /// quietly spends the user's balance for them, and a user whose watched
+    /// media is all gone drops to zero while keeping every badge. That is the
+    /// same loss window issue #48 closed for counters.
+    /// </para>
+    /// </summary>
+    public void ApplyScoreBankFloor(string userId, int previousScoreBank)
+    {
+        if (previousScoreBank <= 0)
+        {
+            return;
+        }
+
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(userId, out var profile)
+                || profile.ScoreBank >= previousScoreBank)
+            {
+                return;
+            }
+
+            profile.ScoreBank = previousScoreBank;
+            Save();
+        }
+    }
+
+    /// <summary>
     /// Carry over everything a watch-history rebuild cannot reconstruct.
     /// <para>
     /// The reset exists so the backfill can recompute counters from playback

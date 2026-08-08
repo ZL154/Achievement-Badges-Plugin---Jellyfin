@@ -109,6 +109,11 @@ public class WatchHistoryBackfillService
             // silently shrink.
             var preScanCounters = _achievementBadgeService.SnapshotCountersForUser(userId);
 
+            // Same window, separate value: the score bank is spendable
+            // currency that accrues per watched item, not per badge, so
+            // carrying unlocks over does not carry it.
+            var preScanScoreBank = _achievementBadgeService.SnapshotScoreBankForUser(userId);
+
             // Reset badges so we rebuild from watch history
             _achievementBadgeService.ResetBadgesForUser(userId);
 
@@ -297,6 +302,7 @@ public class WatchHistoryBackfillService
             // Issue #48 companion: floor the rebuilt counters at their
             // pre scan values so deleted media never shrinks lifetime totals.
             _achievementBadgeService.ApplyCounterFloor(userId, preScanCounters);
+            _achievementBadgeService.ApplyScoreBankFloor(userId, preScanScoreBank);
 
             _logger.LogInformation(
                 "[AchievementBadges] Backfill done for {Username}: {Movies} movies, {Episodes} episodes, {Series} series, {Books} books, {Libraries} libraries.",
