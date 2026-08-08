@@ -21,6 +21,8 @@ namespace Jellyfin.Plugin.AchievementBadges.Api;
 [ApiController]
 [Authorize(Policy = "RequiresElevation")]
 [Route("Plugins/AchievementBadges/custom-badges")]
+// Admin JSON must never be cached (see AchievementBadgesController).
+[ResponseCache(NoStore = true)]
 public class CustomBadgesController : ControllerBase
 {
     private readonly CustomBadgeService _customBadges;

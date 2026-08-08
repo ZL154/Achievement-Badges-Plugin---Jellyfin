@@ -16,6 +16,8 @@ namespace Jellyfin.Plugin.AchievementBadges.Api;
 [ApiController]
 [Authorize(Policy = "RequiresElevation")]
 [Route("Plugins/AchievementBadges/time-windowed")]
+// Admin JSON must never be cached (see AchievementBadgesController).
+[ResponseCache(NoStore = true)]
 public class TimeWindowedAdminController : ControllerBase
 {
     private readonly TimeWindowedRecomputeService _recompute;
