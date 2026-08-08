@@ -4285,9 +4285,42 @@
     var REVAMP_LINK_ID = 'abSaRevampCss';
     // v1.9.0: version-only cache bust (see index.html for full rationale).
     var REVAMP_CSS_BUST = 'v=1.9.2';
-    function getStylePref() {
-        try { return localStorage.getItem(STYLE_PREF_KEY) === 'revamp' ? 'revamp' : 'classic'; }
+    /* [issue #43] The admin's DefaultUiStyle / ForceDefaultUiStyle come from
+       public-config, which is a fetch, but sidebar.js has to pick a style
+       synchronously on every page load or the page flashes the wrong one.
+       So the two values are mirrored into localStorage whenever public-config
+       lands, and both scripts read the mirror. A change by the admin reaches a
+       given browser on its next load, which is the same freshness the language
+       default already has. */
+    var ADMIN_STYLE_KEY = 'ab-style-admin-default';
+    var ADMIN_FORCE_KEY = 'ab-style-admin-forced';
+    function getAdminStyleDefault() {
+        try { return localStorage.getItem(ADMIN_STYLE_KEY) === 'revamp' ? 'revamp' : 'classic'; }
         catch (e) { return 'classic'; }
+    }
+    function isStyleForced() {
+        try { return localStorage.getItem(ADMIN_FORCE_KEY) === '1'; }
+        catch (e) { return false; }
+    }
+    function cacheAdminStyle(cfg) {
+        if (!cfg) return;
+        try {
+            var d = (cfg.DefaultUiStyle || cfg.defaultUiStyle) === 'revamp' ? 'revamp' : 'classic';
+            var f = (cfg.ForceDefaultUiStyle || cfg.forceDefaultUiStyle) ? '1' : '0';
+            localStorage.setItem(ADMIN_STYLE_KEY, d);
+            localStorage.setItem(ADMIN_FORCE_KEY, f);
+        } catch (e) { /* private mode etc. */ }
+    }
+    function getStylePref() {
+        // Forced wins outright. The user's own choice is deliberately left in
+        // place rather than overwritten, so it comes back if the admin turns
+        // the lock off again.
+        if (isStyleForced()) return getAdminStyleDefault();
+        try {
+            var own = localStorage.getItem(STYLE_PREF_KEY);
+            if (own === 'revamp' || own === 'classic') return own;
+        } catch (e) { return 'classic'; }
+        return getAdminStyleDefault();
     }
     function setStylePref(p) {
         try { localStorage.setItem(STYLE_PREF_KEY, p); } catch (e) { /* private mode etc. */ }
@@ -4391,6 +4424,10 @@
         } catch (e) { /* document.body unavailable extremely early — ignore */ }
         var btn = el('abSaStyleToggleBtn');
         if (btn) {
+            // [issue #43] With the admin lock on there is nothing to toggle,
+            // so the control goes away rather than sitting there doing nothing.
+            // Hidden, not disabled: a dead button invites clicking.
+            btn.hidden = isStyleForced();
             // Update the data-i18n key so applyStaticTranslations picks up
             // the correct one on next pass; also set textContent immediately
             // so the user sees the change without waiting for a translations
@@ -4406,6 +4443,9 @@
         if (publicConfigPromise) return publicConfigPromise;
         publicConfigPromise = fetchJson('Plugins/AchievementBadges/public-config').then(function (cfg) {
             publicConfigGlobal = cfg || {};
+            // [issue #43] Refresh the mirror sidebar.js reads synchronously.
+            try { cacheAdminStyle(publicConfigGlobal); } catch (e) {}
+            try { applyStylePref(getStylePref()); } catch (e) {}
             return publicConfigGlobal;
         }).catch(function () {
             publicConfigPromise = null;
@@ -4695,6 +4735,10 @@
         var styleBtn = el('abSaStyleToggleBtn');
         if (styleBtn) {
             styleBtn.addEventListener('click', function () {
+                // [issue #43] Hiding the button is presentation; this is the
+                // actual guard. The handler is wired before public-config has
+                // necessarily landed, and a hidden element is still reachable.
+                if (isStyleForced()) { applyStylePref(getStylePref()); return; }
                 var next = getStylePref() === 'revamp' ? 'classic' : 'revamp';
                 setStylePref(next);
                 applyStylePref(next);

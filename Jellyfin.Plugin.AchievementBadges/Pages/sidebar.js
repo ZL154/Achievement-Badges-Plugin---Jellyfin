@@ -15,8 +15,20 @@
        double-inject when the user navigates from /achievements to another
        Jellyfin page. */
     try {
+        /* [issue #43] Resolve against the admin's default and lock, which
+           standalone.js mirrors into localStorage whenever public-config
+           lands. This runs on every page load and has to be synchronous, so
+           it reads the mirror instead of fetching: waiting on a round trip
+           here would paint one style and then swap it. */
         var __abPref = null;
-        try { __abPref = localStorage.getItem('ab-style-pref'); } catch (e) {}
+        try {
+            var __abForced = localStorage.getItem('ab-style-admin-forced') === '1';
+            var __abAdmin = localStorage.getItem('ab-style-admin-default') === 'revamp' ? 'revamp' : 'classic';
+            var __abOwn = localStorage.getItem('ab-style-pref');
+            __abPref = __abForced ? __abAdmin
+                : (__abOwn === 'revamp' || __abOwn === 'classic') ? __abOwn
+                : __abAdmin;
+        } catch (e) {}
         if (__abPref === 'revamp') {
             try { document.body.setAttribute('data-ab-style', 'revamp'); } catch (e) {
                 /* body not yet ready — retry once DOM loads */

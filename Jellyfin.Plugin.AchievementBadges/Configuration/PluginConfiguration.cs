@@ -143,6 +143,18 @@ public class PluginConfiguration : BasePluginConfiguration
     // "en", "fr", "es", "de", "it", "pt", "zh", "ja".
     public string DefaultLanguage { get; set; } = "en";
 
+    // [issue #43] Default achievements UI style for users who have not used the
+    // Classic/Revamp toggle. "classic" or "revamp"; anything else is treated as
+    // "classic". Mirrors DefaultLanguage above: a starting point, not a lock.
+    public string DefaultUiStyle { get; set; } = "classic";
+
+    // [issue #43] When true, DefaultUiStyle is the only style available: the
+    // Classic/Revamp toggle is hidden and any previous per-user choice is
+    // ignored, so the achievements page can be kept in line with the server's
+    // Jellyfin theme. The user's own choice is remembered, not erased, and
+    // comes back if this is turned off again.
+    public bool ForceDefaultUiStyle { get; set; } = false;
+
     // Admin-supplied SVG used to replace the Xbox logo in the toast animation.
     // Stored as a base64-encoded SVG string (no data:-URI prefix). Empty string
     // means "use the default Xbox logo bundled with the plugin".
