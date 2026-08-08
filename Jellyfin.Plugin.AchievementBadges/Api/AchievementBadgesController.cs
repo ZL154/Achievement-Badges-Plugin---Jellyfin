@@ -820,6 +820,30 @@ public class AchievementBadgesController : ControllerBase
         return Ok(_badgeService.GetPublicEquippedPreview(targetUserId));
     }
 
+    // [issue #42] Summary card for another user, shown on hover / click in the
+    // friends drawer. Same shape of guard as the equipped preview above:
+    // {targetUserId} so the UserOwnershipFilter ignores it, still requires an
+    // authenticated session, and a malformed id is rejected before any service
+    // work so the lookup cannot act as a timing side-channel for id probing.
+    //
+    // The projection is deliberately the leaderboard's, field for field, and
+    // the service gates on the same ForcePrivacyMode + HideFromLeaderboard
+    // pair, so this reveals nothing that was not already public. A user who
+    // opted out and a user who does not exist both answer 404, so the two
+    // cannot be told apart.
+    [HttpGet("profiles/{targetUserId}/summary")]
+    [EnableRateLimiting("ip-30-per-min")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult GetPublicProfileSummary([FromRoute] string targetUserId)
+    {
+        if (string.IsNullOrWhiteSpace(targetUserId) || targetUserId.Length > 64 || !Guid.TryParse(targetUserId, out _))
+            return NotFound();
+
+        var summary = _badgeService.GetPublicProfileSummary(targetUserId);
+        return summary is null ? NotFound() : Ok(summary);
+    }
+
     [HttpPost("users/{userId}/equipped/{badgeId}")]
     [EnableRateLimiting("user-60-per-min")]
     [ProducesResponseType(typeof(List<AchievementBadge>), StatusCodes.Status200OK)]

@@ -1200,6 +1200,127 @@
             }).catch(function(){});
     }
 
+    /* ===== [issue #42] Profile card for another user =====================
+       Hovering a friend's avatar or name opens a small card; clicking pins it
+       so it survives the pointer leaving, and Escape or a click elsewhere
+       closes it. The card shows exactly what the leaderboard already shows
+       about that user, and the endpoint behind it answers 404 both for
+       someone who has opted out and for an id that does not exist.
+
+       Attached to document rather than to the drawer because the drawer is
+       re-rendered on every friends refresh, which would drop listeners bound
+       to it. */
+    var PROFILE_CARD_ID = 'ab-profile-card';
+    var _profileCache = {};
+    var _profileHoverTimer = null;
+    var _profileCardPinned = false;
+
+    function fetchProfileSummary(userId) {
+        var key = String(userId).toLowerCase();
+        if (_profileCache[key]) return _profileCache[key];
+        _profileCache[key] = fetch(buildUrl('Plugins/AchievementBadges/profiles/' + encodeURIComponent(userId) + '/summary'),
+            { headers: authHeaders(), credentials: 'include' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; });
+        return _profileCache[key];
+    }
+
+    function hideProfileCard() {
+        if (_profileHoverTimer) { clearTimeout(_profileHoverTimer); _profileHoverTimer = null; }
+        _profileCardPinned = false;
+        var c = document.getElementById(PROFILE_CARD_ID);
+        if (c && c.parentNode) c.parentNode.removeChild(c);
+    }
+
+    function renderProfileCard(anchor, data) {
+        hideProfileCard();
+        var card = document.createElement('div');
+        card.id = PROFILE_CARD_ID;
+        card.setAttribute('role', 'dialog');
+        card.style.cssText = 'position:fixed;z-index:9999999;min-width:230px;max-width:290px;' +
+            'padding:0.85em 1em;border-radius:12px;background:rgba(20,20,24,0.97);color:#fff;' +
+            'box-shadow:0 10px 34px rgba(0,0,0,0.55);font-size:0.9em;line-height:1.45;' +
+            'border:1px solid rgba(255,255,255,0.12);pointer-events:auto;';
+
+        // Everything interpolated below is either escaped (the one user
+        // controlled string) or coerced to a number. The counts arrive as
+        // JSON, so their type is not guaranteed by anything on this side.
+        function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+        var row = function (label, value) {
+            return '<div style="display:flex;justify-content:space-between;gap:1em;">' +
+                '<span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
+        };
+        card.innerHTML =
+            '<div style="font-weight:600;font-size:1.05em;margin-bottom:0.5em;">' + escapeHtml(data.UserName || '') + '</div>' +
+            row(tr('lb.badges', 'Badges'), num(data.Unlocked) + ' / ' + num(data.Total)) +
+            row(tr('profile.completion', 'Completion'), num(data.Percentage) + '%') +
+            row(tr('lb.score', 'Score'), String(num(data.Score))) +
+            row(tr('lb.streak', 'Best streak'), String(num(data.BestWatchStreak))) +
+            (data.Equipped && data.Equipped.length
+                ? '<div style="margin-top:0.6em;">' + renderEquippedDots(data.Equipped, 20) + '</div>'
+                : '');
+
+        document.body.appendChild(card);
+
+        // Place beside the anchor, then pull back inside the viewport. Fixed
+        // positioning, so no scroll offset maths.
+        var r = anchor.getBoundingClientRect();
+        var cr = card.getBoundingClientRect();
+        var top = Math.max(8, Math.min(r.top, window.innerHeight - cr.height - 8));
+        var left = r.right + 12;
+        if (left + cr.width > window.innerWidth - 8) left = Math.max(8, r.left - cr.width - 12);
+        card.style.top = top + 'px';
+        card.style.left = left + 'px';
+    }
+
+    function openProfileCard(anchor, pin) {
+        var userId = anchor.getAttribute('data-ab-profile');
+        if (!userId) return;
+        fetchProfileSummary(userId).then(function (data) {
+            // 404 means the user opted out of being listed, or does not exist.
+            // Either way there is nothing to show, and nothing to say about
+            // which of the two it was.
+            if (!data) { hideProfileCard(); return; }
+            if (!document.body.contains(anchor)) return;
+            renderProfileCard(anchor, data);
+            _profileCardPinned = !!pin;
+        });
+    }
+
+    document.addEventListener('mouseover', function (ev) {
+        var t = ev.target && ev.target.closest ? ev.target.closest('[data-ab-profile]') : null;
+        if (!t || _profileCardPinned) return;
+        if (_profileHoverTimer) clearTimeout(_profileHoverTimer);
+        // Delay so sweeping the pointer down the list does not fire a request
+        // per row.
+        _profileHoverTimer = setTimeout(function () { openProfileCard(t, false); }, 350);
+    });
+
+    document.addEventListener('mouseout', function (ev) {
+        if (_profileCardPinned) return;
+        var t = ev.target && ev.target.closest ? ev.target.closest('[data-ab-profile]') : null;
+        if (!t) return;
+        var to = ev.relatedTarget;
+        if (to && to.closest && to.closest('#' + PROFILE_CARD_ID)) return;
+        hideProfileCard();
+    });
+
+    document.addEventListener('click', function (ev) {
+        var t = ev.target && ev.target.closest ? ev.target.closest('[data-ab-profile]') : null;
+        if (t) { ev.preventDefault(); openProfileCard(t, true); return; }
+        if (ev.target && ev.target.closest && ev.target.closest('#' + PROFILE_CARD_ID)) return;
+        hideProfileCard();
+    });
+
+    document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape') { hideProfileCard(); return; }
+        if (ev.key !== 'Enter' && ev.key !== ' ') return;
+        var t = ev.target && ev.target.closest ? ev.target.closest('[data-ab-profile]') : null;
+        if (!t) return;
+        ev.preventDefault();
+        openProfileCard(t, true);
+    });
+
     function loadFriends(){
         var uid = getUserId(); if (!uid) return;
         var fBox = document.getElementById('abFriendsPaneFriends');
@@ -1266,10 +1387,15 @@
                             ? ''
                             : '<button type="button" class="ab-fd-act decline" data-ab-friend-remove="' + escapeHtml(f.UserId) + '" title="'+tr('friends.remove','Remove')+'"><span class="material-icons">person_remove</span></button>';
                         var actionsHtml = '<div class="ab-fd-actions">' + chatBtnHtml + removeBtnHtml + '</div>';
+                        // [issue #42] Avatar and name open the profile card.
+                        // Both carry the id so either target works, and the
+                        // name is focusable so the card is reachable without a
+                        // pointer, which hover alone would not be.
+                        var profAttr = ' data-ab-profile="' + escapeHtml(f.UserId) + '"';
                         return '<div class="ab-fd-row">' +
-                            '<div class="ab-fd-avatar'+(f.Online?' online':'')+'" style="' + av + '">' + initialsHtml + '</div>' +
+                            '<div class="ab-fd-avatar'+(f.Online?' online':'')+'" style="' + av + '"' + profAttr + '>' + initialsHtml + '</div>' +
                             '<div class="ab-fd-info">' +
-                                '<div class="ab-fd-name">' + escapeHtml(f.UserName) + '</div>' +
+                                '<div class="ab-fd-name" tabindex="0" role="button"' + profAttr + '>' + escapeHtml(f.UserName) + '</div>' +
                                 '<div class="ab-fd-status'+(f.Online?' online':'')+'">' + status + '</div>' +
                                 (f.Equipped && f.Equipped.length ? '<div style="margin-top:0.35em;">' + renderEquippedDots(f.Equipped, 16) + '</div>' : '') +
                             '</div>' +
