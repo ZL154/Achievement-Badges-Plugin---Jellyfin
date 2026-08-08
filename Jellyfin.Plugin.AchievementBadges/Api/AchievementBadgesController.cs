@@ -2422,6 +2422,8 @@ public class AchievementBadgesController : ControllerBase
             DisabledBadgeCategories = c?.DisabledBadgeCategories ?? new List<string>(),
             WelcomeMessage = c?.WelcomeMessage ?? "",
             DefaultLanguage = c?.DefaultLanguage ?? "en",
+            TracearrUrl = c?.TracearrUrl ?? "",
+            TracearrApiToken = c?.TracearrApiToken ?? "",
             CustomXboxLogoSvg = c?.CustomXboxLogoSvg ?? "",
             RedactUsernamesInAuditLog = c?.RedactUsernamesInAuditLog ?? false,
             ForceHideEquippedShowcase = c?.ForceHideEquippedShowcase ?? false,
@@ -2450,6 +2452,10 @@ public class AchievementBadgesController : ControllerBase
         public List<string> DisabledBadgeCategories { get; set; } = new();
         public string WelcomeMessage { get; set; } = "";
         public string DefaultLanguage { get; set; } = "en";
+
+        // [issue #45] Empty either field disables the Tracearr pass.
+        public string TracearrUrl { get; set; } = "";
+        public string TracearrApiToken { get; set; } = "";
         public string CustomXboxLogoSvg { get; set; } = "";
         public bool RedactUsernamesInAuditLog { get; set; } = false;
         public bool ForceHideEquippedShowcase { get; set; } = false;
@@ -2486,6 +2492,8 @@ public class AchievementBadgesController : ControllerBase
         var allowedLangs = new HashSet<string> { "en", "fr", "es", "de", "it", "pt", "zh", "ja" };
         if (!allowedLangs.Contains(lang)) lang = "en";
         config.DefaultLanguage = lang;
+        config.TracearrUrl = (request.TracearrUrl ?? "").Trim();
+        config.TracearrApiToken = (request.TracearrApiToken ?? "").Trim();
 
         // [v2.1.0] Audiobook counting policy. Invalid/missing falls back to
         // the current value (no silent reset to default).

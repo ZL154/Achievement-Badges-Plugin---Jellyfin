@@ -195,7 +195,8 @@ public class TracearrClient
         return plays;
     }
 
-    internal static TracearrPlay? MapPlay(JsonElement row)
+    /// <summary>Public so the mapping can be tested without a live server.</summary>
+    public static TracearrPlay? MapPlay(JsonElement row)
     {
         var ratingKey = ReadString(row, "rating_key");
         if (string.IsNullOrWhiteSpace(ratingKey)) return null;
@@ -264,6 +265,7 @@ public class TracearrClient
             : null;
     }
 
-    internal static string Compact(string? id)
+    /// <summary>Public so the id matching can be tested directly.</summary>
+    public static string Compact(string? id)
         => string.IsNullOrWhiteSpace(id) ? "" : id.Replace("-", "", StringComparison.Ordinal).ToLowerInvariant();
 }

@@ -2,7 +2,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Jellyfin.Plugin.AchievementBadges.Models;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
@@ -83,6 +85,95 @@ public class WatchHistoryBackfillService
         }
     }
 
+    /// <summary>
+    /// [issue #45] Credits the plays Tracearr holds that the library replay
+    /// could not account for.
+    /// <para>
+    /// Two distinct gaps, and this closes both without overlapping the replay:
+    /// an item Tracearr knows but the library cannot prove is media that has
+    /// been deleted, so its first play is a genuine watch; and every play
+    /// after the first, for any item, is a rewatch. The library query is
+    /// <c>IsPlayed = true</c>, a boolean, so it can never produce a rewatch
+    /// count no matter how many times something was played.
+    /// </para>
+    /// <para>
+    /// Only plays Tracearr itself considers finished are credited, so a
+    /// thirty second sample does not become a watch. Everything is silent:
+    /// a rebuild must not fire a burst of notifications.
+    /// </para>
+    /// </summary>
+    private int RunTracearrPass(string userId, string username, HashSet<string> creditedItemIds)
+    {
+        var config = Plugin.Instance?.Configuration;
+        if (!TracearrClient.IsConfigured(config?.TracearrUrl, config?.TracearrApiToken))
+        {
+            return 0;
+        }
+
+        if (!TracearrClient.TryBuildBaseUri(config!.TracearrUrl, out var baseUri, out var urlError))
+        {
+            _logger.LogWarning("[AchievementBadges] Tracearr not used for {Username}: {Error}", username, urlError);
+            return 0;
+        }
+
+        var credited = 0;
+
+        try
+        {
+            var client = new TracearrClient(_logger);
+            var accountId = client
+                .ResolveAccountIdAsync(baseUri!, config.TracearrApiToken, userId, CancellationToken.None)
+                .GetAwaiter().GetResult();
+
+            if (string.IsNullOrEmpty(accountId))
+            {
+                // Not an error: plenty of Jellyfin users have never streamed
+                // while Tracearr was watching, so they have no account there.
+                _logger.LogInformation("[AchievementBadges] No Tracearr account matches {Username}.", username);
+                return 0;
+            }
+
+            var plays = client
+                .GetHistoryAsync(baseUri!, config.TracearrApiToken, accountId!, CancellationToken.None)
+                .GetAwaiter().GetResult();
+
+            foreach (var credit in TracearrCreditPlan.Build(plays, creditedItemIds))
+            {
+                var play = credit.Play;
+                _achievementBadgeService.RecordPlayback(new PlaybackContext
+                {
+                    UserId = userId,
+                    ItemId = play.RatingKey,
+                    IsMovie = string.Equals(play.MediaType, "movie", StringComparison.OrdinalIgnoreCase),
+                    IsEpisode = string.Equals(play.MediaType, "episode", StringComparison.OrdinalIgnoreCase),
+                    IsRewatch = credit.IsRewatch,
+                    // The date the play happened, not today, so an old viewing
+                    // lands in the right day bucket and cannot manufacture a
+                    // streak that never existed.
+                    PlayedAt = play.StartedAt,
+                    ProductionYear = play.Year,
+                    RunTimeTicks = play.TotalDurationMs is long ms && ms > 0 ? ms * TimeSpan.TicksPerMillisecond : null,
+                    Silent = true
+                });
+
+                credited++;
+            }
+
+            _logger.LogInformation(
+                "[AchievementBadges] Tracearr credited {Count} plays for {Username} that the library could not account for.",
+                credited, username);
+        }
+        catch (Exception ex)
+        {
+            // A backfill that credited the library correctly is still worth
+            // keeping, so a Tracearr failure is reported and swallowed rather
+            // than losing the whole rebuild.
+            _logger.LogWarning(ex, "[AchievementBadges] Tracearr pass failed for {Username}; the library rebuild stands.", username);
+        }
+
+        return credited;
+    }
+
     private object RunBackfillForUserCore(Guid userGuid, string username)
     {
         var userId = userGuid.ToString("D");
@@ -91,6 +182,10 @@ public class WatchHistoryBackfillService
         var seriesCompleted = 0;
         var booksCompleted = 0;
         var librariesFound = new HashSet<string>();
+        // [issue #45] Ids the library replay could prove. Anything Tracearr
+        // knows that is NOT in here is a play of media that has since been
+        // deleted, which is precisely what the library query cannot see.
+        var creditedItemIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         try
         {
@@ -136,6 +231,8 @@ public class WatchHistoryBackfillService
 
                 var (moviesDirectors, moviesActors) = GetPeople(movie);
 
+                creditedItemIds.Add(movie.Id.ToString("D"));
+
                 _achievementBadgeService.RecordPlayback(new PlaybackContext
                 {
                     UserId = userId,
@@ -180,6 +277,8 @@ public class WatchHistoryBackfillService
                     librariesFound.Add(bookLibrary);
                 }
 
+                creditedItemIds.Add(book.Id.ToString("D"));
+
                 _achievementBadgeService.RecordPlayback(new PlaybackContext
                 {
                     UserId = userId,
@@ -220,6 +319,8 @@ public class WatchHistoryBackfillService
                 var playedDate = GetPlayedDate(user, episode);
 
                 var (epDirectors, epActors) = GetPeople(episode);
+
+                creditedItemIds.Add(episode.Id.ToString("D"));
 
                 _achievementBadgeService.RecordPlayback(new PlaybackContext
                 {
@@ -293,6 +394,17 @@ public class WatchHistoryBackfillService
                     _logger.LogWarning(ex, "[AchievementBadges] Failed to check series completion for series {SeriesId}.", seriesId);
                 }
             }
+
+            // [issue #45] Tracearr fills the two holes the replay above cannot
+            // reach: plays of media deleted since it was watched, and how many
+            // times an item was played. No-op unless an admin configured it.
+            //
+            // ORDER MATTERS: this runs BEFORE the counter floor, not after.
+            // The floor restores each counter to its pre scan value, which
+            // already includes those deleted-media watches from back when they
+            // happened. Crediting them after the floor would stack them on top
+            // of themselves and inflate every total they feed.
+            var tracearrCredited = RunTracearrPass(userId, username, creditedItemIds);
 
             // Issue #48 companion: floor the rebuilt counters at their
             // pre scan values so deleted media never shrinks lifetime totals.

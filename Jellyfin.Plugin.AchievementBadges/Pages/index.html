@@ -1963,6 +1963,13 @@ font-size:0.88em;
                             </select>
                             <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;" data-i18n="admin.fc.lang_note">Badge titles/descriptions are not yet localized; only UI chrome is translated.</div>
                         </label>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.tracearr_url">Tracearr URL (optional):</span><br>
+                            <input type="text" id="abFcTracearrUrl" placeholder="https://tracearr.example" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                        </label>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.tracearr_token">Tracearr API token:</span><br>
+                            <input type="password" id="abFcTracearrApiToken" autocomplete="off" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                            <div class="secondaryText" style="font-size:0.85em; margin-top:0.25em;" data-i18n="admin.fc.tracearr_note">With both filled in, a watch history scan also credits plays Tracearr recorded for media that has since been deleted, plus rewatches, which the library scan cannot see. Generate the token in Tracearr under Settings. Leave either field empty to disable.</div>
+                        </label>
                         <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.audiobook_counting">Audiobook plays count toward:</span><br>
                             <select id="abFcAudiobookCounting" style="padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                                 <option value="BooksOnly" data-i18n="admin.fc.audiobook_books_only">Books only (default)</option>
@@ -4154,6 +4161,10 @@ font-size:0.88em;
             document.getElementById('abFcWelcomeMessage').value = c.WelcomeMessage || '';
             var dlSel = document.getElementById('abFcDefaultLanguage');
             if (dlSel) dlSel.value = (c.DefaultLanguage || 'en');
+            var tuEl = document.getElementById('abFcTracearrUrl');
+            if (tuEl) tuEl.value = c.TracearrUrl || '';
+            var ttEl = document.getElementById('abFcTracearrApiToken');
+            if (ttEl) ttEl.value = c.TracearrApiToken || '';
             var abcSel = document.getElementById('abFcAudiobookCounting');
             if (abcSel) abcSel.value = (c.AudiobookCounting || 'BooksOnly');
             var xbEl = document.getElementById('abFcCustomXboxLogoSvg');
@@ -4219,6 +4230,8 @@ font-size:0.88em;
             DisabledBadgeCategories: categories,
             WelcomeMessage: document.getElementById('abFcWelcomeMessage').value || '',
             DefaultLanguage: (document.getElementById('abFcDefaultLanguage') || {}).value || 'en',
+            TracearrUrl: (document.getElementById('abFcTracearrUrl') || {}).value || '',
+            TracearrApiToken: (document.getElementById('abFcTracearrApiToken') || {}).value || '',
             AudiobookCounting: (document.getElementById('abFcAudiobookCounting') || {}).value || 'BooksOnly',
             CustomXboxLogoSvg: (document.getElementById('abFcCustomXboxLogoSvg') || {}).value || '',
             RedactUsernamesInAuditLog: !!(document.getElementById('abFcRedactUsernamesInAuditLog') || {}).checked,
