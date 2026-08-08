@@ -50,6 +50,35 @@ public class PlayerOverlayTests
     }
 
     [Fact]
+    public void ToastContainer_Stylesheet_AnchorsTopRight()
+    {
+        // Toasts stay up during playback on purpose, so where they sit matters:
+        // bottom centre is the subtitle line.
+        var css = ReadEmbedded("styles-revamp.css");
+        var block = css.Substring(css.IndexOf("#ab-toast-container {", StringComparison.Ordinal));
+        block = block.Substring(0, block.IndexOf('}'));
+
+        Assert.Contains("top: 4.5em !important", block);
+        Assert.Contains("right: 1.2em !important", block);
+        Assert.Contains("bottom: auto !important", block);
+        Assert.Contains("left: auto !important", block);
+        Assert.Contains("align-items: flex-end !important", block);
+    }
+
+    [Fact]
+    public void ToastContainer_InlineFallback_MatchesTheStylesheet()
+    {
+        // enhance.js builds the container before any sheet is guaranteed to be
+        // loaded, so the inline style has to agree or the first toast of a
+        // session lands on the subtitles anyway.
+        var js = ReadEmbedded("enhance.js");
+
+        Assert.Contains("top:4.5em;right:1.2em", js);
+        Assert.Contains("align-items:flex-end", js);
+        Assert.DoesNotContain("bottom:24px;left:0;right:0", js);
+    }
+
+    [Fact]
     public void HeaderBadges_KeepTheirExistingPlaybackRules()
     {
         // Guards the selector battery the friends button rule was modelled on,

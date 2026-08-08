@@ -1881,13 +1881,18 @@
 
 #ab-toast-container {
     position: fixed !important;
-    bottom: 24px !important;
-    left: 0 !important;
-    right: 0 !important;
+    /* Top right, not bottom centre: toasts stay visible during playback on
+       purpose, and bottom centre is where subtitles are rendered, so a card
+       parked there for several seconds covers the line being spoken. Kept in
+       sync with the inline fallback in enhance.js. */
+    top: 4.5em !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: 1.2em !important;
     z-index: 2147483000 !important;     /* well above any conceivable page chrome */
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
+    align-items: flex-end !important;
     gap: 14px !important;
     pointer-events: none !important;
     /* defeat any inherited transform / will-change / contain that could

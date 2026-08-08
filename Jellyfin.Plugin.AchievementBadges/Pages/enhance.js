@@ -159,7 +159,12 @@
         if (c) return c;
         c = document.createElement('div');
         c.id = TOAST_ID;
-        c.style.cssText = 'position:fixed;bottom:24px;left:0;right:0;z-index:99999;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none;';
+        // Top right, not bottom centre. Toasts deliberately stay visible during
+        // playback so an unlock lands while you are watching, and bottom centre
+        // is exactly where subtitles are rendered, so a 110px card parked there
+        // for several seconds covers the line being spoken. Kept in sync with
+        // the #ab-toast-container rule in styles-revamp.css.
+        c.style.cssText = 'position:fixed;top:4.5em;right:1.2em;z-index:99999;display:flex;flex-direction:column;align-items:flex-end;gap:14px;pointer-events:none;';
         document.body.appendChild(c);
         return c;
     }
