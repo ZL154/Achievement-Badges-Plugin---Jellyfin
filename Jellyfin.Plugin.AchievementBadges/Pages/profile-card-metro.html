@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Achievement Profile Card</title>
+<style>
+  /* Retro Xbox 360 "Metro" dashboard skin (2011 era): a flat bento tile
+     grid, the signature solid-green COMPLETE tile, Gamerscore treatment.
+     Deliberately flat — no gloss — and fixed 360 green rather than the
+     per-tier colour. Pure HTML/CSS (the card CSP forbids inline JS; the
+     avatar falls back to initials). */
+  :root{
+    --green:#7ab51d; --green-lite:#9ed13a; --green-d:#4f7a12;
+    --bg:#0a0d07; --tile:#171d10; --tile-2:#12170c;
+    --ink:#f3f6ec; --dim:rgba(243,246,236,.58); --faint:rgba(243,246,236,.4);
+    --line:rgba(255,255,255,.07);
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2.25rem 1rem;
+    font-family:"Segoe UI",-apple-system,system-ui,Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(120% 90% at 50% 0%, #10160b, var(--bg) 70%); -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ width:660px; max-width:100%; animation:rise .45s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes rise{ from{opacity:0;transform:translateY(9px);} to{opacity:1;transform:none;} }
+  @media (prefers-reduced-motion: reduce){ .wrap{ animation:none; } }
+  .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .tile{ background:var(--tile); border:1px solid var(--line); border-radius:3px; }
+
+  .hero{ grid-column:1 / span 3; display:flex; align-items:center; gap:16px; padding:18px; }
+  .pic{ width:84px; height:84px; flex:0 0 auto; border-radius:2px; position:relative; overflow:hidden; background:#0f140a; box-shadow:inset 0 0 0 1px var(--line); }
+  .pic .ini{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:34px; color:#dfeccb; }
+  .pic .img{ position:absolute; inset:0; background-image:url('/Users/{{userId}}/Images/Primary?width=160&quality=90'); background-size:cover; background-position:center; }
+  .pic::after{ content:""; position:absolute; left:0; bottom:0; width:100%; height:4px; background:var(--green); }
+  .hid{ min-width:0; flex:1; }
+  .tag{ font-size:26px; font-weight:800; letter-spacing:-.01em; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rank{ margin-top:5px; font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--green-lite); }
+  .gs{ display:flex; align-items:center; gap:8px; margin-top:12px; }
+  .gs .gi{ width:24px; height:24px; border-radius:2px; background:var(--green); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:15px; color:#0c1206; }
+  .gs .num{ font-size:24px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .gs .u{ font-size:9px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); align-self:flex-end; margin-bottom:3px; }
+
+  .comp{ grid-column:4; background:var(--green); border-color:transparent; display:flex; flex-direction:column; justify-content:center; padding:16px; }
+  .comp .big{ font-size:40px; font-weight:900; letter-spacing:-.03em; line-height:.9; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 1px 0 rgba(0,0,0,.15); }
+  .comp .k{ margin-top:8px; font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.9); }
+  .comp .sub{ margin-top:3px; font-size:11px; font-weight:700; font-variant-numeric:tabular-nums; color:rgba(12,18,6,.8); }
+
+  .statband{ grid-column:1 / span 4; display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+  .stat{ background:var(--tile); border:1px solid var(--line); border-radius:3px; padding:13px 6px; text-align:center; }
+  .stat .v{ font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .stat .l{ margin-top:6px; font-size:8px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); }
+  @media(max-width:520px){ .statband{ grid-template-columns:repeat(3,1fr); } }
+
+  .prog{ grid-column:1 / span 4; padding:13px 16px; }
+  .prog .top{ display:flex; justify-content:space-between; font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-bottom:9px; }
+  .prog .top b{ color:var(--dim); font-variant-numeric:tabular-nums; }
+  .prog .bar{ height:8px; background:rgba(12,17,7,.5); box-shadow:inset 0 0 0 1px var(--line); overflow:hidden; }
+  .prog .fill{ height:100%; width:{{progressToNext}}%; background:var(--green); }
+
+  .ach{ grid-column:1 / span 4; padding:14px 16px; }
+  .ach .h{ font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin-bottom:10px; }
+  .eq{ display:flex; flex-wrap:wrap; gap:8px; }
+  .badge-chip{ display:flex; align-items:center; gap:9px; padding:9px 12px; background:var(--tile-2); border:1px solid var(--line); border-radius:2px; font-size:12.5px; font-weight:700; color:var(--ink); }
+  .badge-chip::before{ content:""; width:22px; height:22px; border-radius:2px; background:linear-gradient(135deg,var(--green),var(--green-d)); flex:0 0 auto; }
+  .eq .tier{ color:var(--dim); background:none; border:none; padding:0; }
+  .eq .tier::before{ display:none; }
+
+  .ab-back-btn{
+    position:fixed; top:max(1em, env(safe-area-inset-top,0px)); left:max(1em, env(safe-area-inset-left,0px));
+    width:44px; height:44px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; border-radius:8px;
+    background:rgba(16,22,10,.75); color:var(--ink); border:1px solid var(--line);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); text-decoration:none; cursor:pointer; z-index:100;
+    transition:background .15s cubic-bezier(0.16,1,0.3,1), transform .15s cubic-bezier(0.16,1,0.3,1); -webkit-tap-highlight-color:transparent;
+  }
+  .ab-back-btn:hover, .ab-back-btn:active{ background:rgba(26,34,16,.9); transform:scale(.96); }
+  .ab-back-btn svg{ width:22px; height:22px; fill:currentColor; }
+</style>
+</head>
+<body>
+  <a class="ab-back-btn" href="/web/index.html#!/achievements" aria-label="Back to Jellyfin"
+     onclick="try{if(document.referrer&&window.history.length>1){window.history.back();return false;}}catch(e){}return true;">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+  </a>
+
+  <div class="wrap"><div class="grid">
+    <div class="tile hero">
+      <div class="pic"><span class="ini">{{userInitial}}</span><span class="img"></span></div>
+      <div class="hid">
+        <div class="tag">{{userName}}</div>
+        <div class="rank">Rank&nbsp;&nbsp;{{tierName}}</div>
+        <div class="gs"><span class="gi">G</span><span class="num">{{score}}</span><span class="u">Gamerscore</span></div>
+      </div>
+    </div>
+    <div class="tile comp">
+      <div class="big">{{percentage}}%</div>
+      <div class="k">Complete</div>
+      <div class="sub">{{unlocked}} / {{total}} badges</div>
+    </div>
+
+    <div class="statband">
+      <div class="stat"><div class="v">{{currentStreak}}</div><div class="l">Day streak</div></div>
+      <div class="stat"><div class="v">{{bestStreak}}</div><div class="l">Best streak</div></div>
+      <div class="stat"><div class="v">{{recapMovies}}</div><div class="l">Films 30d</div></div>
+      <div class="stat"><div class="v">{{recapEpisodes}}</div><div class="l">Eps 30d</div></div>
+      <div class="stat"><div class="v">{{recapUnlocks}}</div><div class="l">Unlocks 30d</div></div>
+    </div>
+
+    <div class="tile prog">
+      <div class="top"><span>Rank progress</span><span><b>{{nextTierLabel}}</b></span></div>
+      <div class="bar"><div class="fill"></div></div>
+    </div>
+
+    <div class="tile ach">
+      <div class="h">Equipped</div>
+      <div class="eq">{{equippedHtml}}</div>
+    </div>
+  </div></div>
+</body>
+</html>

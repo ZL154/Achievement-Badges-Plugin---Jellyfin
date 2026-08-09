@@ -5,255 +5,107 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Achievement Profile Card</title>
 <style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
-    background: radial-gradient(ellipse at top, #1a1033 0%, #0a0814 55%, #050409 100%);
-    color: #fff;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2em 1em;
+  /* Console-style profile card, in the spirit of the Xbox / PlayStation
+     dashboards: restrained and systematic. The rank tier colour is the only
+     accent and it is used sparingly (a header pip, the avatar underline, the
+     score unit, the progress fill) over neutral tinted greys. Flat surfaces,
+     tabular figures, uppercase micro-labels. No AI-slop tells: no purple
+     wash, gradient text, emoji, neon glow, or spinning ring. Pure HTML/CSS
+     because the card's CSP forbids inline JS (the avatar falls back to
+     initials with no onerror handler). */
+  :root{
+    --accent: {{tierColor}};
+    --bg:#0d0e11; --tile:#15171c; --tile-2:#101216;
+    --ink:#f3f5f8; --dim:rgba(243,245,248,.56); --faint:rgba(243,245,248,.36);
+    --line:rgba(255,255,255,.08);
   }
-  .card {
-    width: 820px;
-    max-width: 100%;
-    position: relative;
-    border-radius: 24px;
-    padding: 2.5em 2.5em 2em;
-    background:
-      radial-gradient(circle at top right, {{tierColor}}22 0%, transparent 55%),
-      linear-gradient(145deg, rgba(40,30,80,0.55), rgba(12,10,25,0.95));
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow:
-      0 30px 80px -20px rgba(0,0,0,0.8),
-      0 0 0 1px rgba(255,255,255,0.03) inset,
-      0 0 80px -30px {{tierColor}};
-    overflow: hidden;
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh;
+    display:flex; align-items:center; justify-content:center; padding:2.25rem 1rem;
+    font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif; color:var(--ink); background:var(--bg);
+    -webkit-font-smoothing:antialiased;
   }
-  .card::before {
-    content: "";
-    position: absolute;
-    top: -100px; right: -100px;
-    width: 300px; height: 300px;
-    border-radius: 50%;
-    background: radial-gradient(circle, {{tierColor}}30 0%, transparent 70%);
-    pointer-events: none;
+  .card{
+    width:600px; max-width:100%; border-radius:14px; overflow:hidden;
+    background:#0f1115; border:1px solid var(--line);
+    box-shadow:0 24px 60px -26px rgba(0,0,0,.7);
+    animation:rise .45s cubic-bezier(0.16,1,0.3,1) both;
   }
-  .card::after {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, {{tierColor}}, transparent);
+  @keyframes rise{ from{opacity:0;transform:translateY(9px);} to{opacity:1;transform:none;} }
+  @media (prefers-reduced-motion: reduce){ .card{ animation:none; } }
+
+  .sys{
+    display:flex; align-items:center; justify-content:space-between; padding:11px 18px;
+    background:#111318; border-bottom:1px solid var(--line);
+    font:600 10.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--faint);
   }
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 1.25em;
-    margin-bottom: 2em;
-    position: relative;
+  .sys .tier{ display:inline-flex; align-items:center; gap:8px; color:var(--ink); min-width:0; }
+  .sys .tier b{ color:var(--accent); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sys .tier::before{ content:""; width:8px; height:8px; background:var(--accent); flex:0 0 auto; }
+
+  .pad{ padding:18px; }
+  .prof{ display:flex; align-items:center; gap:15px; }
+  .av{
+    position:relative; width:62px; height:62px; border-radius:12px; flex:0 0 auto;
+    background:rgba(255,255,255,.05); border:1px solid var(--line); overflow:hidden;
   }
-  .avatar-ring {
-    width: 92px;
-    height: 92px;
-    border-radius: 50%;
-    padding: 3px;
-    background: conic-gradient(from 180deg, {{tierColor}}, #7b2cbf, {{tierColor}});
-    animation: spin 12s linear infinite;
-    flex-shrink: 0;
+  .av .ini{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:24px; color:#e6e9ee; }
+  .av .img{
+    position:absolute; inset:0;
+    background-image:url('/Users/{{userId}}/Images/Primary?width=144&quality=90');
+    background-size:cover; background-position:center;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .avatar {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: radial-gradient(circle, #1c1535, #0a0814);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.6em;
+  .av::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--accent); }
+  .who{ flex:1; min-width:0; }
+  .who .name{ font-size:21px; font-weight:700; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .who .sub{ margin-top:4px; font-size:12px; color:var(--dim); }
+  .who .sub b{ color:var(--ink); font-weight:600; }
+  .compl{ text-align:right; flex:0 0 auto; }
+  .compl .n{ font-size:26px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; }
+  .compl .k{ margin-top:4px; font-size:9px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); }
+
+  .gs{
+    display:flex; align-items:center; justify-content:space-between; margin-top:16px; padding:14px 16px;
+    border-radius:10px; background:var(--tile); border:1px solid var(--line);
   }
-  .name-block { flex: 1; }
-  .label {
-    font-size: 0.72em;
-    text-transform: uppercase;
-    letter-spacing: 2.5px;
-    opacity: 0.55;
-    font-weight: 600;
+  .gs .val{ display:flex; align-items:baseline; gap:9px; min-width:0; }
+  .gs .val .num{ font-size:32px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; }
+  .gs .val .u{ font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); }
+  .gs .goal{ text-align:right; flex:0 0 auto; }
+  .gs .goal .g2{ font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+  .gs .goal .g1{ margin-top:4px; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; }
+
+  .prog{ margin-top:14px; }
+  .prog .bar{ height:6px; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .prog .fill{ height:100%; width:{{progressToNext}}%; background:var(--accent); }
+  .prog .lab{ display:flex; justify-content:space-between; margin-top:7px; font-size:10.5px; letter-spacing:.03em; color:var(--faint); text-transform:uppercase; font-weight:600; }
+  .prog .lab b{ color:var(--dim); font-variant-numeric:tabular-nums; }
+
+  .stats{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:16px; }
+  .st{ background:var(--tile-2); border:1px solid var(--line); border-radius:8px; padding:12px 6px; text-align:center; }
+  .st .v{ font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .st .l{ margin-top:6px; font-size:8px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); }
+  @media (max-width:540px){ .stats{ grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:360px){ .stats{ grid-template-columns:repeat(2,1fr); } }
+
+  .eqh{ margin:18px 0 9px; font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); }
+  .eq{ display:flex; flex-wrap:wrap; gap:7px; }
+  .badge-chip{ padding:6px 11px; border-radius:6px; font-size:12px; font-weight:600; color:var(--ink); background:var(--tile); border:1px solid var(--line); }
+  .eq .tier{ color:var(--dim); font-size:12px; }
+
+  .ab-back-btn{
+    position:fixed; top:max(1em, env(safe-area-inset-top,0px)); left:max(1em, env(safe-area-inset-left,0px));
+    width:44px; height:44px; min-width:44px; min-height:44px;
+    display:flex; align-items:center; justify-content:center; border-radius:12px;
+    background:rgba(20,22,28,.7); color:var(--ink); border:1px solid var(--line);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    text-decoration:none; cursor:pointer; z-index:100;
+    transition:background .15s cubic-bezier(0.16,1,0.3,1), transform .15s cubic-bezier(0.16,1,0.3,1);
+    -webkit-tap-highlight-color:transparent;
   }
-  .name {
-    font-size: 1.7em;
-    font-weight: 800;
-    margin-top: 0.15em;
-    letter-spacing: -0.5px;
-  }
-  .tier-pill {
-    display: inline-block;
-    padding: 0.3em 0.9em;
-    border-radius: 999px;
-    background: {{tierColor}}25;
-    color: {{tierColor}};
-    font-size: 0.78em;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-top: 0.4em;
-    border: 1px solid {{tierColor}}50;
-  }
-  .score-hero {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 1.25em;
-    gap: 1em;
-    flex-wrap: wrap;
-  }
-  .score-main {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5em;
-  }
-  .score-big {
-    font-size: 4.2em;
-    font-weight: 900;
-    line-height: 1;
-    background: linear-gradient(135deg, #fff 0%, {{tierColor}} 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -2px;
-  }
-  .score-label {
-    font-size: 0.9em;
-    opacity: 0.7;
-    font-weight: 500;
-  }
-  .completion {
-    text-align: right;
-  }
-  .completion-num {
-    font-size: 1.8em;
-    font-weight: 800;
-  }
-  .progress-bar {
-    position: relative;
-    height: 10px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.08);
-    overflow: hidden;
-    margin-bottom: 0.5em;
-  }
-  .progress-fill {
-    height: 100%;
-    width: {{progressToNext}}%;
-    background: linear-gradient(90deg, {{tierColor}}, #fff);
-    border-radius: 999px;
-    box-shadow: 0 0 12px {{tierColor}};
-    transition: width 0.6s;
-  }
-  .next-tier { text-align: right; font-size: 0.8em; opacity: 0.65; margin-bottom: 1.5em; }
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0.6em;
-    margin-bottom: 1.5em;
-  }
-  @media (max-width: 720px) {
-    .stats { grid-template-columns: repeat(3, 1fr); }
-  }
-  @media (max-width: 480px) {
-    .stats { grid-template-columns: repeat(2, 1fr); }
-  }
-  .stat {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 14px;
-    padding: 1em 0.75em;
-    text-align: center;
-    transition: all 0.2s;
-  }
-  .stat:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
-  .stat-value {
-    font-size: 1.9em;
-    font-weight: 800;
-    color: {{tierColor}};
-    line-height: 1;
-  }
-  .stat-label {
-    font-size: 0.68em;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    opacity: 0.55;
-    margin-top: 0.5em;
-    font-weight: 600;
-  }
-  .showcase-heading {
-    font-size: 0.72em;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    opacity: 0.55;
-    font-weight: 600;
-    margin-bottom: 0.75em;
-  }
-  .showcase {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-  }
-  .badge-chip {
-    padding: 0.6em 1em;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    font-size: 0.82em;
-    font-weight: 600;
-  }
-  .empty {
-    color: rgba(255,255,255,0.4);
-    font-style: italic;
-    font-size: 0.88em;
-  }
-  .footer {
-    margin-top: 2em;
-    padding-top: 1.5em;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    font-size: 0.7em;
-    opacity: 0.4;
-    text-align: center;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-  /* Back button: fixed top-left, 44x44 min touch target per iOS HIG. */
-  .ab-back-btn {
-    position: fixed;
-    top: max(1em, env(safe-area-inset-top, 0px));
-    left: max(1em, env(safe-area-inset-left, 0px));
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    background: rgba(0,0,0,0.55);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.18);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    text-decoration: none;
-    cursor: pointer;
-    z-index: 100;
-    font-size: 22px;
-    line-height: 1;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
-    transition: background 0.15s, transform 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .ab-back-btn:hover, .ab-back-btn:active { background: rgba(0,0,0,0.8); transform: scale(0.96); }
-  .ab-back-btn svg { width: 22px; height: 22px; fill: currentColor; }
+  .ab-back-btn:hover, .ab-back-btn:active{ background:rgba(30,33,42,.85); transform:scale(.96); }
+  .ab-back-btn svg{ width:22px; height:22px; fill:currentColor; }
 </style>
 </head>
 <body>
@@ -261,59 +113,43 @@
      onclick="try{if(document.referrer&&window.history.length>1){window.history.back();return false;}}catch(e){}return true;">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
   </a>
+
   <div class="card">
-    <div class="header">
-      <div class="avatar-ring">
-        <div class="avatar">🏆</div>
-      </div>
-      <div class="name-block">
-        <div class="label">Achievement Profile</div>
-        <div class="name">Jellyfin Hunter</div>
-        <div class="tier-pill">{{tierName}}</div>
-      </div>
+    <div class="sys">
+      <span>Achievements</span>
+      <span class="tier">RANK&nbsp;<b>{{tierName}}</b></span>
     </div>
+    <div class="pad">
+      <div class="prof">
+        <div class="av"><span class="ini">{{userInitial}}</span><span class="img"></span></div>
+        <div class="who">
+          <div class="name">{{userName}}</div>
+          <div class="sub"><b>{{unlocked}}</b> of <b>{{total}}</b> badges unlocked</div>
+        </div>
+        <div class="compl"><div class="n">{{percentage}}%</div><div class="k">Complete</div></div>
+      </div>
 
-    <div class="score-hero">
-      <div class="score-main">
-        <div class="score-big">{{score}}</div>
-        <div class="score-label">ACHIEVEMENT SCORE</div>
+      <div class="gs">
+        <div class="val"><span class="num">{{score}}</span><span class="u">Score</span></div>
+        <div class="goal"><div class="g2">Next rank</div><div class="g1">{{nextTierLabel}}</div></div>
       </div>
-      <div class="completion">
-        <div class="completion-num">{{unlocked}} / {{total}}</div>
-        <div class="score-label">{{percentage}}% COMPLETE</div>
+
+      <div class="prog">
+        <div class="bar"><div class="fill"></div></div>
+        <div class="lab"><span>Rank progress</span><span><b>{{progressToNext}}%</b></span></div>
       </div>
+
+      <div class="stats">
+        <div class="st"><div class="v">{{currentStreak}}</div><div class="l">Day streak</div></div>
+        <div class="st"><div class="v">{{bestStreak}}</div><div class="l">Best streak</div></div>
+        <div class="st"><div class="v">{{recapMovies}}</div><div class="l">Films 30d</div></div>
+        <div class="st"><div class="v">{{recapEpisodes}}</div><div class="l">Eps 30d</div></div>
+        <div class="st"><div class="v">{{recapUnlocks}}</div><div class="l">Unlocks 30d</div></div>
+      </div>
+
+      <div class="eqh">Equipped</div>
+      <div class="eq">{{equippedHtml}}</div>
     </div>
-
-    <div class="progress-bar"><div class="progress-fill"></div></div>
-    <div class="next-tier">{{nextTierLabel}}</div>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value">🔥 {{currentStreak}}</div>
-        <div class="stat-label">Current Streak</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">{{bestStreak}}</div>
-        <div class="stat-label">Best Streak</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">{{recapMovies}}</div>
-        <div class="stat-label">Movies / 30d</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">{{recapEpisodes}}</div>
-        <div class="stat-label">Episodes / 30d</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">{{recapUnlocks}}</div>
-        <div class="stat-label">Unlocks / 30d</div>
-      </div>
-    </div>
-
-    <div class="showcase-heading">Equipped Showcase</div>
-    <div class="showcase">{{equippedHtml}}</div>
-
-    <div class="footer">Jellyfin Achievement Badges · Screenshot or save to share</div>
   </div>
 </body>
 </html>

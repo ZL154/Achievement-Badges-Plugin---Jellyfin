@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Achievement Profile Card</title>
+<style>
+  /* Retro Xbox 360 "Blades" dashboard skin (2005 era): the glossy green
+     profile blade with a curved corner, peeking coloured blades behind, and
+     a vertical tab. Deliberately skeuomorphic (this is the nostalgia). Fixed
+     360 green rather than the per-tier colour. Pure HTML/CSS (the card CSP
+     forbids inline JS; the avatar falls back to initials). */
+  :root{
+    --ink:#f4f8ee; --dim:rgba(244,248,238,.62); --faint:rgba(244,248,238,.42);
+    --line:rgba(255,255,255,.12);
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:2.5rem 1rem;
+    font-family:"Segoe UI",-apple-system,system-ui,Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(80% 60% at 30% 20%, #17240c, #05080c 75%); -webkit-font-smoothing:antialiased;
+  }
+  .stage{ position:relative; width:640px; max-width:100%; animation:rise .5s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes rise{ from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:none;} }
+  @media (prefers-reduced-motion: reduce){ .stage{ animation:none; } }
+  .peek{ position:absolute; top:22px; bottom:22px; width:80px; border-radius:14px 40px 40px 14px;
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.25), inset 0 -20px 30px rgba(0,0,0,.25), 0 12px 30px rgba(0,0,0,.4); }
+  .peek.p1{ right:-30px; background:linear-gradient(180deg,#3f9ae8,#1c5fa8); }
+  .peek.p2{ right:-52px; top:40px; bottom:40px; background:linear-gradient(180deg,#f0a028,#c06a08); z-index:-1; }
+  .blade{ position:relative; z-index:2; border-radius:16px 56px 16px 16px; overflow:hidden;
+    background:linear-gradient(160deg,#a2d84e 0%,#7cbf2f 38%,#548f1c 100%);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.4), inset 0 -40px 60px rgba(20,50,0,.35), 0 22px 50px -12px rgba(0,0,0,.6); }
+  .blade::before{ content:""; position:absolute; left:0; right:0; top:0; height:44%; pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0)); }
+  .tab{ position:absolute; left:0; top:0; bottom:0; width:34px; display:flex; align-items:center; justify-content:center; z-index:3; }
+  .tab span{ transform:rotate(180deg); writing-mode:vertical-rl; font-size:10px; font-weight:800; letter-spacing:.28em; text-transform:uppercase; color:rgba(12,26,2,.55); }
+  .inner{ position:relative; z-index:2; padding:20px 22px 20px 44px; }
+  .head{ display:flex; align-items:center; gap:15px; }
+  .pic{ width:78px; height:78px; border-radius:8px; flex:0 0 auto; position:relative; overflow:hidden; background:#25350f;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.6), 0 3px 8px rgba(0,0,0,.4); }
+  .pic .ini{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:31px; color:#eef6db; }
+  .pic .img{ position:absolute; inset:0; background-image:url('/Users/{{userId}}/Images/Primary?width=160&quality=90'); background-size:cover; background-position:center; }
+  .pic::after{ content:""; position:absolute; left:0; right:0; top:0; height:46%; background:linear-gradient(180deg,rgba(255,255,255,.3),transparent); }
+  .who{ flex:1; min-width:0; color:#123005; }
+  .tag{ font-size:25px; font-weight:800; letter-spacing:-.01em; text-shadow:0 1px 0 rgba(255,255,255,.25); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rank{ margin-top:4px; font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(18,48,5,.7); }
+  .gs{ margin-top:10px; display:flex; align-items:center; gap:8px; }
+  .gs .gi{ width:24px; height:24px; border-radius:5px; background:#123005; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:15px; color:#bfe86a; box-shadow:inset 0 1px 0 rgba(255,255,255,.15); }
+  .gs .num{ font-size:23px; font-weight:800; font-variant-numeric:tabular-nums; color:#0f2a04; text-shadow:0 1px 0 rgba(255,255,255,.2); }
+  .gs .u{ font-size:9px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:rgba(18,48,5,.6); align-self:flex-end; margin-bottom:3px; }
+  .panel{ margin-top:16px; border-radius:12px; padding:16px; background:linear-gradient(180deg, rgba(10,22,4,.92), rgba(6,14,2,.94));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 6px 16px rgba(0,0,0,.3); }
+  .prog .top{ display:flex; justify-content:space-between; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; }
+  .prog .top b{ color:var(--dim); font-variant-numeric:tabular-nums; }
+  .prog .bar{ height:12px; border-radius:6px; background:#0a1204; box-shadow:inset 0 1px 3px rgba(0,0,0,.7); overflow:hidden; }
+  .prog .fill{ height:100%; width:{{progressToNext}}%; border-radius:6px; background:linear-gradient(180deg,#a2d84e,#6aa823); box-shadow:inset 0 1px 0 rgba(255,255,255,.5); }
+  .stats{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:14px; }
+  .st{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:7px; padding:10px 4px; text-align:center; }
+  .st .v{ font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .st .l{ margin-top:5px; font-size:7.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); }
+  @media(max-width:520px){ .stats{ grid-template-columns:repeat(3,1fr); } }
+  .eqh{ margin:14px 0 8px; font-size:9.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .eq{ display:flex; flex-wrap:wrap; gap:7px; }
+  .badge-chip{ padding:5px 10px; border-radius:5px; font-size:11.5px; font-weight:700; color:var(--ink); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); }
+  .eq .tier{ color:var(--dim); background:none; border:none; padding:0; }
+
+  .ab-back-btn{
+    position:fixed; top:max(1em, env(safe-area-inset-top,0px)); left:max(1em, env(safe-area-inset-left,0px));
+    width:44px; height:44px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px;
+    background:rgba(10,20,4,.7); color:var(--ink); border:1px solid var(--line);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); text-decoration:none; cursor:pointer; z-index:100;
+    transition:background .15s cubic-bezier(0.16,1,0.3,1), transform .15s cubic-bezier(0.16,1,0.3,1); -webkit-tap-highlight-color:transparent;
+  }
+  .ab-back-btn:hover, .ab-back-btn:active{ background:rgba(20,34,10,.85); transform:scale(.96); }
+  .ab-back-btn svg{ width:22px; height:22px; fill:currentColor; }
+</style>
+</head>
+<body>
+  <a class="ab-back-btn" href="/web/index.html#!/achievements" aria-label="Back to Jellyfin"
+     onclick="try{if(document.referrer&&window.history.length>1){window.history.back();return false;}}catch(e){}return true;">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+  </a>
+
+  <div class="stage">
+    <div class="peek p2"></div>
+    <div class="peek p1"></div>
+    <div class="blade">
+      <div class="tab"><span>Profile</span></div>
+      <div class="inner">
+        <div class="head">
+          <div class="pic"><span class="ini">{{userInitial}}</span><span class="img"></span></div>
+          <div class="who">
+            <div class="tag">{{userName}}</div>
+            <div class="rank">Rank&nbsp;&nbsp;{{tierName}}<span style="opacity:.55">&nbsp;&#183;&nbsp;{{unlocked}}/{{total}}</span></div>
+            <div class="gs"><span class="gi">G</span><span class="num">{{score}}</span><span class="u">Gamerscore</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="prog">
+            <div class="top"><span>Rank progress</span><span><b>{{nextTierLabel}}</b></span></div>
+            <div class="bar"><div class="fill"></div></div>
+          </div>
+          <div class="stats">
+            <div class="st"><div class="v">{{currentStreak}}</div><div class="l">Day streak</div></div>
+            <div class="st"><div class="v">{{bestStreak}}</div><div class="l">Best streak</div></div>
+            <div class="st"><div class="v">{{recapMovies}}</div><div class="l">Films 30d</div></div>
+            <div class="st"><div class="v">{{recapEpisodes}}</div><div class="l">Eps 30d</div></div>
+            <div class="st"><div class="v">{{recapUnlocks}}</div><div class="l">Unlocks 30d</div></div>
+          </div>
+          <div class="eqh">Equipped</div>
+          <div class="eq">{{equippedHtml}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

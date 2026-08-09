@@ -1398,7 +1398,7 @@ public class AchievementBadgesController : ControllerBase
     [EnableRateLimiting("ip-30-per-min")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult GetProfileCard([FromRoute] string userId)
+    public ActionResult GetProfileCard([FromRoute] string userId, [FromQuery] string? style = null)
     {
         // v1.8.59 (A+): security headers on the only anonymous HTML endpoint.
         // CSP locks the page to its own origin (no remote scripts), nosniff
@@ -1438,6 +1438,7 @@ public class AchievementBadgesController : ControllerBase
         {
             return Unavailable();
         }
+        string cardUserName;
         try
         {
             var userExists = _userManager.GetUserById(userGuid);
@@ -1445,13 +1446,26 @@ public class AchievementBadgesController : ControllerBase
             {
                 return Unavailable();
             }
+            cardUserName = userExists.Username ?? string.Empty;
         }
         catch
         {
             return Unavailable();
         }
 
-        var content = ResourceReader.ReadEmbeddedText("Jellyfin.Plugin.AchievementBadges.Pages.profile-card.html")
+        // Card skin. Default is the clean "console" card. The retro Xbox 360
+        // look ships in two flavours: "metro" (flat 2011 tile dashboard) and
+        // "blades" (glossy 2005 blades). "xbox360"/"360" alias to metro. Every
+        // template uses the same {{token}} set, so the substitution is shared.
+        var normalizedStyle = (style ?? string.Empty).Trim().ToLowerInvariant();
+        var templateResource = normalizedStyle switch
+        {
+            "blades" or "360blades" or "xbox360blades" => "Jellyfin.Plugin.AchievementBadges.Pages.profile-card-blades.html",
+            "metro" or "360metro" or "xbox360" or "360" or "xbox" => "Jellyfin.Plugin.AchievementBadges.Pages.profile-card-metro.html",
+            _ => "Jellyfin.Plugin.AchievementBadges.Pages.profile-card.html",
+        };
+
+        var content = ResourceReader.ReadEmbeddedText(templateResource)
             ?? "<html><body>Profile card template missing.</body></html>";
 
         // Pre-fetch all the data server-side so the rendered HTML works without
@@ -1490,7 +1504,10 @@ public class AchievementBadgesController : ControllerBase
 
             content = content
                 .Replace("{{userId}}", System.Net.WebUtility.HtmlEncode(userId))
-                .Replace("{{score}}", score.ToString())
+                .Replace("{{userName}}", System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(cardUserName) ? "Jellyfin user" : cardUserName))
+                .Replace("{{userInitial}}", System.Net.WebUtility.HtmlEncode(
+                    (string.IsNullOrWhiteSpace(cardUserName) ? "?" : char.ToUpperInvariant(cardUserName.Trim()[0]).ToString())))
+                .Replace("{{score}}", score.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture))
                 .Replace("{{unlocked}}", unlocked.ToString())
                 .Replace("{{total}}", total.ToString())
                 .Replace("{{percentage}}", percentage.ToString("0.#"))
