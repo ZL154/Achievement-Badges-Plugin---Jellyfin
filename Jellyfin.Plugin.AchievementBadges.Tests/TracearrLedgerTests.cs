@@ -139,6 +139,28 @@ public class TracearrLedgerTests : IDisposable
     }
 
     [Fact]
+    public void AnEmptyLedgerIsNotEvidenceThatNothingWasCredited()
+    {
+        // The upgrade case, and the one that actually bit. A profile scanned
+        // under a version without a ledger has counters that already include
+        // Tracearr credits, and an empty ledger that cannot say so. Treating
+        // empty as "nothing counted yet" doubles every one of them: measured
+        // on a live upgrade, RewatchCount went 6 to 12 on the first press.
+        //
+        // So the caller has to distinguish "no record" from "record says
+        // nothing", which it can only do by asking whether the set is empty
+        // before it decides to credit.
+        var ledger = new TracearrCreditLedger(Path_);
+
+        Assert.Empty(ledger.For("never-synced"));
+
+        // After adopting, the same emptiness check tells the opposite story,
+        // which is what stops the second press crediting.
+        ledger.Remember("never-synced", new[] { "chain-1", "chain-2" });
+        Assert.Equal(2, ledger.For("never-synced").Count);
+    }
+
+    [Fact]
     public void ACorruptLedgerDoesNotStopTheServiceStarting()
     {
         File.WriteAllText(Path_, "{ this is not json");

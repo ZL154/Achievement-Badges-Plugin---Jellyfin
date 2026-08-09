@@ -149,6 +149,32 @@ public class WatchHistoryBackfillService
         lock (gate)
         {
             var normalised = userGuid.ToString("D");
+
+            // A user with no ledger at all has not been synced under a version
+            // that keeps one, but their counters may already include Tracearr
+            // credits from a scan that ran before the ledger existed. There is
+            // no way to tell which, so crediting would double every one of
+            // them. Measured on a live upgrade: RewatchCount 6 to 12.
+            //
+            // So the first sync adopts instead of crediting: it records what
+            // is currently creditable and counts nothing. A scan clears the
+            // ledger and rebuilds it honestly, which is the way to get those
+            // plays counted if they never were.
+            if (_tracearrLedger.For(normalised).Count == 0)
+            {
+                var adopted = AdoptWithoutCrediting(normalised, user);
+                return new
+                {
+                    UserId = normalised,
+                    Username = user.Username,
+                    PlaysCredited = 0,
+                    Adopted = adopted,
+                    Success = true,
+                    Message = "First sync for this user: " + adopted
+                        + " plays recorded as already counted, none credited. Run a watch history scan if they were never counted."
+                };
+            }
+
             var credited = RunTracearrPass(normalised, user.Username, PlayedItemIds(user));
 
             return new
@@ -156,8 +182,47 @@ public class WatchHistoryBackfillService
                 UserId = normalised,
                 Username = user.Username,
                 PlaysCredited = credited,
+                Adopted = 0,
                 Success = true
             };
+        }
+    }
+
+    /// <summary>
+    /// Records every play that would be creditable right now as already
+    /// counted, without crediting any of it. Used the first time a user is
+    /// synced, when their counters may already hold credits from before the
+    /// ledger existed and there is no way to tell which.
+    /// </summary>
+    private int AdoptWithoutCrediting(string userId, Jellyfin.Database.Implementations.Entities.User user)
+    {
+        var config = Plugin.Instance?.Configuration;
+        if (!TracearrClient.TryBuildBaseUri(config!.TracearrUrl, out var baseUri, out _)) return 0;
+
+        try
+        {
+            var client = new TracearrClient(_logger);
+            var accountId = client
+                .ResolveAccountIdAsync(baseUri!, config.TracearrApiToken, userId, CancellationToken.None)
+                .GetAwaiter().GetResult();
+            if (string.IsNullOrEmpty(accountId)) return 0;
+
+            var plays = client
+                .GetHistoryAsync(baseUri!, config.TracearrApiToken, accountId!, CancellationToken.None)
+                .GetAwaiter().GetResult();
+
+            var ids = TracearrCreditPlan.Build(plays, PlayedItemIds(user))
+                .Select(c => c.Play.Id)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Select(id => id!)
+                .ToList();
+
+            return _tracearrLedger.Remember(userId, ids);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[AchievementBadges] Tracearr adopt failed for {Username}.", user.Username);
+            return 0;
         }
     }
 
