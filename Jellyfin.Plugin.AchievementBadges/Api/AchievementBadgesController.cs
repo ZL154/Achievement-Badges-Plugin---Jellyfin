@@ -23,6 +23,12 @@ namespace Jellyfin.Plugin.AchievementBadges.Api;
 // recompute-cooldown, ip-30-per-min) keep their explicit method-level
 // [EnableRateLimiting] which OVERRIDES this default per ASP.NET semantics.
 [EnableRateLimiting("user-60-per-min")]
+// Dynamic JSON responses ship Cache-Control: no-store so
+// browsers and proxies never serve stale profiles, friends or quests from
+// heuristic caching. The filter writes the header before the action runs,
+// so routes that set an explicit policy in their body (client-script and
+// asset immutable, translations no-cache, attachments private) still win.
+[ResponseCache(NoStore = true)]
 public class AchievementBadgesController : ControllerBase
 {
     private readonly AchievementBadgeService _badgeService;
