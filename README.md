@@ -57,6 +57,7 @@ A full progression, gamification and achievement system for Jellyfin that reward
   - [Languages](#-languages)
   - [Admin features](#-admin-features)
   - [Tracking](#-tracking)
+- [Tracearr integration](#-tracearr-integration) — credit plays the library scan cannot see
 - [Security & operations](#-security--operations) — rate limits, CSP, audit log, signed releases, CI
 - [Installation](#-installation)
 - [Requirements](#-requirements)
@@ -373,6 +374,8 @@ A gear icon on the achievements page opens a full settings panel with auto-save:
 - **Manual badge revoke (v1.9.8)** — un-award a specific badge from a specific user when needed
 - **Integrity test injection (v1.9.8)** — verify daily-cap and suspicious-rate audit flag end-to-end on a throwaway user
 - **Admin auth lockdown** — all admin endpoints require elevated permissions
+- **Default UI style + lock (#43)** — pick whether users start on Classic or Revamp, and optionally make it the only choice so the achievements page matches your Jellyfin theme. A user's own pick is remembered rather than erased, so it returns if you lift the lock
+- **Tracearr watch history (#45)** — set a Tracearr URL and API token to credit plays the library scan cannot see. See [Tracearr integration](#-tracearr-integration)
 
 ### 🔒 Tracking
 
@@ -473,9 +476,48 @@ Nested example — *"(finish 5 horror series OR 10h of audiobooks) AND watch 25 
 | `GET`    | `/Plugins/AchievementBadges/custom-badges/export` | Export all as JSON |
 | `POST`   | `/Plugins/AchievementBadges/custom-badges/import` | Bulk import (fresh ids) |
 
-### Common metrics
+### All metrics
 
-`TotalItemsWatched`, `MoviesWatched`, `SeriesCompleted`, `AnimeItemsWatched`, `DaysWatched`, `CurrentWatchStreak`, `BestWatchStreak`, `UniqueGenresWatched`, `UniqueLanguagesWatched`, `UniqueCountriesWatched`, `MusicPlaysTotal`, `MusicListeningHours`, `UniqueMusicAlbums`, `UniqueMusicArtists`, `UniqueMusicGenres`, `UniqueMusicDecades`, `BooksCompleted`, `AudiobookListeningHours`, `UniqueBookSeriesCompleted`, `MusicGenrePlays`, `MusicGenreListeningHours`, `GenreItemsWatched`. (`metricParameter` applies to parameterized metrics — e.g. `MusicGenrePlays` with `metricParameter` = `"disco"` counts only disco tracks, matched case-insensitively.)
+Every value `AchievementMetric` exposes, 71 of them. Entries marked \* accept a `metricParameter`.
+
+- **Watching** — `TotalItemsWatched`, `MoviesWatched`, `SeriesCompleted`, `LongSeriesCompleted`, `VeryLongSeriesCompleted`, `RewatchCount`, `ShortItemsWatched`, `LongestItemMinutes`, `TotalMinutesWatched`, `SeriesSampledOnly`, `SeriesBingedAfterPilot`
+
+- **Streaks and days** — `DaysWatched`, `CurrentWatchStreak`, `BestWatchStreak`, `DaysLoggedIn`, `CurrentLoginStreak`, `BestLoginStreak`, `MaxEpisodesInSingleDay`, `MaxMoviesInSingleDay`, `MaxMinutesInSingleDay`
+
+- **Time of day** — `LateNightSessions`, `EarlyMorningSessions`, `AfternoonSessions`, `PrimeTimeSessions`, `WeekendSessions`
+
+- **Variety** — `UniqueGenresWatched`, `UniqueCountriesWatched`, `UniqueLanguagesWatched`, `UniqueDecadesWatched`, `UniqueLibrariesVisited`, `TopDirectorCount`, `TopActorCount`, `MaxLibraryItemCount`
+
+- **Completion** — `LibraryCompletionPercent` \*, `LibrariesAt100Percent`, `BadgesUnlockedPercent`, `ArtistCompletionPercent` \*
+
+- **Music** — `MusicPlaysTotal`, `MusicListeningHours`, `UniqueMusicAlbums`, `UniqueMusicArtists`, `UniqueMusicGenres`, `UniqueMusicDecades`, `MusicGenrePlays` \*, `MusicGenreListeningHours` \*
+
+- **Books** — `BooksCompleted`, `AudiobookListeningHours`, `UniqueBookSeriesCompleted`
+
+- **Score and prestige** — `PrestigeLevel`, `LifetimeScore`, `BestComboCount`
+
+- **Parameterized by name** — `GenreItemsWatched` \*, `PersonItemsWatched` \*, `StudioItemsWatched` \*, `DecadeItemsWatched` \*, `DayOfWeekItemsWatched` \*
+
+- **Holidays and dates** — `WatchedOnChristmas`, `WatchedOnNewYear`, `WatchedOnHalloween`, `WatchedOnEid`, `WatchedOnValentines`, `WatchedOnEaster`, `WatchedOnLunarNewYear`, `WatchedOnDiwali`, `WatchedOnThanksgiving`, `WatchedOnIndependenceDayUS`, `WatchedOnBonfireNight`, `WatchedOnBoxingDay`, `WatchedOnMothersDay`, `WatchedOnFathersDay`
+
+- **Anime** — `AnimeItemsWatched`
+
+Parameterized metrics match their parameter case-insensitively. `GenreItemsWatched` with `metricParameter` of `"horror"` counts only horror items; `LibraryCompletionPercent` with `"Movies"` reads that one library, and without a parameter it reads whichever library the user is furthest through. The same applies to `ArtistCompletionPercent`, which without a parameter reads the user's best artist.
+
+---
+
+## 📡 Tracearr integration
+
+Optional. Set **Tracearr URL** and **Tracearr API token** in the plugin settings, generate the token in Tracearr under Settings, and a watch history scan will also read your Tracearr history. Leave either field empty and nothing changes.
+
+It exists because a library scan has two blind spots it cannot fix on its own:
+
+- **Media you deleted.** The scan reads `IsPlayed` on items that still exist, so a film you watched and later removed is invisible to it. Tracearr recorded the play when it happened and still has it.
+- **How many times you watched something.** `IsPlayed` is a boolean, so no number of viewings can produce a rewatch count. That leaves the Rewatch badges unreachable for anyone who installed the plugin after they had already been watching.
+
+Only plays Tracearr considers finished are credited, each on the date it happened rather than today, so an old viewing cannot manufacture a streak. A play the library already accounted for is not counted again: the first viewing of a known item is skipped, and only repeats become rewatches.
+
+Nothing is required on the Tracearr side. It uses the existing public v2 API.
 
 ---
 
