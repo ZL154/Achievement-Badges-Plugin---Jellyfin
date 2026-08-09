@@ -28,6 +28,7 @@ public class WatchHistoryBackfillService
     private readonly IUserManager _userManager;
     private readonly IUserDataManager _userDataManager;
     private readonly AchievementBadgeService _achievementBadgeService;
+    private readonly LibraryCompletionService _libraryCompletionService;
     private readonly ILogger<WatchHistoryBackfillService> _logger;
 
     public WatchHistoryBackfillService(
@@ -35,12 +36,14 @@ public class WatchHistoryBackfillService
         IUserManager userManager,
         IUserDataManager userDataManager,
         AchievementBadgeService achievementBadgeService,
+        LibraryCompletionService libraryCompletionService,
         ILogger<WatchHistoryBackfillService> logger)
     {
         _libraryManager = libraryManager;
         _userManager = userManager;
         _userDataManager = userDataManager;
         _achievementBadgeService = achievementBadgeService;
+        _libraryCompletionService = libraryCompletionService;
         _logger = logger;
     }
 
@@ -303,6 +306,24 @@ public class WatchHistoryBackfillService
             // pre scan values so deleted media never shrinks lifetime totals.
             _achievementBadgeService.ApplyCounterFloor(userId, preScanCounters);
             _achievementBadgeService.ApplyScoreBankFloor(userId, preScanScoreBank);
+
+            // [issue #79] Library completion percentages come from the library
+            // itself, not from the replay, so nothing above computes them. The
+            // service and the five badges that read it have existed since the
+            // metric was added, but the only caller was an endpoint nothing
+            // invokes, which left the percentages empty and those badges stuck
+            // at zero on every install. The scan is the natural place: the
+            // library is already open and being enumerated far more heavily
+            // than two counting queries per library cost.
+            try
+            {
+                _libraryCompletionService.RecomputeForUser(userGuid);
+            }
+            catch (Exception ex)
+            {
+                // Never lose a good rebuild over the completion extra.
+                _logger.LogWarning(ex, "[AchievementBadges] Library completion recompute failed for {Username}.", username);
+            }
 
             _logger.LogInformation(
                 "[AchievementBadges] Backfill done for {Username}: {Movies} movies, {Episodes} episodes, {Series} series, {Books} books, {Libraries} libraries.",
