@@ -1458,6 +1458,13 @@ public class AchievementBadgesController : ControllerBase
         // "blades" (glossy 2005 blades). "xbox360"/"360" alias to metro. Every
         // template uses the same {{token}} set, so the substitution is shared.
         var normalizedStyle = (style ?? string.Empty).Trim().ToLowerInvariant();
+        // No explicit ?style= → use the card owner's saved preference, so the
+        // card others open looks the way the owner picked in their settings.
+        if (normalizedStyle.Length == 0)
+        {
+            try { normalizedStyle = (_badgeService.GetUserPreferences(userId)?.ProfileCardStyle ?? string.Empty).Trim().ToLowerInvariant(); }
+            catch { normalizedStyle = string.Empty; }
+        }
         var templateResource = normalizedStyle switch
         {
             "blades" or "360blades" or "xbox360blades" => "Jellyfin.Plugin.AchievementBadges.Pages.profile-card-blades.html",

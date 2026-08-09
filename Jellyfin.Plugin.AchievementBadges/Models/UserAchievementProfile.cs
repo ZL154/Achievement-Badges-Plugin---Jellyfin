@@ -254,6 +254,14 @@ public class UserNotificationPreferences
     [JsonPropertyName("ShowEquippedShowcase")]
     public bool ShowEquippedShowcase { get; set; } = true;
 
+    // [#42/#45 follow-up] Which shareable profile-card skin this user's public
+    // card renders as: "" or "console" (default clean card), "metro" or
+    // "blades" (the retro Xbox 360 dashboards). Read by the anonymous
+    // profile-card endpoint when no explicit ?style= is given, so a user's
+    // shared card looks the way they chose.
+    [JsonPropertyName("ProfileCardStyle")]
+    public string ProfileCardStyle { get; set; } = "";
+
     // Navigation integrations are intentionally independent. The admin-level
     // plugin configuration remains the ceiling, while each user can hide only
     // the optional surface they do not want without disabling achievements.

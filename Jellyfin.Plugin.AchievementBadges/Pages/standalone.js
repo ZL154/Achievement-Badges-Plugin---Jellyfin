@@ -3536,6 +3536,7 @@
         var pageTheme = prefs.achievementPageTheme || prefs.AchievementPageTheme || 'default';
         var slots = prefs.equippedBadgeSlots || prefs.EquippedBadgeSlots || 5;
         var prefLang = (prefs.language || prefs.Language || 'default').toString().toLowerCase();
+        var prefCardStyle = (prefs.profileCardStyle || prefs.ProfileCardStyle || '').toString().toLowerCase();
         var prefCorner = (prefs.friendsButtonCorner || prefs.FriendsButtonCorner || 'bottom-left').toString().toLowerCase();
 
         // Admin-forced feature flags (from public-config). When an admin has forced a behavior
@@ -3676,6 +3677,14 @@
                             '<option value="default"' + (pageTheme === 'default' ? ' selected' : '') + '>' + tr('settings.theme_default', 'Default') + '</option>' +
                             '<option value="dark"' + (pageTheme === 'dark' ? ' selected' : '') + '>' + tr('settings.theme_dark', 'Dark') + '</option>' +
                             '<option value="light"' + (pageTheme === 'light' ? ' selected' : '') + '>' + tr('settings.theme_light', 'Light') + '</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="ab-setting-row">' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.profile_card_style', 'Shareable card style') + '</div><div class="ab-toggle-desc">' + tr('settings.profile_card_style_desc', 'How your shareable profile card looks when someone opens it') + '</div></div>' +
+                        '<select class="ab-select" data-settings-select="profileCardStyle">' +
+                            '<option value=""' + (prefCardStyle === '' || prefCardStyle === 'console' ? ' selected' : '') + '>' + tr('settings.card_style_console', 'Classic') + '</option>' +
+                            '<option value="metro"' + (prefCardStyle === 'metro' ? ' selected' : '') + '>' + tr('settings.card_style_metro', 'Xbox 360 — Metro') + '</option>' +
+                            '<option value="blades"' + (prefCardStyle === 'blades' ? ' selected' : '') + '>' + tr('settings.card_style_blades', 'Xbox 360 — Blades') + '</option>' +
                         '</select>' +
                     '</div>' +
                     spoilerRowHtml +

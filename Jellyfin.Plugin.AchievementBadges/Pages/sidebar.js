@@ -1225,6 +1225,7 @@
     var PROFILE_CARD_ID = 'ab-profile-card';
     var _profileCache = {};
     var _profileHoverTimer = null;
+    var _profileHideTimer = null;
     var _profileCardPinned = false;
 
     function fetchProfileSummary(userId) {
@@ -1239,38 +1240,153 @@
 
     function hideProfileCard() {
         if (_profileHoverTimer) { clearTimeout(_profileHoverTimer); _profileHoverTimer = null; }
+        if (_profileHideTimer) { clearTimeout(_profileHideTimer); _profileHideTimer = null; }
         _profileCardPinned = false;
         var c = document.getElementById(PROFILE_CARD_ID);
         if (c && c.parentNode) c.parentNode.removeChild(c);
     }
 
-    function renderProfileCard(anchor, data) {
+    // Hover-intent bridge: leaving the friend row does not hide the card
+    // immediately, so the pointer can cross the gap and land on the card.
+    // Entering the card cancels the pending hide; leaving it schedules one.
+    function _pcCancelHide() { if (_profileHideTimer) { clearTimeout(_profileHideTimer); _profileHideTimer = null; } }
+    function _pcScheduleHide() {
+        _pcCancelHide();
+        _profileHideTimer = setTimeout(function () { if (!_profileCardPinned) hideProfileCard(); }, 220);
+    }
+
+    // Rank tiers mirror Helpers/RankHelper.cs. The summary endpoint sends a
+    // Score but no tier (its projection is pinned to the leaderboard's exact
+    // public fields), so the tier name/colour/next-rank are derived here. Keep
+    // in sync with RankHelper if the ladder ever changes.
+    var _abPcTiers = [
+        ['Rookie', 0, '#9aa5b1', 'sprout'], ['Novice', 100, '#4caf50', 'eco'],
+        ['Viewer', 300, '#2196f3', 'visibility'], ['Regular', 700, '#03a9f4', 'person'],
+        ['Enthusiast', 1500, '#00bcd4', 'star'], ['Binger', 3000, '#9c27b0', 'bolt'],
+        ['Connoisseur', 5000, '#e91e63', 'workspace_premium'], ['Maestro', 8000, '#ff9800', 'military_tech'],
+        ['Legend', 12000, '#f44336', 'local_fire_department'], ['Immortal', 20000, '#ffd700', 'auto_awesome']
+    ];
+    function _abTierOf(score) {
+        var t = _abPcTiers[0], n = null, i;
+        for (i = 0; i < _abPcTiers.length; i++) { if (score >= _abPcTiers[i][1]) t = _abPcTiers[i]; }
+        for (i = 0; i < _abPcTiers.length; i++) { if (_abPcTiers[i][1] > score) { n = _abPcTiers[i]; break; } }
+        var prog = n ? Math.round(100 * (score - t[1]) / (n[1] - t[1])) : 100;
+        return { name: t[0], color: t[2], icon: t[3], next: n ? n[0] : null, toNext: n ? (n[1] - score) : 0, prog: prog };
+    }
+    var _abPcRingC = (2 * Math.PI * 28).toFixed(2);
+    function _abComma(n) { n = Number(n) || 0; return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+    function _abEnsurePcStyles() {
+        if (document.getElementById('ab-pc2-styles')) return;
+        var s = document.createElement('style');
+        s.id = 'ab-pc2-styles';
+        s.textContent = [
+            '@keyframes abPc2In{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}',
+            '@keyframes abPc2Open{from{opacity:0;transform:scale(.82);}60%{opacity:1;}to{opacity:1;transform:scale(1);}}',
+            '@keyframes abPc2Ring{to{stroke-dashoffset:var(--off);}}',
+            '@keyframes abPc2Bar{to{width:var(--pw);}}',
+            '#ab-profile-card.ab-pc2{--acc:#8aa0b6;position:fixed;z-index:9999999;box-sizing:border-box;width:288px;',
+            'background:linear-gradient(180deg,#191920,#131318);color:#eceef2;border:1px solid rgba(255,255,255,.08);',
+            'border-radius:18px;padding:18px 18px 16px;font-size:13px;line-height:1.5;pointer-events:auto;',
+            'box-shadow:0 20px 54px -16px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;',
+            'animation:abPc2In .34s cubic-bezier(.16,1,.3,1) both;}',
+            '#ab-profile-card.ab-pc2.pin{width:340px;padding:22px 22px 18px;transform-origin:top left;animation:abPc2Open .3s cubic-bezier(.16,1,.3,1) both;}',
+            '#ab-profile-card.ab-pc2::before{content:"";position:absolute;inset:0 0 auto 0;height:120px;pointer-events:none;',
+            'background:radial-gradient(120% 90% at 26% -10%,color-mix(in srgb,var(--acc) 20%,transparent),transparent 60%);}',
+            '.ab-pc2 .top{position:relative;display:flex;align-items:center;gap:15px;}',
+            '.ab-pc2 .ava{position:relative;width:62px;height:62px;flex:0 0 auto;}',
+            '.ab-pc2 .ava svg{position:absolute;inset:0;transform:rotate(-90deg);}',
+            '.ab-pc2 .ava .trk{fill:none;stroke:rgba(255,255,255,.10);stroke-width:3;}',
+            '.ab-pc2 .ava .fil{fill:none;stroke:var(--acc);stroke-width:3;stroke-linecap:round;stroke-dasharray:var(--C);stroke-dashoffset:var(--C);animation:abPc2Ring .9s cubic-bezier(.16,1,.3,1) .12s forwards;}',
+            '.ab-pc2 .ava .ini{position:absolute;inset:6px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-weight:650;font-size:19px;color:#cfd3da;}',
+            '.ab-pc2 .ava .img{position:absolute;inset:6px;border-radius:50%;background-size:cover;background-position:center;}',
+            '.ab-pc2 .ava .pct{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);background:var(--acc);color:#06222a;font:800 9.5px/1 system-ui;padding:2.5px 6px;border-radius:99px;font-variant-numeric:tabular-nums;box-shadow:0 2px 6px rgba(0,0,0,.4);white-space:nowrap;}',
+            '.ab-pc2 .id{min-width:0;flex:1;}',
+            '.ab-pc2 .nm{font-weight:650;font-size:17px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+            '.ab-pc2 .tier{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 9px 3px 6px;border-radius:99px;background:color-mix(in srgb,var(--acc) 16%,transparent);border:1px solid color-mix(in srgb,var(--acc) 42%,transparent);color:var(--acc);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}',
+            '.ab-pc2 .tier .tdot{width:6px;height:6px;border-radius:50%;background:var(--acc);flex:0 0 auto;}',
+            '.ab-pc2 .priv{display:flex;align-items:center;gap:9px;margin-top:15px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.6);font-size:12.5px;}',
+            '.ab-pc2 .priv .material-icons{font-size:17px;opacity:.7;}',
+            '.ab-pc2 .prog{margin-top:16px;}',
+            '.ab-pc2 .prog .r{display:flex;justify-content:space-between;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.42);margin-bottom:6px;}',
+            '.ab-pc2 .prog .r b{color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums;}',
+            '.ab-pc2 .prog .bar{height:5px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;}',
+            '.ab-pc2 .prog .bfil{height:100%;border-radius:99px;background:var(--acc);width:0;animation:abPc2Bar .8s cubic-bezier(.16,1,.3,1) .2s forwards;}',
+            '.ab-pc2 .stats{display:flex;margin:16px 0 2px;border-top:1px solid rgba(255,255,255,.07);padding-top:13px;}',
+            '.ab-pc2 .st{flex:1;text-align:center;position:relative;}',
+            '.ab-pc2 .st + .st::before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:1px;background:rgba(255,255,255,.08);}',
+            '.ab-pc2 .st b{display:block;font-size:17px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}',
+            '.ab-pc2 .st b i{font-style:normal;opacity:.38;font-weight:500;font-size:12px;}',
+            '.ab-pc2 .st span{display:block;margin-top:3px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.42);}',
+            '.ab-pc2 .eq{margin-top:15px;padding-top:13px;border-top:1px solid rgba(255,255,255,.07);}',
+            '.ab-pc2 .eq .h{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:rgba(255,255,255,.42);margin-bottom:9px;}',
+            '.ab-pc2 .eq .row{display:flex;gap:7px;}',
+            '.ab-pc2 .bdg{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;}',
+            '.ab-pc2 .bdg .material-icons{font-size:16px;color:#fff;}',
+            '.ab-pc2 .act{display:flex;gap:8px;margin-top:16px;}',
+            '.ab-pc2 .btn{flex:1;padding:9px;border-radius:11px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:inherit;cursor:pointer;font-size:12px;font-weight:600;text-align:center;text-decoration:none;}',
+            '.ab-pc2 .btn.acc{border-color:transparent;background:color-mix(in srgb,var(--acc) 24%,transparent);color:#fff;}'
+        ].join('');
+        (document.head || document.documentElement).appendChild(s);
+    }
+
+    function renderProfileCard(anchor, data, pin) {
         hideProfileCard();
+        _abEnsurePcStyles();
+        function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+        var score = num(data.Score);
+        var pct = num(data.Percentage);
+        var t = _abTierOf(score);
+        var uid = data.UserId || anchor.getAttribute('data-ab-profile') || '';
+        var nm = data.UserName || '';
+        var ini = (nm.trim ? nm.trim().charAt(0) : '') || '?';
+
+        var off = (_abPcRingC * (1 - Math.max(0, Math.min(100, pct)) / 100)).toFixed(2);
+        var avatarUrl = uid ? buildUrl('Users/' + encodeURIComponent(uid) + '/Images/Primary?width=124&quality=90') : '';
+        var avatar = '<div class="ava">' +
+            '<svg viewBox="0 0 62 62" width="62" height="62"><circle class="trk" cx="31" cy="31" r="28"></circle>' +
+            '<circle class="fil" cx="31" cy="31" r="28" style="--C:' + _abPcRingC + ';--off:' + off + ';"></circle></svg>' +
+            '<div class="ini">' + escapeHtml(ini.toUpperCase()) + '</div>' +
+            (avatarUrl ? '<div class="img" style="background-image:url(\'' + avatarUrl.replace(/'/g, '%27') + '\');"></div>' : '') +
+            '<span class="pct">' + (Math.round(pct * 10) / 10) + '%</span></div>';
+
+        var prog = t.next
+            ? '<div class="prog"><div class="r"><span>' + escapeHtml(tr('friends.rank_progress', 'Rank progress')) + '</span><b>' + _abComma(t.toNext) + ' &#8594; ' + escapeHtml(t.next) + '</b></div><div class="bar"><div class="bfil" style="--pw:' + t.prog + '%;"></div></div></div>'
+            : '<div class="prog"><div class="r"><span>' + escapeHtml(tr('lb.rank', 'Rank')) + '</span><b>' + escapeHtml(tr('friends.max_rank', 'Max rank')) + '</b></div><div class="bar"><div class="bfil" style="--pw:100%;"></div></div></div>';
+
+        var eq = (data.Equipped && data.Equipped.length)
+            ? '<div class="eq"><div class="h">' + escapeHtml(tr('profile.equipped', 'Equipped')) + '</div><div class="row">' +
+              data.Equipped.slice(0, 5).map(function (b) {
+                  var c = rarityColour(b.Rarity);
+                  return '<span class="bdg" title="' + escapeHtml(b.Title || '') + '" style="background:' + c + '26;box-shadow:inset 0 0 0 1.5px ' + c + ';"><span class="material-icons" style="font-family:Material Icons;">' + escapeHtml(icName(b.Icon)) + '</span></span>';
+              }).join('') + '</div></div>'
+            : '';
+
+        var act = pin
+            ? '<div class="act"><a class="btn acc" href="' + buildUrl('Plugins/AchievementBadges/users/' + encodeURIComponent(uid) + '/profile-card') + '" target="_blank" rel="noopener">' + escapeHtml(tr('friends.open_shareable', 'Open shareable card')) + '</a><button type="button" class="btn" data-ab-pc-close>' + escapeHtml(tr('common.close', 'Close')) + '</button></div>'
+            : '';
+
         var card = document.createElement('div');
         card.id = PROFILE_CARD_ID;
+        card.className = 'ab-pc2' + (pin ? ' pin' : '');
         card.setAttribute('role', 'dialog');
-        card.style.cssText = 'position:fixed;z-index:9999999;min-width:230px;max-width:290px;' +
-            'padding:0.85em 1em;border-radius:12px;background:rgba(20,20,24,0.97);color:#fff;' +
-            'box-shadow:0 10px 34px rgba(0,0,0,0.55);font-size:0.9em;line-height:1.45;' +
-            'border:1px solid rgba(255,255,255,0.12);pointer-events:auto;';
-
-        // Everything interpolated below is either escaped (the one user
-        // controlled string) or coerced to a number. The counts arrive as
-        // JSON, so their type is not guaranteed by anything on this side.
-        function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
-        var row = function (label, value) {
-            return '<div style="display:flex;justify-content:space-between;gap:1em;">' +
-                '<span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
-        };
+        card.style.setProperty('--acc', t.color);
         card.innerHTML =
-            '<div style="font-weight:600;font-size:1.05em;margin-bottom:0.5em;">' + escapeHtml(data.UserName || '') + '</div>' +
-            row(tr('lb.badges', 'Badges'), num(data.Unlocked) + ' / ' + num(data.Total)) +
-            row(tr('profile.completion', 'Completion'), num(data.Percentage) + '%') +
-            row(tr('lb.score', 'Score'), String(num(data.Score))) +
-            row(tr('lb.streak', 'Best streak'), String(num(data.BestWatchStreak))) +
-            (data.Equipped && data.Equipped.length
-                ? '<div style="margin-top:0.6em;">' + renderEquippedDots(data.Equipped, 20) + '</div>'
-                : '');
+            '<div class="top">' + avatar +
+            '<div class="id"><div class="nm">' + escapeHtml(nm) + '</div>' +
+            '<span class="tier"><span class="tdot"></span>' + escapeHtml(t.name) + '</span></div></div>' +
+            prog +
+            '<div class="stats"><div class="st"><b>' + num(data.Unlocked) + '<i>/' + num(data.Total) + '</i></b><span>' + escapeHtml(tr('lb.badges', 'Badges')) + '</span></div>' +
+            '<div class="st"><b>' + _abComma(score) + '</b><span>' + escapeHtml(tr('lb.score', 'Score')) + '</span></div>' +
+            '<div class="st"><b>' + num(data.BestWatchStreak) + '</b><span>' + escapeHtml(tr('lb.streak', 'Best streak')) + '</span></div></div>' +
+            eq + act;
+
+        card.addEventListener('click', function (ev) {
+            if (ev.target && ev.target.closest && ev.target.closest('[data-ab-pc-close]')) { hideProfileCard(); }
+        });
+        // Keep the card alive while the pointer is on it (works for the
+        // un-pinned hover card too, so you can move onto it and click).
+        card.addEventListener('mouseenter', _pcCancelHide);
+        card.addEventListener('mouseleave', function () { if (!_profileCardPinned) _pcScheduleHide(); });
 
         document.body.appendChild(card);
 
@@ -1285,16 +1401,52 @@
         card.style.left = left + 'px';
     }
 
+    function renderPrivateCard(anchor, pin) {
+        hideProfileCard();
+        _abEnsurePcStyles();
+        var uid = anchor.getAttribute('data-ab-profile') || '';
+        var nm = anchor.getAttribute('data-ab-profile-name') || '';
+        if (!nm && anchor.closest) { var row = anchor.closest('.ab-fd-row'); var nel = row ? row.querySelector('.ab-fd-name') : null; nm = nel ? (nel.textContent || '') : ''; }
+        var ini = ((nm.trim ? nm.trim().charAt(0) : '') || '?').toUpperCase();
+        var avatarUrl = uid ? buildUrl('Users/' + encodeURIComponent(uid) + '/Images/Primary?width=124&quality=90') : '';
+        var act = pin ? '<div class="act"><button type="button" class="btn" data-ab-pc-close>' + escapeHtml(tr('common.close', 'Close')) + '</button></div>' : '';
+        var card = document.createElement('div');
+        card.id = PROFILE_CARD_ID;
+        card.className = 'ab-pc2' + (pin ? ' pin' : '');
+        card.setAttribute('role', 'dialog');
+        card.style.setProperty('--acc', '#8aa0b6');
+        card.innerHTML =
+            '<div class="top"><div class="ava"><svg viewBox="0 0 62 62" width="62" height="62"><circle class="trk" cx="31" cy="31" r="28"></circle></svg>' +
+            '<div class="ini">' + escapeHtml(ini) + '</div>' +
+            (avatarUrl ? '<div class="img" style="background-image:url(\'' + avatarUrl.replace(/'/g, '%27') + '\');"></div>' : '') + '</div>' +
+            '<div class="id"><div class="nm">' + escapeHtml(nm) + '</div>' +
+            '<span class="tier"><span class="tdot"></span>' + escapeHtml(tr('friends.private', 'Private')) + '</span></div></div>' +
+            '<div class="priv"><span class="material-icons" style="font-family:Material Icons;">lock</span><span>' + escapeHtml(tr('friends.private_desc', 'This profile is private.')) + '</span></div>' +
+            act;
+        card.addEventListener('click', function (ev) { if (ev.target && ev.target.closest && ev.target.closest('[data-ab-pc-close]')) hideProfileCard(); });
+        card.addEventListener('mouseenter', _pcCancelHide);
+        card.addEventListener('mouseleave', function () { if (!_profileCardPinned) _pcScheduleHide(); });
+        document.body.appendChild(card);
+        var r = anchor.getBoundingClientRect();
+        var cr = card.getBoundingClientRect();
+        var top = Math.max(8, Math.min(r.top, window.innerHeight - cr.height - 8));
+        var left = r.right + 12;
+        if (left + cr.width > window.innerWidth - 8) left = Math.max(8, r.left - cr.width - 12);
+        card.style.top = top + 'px';
+        card.style.left = left + 'px';
+    }
+
     function openProfileCard(anchor, pin) {
         var userId = anchor.getAttribute('data-ab-profile');
         if (!userId) return;
         fetchProfileSummary(userId).then(function (data) {
-            // 404 means the user opted out of being listed, or does not exist.
-            // Either way there is nothing to show, and nothing to say about
-            // which of the two it was.
-            if (!data) { hideProfileCard(); return; }
             if (!document.body.contains(anchor)) return;
-            renderProfileCard(anchor, data);
+            // A 404 means the user opted out (or does not exist). The endpoint
+            // stays indistinguishable server-side; here the drawer row already
+            // proves the user exists, so show a "private" card for its own
+            // known rows rather than nothing at all.
+            if (!data) { renderPrivateCard(anchor, pin); _profileCardPinned = !!pin; return; }
+            renderProfileCard(anchor, data, pin);
             _profileCardPinned = !!pin;
         });
     }
@@ -1302,6 +1454,7 @@
     document.addEventListener('mouseover', function (ev) {
         var t = ev.target && ev.target.closest ? ev.target.closest('[data-ab-profile]') : null;
         if (!t || _profileCardPinned) return;
+        _pcCancelHide(); // returning to the row cancels a pending hide
         if (_profileHoverTimer) clearTimeout(_profileHoverTimer);
         // Delay so sweeping the pointer down the list does not fire a request
         // per row.
@@ -1314,7 +1467,9 @@
         if (!t) return;
         var to = ev.relatedTarget;
         if (to && to.closest && to.closest('#' + PROFILE_CARD_ID)) return;
-        hideProfileCard();
+        // Do not hide immediately: schedule it so the pointer can cross the
+        // gap onto the card, whose mouseenter cancels this.
+        _pcScheduleHide();
     });
 
     document.addEventListener('click', function (ev) {
@@ -1403,7 +1558,7 @@
                         // Both carry the id so either target works, and the
                         // name is focusable so the card is reachable without a
                         // pointer, which hover alone would not be.
-                        var profAttr = ' data-ab-profile="' + escapeHtml(f.UserId) + '"';
+                        var profAttr = ' data-ab-profile="' + escapeHtml(f.UserId) + '" data-ab-profile-name="' + escapeHtml(f.UserName) + '"';
                         return '<div class="ab-fd-row">' +
                             '<div class="ab-fd-avatar'+(f.Online?' online':'')+'" style="' + av + '"' + profAttr + '>' + initialsHtml + '</div>' +
                             '<div class="ab-fd-info">' +
