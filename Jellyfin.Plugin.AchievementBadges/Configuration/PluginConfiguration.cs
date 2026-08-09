@@ -155,6 +155,13 @@ public class PluginConfiguration : BasePluginConfiguration
     // comes back if this is turned off again.
     public bool ForceDefaultUiStyle { get; set; } = false;
 
+    // [issue #45] Base URL of a Tracearr instance, e.g. https://tracearr.example
+    // or http://10.0.0.5:3000. Empty disables the integration entirely.
+    public string TracearrUrl { get; set; } = "";
+
+    // [issue #45] Public API token for that instance, sent as a Bearer token.
+    public string TracearrApiToken { get; set; } = "";
+
     // Admin-supplied SVG used to replace the Xbox logo in the toast animation.
     // Stored as a base64-encoded SVG string (no data:-URI prefix). Empty string
     // means "use the default Xbox logo bundled with the plugin".
