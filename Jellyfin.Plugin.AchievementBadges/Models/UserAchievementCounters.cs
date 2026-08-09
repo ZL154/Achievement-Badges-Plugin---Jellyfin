@@ -118,6 +118,12 @@ public class UserAchievementCounters
     public Dictionary<string, int> LibraryItemCounts { get; set; } = new();
     public Dictionary<string, int> LibraryCompletionPercents { get; set; } = new();
 
+    // [issue #79] Per-artist discography completion, played tracks over the
+    // artist's tracks in the library. Same shape as LibraryCompletionPercents
+    // above, keyed by artist name, so the metric can be read either for one
+    // named artist or as "your best artist".
+    public Dictionary<string, int> ArtistCompletionPercents { get; set; } = new();
+
     // Per-decade item counts (key = decade as string, e.g. "1970", "1980")
     public Dictionary<string, int> DecadeItemCounts { get; set; } = new();
     // Per-day-of-week item counts (key = day name, e.g. "Monday")
@@ -201,6 +207,7 @@ public class UserAchievementCounters
     public int SeriesSampledOnlyCount => SeriesPilotsWatched.Count(id => !SeriesContinuedPastPilot.Contains(id));
     public int SeriesBingedAfterPilotCount => SeriesContinuedPastPilot.Count;
     public int BestLibraryCompletionPercent => LibraryCompletionPercents.Count == 0 ? 0 : LibraryCompletionPercents.Values.Max();
+    public int BestArtistCompletionPercent => ArtistCompletionPercents.Count == 0 ? 0 : ArtistCompletionPercents.Values.Max();
     public int LibrariesAt100PercentCount => LibraryCompletionPercents.Count(kv => kv.Value >= 100);
     public int MaxLibraryItemCountValue => LibraryItemCounts.Count == 0 ? 0 : LibraryItemCounts.Values.Max();
     public int MaxMinutesInSingleDay => MinutesByDate.Count == 0 ? 0 : MinutesByDate.Values.Max();

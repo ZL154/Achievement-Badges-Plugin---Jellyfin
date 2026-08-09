@@ -166,6 +166,16 @@ public static class AchievementDefinitions
         new() { Id = "library-three-quarter", Key = "library_three_quarter", Title = "Three-Quarters", Description = "Reach 75% completion in any library.", Icon = "menu_book", Category = "Library Completion", Rarity = "Epic", Metric = AchievementMetric.LibraryCompletionPercent, TargetValue = 75 },
         new() { Id = "library-complete", Key = "library_complete", Title = "100% Complete", Description = "Reach 100% completion in any library.", Icon = "check_circle", Category = "Library Completion", Rarity = "Legendary", Metric = AchievementMetric.LibraryCompletionPercent, TargetValue = 100 },
 
+        // [issue #79] Discography completion, the same ladder as the library
+        // one above but one level down: a single artist rather than a whole
+        // library. Unparameterised, so each reads the user's best artist; a
+        // custom badge can name one through MetricParameter.
+        new() { Id = "artist-sampler", Key = "artist_sampler", Title = "Sampler", Description = "Hear 10% of one artist's tracks.", Icon = "album", Category = "Discography", Rarity = "Common", Metric = AchievementMetric.ArtistCompletionPercent, TargetValue = 10 },
+        new() { Id = "artist-listener", Key = "artist_listener", Title = "Regular Listener", Description = "Hear 25% of one artist's tracks.", Icon = "queue_music", Category = "Discography", Rarity = "Uncommon", Metric = AchievementMetric.ArtistCompletionPercent, TargetValue = 25 },
+        new() { Id = "artist-fan", Key = "artist_fan", Title = "Fan", Description = "Hear 50% of one artist's tracks.", Icon = "favorite", Category = "Discography", Rarity = "Rare", Metric = AchievementMetric.ArtistCompletionPercent, TargetValue = 50 },
+        new() { Id = "artist-devotee", Key = "artist_devotee", Title = "Devotee", Description = "Hear 75% of one artist's tracks.", Icon = "star", Category = "Discography", Rarity = "Epic", Metric = AchievementMetric.ArtistCompletionPercent, TargetValue = 75 },
+        new() { Id = "artist-discography", Key = "artist_discography", Title = "Complete Discography", Description = "Hear every track an artist has in the library.", Icon = "library_music", Category = "Discography", Rarity = "Legendary", Metric = AchievementMetric.ArtistCompletionPercent, TargetValue = 100 },
+
         new() { Id = "login-streak-week", Key = "login_streak_week", Title = "Regular Visitor", Description = "Log in 7 different days.", Icon = "event_repeat", Category = "Loyalty", Rarity = "Common", Metric = AchievementMetric.DaysLoggedIn, TargetValue = 7 },
         new() { Id = "login-streak-month", Key = "login_streak_month", Title = "Monthly Regular", Description = "Log in 30 different days.", Icon = "calendar_month", Category = "Loyalty", Rarity = "Rare", Metric = AchievementMetric.DaysLoggedIn, TargetValue = 30 },
         new() { Id = "login-streak-year", Key = "login_streak_year", Title = "Dedicated", Description = "Log in 365 different days.", Icon = "workspace_premium", Category = "Loyalty", Rarity = "Legendary", Metric = AchievementMetric.DaysLoggedIn, TargetValue = 365 },

@@ -312,11 +312,15 @@ public class WatchHistoryBackfillService
             try
             {
                 _libraryCompletionService.RecomputeForUser(userGuid);
+                // [issue #79] Same reasoning one level down. Shipping the
+                // discography metric without a caller would leave it in the
+                // exact dead state this issue was opened about.
+                _libraryCompletionService.RecomputeArtistsForUser(userGuid);
             }
             catch (Exception ex)
             {
-                // Never lose a good rebuild over the completion extra.
-                _logger.LogWarning(ex, "[AchievementBadges] Library completion recompute failed for {Username}.", username);
+                // Never lose a good rebuild over the completion extras.
+                _logger.LogWarning(ex, "[AchievementBadges] Completion recompute failed for {Username}.", username);
             }
 
             _logger.LogInformation(
