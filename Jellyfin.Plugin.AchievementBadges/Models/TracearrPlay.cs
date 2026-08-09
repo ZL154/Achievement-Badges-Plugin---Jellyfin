@@ -10,6 +10,13 @@ namespace Jellyfin.Plugin.AchievementBadges.Models;
 public class TracearrPlay
 {
     /// <summary>
+    /// Tracearr's own id for this play, its chain id. Stable across calls and
+    /// across paging, which is what lets a standalone sync tell a play it has
+    /// already credited from one it has not.
+    /// </summary>
+    public string? Id { get; set; }
+
+    /// <summary>
     /// The media server's own item id, Tracearr's <c>rating_key</c>. For a
     /// Jellyfin server this is the item GUID, which is what lets a play be
     /// matched against what the library replay already credited.

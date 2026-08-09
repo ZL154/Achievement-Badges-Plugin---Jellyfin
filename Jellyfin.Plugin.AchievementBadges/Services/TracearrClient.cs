@@ -225,6 +225,7 @@ public class TracearrClient
 
         return new TracearrPlay
         {
+            Id = ReadString(row, "id"),
             RatingKey = ratingKey,
             MediaType = ReadString(row, "media_type"),
             MediaTitle = ReadString(row, "media_title"),

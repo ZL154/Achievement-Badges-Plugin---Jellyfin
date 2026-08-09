@@ -927,6 +927,16 @@ public class AchievementBadgesController : ControllerBase
         return Ok(result);
     }
 
+    // [issue #45 button] Credits Tracearr plays without the reset and replay a
+    // full scan does. Idempotent by ledger: pressing it again credits nothing.
+    [HttpPost("users/{userId}/tracearr-sync")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult SyncTracearr([FromRoute] string userId)
+    {
+        return Ok(_backfillService.SyncTracearrForUser(userId));
+    }
+
     [HttpPost("backfill-all")]
     [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]

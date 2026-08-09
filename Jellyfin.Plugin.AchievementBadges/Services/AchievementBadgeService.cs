@@ -29,6 +29,7 @@ public class AchievementBadgeService : IDisposable
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = false };
     private readonly ILogger<AchievementBadgeService> _logger;
     private readonly IUserManager _userManager;
+    private readonly TracearrCreditLedger? _tracearrLedger;
     private readonly WebhookNotifier? _webhookNotifier;
     private readonly AuditLogService? _auditLog;
 
@@ -52,9 +53,11 @@ public class AchievementBadgeService : IDisposable
         ILogger<AchievementBadgeService> logger,
         PowerUpService? powerUps = null,
         ShopService? shop = null,
-        CustomBadgeService? customBadges = null)
+        CustomBadgeService? customBadges = null,
+        TracearrCreditLedger? tracearrLedger = null)
     {
         _logger = logger;
+        _tracearrLedger = tracearrLedger;
         _userManager = userManager;
         _webhookNotifier = webhookNotifier;
         _auditLog = auditLog;
@@ -1598,6 +1601,14 @@ public class AchievementBadgeService : IDisposable
             }
 
             _userProfiles[userId] = profile;
+
+            // [issue #45 button] The Tracearr ledger records which plays were
+            // already counted, so a standalone sync cannot count them twice.
+            // A reset wipes the counters those plays fed, so they genuinely
+            // need crediting again: keeping the ledger here would leave the
+            // user permanently missing them.
+            _tracearrLedger?.Forget(userId);
+
             Save();
             _logger.LogInformation("Reset badges for user {UserId}", userId);
             return profile.Badges.Select(CloneBadge).ToList();

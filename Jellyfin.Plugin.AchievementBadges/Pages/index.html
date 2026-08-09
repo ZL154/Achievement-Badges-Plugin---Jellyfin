@@ -1588,6 +1588,10 @@ font-size:0.88em;
                         <button is="emby-button" type="button" class="raised" id="abBackfillAllBtn" data-i18n="admin.btn_scan_all_users">
                             Scan all users
                         </button>
+
+                        <button is="emby-button" type="button" class="raised" id="abTracearrSyncBtn" data-i18n="admin.btn_tracearr_sync">
+                            Sync Tracearr
+                        </button>
                     </div>
                 </details>
 
@@ -3126,6 +3130,32 @@ font-size:0.88em;
         }).catch(function (err) {
             setStatus('');
             setError(tr('admin.msg.backfill_failed', 'Backfill failed.') + ' ' + (err && err.message ? err.message : String(err)));
+        });
+    });
+
+    var tracearrSyncBtn = document.getElementById('abTracearrSyncBtn');
+    if (tracearrSyncBtn) tracearrSyncBtn.addEventListener('click', function () {
+        var userId = getUserId();
+        if (!userId) { setError(tr('admin.msg.no_user_id_short', 'No user ID.')); return; }
+        clearError();
+        setStatus(tr('admin.msg.tracearr_syncing', 'Syncing Tracearr history...'));
+        fetchJson('Plugins/AchievementBadges/users/' + userId + '/tracearr-sync', 'POST').then(function (result) {
+            if (result && result.Success === false) {
+                setStatus('');
+                setError(result.Message || tr('admin.msg.tracearr_failed', 'Tracearr sync failed.'));
+                return;
+            }
+            return reloadAll().then(function () {
+                // Zero is the expected answer on a second press, so say so
+                // rather than leaving it looking like a failure.
+                var n = (result && result.PlaysCredited) || 0;
+                setStatus(n > 0
+                    ? tr('admin.msg.tracearr_done', 'Tracearr sync complete!') + ' ' + n + ' ' + tr('admin.msg.tracearr_plays', 'plays credited.')
+                    : tr('admin.msg.tracearr_nothing', 'Tracearr sync complete. Nothing new to credit.'));
+            });
+        }).catch(function (err) {
+            setStatus('');
+            setError(tr('admin.msg.tracearr_failed', 'Tracearr sync failed.') + ' ' + (err && err.message ? err.message : String(err)));
         });
     });
 
