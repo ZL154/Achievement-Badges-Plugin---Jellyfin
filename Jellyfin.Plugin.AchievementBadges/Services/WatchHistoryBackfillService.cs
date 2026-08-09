@@ -31,6 +31,7 @@ public class WatchHistoryBackfillService
     private readonly IUserDataManager _userDataManager;
     private readonly AchievementBadgeService _achievementBadgeService;
     private readonly LibraryCompletionService _libraryCompletionService;
+    private readonly TracearrCreditLedger _tracearrLedger;
     private readonly ILogger<WatchHistoryBackfillService> _logger;
 
     public WatchHistoryBackfillService(
@@ -39,6 +40,7 @@ public class WatchHistoryBackfillService
         IUserDataManager userDataManager,
         AchievementBadgeService achievementBadgeService,
         LibraryCompletionService libraryCompletionService,
+        TracearrCreditLedger tracearrLedger,
         ILogger<WatchHistoryBackfillService> logger)
     {
         _libraryManager = libraryManager;
@@ -46,6 +48,7 @@ public class WatchHistoryBackfillService
         _userDataManager = userDataManager;
         _achievementBadgeService = achievementBadgeService;
         _libraryCompletionService = libraryCompletionService;
+        _tracearrLedger = tracearrLedger;
         _logger = logger;
     }
 
@@ -105,6 +108,86 @@ public class WatchHistoryBackfillService
     /// a rebuild must not fire a burst of notifications.
     /// </para>
     /// </summary>
+    /// <summary>
+    /// [issue #45 button] Credits Tracearr plays without resetting or
+    /// replaying anything, for the standalone sync.
+    /// <para>
+    /// The in-scan pass is safe because the scan wipes the profile first. This
+    /// one writes onto live counters, so it leans entirely on the ledger to
+    /// avoid counting a play twice. Pressing the button repeatedly credits
+    /// nothing after the first time.
+    /// </para>
+    /// <para>
+    /// It still has to know which items the library can account for, since
+    /// that is what separates a first watch from a rewatch. Inside a scan that
+    /// set falls out of the replay; here it is rebuilt with the same IsPlayed
+    /// queries, which is the whole extra cost of running standalone.
+    /// </para>
+    /// </summary>
+    public object SyncTracearrForUser(string userId)
+    {
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            return new { Success = false, Message = "Invalid user ID." };
+        }
+
+        var user = _userManager.GetUserById(userGuid);
+        if (user is null)
+        {
+            return new { Success = false, Message = "User not found." };
+        }
+
+        var config = Plugin.Instance?.Configuration;
+        if (!TracearrClient.IsConfigured(config?.TracearrUrl, config?.TracearrApiToken))
+        {
+            return new { Success = false, Message = "Tracearr is not configured." };
+        }
+
+        // Same gate as the scan: one sync per user at a time, so two clicks
+        // cannot interleave and read the ledger before either has written it.
+        var gate = _userGates.GetOrAdd(userGuid, static _ => new object());
+        lock (gate)
+        {
+            var normalised = userGuid.ToString("D");
+            var credited = RunTracearrPass(normalised, user.Username, PlayedItemIds(user));
+
+            return new
+            {
+                UserId = normalised,
+                Username = user.Username,
+                PlaysCredited = credited,
+                Success = true
+            };
+        }
+    }
+
+    /// <summary>
+    /// Item ids this user has played that the library can still prove, which
+    /// is what the in-scan pass gets for free from its own replay.
+    /// </summary>
+    private HashSet<string> PlayedItemIds(Jellyfin.Database.Implementations.Entities.User user)
+    {
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var kind in new[] { BaseItemKind.Movie, BaseItemKind.Episode, BaseItemKind.Book })
+        {
+            var query = new InternalItemsQuery(user)
+            {
+                IsPlayed = true,
+                IncludeItemTypes = new[] { kind },
+                Recursive = true,
+                EnableTotalRecordCount = false
+            };
+
+            foreach (var item in _libraryManager.GetItemsResult(query).Items)
+            {
+                ids.Add(item.Id.ToString("D"));
+            }
+        }
+
+        return ids;
+    }
+
     private int RunTracearrPass(string userId, string username, HashSet<string> creditedItemIds)
     {
         var config = Plugin.Instance?.Configuration;
@@ -140,8 +223,10 @@ public class WatchHistoryBackfillService
                 .GetHistoryAsync(baseUri!, config.TracearrApiToken, accountId!, CancellationToken.None)
                 .GetAwaiter().GetResult();
 
-            foreach (var credit in TracearrCreditPlan.Build(plays, creditedItemIds))
+            var newlyCredited = new List<string>();
+            foreach (var credit in TracearrCreditPlan.Build(plays, creditedItemIds, _tracearrLedger.For(userId)))
             {
+                if (!string.IsNullOrWhiteSpace(credit.Play.Id)) newlyCredited.Add(credit.Play.Id!);
                 var play = credit.Play;
                 _achievementBadgeService.RecordPlayback(new PlaybackContext
                 {
@@ -161,6 +246,10 @@ public class WatchHistoryBackfillService
 
                 credited++;
             }
+
+            // Recorded after the fact: a play that failed to credit must not
+            // be remembered as credited, or it is lost for good.
+            _tracearrLedger.Remember(userId, newlyCredited);
 
             _logger.LogInformation(
                 "[AchievementBadges] Tracearr credited {Count} plays for {Username} that the library could not account for.",

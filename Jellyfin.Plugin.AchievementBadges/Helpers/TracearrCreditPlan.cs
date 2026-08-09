@@ -38,12 +38,16 @@ public static class TracearrCreditPlan
     /// count however many times an item was played.</item>
     /// </list>
     /// </summary>
-    public static List<Credit> Build(IEnumerable<TracearrPlay>? plays, ISet<string>? alreadyCredited)
+    public static List<Credit> Build(
+        IEnumerable<TracearrPlay>? plays,
+        ISet<string>? alreadyCredited,
+        IReadOnlySet<string>? alreadyCreditedPlayIds = null)
     {
         var result = new List<Credit>();
         if (plays is null) return result;
 
         var seen = alreadyCredited ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var ledger = alreadyCreditedPlayIds ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         var groups = plays
             .Where(p => p is not null && p.Watched && !string.IsNullOrWhiteSpace(p.RatingKey))
@@ -63,6 +67,12 @@ public static class TracearrCreditPlan
             for (var i = 0; i < ordered.Count; i++)
             {
                 if (libraryAlreadyCreditedIt && i == 0) continue;
+
+                // Already counted on a previous sync. Skipped after the
+                // position check, not before, so removing it from the list
+                // cannot shift which play counts as the first watch.
+                if (!string.IsNullOrWhiteSpace(ordered[i].Id) && ledger.Contains(ordered[i].Id!)) continue;
+
                 result.Add(new Credit(ordered[i], libraryAlreadyCreditedIt || i > 0));
             }
         }

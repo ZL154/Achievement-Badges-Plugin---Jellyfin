@@ -1,6 +1,7 @@
 using System;
 using System.Threading.RateLimiting;
 using Jellyfin.Plugin.AchievementBadges.Api;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Jellyfin.Plugin.AchievementBadges.Services;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Plugins;
@@ -33,6 +34,14 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<TimeWindowedRecomputeService>();
         serviceCollection.AddSingleton<PlaybackCompletionService>();
         serviceCollection.AddSingleton<WatchHistoryBackfillService>();
+        // [issue #45 button] Sidecar next to badges.json, same place the
+        // watch-carry store lives. Singleton because two instances would each
+        // hold half the record and neither would prevent double crediting.
+        serviceCollection.AddSingleton(provider => new TracearrCreditLedger(
+            System.IO.Path.Combine(
+                provider.GetRequiredService<MediaBrowser.Common.Configuration.IApplicationPaths>().PluginConfigurationsPath,
+                "achievementbadges",
+                "tracearr-credited.json")));
         serviceCollection.AddSingleton<LibraryCompletionService>();
         serviceCollection.AddSingleton<RecapService>();
         serviceCollection.AddSingleton<RecommendationService>();
