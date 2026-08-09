@@ -1227,6 +1227,23 @@ public class AchievementBadgeService : IDisposable
         }
     }
 
+    /// <summary>
+    /// [issue #79] Replaces the per-artist discography percentages. Same
+    /// contract as the library one above: computed elsewhere from the library,
+    /// written here in one shot, badges re-evaluated immediately.
+    /// </summary>
+    public void UpdateArtistCompletionPercents(string userId, Dictionary<string, int> percents)
+    {
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            profile.Counters.ArtistCompletionPercents = percents ?? new Dictionary<string, int>();
+            EvaluateBadges(profile, userId);
+            Save();
+        }
+    }
+
     public void RegisterLogin(string userId)
     {
         userId = NormalizeUserId(userId);
@@ -3094,6 +3111,18 @@ public class AchievementBadgeService : IDisposable
                 return counters.LibraryCompletionPercents.TryGetValue(parameter, out var p) ? p : 0;
             }
             return counters.BestLibraryCompletionPercent;
+        }
+
+        // [issue #79] Same two readings as the library metric above: a named
+        // artist via MetricParameter, or the user's best artist when the badge
+        // does not name one.
+        if (metric == AchievementMetric.ArtistCompletionPercent)
+        {
+            if (!string.IsNullOrWhiteSpace(parameter))
+            {
+                return counters.ArtistCompletionPercents.TryGetValue(parameter, out var a) ? a : 0;
+            }
+            return counters.BestArtistCompletionPercent;
         }
 
         return GetSingleMetricValue(counters, metric);

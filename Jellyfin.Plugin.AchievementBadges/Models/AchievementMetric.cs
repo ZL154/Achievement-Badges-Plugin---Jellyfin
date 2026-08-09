@@ -87,4 +87,9 @@ public enum AchievementMetric
     // serialized ordinals are unchanged.
     MusicGenrePlays,
     MusicGenreListeningHours,
+
+    // [issue #79] Discography completion for one artist, or the best artist
+    // when no MetricParameter is set. Appended at the end for the same reason
+    // as the two above: existing serialized ordinals must not shift.
+    ArtistCompletionPercent,
 }
