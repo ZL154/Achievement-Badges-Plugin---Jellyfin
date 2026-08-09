@@ -2389,7 +2389,9 @@ public class AchievementBadgesController : ControllerBase
             FriendsSimpleMode = c?.FriendsSimpleMode ?? false,
             EnableCustomTabsIntegration = c?.EnableCustomTabsIntegration ?? false,
             EnablePluginPagesIntegration = c?.EnablePluginPagesIntegration ?? false,
-            EnableUserMenuShortcut = c?.EnableUserMenuShortcut ?? false
+            EnableUserMenuShortcut = c?.EnableUserMenuShortcut ?? false,
+            DefaultUiStyle = UiStyle.Normalize(c?.DefaultUiStyle),
+            ForceDefaultUiStyle = c?.ForceDefaultUiStyle ?? false
         });
     }
 
