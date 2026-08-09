@@ -166,6 +166,54 @@ public class TracearrBackfillTests
     }
 
     [Fact]
+    public void AccountLookup_ReadsTheRealUsersPayloadShape()
+    {
+        // Regression. The first version looked for a nested array called
+        // "identities". Tracearr calls it "accounts", so nothing ever matched
+        // and every user was reported as having no Tracearr account, which is
+        // indistinguishable from a server where nobody has streamed. Found in
+        // production rather than here, which is why this test now exists.
+        var payload = JsonDocument.Parse("""
+            {
+              "data": [
+                {
+                  "id": "11111111-1111-1111-1111-111111111111",
+                  "username": "someone-else",
+                  "accounts": [
+                    { "server_type": "jellyfin", "external_user_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+                  ]
+                },
+                {
+                  "id": "22222222-2222-2222-2222-222222222222",
+                  "username": "badpixel",
+                  "accounts": [
+                    { "server_type": "jellyfin", "external_user_id": "5dd06ee5ced14ceea5e5cbc29d2425c4" }
+                  ]
+                }
+              ],
+              "next_cursor": null
+            }
+            """).RootElement;
+
+        // Hyphenated on our side, compact on theirs. The match has to survive
+        // that or it silently credits nothing at all.
+        Assert.Equal(
+            "22222222-2222-2222-2222-222222222222",
+            TracearrClient.FindAccountId(payload, "5DD06EE5-CED1-4CEE-A5E5-CBC29D2425C4"));
+
+        Assert.Null(TracearrClient.FindAccountId(payload, "99999999-9999-9999-9999-999999999999"));
+        Assert.Null(TracearrClient.FindAccountId(payload, ""));
+    }
+
+    [Fact]
+    public void AccountLookup_SurvivesAPayloadWithoutTheNestedArray()
+    {
+        var payload = JsonDocument.Parse("""{"data":[{"id":"1","username":"x"}]}""").RootElement;
+
+        Assert.Null(TracearrClient.FindAccountId(payload, "5dd06ee5ced14ceea5e5cbc29d2425c4"));
+    }
+
+    [Fact]
     public void AdminPage_BothLoadsAndSavesTheTwoFields()
     {
         // An unwired control silently discards what the admin typed on every

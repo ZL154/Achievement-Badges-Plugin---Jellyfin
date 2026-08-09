@@ -119,16 +119,35 @@ public class TracearrClient
         }
 
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
-        foreach (var account in EnumerateData(document.RootElement))
+        return FindAccountId(document.RootElement, jellyfinUserId);
+    }
+
+    /// <summary>
+    /// Picks the Tracearr account id whose linked media-server account carries
+    /// this Jellyfin user id.
+    /// <para>
+    /// Split out from the request so the payload shape is covered by a test.
+    /// The first version of this looked for a nested array named "identities",
+    /// which does not exist: Tracearr calls it "accounts", and the mismatch
+    /// failed silently as "no account matches" for every single user, which is
+    /// indistinguishable from a server where nobody has streamed.
+    /// </para>
+    /// </summary>
+    public static string? FindAccountId(JsonElement usersPayload, string jellyfinUserId)
+    {
+        var wanted = Compact(jellyfinUserId);
+        if (wanted.Length == 0) return null;
+
+        foreach (var account in EnumerateData(usersPayload))
         {
-            if (!account.TryGetProperty("identities", out var identities) || identities.ValueKind != JsonValueKind.Array)
+            if (!account.TryGetProperty("accounts", out var linked) || linked.ValueKind != JsonValueKind.Array)
             {
                 continue;
             }
 
-            foreach (var identity in identities.EnumerateArray())
+            foreach (var link in linked.EnumerateArray())
             {
-                var external = ReadString(identity, "external_user_id");
+                var external = ReadString(link, "external_user_id");
                 if (external is null || Compact(external) != wanted) continue;
 
                 return ReadString(account, "id");
