@@ -4212,6 +4212,15 @@ body[data-ab-style="revamp"] #abFriendsBtn:hover {
 body[data-ab-style="revamp"] #abFriendsBtn:active {
     transform: translateY(0);
 }
+
+/* Hide the friends button while the video player is on screen. Deliberately
+   unscoped, unlike the rules around it, so it applies in every theme, and it
+   is a redundant copy of the rule enhance.js injects globally: this sheet only
+   loads on the plugin's pages with the revamp theme, so it cannot be the one
+   that carries the fix. */
+body:has(.videoPlayerContainer) #abFriendsBtn {
+    display: none !important;
+}
 body[data-ab-style="revamp"] #abFriendsBadge {
     background: var(--rv-accent-fr) !important;
     box-shadow: 0 0 0 2px var(--rv-bg-fr) !important;

@@ -646,6 +646,22 @@
             'body:has(.videoPlayer) #ab-header-badges,' +
             'body:has(#videoOsdPage) #ab-header-badges,' +
             'body:has(.mainAnimatedPage.videoOsdPage) #ab-header-badges { display: none !important; }' +
+            // The floating friends button gets the same treatment, for the same
+            // reason: it is position:fixed at z-index 9999998, so during
+            // playback it sits on top of the OSD controls. The rule has to live
+            // in THIS globally injected block rather than in styles-revamp.css,
+            // because that sheet only loads with the revamp theme on the
+            // plugin's own pages, while the button is present on every page.
+            '.videoOsdBottom ~ * #abFriendsBtn,' +
+            '.videoPlayer #abFriendsBtn,' +
+            'body.videoPlayerContainerPresent #abFriendsBtn,' +
+            'body.videoOsdOpen #abFriendsBtn,' +
+            'body.osd-open #abFriendsBtn,' +
+            'body:has(.videoPlayerContainer) #abFriendsBtn,' +
+            'body:has(.videoOsdBottom) #abFriendsBtn,' +
+            'body:has(.videoPlayer) #abFriendsBtn,' +
+            'body:has(#videoOsdPage) #abFriendsBtn,' +
+            'body:has(.mainAnimatedPage.videoOsdPage) #abFriendsBtn { display: none !important; }' +
             // Toast container stays visible during playback so unlocks fire mid-watch.
             // Force it above the video OSD layers.
             '#ab-toast-container{z-index:2147483647 !important;}' +
