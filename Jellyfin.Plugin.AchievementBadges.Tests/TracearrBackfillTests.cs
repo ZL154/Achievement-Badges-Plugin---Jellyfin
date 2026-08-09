@@ -214,6 +214,28 @@ public class TracearrBackfillTests
     }
 
     [Fact]
+    public void Pagination_ReadsTheCursorFromTheMetaEnvelope()
+    {
+        // Regression. Tracearr wraps pages as { data, meta: { nextCursor } }.
+        // Reading only the root found nothing, so the walk stopped after the
+        // first page and a long history came back truncated with no error.
+        // Observed live: a user with 54 completed viewings yielded 15 credits,
+        // which is one default-sized page.
+        var paged = JsonDocument.Parse("""
+            { "data": [], "meta": { "nextCursor": "abc123", "pageSize": 100 } }
+            """).RootElement;
+        Assert.Equal("abc123", TracearrClient.ReadCursor(paged));
+
+        var lastPage = JsonDocument.Parse("""
+            { "data": [], "meta": { "nextCursor": null, "pageSize": 100 } }
+            """).RootElement;
+        Assert.Null(TracearrClient.ReadCursor(lastPage));
+
+        Assert.Null(TracearrClient.ReadCursor(JsonDocument.Parse("""{"data":[]}""").RootElement));
+        Assert.Null(TracearrClient.ReadCursor(JsonDocument.Parse("""[]""").RootElement));
+    }
+
+    [Fact]
     public void AdminPage_BothLoadsAndSavesTheTwoFields()
     {
         // An unwired control silently discards what the admin typed on every

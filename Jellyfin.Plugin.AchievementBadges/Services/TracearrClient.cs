@@ -32,7 +32,10 @@ public class TracearrClient
     })
     { Timeout = TimeSpan.FromSeconds(30) };
 
-    private const int PageSize = 200;
+    // Tracearr caps pageSize at 100 and reads it as camelCase. A snake_case
+    // key is silently ignored, which drops the request to the default of 25
+    // and makes a large history look small.
+    private const int PageSize = 100;
 
     // A stop, not a target: a server with years of history should not be able
     // to hold a backfill open indefinitely.
@@ -111,7 +114,7 @@ public class TracearrClient
         var wanted = Compact(jellyfinUserId);
         if (wanted.Length == 0) return null;
 
-        using var response = await _http.SendAsync(Request(baseUri, token, "/api/v2/public/users?page_size=500"), ct).ConfigureAwait(false);
+        using var response = await _http.SendAsync(Request(baseUri, token, "/api/v2/public/users?pageSize=100"), ct).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogWarning("[AchievementBadges] Tracearr /users returned {Status}.", (int)response.StatusCode);
@@ -171,7 +174,7 @@ public class TracearrClient
         for (var page = 0; page < MaxPages; page++)
         {
             var path = "/api/v2/public/users/" + Uri.EscapeDataString(accountId)
-                + "/history?page_size=" + PageSize.ToString(CultureInfo.InvariantCulture)
+                + "/history?pageSize=" + PageSize.ToString(CultureInfo.InvariantCulture)
                 + (cursor is null ? "" : "&cursor=" + Uri.EscapeDataString(cursor));
 
             HttpResponseMessage response;
@@ -253,17 +256,32 @@ public class TracearrClient
         }
     }
 
-    private static string? ReadCursor(JsonElement root)
+    /// <summary>
+    /// Pulls the next-page cursor out of a paged response.
+    /// <para>
+    /// Tracearr wraps pages as <c>{ data, meta: { nextCursor } }</c>, so the
+    /// cursor is one level down. Reading only the root found nothing, the walk
+    /// stopped after the first page, and a long history came back truncated
+    /// with no error to notice.
+    /// </para>
+    /// </summary>
+    public static string? ReadCursor(JsonElement root)
     {
         if (root.ValueKind != JsonValueKind.Object) return null;
-        foreach (var name in new[] { "next_cursor", "nextCursor" })
+
+        foreach (var container in new[] { root.TryGetProperty("meta", out var meta) ? meta : default, root })
         {
-            if (root.TryGetProperty(name, out var c) && c.ValueKind == JsonValueKind.String)
+            if (container.ValueKind != JsonValueKind.Object) continue;
+            foreach (var name in new[] { "nextCursor", "next_cursor" })
             {
-                var value = c.GetString();
-                if (!string.IsNullOrWhiteSpace(value)) return value;
+                if (container.TryGetProperty(name, out var c) && c.ValueKind == JsonValueKind.String)
+                {
+                    var value = c.GetString();
+                    if (!string.IsNullOrWhiteSpace(value)) return value;
+                }
             }
         }
+
         return null;
     }
 
