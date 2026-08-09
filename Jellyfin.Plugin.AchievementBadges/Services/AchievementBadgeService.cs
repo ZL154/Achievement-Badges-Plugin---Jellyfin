@@ -2531,6 +2531,51 @@ public class AchievementBadgeService : IDisposable
     }
 
     /// <summary>
+    /// [issue #42] Public summary of another user, for the card shown when you
+    /// hover or click a name in the friends drawer.
+    /// <para>
+    /// Projects exactly the fields the leaderboard already publishes to every
+    /// user, and gates on the same two switches: the admin's ForcePrivacyMode
+    /// and the target's own HideFromLeaderboard. So this cannot reveal
+    /// anything that was not already visible, and anyone who opted out of
+    /// being listed stays opted out here too.
+    /// </para>
+    /// <para>
+    /// Returns null both for a user who opted out and for a user who does not
+    /// exist, so a caller cannot tell the two apart and probe for ids.
+    /// </para>
+    /// </summary>
+    public object? GetPublicProfileSummary(string targetUserId)
+    {
+        targetUserId = NormalizeUserId(targetUserId);
+        var config = Plugin.Instance?.Configuration;
+        if (config?.ForcePrivacyMode == true) return null;
+
+        lock (_lock)
+        {
+            if (!_userProfiles.TryGetValue(targetUserId, out var profile)) return null;
+            if (profile.Preferences?.HideFromLeaderboard ?? false) return null;
+
+            EvaluateBadges(profile, targetUserId);
+            var enabled = profile.Badges.Where(b => IsBadgeEnabled(b.Id)).ToList();
+            var unlocked = enabled.Count(b => b.Unlocked);
+            var total = enabled.Count;
+
+            return new
+            {
+                UserId = profile.UserId,
+                UserName = ResolveUserName(profile.UserId),
+                Unlocked = unlocked,
+                Total = total,
+                Percentage = total == 0 ? 0 : Math.Round((double)unlocked / total * 100.0, 1),
+                Score = AchievementScoreHelper.GetTotalUnlockedScore(enabled),
+                BestWatchStreak = profile.Counters.BestWatchStreak,
+                Equipped = BuildEquippedPreview(profile)
+            };
+        }
+    }
+
+    /// <summary>
     /// For each enabled badge id, returns the percentage of users on this
     /// server who have unlocked it. Cached for 5 minutes so the per-badge-
     /// card render on the achievements page doesn't re-scan every profile
