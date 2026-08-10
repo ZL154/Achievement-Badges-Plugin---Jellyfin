@@ -42,6 +42,23 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
                 provider.GetRequiredService<MediaBrowser.Common.Configuration.IApplicationPaths>().PluginConfigurationsPath,
                 "achievementbadges",
                 "tracearr-credited.json")));
+        // Shared between the playback tracker, which fills it, and the watch
+        // history scan, which has to drop the carry of items it credits.
+        // While the tracker owned it privately the scan could not reach it, so
+        // a credited item kept its banked minutes and a short rewatch cleared
+        // the threshold on time already spent.
+        serviceCollection.AddSingleton(provider =>
+        {
+            var days = Plugin.Instance?.Configuration?.WatchCarryRetentionDays ?? 7;
+            if (days <= 0) return new WatchCarryStore(System.TimeSpan.Zero);
+
+            return new WatchCarryStore(
+                System.TimeSpan.FromDays(days),
+                System.IO.Path.Combine(
+                    provider.GetRequiredService<MediaBrowser.Common.Configuration.IApplicationPaths>().PluginConfigurationsPath,
+                    "achievementbadges",
+                    "watch-carry.json"));
+        });
         serviceCollection.AddSingleton<LibraryCompletionService>();
         serviceCollection.AddSingleton<RecapService>();
         serviceCollection.AddSingleton<RecommendationService>();

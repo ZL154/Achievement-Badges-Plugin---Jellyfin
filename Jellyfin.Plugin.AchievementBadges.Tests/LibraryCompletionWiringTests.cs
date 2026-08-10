@@ -32,6 +32,27 @@ public class LibraryCompletionWiringTests
     }
 
     [Fact]
+    public void TheBackfillCanReachTheWatchCarryStore()
+    {
+        // Same shape of defect, different store. The carry was owned privately
+        // by PlaybackCompletionTracker, so the scan could not drop the carry of
+        // items it credited. Those minutes stayed banked and a later partial
+        // rewatch reached the 80% gate on time already spent: measured live, an
+        // item sat at 72.3% carried after being credited.
+        //
+        // Being straight about what this proves: it pins the dependency, not
+        // the call. Exercising the call needs the whole backfill stack, and the
+        // evidence for it is the live run recorded in the PR, not this test.
+        var constructor = typeof(WatchHistoryBackfillService)
+            .GetConstructors()
+            .Single();
+
+        Assert.Contains(
+            constructor.GetParameters(),
+            p => p.ParameterType == typeof(Helpers.WatchCarryStore));
+    }
+
+    [Fact]
     public void TheLibraryBadgesStillReadTheMetricTheyAlwaysDid()
     {
         // Guards the other end: wiring the producer is pointless if the badges
