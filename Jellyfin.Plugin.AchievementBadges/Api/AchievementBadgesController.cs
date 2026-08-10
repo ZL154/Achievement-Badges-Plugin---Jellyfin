@@ -2460,6 +2460,7 @@ public class AchievementBadgesController : ControllerBase
             ForceSpoilerMode = c?.ForceSpoilerMode ?? false,
             ForceExtremeSpoilerMode = c?.ForceExtremeSpoilerMode ?? false,
             MaxEquippedBadges = c?.MaxEquippedBadges ?? 5,
+            WatchCarryRetentionDays = c?.WatchCarryRetentionDays ?? 7,
             RestrictBadgeVisibility = c?.RestrictBadgeVisibility ?? false,
             DisabledBadgeCategories = c?.DisabledBadgeCategories ?? new List<string>(),
             WelcomeMessage = c?.WelcomeMessage ?? "",
@@ -2490,6 +2491,14 @@ public class AchievementBadgesController : ControllerBase
         public bool ForceSpoilerMode { get; set; } = false;
         public bool ForceExtremeSpoilerMode { get; set; } = false;
         public int MaxEquippedBadges { get; set; } = 5;
+
+        /// <summary>
+        /// Nullable on purpose. A non-nullable default would let any caller
+        /// that omits the field reset a configured retention back to 7 days,
+        /// silently discarding partial viewings the admin meant to keep.
+        /// </summary>
+        public int? WatchCarryRetentionDays { get; set; }
+
         public bool RestrictBadgeVisibility { get; set; } = false;
         public List<string> DisabledBadgeCategories { get; set; } = new();
         public string WelcomeMessage { get; set; } = "";
@@ -2526,6 +2535,15 @@ public class AchievementBadgesController : ControllerBase
         config.ForceSpoilerMode = request.ForceSpoilerMode;
         config.ForceExtremeSpoilerMode = request.ForceExtremeSpoilerMode;
         config.MaxEquippedBadges = Math.Clamp(request.MaxEquippedBadges, 1, 10);
+
+        // Omitted means "leave it alone", so a partial body cannot quietly
+        // shorten the window and throw away viewings already part-watched.
+        // Zero is a real choice: it turns carrying off.
+        if (request.WatchCarryRetentionDays is int carryDays)
+        {
+            config.WatchCarryRetentionDays = Math.Clamp(carryDays, 0, 365);
+        }
+
         config.RestrictBadgeVisibility = request.RestrictBadgeVisibility;
         config.DisabledBadgeCategories = request.DisabledBadgeCategories ?? new();
         config.WelcomeMessage = request.WelcomeMessage ?? "";
