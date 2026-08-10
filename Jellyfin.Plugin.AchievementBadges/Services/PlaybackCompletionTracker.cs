@@ -117,9 +117,51 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             _userDataManager.UserDataSaved += OnUserDataSaved;
             _subscribed = true;
             _logger.LogInformation("[AchievementBadges] PlaybackCompletionTracker started, subscribed to session + userdata events.");
+
+            BackfillCarryMediaKeys();
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Gives the viewings already on disk the same protection as new ones, by
+    /// resolving their media identity while their items are still in the
+    /// library. Runs once at startup and is cheap: only entries missing a key
+    /// are looked up, and the store is bounded by its own pruning.
+    /// </summary>
+    private void BackfillCarryMediaKeys()
+    {
+        try
+        {
+            var (filled, unresolved) = _carried.BackfillMediaKeys(itemId =>
+                Guid.TryParse(itemId, out var guid)
+                    ? ResolveMediaKey(_libraryManager.GetItemById(guid))
+                    : null);
+
+            if (filled > 0)
+            {
+                _logger.LogInformation(
+                    "[AchievementBadges] Carried {Count} partial viewings now survive a media file replacement.",
+                    filled);
+            }
+
+            if (unresolved > 0)
+            {
+                // Said out loud rather than swallowed: this is watch time that
+                // is already unreachable, and a watch history scan is the only
+                // way to credit those viewings.
+                _logger.LogInformation(
+                    "[AchievementBadges] {Count} carried partial viewings reference items that are gone or have no "
+                    + "provider id, so they cannot be linked to their media. If a viewer is being refused credit for "
+                    + "something they finished, a watch history scan credits it from Jellyfin's own played flag.",
+                    unresolved);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[AchievementBadges] Could not backfill watch carry media keys; carrying continues by item id.");
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

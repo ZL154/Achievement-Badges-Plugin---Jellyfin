@@ -321,6 +321,64 @@ public class WatchCarryTests
     }
 
     [Fact]
+    public void BackfillGivesTimeAlreadyOnDisk_TheSameProtection()
+    {
+        // Without this the fix only helps viewings started after the upgrade.
+        // Someone with 45 minutes banked right now, whose file is replaced
+        // tomorrow, would lose it exactly as before.
+        var store = new WatchCarryStore(TimeSpan.FromDays(7));
+        store.Remember(User, OldFileId, Seconds(4176), Now, null);
+
+        var result = store.BackfillMediaKeys(_ => Film);
+
+        Assert.Equal(1, result.Filled);
+        Assert.Equal(0, result.Unresolved);
+        Assert.Equal(Seconds(4176), store.Peek(User, NewFileId, Now.AddDays(1), Film));
+    }
+
+    [Fact]
+    public void BackfillCountsWhatItCannotResolve_InsteadOfHidingIt()
+    {
+        // An item already deleted cannot be linked to anything: the old code
+        // stored the item id and nothing else. Counting it is what lets the
+        // caller tell an admin to run a scan rather than let the time vanish
+        // quietly, which is how this bug survived unnoticed.
+        var store = new WatchCarryStore(TimeSpan.FromDays(7));
+        store.Remember(User, OldFileId, Seconds(4176), Now, null);
+
+        var result = store.BackfillMediaKeys(_ => null);
+
+        Assert.Equal(0, result.Filled);
+        Assert.Equal(1, result.Unresolved);
+    }
+
+    [Fact]
+    public void BackfillNeverOverwritesAKeyItAlreadyHas()
+    {
+        var store = new WatchCarryStore(TimeSpan.FromDays(7));
+        store.Remember(User, OldFileId, Seconds(4176), Now, Film);
+
+        var result = store.BackfillMediaKeys(_ => "Movie|Imdb:tt999");
+
+        Assert.Equal(0, result.Filled);
+        Assert.Equal(Seconds(4176), store.Peek(User, NewFileId, Now, Film));
+    }
+
+    [Fact]
+    public void OneUnreadableItem_DoesNotAbortTheRestOfTheBackfill()
+    {
+        var store = new WatchCarryStore(TimeSpan.FromDays(7));
+        store.Remember(User, OldFileId, Seconds(1000), Now, null);
+        store.Remember(User, Item, Seconds(1000), Now, null);
+
+        var result = store.BackfillMediaKeys(id =>
+            id == OldFileId ? throw new InvalidOperationException("item is broken") : Film);
+
+        Assert.Equal(1, result.Filled);
+        Assert.Equal(1, result.Unresolved);
+    }
+
+    [Fact]
     public void UnreadableCarryFile_StartsEmptyInsteadOfThrowing()
     {
         var path = TempFile();

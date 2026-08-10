@@ -206,6 +206,72 @@ public sealed class WatchCarryStore
         }
     }
 
+    /// <summary>
+    /// Fills in the media key of entries written before the field existed, and
+    /// reports how many could not be resolved.
+    /// <para>
+    /// Without this an upgrade only protects viewings started after it. Every
+    /// partial viewing already on disk keeps its bare item id, so a file
+    /// replaced tomorrow strands it exactly as before. Resolving them at
+    /// startup, while their items are still in the library, is the difference
+    /// between fixing this going forward and fixing it for the people who
+    /// already have time banked.
+    /// </para>
+    /// <para>
+    /// An entry whose item no longer resolves is already lost and nothing here
+    /// can recover it: the old code stored the item id and nothing else, so
+    /// after the item is gone there is nothing left to match it to. Those are
+    /// counted and returned so the caller can say so out loud rather than let
+    /// the time disappear quietly, which is how this was missed in the first
+    /// place.
+    /// </para>
+    /// </summary>
+    /// <param name="resolve">Maps an item id to a media key, or null when the
+    /// item is gone or carries no provider id.</param>
+    /// <returns>How many were filled in, and how many could not be.</returns>
+    public (int Filled, int Unresolved) BackfillMediaKeys(Func<string, string?> resolve)
+    {
+        ArgumentNullException.ThrowIfNull(resolve);
+
+        var filled = 0;
+        var unresolved = 0;
+
+        foreach (var pair in _entries)
+        {
+            var entry = pair.Value;
+            if (!string.IsNullOrEmpty(entry.MediaKey)) continue;
+
+            string? key;
+            try
+            {
+                key = resolve(entry.ItemId);
+            }
+            catch (Exception)
+            {
+                // One unreadable item must not abort the whole backfill and
+                // leave the rest unprotected.
+                unresolved++;
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(key))
+            {
+                unresolved++;
+                continue;
+            }
+
+            entry.MediaKey = key;
+            filled++;
+        }
+
+        if (filled > 0)
+        {
+            Persist();
+        }
+
+        return (filled, unresolved);
+    }
+
     private void Prune(DateTimeOffset now)
     {
         var removed = false;
