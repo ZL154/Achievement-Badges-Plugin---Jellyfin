@@ -31,14 +31,14 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd meets Steam profile customization, built natively into your media server.
 
-> **Status:** Active development — **v2.2.0 (Your Screen, Your Rules)** is live. Achievement navigation is now modular per user, optional Custom Tabs and Plugin Pages hosts reuse the stock page, unlock bursts can be grouped or shown individually, notifications can stay on the device that earned them, and real unlock toasts open the exact achievement. See [What's new in v2.2.0](#-whats-new-in-v220). Built on the v2.1 "Open Library" expansion and v2.0 "Choose Your Loadout" progression game.
+> **Status:** Active development — **v2.3.0 (Friends & Foundations)** is live. Hover a friend to see their rank, completion and equipped showcase; pin a full card; share your own in one of three skins (Console / Metro / Aurora Spine). Underneath sit library + artist completion wiring, Tracearr history crediting, tougher watch-time carry, and the profile data-loss + gzip injection fixes every published build needs. See [What's new in v2.3.0](#-whats-new-in-v230--friends--foundations). Built on v2.2 "Your Screen, Your Rules", the v2.1 "Open Library" expansion, and v2.0 "Choose Your Loadout".
 
 ---
 
 ## 📑 Table of contents
 
 - [Overview](#-overview)
-- [What's new in v2.1.0 — Open Library](#-whats-new-in-v210--open-library) — music + books, custom badges, JS Injector fallback, anime/daily-badge fixes, language picker
+- [What's new in v2.3.0 — Friends & Foundations](#-whats-new-in-v230--friends--foundations) — friend profile cards, shareable card skins, library + artist completion, Tracearr, reliability + published-build fixes
 - [Core features](#-core-features)
   - [Badge system](#-badge-system) — 200+ achievements, 35+ categories, 6 rarities
   - [Rank system](#-rank-system) — 10 tiers from Rookie to Immortal
@@ -47,7 +47,7 @@ A full progression, gamification and achievement system for Jellyfin that reward
   - [Daily & weekly quests](#-daily--weekly-quests) — with reroll (v2.0)
   - [Power-ups & Score Shop](#-power-ups--score-shop) **(new in v2.0)**
   - [Profile customization](#-profile-customization) **(new in v2.0)**
-  - [Friends drawer](#-friends-drawer) — bi-directional, online/offline, last-watched
+  - [Friends drawer](#-friends-drawer) — bi-directional, online/offline, last-watched, hover profile cards
   - [Messaging](#-messaging) — 1:1 + groups, attachments, read receipts
   - [Rarity percentage chip](#-rarity-percentage-chip)
   - [Data-loss recovery](#-data-loss-recovery)
@@ -65,6 +65,7 @@ A full progression, gamification and achievement system for Jellyfin that reward
 - [API endpoints](#-api-endpoints)
 - [Screenshots](#-screenshots)
 - [Release history](#-release-history)
+- [Previous release notes](#-previous-release-notes) — full v2.2.0 / v2.1.3 / v2.1.0 notes
 - [Support the project](#-support-the-project)
 - [Credits & thanks](#-credits--thanks)
 - [License](#-license)
@@ -79,66 +80,48 @@ Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin
 
 ---
 
-## 🚀 What's new in v2.2.0 — Your Screen, Your Rules
+## 🚀 What's new in v2.3.0 — Friends & Foundations
 
-This release makes Achievement Badges fit each user's Jellyfin layout and notification preferences while keeping the stock Achievements page available at all times. **Drop-in upgrade from v2.1.x / v2.0.x — no schema breakage or manual migration.**
+Achievement Badges gains a social layer — see how your friends are doing, and share your own card — on top of a run of reliability fixes, several of which matter to anyone on the published v2.2.0 build. **Drop-in upgrade from v2.2.x / v2.1.x / v2.0.x — no schema breakage or manual migration.**
 
-- **Optional Custom Tabs and Plugin Pages hosts (#37).** Admins can opt into either integration independently. Both reuse the same Achievements surface instead of maintaining duplicate pages, and compatibility failures stay isolated so they cannot prevent Jellyfin from starting.
-- **Per-user navigation controls (#37).** Each user can independently show or hide the Custom Tabs entry, Plugin Pages entry, and header trophy from Achievement settings or Jellyfin's native user settings. Hiding navigation never disables tracking, notifications, or the stock page.
-- **Grouped or individual unlock bursts (#38).** Simultaneous unlocks can collapse into one summary with a combined score, or play one at a time using the existing queue.
-- **Device-scoped unlock notifications (#38).** Users can keep the default delivery to every signed-in client or restrict a toast to the Jellyfin device that earned it. The server validates the originating device instead of trusting the browser alone.
-- **Unlock toasts now lead somewhere useful.** Click a real single unlock (or focus it and press Enter/Space) to open My Badges, clear filters, scroll to the exact badge, and briefly highlight it. Grouped summaries open Recently unlocked. Synthetic admin previews remain deliberately non-navigating and never write achievement data.
-- **Better notification testing.** A new **Test 10 unlocks** admin control exercises the saved grouping preference without creating unlocks or modifying a profile.
-- **Fresh client assets on every build.** Script cache keys now include the compiled module ID, preventing browsers from retaining an older same-version UI during testing or deployment.
-- **Full localization.** Every new option, help message, navigation label, and toast action is translated across all 8 UI languages (English, French, Spanish, German, Italian, Portuguese, Chinese, Japanese).
+### 👋 Friend profile cards (#76)
 
----
+Hover a friend's name or avatar in the drawer for a summary card — rank tier, completion, score, best streak and equipped showcase. Click to pin a larger card that survives the pointer leaving, closes on Escape or an outside click, and is reachable by keyboard. It's backed by a public-summary endpoint that's privacy-gated to expose nothing the leaderboard doesn't: anyone opted out of being listed is equally invisible here.
 
-## 🚀 What's new in v2.1.3
+### 🪪 Shareable card skins
 
-A bug-fix patch resolving the outstanding reports from #24 and #36, plus a full builder-localization pass. **Drop-in upgrade from v2.1.x / v2.0.x — no schema breakage; a one-time, ID-preserving custom-badge migration runs automatically.**
+Three server-rendered profile-card skins — **Console** (default), **Metro**, and **Aurora Spine** — each drawn with the card owner's own rank colour as the single accent. Every user picks their own skin in preferences; a card opened without an explicit style falls back to the owner's choice.
 
-- **Genre-filtered music badges now actually filter by genre (#24).** Music plays and listening time are tracked **per genre** (case-insensitive), so a "play 50 disco tracks" badge no longer ticks up when you listen to metal. Three new builder metrics — *Music plays of a genre*, *Music hours of a genre*, *Items watched of a genre* — reveal a genre field when picked.
-- **Custom badges fully delete (#24).** The visual builder, the badge list, and delete now share one store (they were previously split, so builder-made badges couldn't be removed), and deleting a badge purges its earned + equipped copies from every user profile. Pre-existing badges are migrated on first startup with their IDs preserved.
-- **Header UI survives another header-injecting plugin (#36).** When a second plugin (e.g. Ratings) stripped the badge scripts from `index.html`, the plugin used to think it was still patched and never re-injected. The guard now keys on the actual script tag, so a stripped page is always repaired.
-- **Badge category labels fixed (#24).** Categories like *Studio Specialist* and *Books* no longer show as raw `category.*` keys, and every built-in category is now translated.
-- **Full builder localization.** The badge-builder metric list, quest builder, power-up + cosmetic pickers, and status messages are now translated across all 8 languages (en/fr/es/de/it/pt/zh/ja).
+### 🎯 Completion tracking that finally runs
 
----
+- **Library completion (#80, #79).** The five library-completion badges are now computed during the watch-history scan, so they can unlock through normal use instead of sitting at zero on every install.
+- **Artist discography completion (#81, #24).** Played tracks over total tracks per artist — a badge for completing any artist, plus a parameterised metric for a specific one.
 
-## 🚀 What's new in v2.1.0 — Open Library
+### 📡 Tracearr history crediting (#77 / #84 / #85)
 
-Achievements expand beyond film & TV, and admins get real badge-authoring power. **Drop-in upgrade from v2.0.x — no schema breakage, no data migration.**
+Credit genuine first watches the library scan can't prove on its own — media you deleted, and true rewatch counts — from Tracearr's public v2 API. A standalone sync button is made idempotent by a ledger, so pressing it twice credits nothing the second time. Configured admin-side with a URL and token; nothing is required on the Tracearr side. See [Tracearr integration](#-tracearr-integration).
 
-### 🎵 Music achievements
+### 🔔 Notifications and layout
 
-**18 built-in music badges** driven by real listening — total plays, listening hours, and unique **albums / artists / genres / decades**. Audio items now flow through the same playback-credit pipeline (80% real-listen gate) as films and episodes.
+- **Per-user toast position** — any of the four corners or top-centre, applied live.
+- Unlock toasts moved off the subtitle line, and the floating friends button hides while the video player is on screen.
+- **Admin-set default UI style, optionally locked (#43)** — start users on Classic or Revamp, and optionally make it the only choice so the page matches your Jellyfin theme; a user's own pick is remembered and returns if the lock is lifted.
 
-### 📚 Book achievements
+### 🧱 Reliability
 
-**8 book badges** — books completed, audiobook listening hours, and book series completed. An **audiobook-counting policy** lets admins choose whether audiobook plays count toward Books only (default), Music only, or Both.
+- **Watch-time carry** survives a session break, a restart, and a media-file replacement or quality upgrade (keyed by media identity, #89), with a configurable retention window (#87). The scan clears the carry of exactly what it credits (#91/#92), so a later partial rewatch can't reach the completion gate on minutes already counted.
+- **Counter resilience** — rebuilt counters are floored and dated snapshots kept so a scan never loses progress; the score bank is floored on rebuild so deleted media can't zero a balance; backfill is serialised per user; and failed loads surface instead of being drawn as empty or loading.
 
-> **How ebook completion is detected (important):** Jellyfin has no "finished reading an ebook" signal — unlike audiobooks and music, which stream through a session and track listening time automatically, an ebook is text with no runtime. So an **ebook counts once it's marked _Played_** (the ✓ / "Mark as watched" toggle on the item). Simply reaching the last page in Jellyfin's reader does **not** auto-mark it, so book badges won't move until the book is marked played. This is a Jellyfin limitation, not something the plugin can detect on its own.
+### 🩹 Fixes for anyone on v2.2.0
 
-### 🛠️ Custom badge builder
+- **Empty twin profiles could swallow unlocked badges (#59/#60).** `GetOrCreateProfile` now normalises the user id first, so the friends and messaging paths can't create an empty profile beside the live one that later folds over it. Opening the friends panel was enough to trigger it.
+- **The injected UI never mounted under gzip (#46).** The client bootstrap now injects into compressed responses instead of skipping them — every browser asks for gzip, so on v2.2.0 the sidebar, widget, item ribbon and toasts silently failed to load. Also behind the #37 and #36 reports.
 
-Define your own badges with **compound AND/OR criteria** across any metric — film, TV, music, books and more. Simple badges via the admin form; compound criteria, icons, and import/export via the API. Full guide + copy-paste templates: [Custom badges](#-custom-badges).
+### 🌍 Localization
 
-### 🌐 JS Injector fallback (issue #26)
+Every new interface string is translated across all 8 UI languages, and the admin user-picker strings were completed in the seven non-English locales for full key parity.
 
-On bare-metal Linux where `/usr/share/jellyfin/web` isn't writable, the on-disk UI injection used to fail silently. The plugin now detects the [JavaScript Injector plugin](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector) and surfaces the exact script URLs to paste in. Details: [Troubleshooting](#-troubleshooting).
-
-### 🇯🇵 Anime detection fix (issue #25)
-
-Anime is now detected from **Genres *and* Tags**, read from both the item **and its parent Series**, with admin-configurable libraries / genres / tags — fixing anime badges that never fired when the classification lived on the Series or in Tags.
-
-### 🗓️ Daily-badge backfill fix + audit tool (issue #27)
-
-Time-windowed badges (daily / weekly / monthly) are now **skipped during the initial history scan**, so they no longer false-unlock from lifetime totals. A new admin **audit + cleanup tool** finds and clears badges wrongly awarded by pre-v2.1.0 backfills (re-earnable organically afterward).
-
-### 🌍 Globe language picker + full admin localization
-
-A **globe dropdown** on the admin page switches the UI language live and persists across reloads, and the **entire admin page** — including the Integrity and testing-tools sections — is now localized across all **8 languages**.
+Big thanks to **[@camarigor](https://github.com/camarigor)** for the friend profiles, Tracearr integration, the library and artist completion wiring, the watch-carry work, and the profile data-loss + gzip injection fixes.
 
 ---
 
@@ -234,6 +217,7 @@ Standout sub-collections:
 - **Bi-directional** friendship with a proper **request / accept** flow — nobody follows you silently
 - **Global floating button** anchored bottom-left on every Jellyfin page — not just the achievements tab. Auto-hides on `/dashboard` + `/plugins` pages and during media playback; reappears as soon as you leave either state
 - **Xbox-guide-style side drawer** with four sub-tabs: Friends / Requests / Find / Messages
+- **Hover/click profile cards (v2.3.0, #76)** — hovering a friend's name or avatar opens a summary card (rank tier, completion, score, best streak, equipped showcase); clicking pins a larger card that closes on Escape or an outside click and is keyboard-reachable. Served by a public-summary endpoint gated by the same leaderboard opt-out, so it exposes nothing extra
 - **Jellyfin profile-image avatars** per friend row (initials fall back when no image is set)
 - **Online / offline** status pulled live from Jellyfin's `ISessionManager`, with a 15-minute grace window so casual browsing still counts as online (not just active playback)
 - **Now playing** display — see the series + episode title each online friend is watching
@@ -311,7 +295,8 @@ Xbox-Guide-style chat built into the Friends drawer. No external service, no Web
 - **Standalone achievements page** at `#!/achievements` with the new **Loadout tab (v2.0)** for managing power-ups, shop, and cosmetics
 - **Optional page hosts** — reuse the same page inside Custom Tabs or register it with Plugin Pages; both are admin opt-in and the stock page always remains available
 - **Modular per-user navigation** — independently show or hide the Custom Tabs entry, Plugin Pages entry, and header trophy without affecting achievement tracking or each other
-- **Shareable profile card** — server-rendered HTML at `/Plugins/AchievementBadges/users/{id}/profile-card`
+- **Shareable profile card (three skins, v2.3.0)** — server-rendered HTML at `/Plugins/AchievementBadges/users/{id}/profile-card`, in **Console** (default), **Metro**, or **Aurora Spine**, each drawn with the owner's rank colour as the accent. Users pick their skin in preferences; `?style=` overrides per link, and a request with no style falls back to the owner's choice
+- **Friend popover style (v2.3.0)** — the drawer profile card comes in a detailed or a compact layout, chosen per user
 - **Classic / Revamp toggle** — every screen the plugin renders has a Classic/Revamp toggle (`ab-style-pref` localStorage):
   - **Revamp** — magazine-spread hero with massive Geist 700 rank name, 220px conic completion donut, asymmetric stats grid, chapter-numbered tabs (`01 / MY BADGES`, `02 / QUESTS`…), control-panel filter strip, ambient drift orb, film grain overlay, day-streak pulse, rank-name shimmer, full page entrance cascade
   - **Classic** — the v1.8.10 look you know
@@ -336,6 +321,9 @@ A gear icon on the achievements page opens a full settings panel with auto-save:
 - **Hide my last watched when offline** — friends won't see what you watched most recently when you're offline
 - **Mute toasts during playback** + **Mute toast sound during playback** — keep the unlock animation/sound out of the way while actively watching
 - **Message notifications + sound + mute-during-playback** — full control over the Friends drawer's chat notifications
+- **Shareable card skin (v2.3.0)** — Console / Metro / Aurora Spine for your own profile card
+- **Friend popover style (v2.3.0)** — detailed or compact layout for the hover/click card
+- **Toast position (v2.3.0)** — place unlock toasts in any of the four corners or top-centre
 
 ### 🌍 Languages
 
@@ -386,6 +374,8 @@ A gear icon on the achievements page opens a full settings panel with auto-save:
 - **60-second minimum runtime** filter so Projectionist prerolls and bumpers can't credit
 - **Daily credit cap** (default 200/user/day, configurable) + **`SuspiciousRatePerHour`** audit flag (default 30/h, configurable) for soft anti-abuse
 - **Rewatch detection** — dedupes within 6 hours, counts rewatches beyond that
+- **Watch-time carry (v2.3.0)** — partial viewings are banked and survive a session break, a restart, and a media-file replacement or quality upgrade (keyed by media identity, #89), with an admin retention window (#87); a scan then clears the carry of exactly what it credits (#91/#92) so already-counted minutes can't finish a later rewatch
+- **Library + artist completion wiring (v2.3.0)** — the library-completion badges are recomputed during the scan (#80) and per-artist discography completion is tracked (#81), so both unlock through normal use
 - **People metadata extraction** — uses `ILibraryManager.GetPeople()` for directors/actors
 
 ---
@@ -860,6 +850,7 @@ Full per-version notes and signed binaries live on the GitHub Releases page:
 
 Highlights:
 
+- **v2.3.0** — Friends & Foundations: hover/click friend profile cards (#76) behind a privacy-gated summary endpoint; three shareable card skins (Console / Metro / Aurora Spine) chosen per user; library completion now computes during the scan (#80) and new artist discography completion (#81, #24); Tracearr history crediting (#77/#84/#85); watch-time carry across restarts and file replacements (#87/#89/#91/#92); admin-set default UI style + lock (#43); plus the profile data-loss (#59/#60) and gzip injection (#46) fixes for published builds
 - **v2.2.0** — Your Screen, Your Rules: optional Custom Tabs + Plugin Pages hosts and independent per-user navigation controls (#37); grouped/individual and all-device/origin-device unlock notification modes (#38); clickable, keyboard-accessible real unlock toasts; 10-toast admin grouping preview; build-specific client cache keys; full 8-language coverage
 - **v2.1.3** — Open Library patch: per-genre music badges so genre filters actually filter (#24), custom badges fully delete + purge earned copies + ID-preserving migration (#24), header UI survives another header-injecting plugin (#36), badge-category label fix, and full localization of the badge/quest builders across all 8 languages
 - **v2.1.0** — Open Library: music + book achievements, custom badge builder (compound AND/OR), JS Injector fallback (#26), anime detection via Genres+Tags+Series (#25), daily-badge backfill fix + audit/cleanup tool (#27), globe language picker + full admin-page localization
@@ -872,6 +863,73 @@ Highlights:
 - **v1.9.0** — Revamp UI (Classic/Revamp toggle), Friends drawer Revamp, "Offline — last watched", HMAC webhook signing, security upgrade (rate limit, CSP, audit log filter, GitHub Actions CI)
 - **v1.8** — Full messaging suite (1:1 + groups, attachments, read receipts, edit/delete, block, notifications)
 - **v1.7** — Friends drawer foundation, hand-translated French by [@frenchyx24](https://github.com/frenchyx24)
+
+---
+
+## 🗂️ Previous release notes
+
+Full notes for earlier versions, newest first.
+
+## 🚀 What's new in v2.2.0 — Your Screen, Your Rules
+
+This release makes Achievement Badges fit each user's Jellyfin layout and notification preferences while keeping the stock Achievements page available at all times. **Drop-in upgrade from v2.1.x / v2.0.x — no schema breakage or manual migration.**
+
+- **Optional Custom Tabs and Plugin Pages hosts (#37).** Admins can opt into either integration independently. Both reuse the same Achievements surface instead of maintaining duplicate pages, and compatibility failures stay isolated so they cannot prevent Jellyfin from starting.
+- **Per-user navigation controls (#37).** Each user can independently show or hide the Custom Tabs entry, Plugin Pages entry, and header trophy from Achievement settings or Jellyfin's native user settings. Hiding navigation never disables tracking, notifications, or the stock page.
+- **Grouped or individual unlock bursts (#38).** Simultaneous unlocks can collapse into one summary with a combined score, or play one at a time using the existing queue.
+- **Device-scoped unlock notifications (#38).** Users can keep the default delivery to every signed-in client or restrict a toast to the Jellyfin device that earned it. The server validates the originating device instead of trusting the browser alone.
+- **Unlock toasts now lead somewhere useful.** Click a real single unlock (or focus it and press Enter/Space) to open My Badges, clear filters, scroll to the exact badge, and briefly highlight it. Grouped summaries open Recently unlocked. Synthetic admin previews remain deliberately non-navigating and never write achievement data.
+- **Better notification testing.** A new **Test 10 unlocks** admin control exercises the saved grouping preference without creating unlocks or modifying a profile.
+- **Fresh client assets on every build.** Script cache keys now include the compiled module ID, preventing browsers from retaining an older same-version UI during testing or deployment.
+- **Full localization.** Every new option, help message, navigation label, and toast action is translated across all 8 UI languages (English, French, Spanish, German, Italian, Portuguese, Chinese, Japanese).
+
+---
+
+## 🚀 What's new in v2.1.3
+
+A bug-fix patch resolving the outstanding reports from #24 and #36, plus a full builder-localization pass. **Drop-in upgrade from v2.1.x / v2.0.x — no schema breakage; a one-time, ID-preserving custom-badge migration runs automatically.**
+
+- **Genre-filtered music badges now actually filter by genre (#24).** Music plays and listening time are tracked **per genre** (case-insensitive), so a "play 50 disco tracks" badge no longer ticks up when you listen to metal. Three new builder metrics — *Music plays of a genre*, *Music hours of a genre*, *Items watched of a genre* — reveal a genre field when picked.
+- **Custom badges fully delete (#24).** The visual builder, the badge list, and delete now share one store (they were previously split, so builder-made badges couldn't be removed), and deleting a badge purges its earned + equipped copies from every user profile. Pre-existing badges are migrated on first startup with their IDs preserved.
+- **Header UI survives another header-injecting plugin (#36).** When a second plugin (e.g. Ratings) stripped the badge scripts from `index.html`, the plugin used to think it was still patched and never re-injected. The guard now keys on the actual script tag, so a stripped page is always repaired.
+- **Badge category labels fixed (#24).** Categories like *Studio Specialist* and *Books* no longer show as raw `category.*` keys, and every built-in category is now translated.
+- **Full builder localization.** The badge-builder metric list, quest builder, power-up + cosmetic pickers, and status messages are now translated across all 8 languages (en/fr/es/de/it/pt/zh/ja).
+
+---
+
+## 🚀 What's new in v2.1.0 — Open Library
+
+Achievements expand beyond film & TV, and admins get real badge-authoring power. **Drop-in upgrade from v2.0.x — no schema breakage, no data migration.**
+
+### 🎵 Music achievements
+
+**18 built-in music badges** driven by real listening — total plays, listening hours, and unique **albums / artists / genres / decades**. Audio items now flow through the same playback-credit pipeline (80% real-listen gate) as films and episodes.
+
+### 📚 Book achievements
+
+**8 book badges** — books completed, audiobook listening hours, and book series completed. An **audiobook-counting policy** lets admins choose whether audiobook plays count toward Books only (default), Music only, or Both.
+
+> **How ebook completion is detected (important):** Jellyfin has no "finished reading an ebook" signal — unlike audiobooks and music, which stream through a session and track listening time automatically, an ebook is text with no runtime. So an **ebook counts once it's marked _Played_** (the ✓ / "Mark as watched" toggle on the item). Simply reaching the last page in Jellyfin's reader does **not** auto-mark it, so book badges won't move until the book is marked played. This is a Jellyfin limitation, not something the plugin can detect on its own.
+
+### 🛠️ Custom badge builder
+
+Define your own badges with **compound AND/OR criteria** across any metric — film, TV, music, books and more. Simple badges via the admin form; compound criteria, icons, and import/export via the API. Full guide + copy-paste templates: [Custom badges](#-custom-badges).
+
+### 🌐 JS Injector fallback (issue #26)
+
+On bare-metal Linux where `/usr/share/jellyfin/web` isn't writable, the on-disk UI injection used to fail silently. The plugin now detects the [JavaScript Injector plugin](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector) and surfaces the exact script URLs to paste in. Details: [Troubleshooting](#-troubleshooting).
+
+### 🇯🇵 Anime detection fix (issue #25)
+
+Anime is now detected from **Genres *and* Tags**, read from both the item **and its parent Series**, with admin-configurable libraries / genres / tags — fixing anime badges that never fired when the classification lived on the Series or in Tags.
+
+### 🗓️ Daily-badge backfill fix + audit tool (issue #27)
+
+Time-windowed badges (daily / weekly / monthly) are now **skipped during the initial history scan**, so they no longer false-unlock from lifetime totals. A new admin **audit + cleanup tool** finds and clears badges wrongly awarded by pre-v2.1.0 backfills (re-earnable organically afterward).
+
+### 🌍 Globe language picker + full admin localization
+
+A **globe dropdown** on the admin page switches the UI language live and persists across reloads, and the **entire admin page** — including the Integrity and testing-tools sections — is now localized across all **8 languages**.
 
 ---
 
@@ -890,6 +948,7 @@ Not expected, just appreciated. Contributions — issues, PRs, translation fixes
 ## 🙏 Credits & thanks
 
 - **[@frenchyx24](https://github.com/frenchyx24)** — **full French translation of all 171 built-in badges** (hand-translated titles + descriptions, merged in v1.7.2 from [issue #5](https://github.com/ZL154/AchievementBadges_for_Jellyfin/issues/5)). Also filed the original multi-language feature request and the deactivate-equipped-badges / quest-customization / Xbox-logo bug reports that shaped v1.6.1 → v1.7.x. Merci beaucoup !
+- **[@camarigor](https://github.com/camarigor)** — the v2.3.0 friend profile cards and public-summary endpoint (#76), Tracearr history integration (#77/#84/#85), library + artist completion wiring (#80/#81), the watch-time carry reliability work (#87/#89/#91/#92), and the profile data-loss (#59/#60) and gzip-injection (#46) fixes that mattered to every published build.
 - **xdnewlun1 (Techno Cricket, CCDC)** — responsible disclosure of 12 security findings in v1.6.0 including the critical IDOR that led to the `UserOwnershipFilter`.
 - **Uenify** — the Xbox-style toast animation (circle grow, banner sweep, shimmer, text slide) is a port of his [CodePen](https://codepen.io/uenify) to vanilla JS + per-rarity colour palettes.
 - Translations for es / de / it / pt / zh-CN / ja started from an automated pass — native-speaker polish welcomed via PR.
