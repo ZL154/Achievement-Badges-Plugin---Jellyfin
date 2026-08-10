@@ -244,6 +244,82 @@ public class WatchCarryTests
         Assert.Equal(7, new Configuration.PluginConfiguration().WatchCarryRetentionDays);
     }
 
+    // ─── Surviving the media file being replaced ──────────────────────────
+    //
+    // Item ids are not stable. Any *arr upgrading a file gives Jellyfin a fresh
+    // GUID for the same film, and everything banked against the old one became
+    // unreachable while the viewer carried on watching the same thing.
+
+    private const string OldFileId = "2cb04d09-20f4-4d3a-9a1e-1f0a2b3c4d5e";
+    private const string NewFileId = "ab328693-0009-d23f-c74b-0b7076965966";
+    private const string Film = "Movie|Imdb:tt35051162";
+
+    [Fact]
+    public void ReplacingTheMediaFile_DoesNotStrandWhatWasAlreadyWatched()
+    {
+        // The real incident, with its real numbers. A 95 minute film watched
+        // over five sittings, then upgraded to 2160p, which minted a new item
+        // id. Two more sittings landed on the new id and the finished film was
+        // refused at 36%, with 69.6 minutes stranded under the dead id and
+        // nothing in any log to say so.
+        var store = new WatchCarryStore(TimeSpan.FromDays(7));
+        store.Remember(User, OldFileId, Seconds(4176), Now, Film);
+
+        Assert.Equal(Seconds(4176), store.Peek(User, NewFileId, Now.AddDays(2), Film));
+    }
+
+    [Fact]
+    public void FoldingTheOldIdIn_DoesNotCountItTwiceOnTheNextSitting()
+    {
+        // What makes adding rather than falling back safe. Remember is handed
+        // the running total, which already contains the old id, so the old
+        // entry has to go with it. If it survived, every later sitting would
+        // re-add it and the total would grow without anyone watching anything.
+        var store = new WatchCarryStore(TimeSpan.FromDays(7));
+        store.Remember(User, OldFileId, Seconds(4176), Now, Film);
+
+        var second = Now.AddDays(2);
+        var runningTotal = store.Peek(User, NewFileId, second, Film) + Seconds(1083);
+        store.Remember(User, NewFileId, runningTotal, second, Film);
+
+        Assert.Equal(1, store.Count);
+        Assert.Equal(runningTotal, store.Peek(User, NewFileId, second.AddHours(1), Film));
+    }
+
+    [Fact]
+    public void CreditingClearsTheOtherIdsToo_SoARewatchStartsFromZero()
+    {
+        var store = new WatchCarryStore(TimeSpan.FromDays(7));
+        store.Remember(User, OldFileId, Seconds(4176), Now, Film);
+        store.Remember(User, NewFileId, Seconds(1083), Now, null);
+
+        store.Clear(User, NewFileId, Film);
+
+        Assert.Equal(0, store.Peek(User, NewFileId, Now, Film));
+        Assert.Equal(0, store.Peek(User, OldFileId, Now, Film));
+    }
+
+    [Fact]
+    public void AnItemWithNoProviderId_StillCarriesByItemIdAlone()
+    {
+        // Home video, a rip with no metadata, and every entry written before
+        // the media key existed. These have to behave exactly as they did.
+        var store = new WatchCarryStore(TimeSpan.FromDays(7));
+        store.Remember(User, Item, Seconds(2400), Now, null);
+
+        Assert.Equal(Seconds(2400), store.Peek(User, Item, Now.AddDays(1), null));
+        Assert.Equal(0, store.Peek(User, "some-other-item", Now.AddDays(1), null));
+    }
+
+    [Fact]
+    public void TwoDifferentFilms_DoNotBleedIntoEachOther()
+    {
+        var store = new WatchCarryStore(TimeSpan.FromDays(7));
+        store.Remember(User, Item, Seconds(2400), Now, "Movie|Imdb:tt111");
+
+        Assert.Equal(0, store.Peek(User, "other-item", Now, "Movie|Imdb:tt222"));
+    }
+
     [Fact]
     public void UnreadableCarryFile_StartsEmptyInsteadOfThrowing()
     {

@@ -42,6 +42,15 @@ public sealed class WatchCarryStore
 
         public string ItemId { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Stable identity of the media itself, such as <c>Movie|Imdb:tt123</c>,
+        /// or null when the item carries no provider id. Item ids are not
+        /// stable: replacing a file gives Jellyfin a new one. Null entries,
+        /// including every entry written before this field existed, still work
+        /// by item id alone.
+        /// </summary>
+        public string? MediaKey { get; set; }
+
         public long Ticks { get; set; }
 
         public DateTimeOffset UpdatedAt { get; set; }
@@ -90,17 +99,44 @@ public sealed class WatchCarryStore
     /// recent. Expired entries are dropped on the way through, which keeps the
     /// store bounded without a background timer.
     /// </summary>
-    public long Peek(string userId, string itemId, DateTimeOffset now)
+    public long Peek(string userId, string itemId, DateTimeOffset now, string? mediaKey = null)
     {
         Prune(now);
+
+        var total = 0L;
 
         if (_entries.TryGetValue(Key(userId, itemId), out var entry)
             && now - entry.UpdatedAt <= _window)
         {
-            return entry.Ticks;
+            total = entry.Ticks;
         }
 
-        return 0;
+        // Same media, different item id. An *arr quality upgrade replaces the
+        // file and Jellyfin mints a new GUID, so everything banked against the
+        // old one becomes unreachable while the viewer keeps watching the same
+        // film. Measured on a live server: 69.6 minutes stranded under a dead
+        // id, 34.8 minutes under the live one, and a finished 95 minute film
+        // refused at 36%.
+        //
+        // Added rather than used as a fallback, because the live id usually
+        // does have an entry, so a fallback would never fire in the case this
+        // exists for. Double counting is not a concern: Remember folds the
+        // older entries away as soon as this total is written back.
+        if (!string.IsNullOrEmpty(mediaKey))
+        {
+            foreach (var pair in _entries)
+            {
+                var other = pair.Value;
+                if (!string.Equals(other.MediaKey, mediaKey, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!string.Equals(other.UserId, userId, StringComparison.OrdinalIgnoreCase)) continue;
+                if (string.Equals(other.ItemId, itemId, StringComparison.OrdinalIgnoreCase)) continue;
+                if (now - other.UpdatedAt > _window) continue;
+
+                total += other.Ticks;
+            }
+        }
+
+        return total;
     }
 
     /// <summary>
@@ -108,11 +144,11 @@ public sealed class WatchCarryStore
     /// because the caller passes the running total for the item, not a delta.
     /// Non-positive values clear the entry instead of storing a useless one.
     /// </summary>
-    public void Remember(string userId, string itemId, long ticks, DateTimeOffset now)
+    public void Remember(string userId, string itemId, long ticks, DateTimeOffset now, string? mediaKey = null)
     {
         if (ticks <= 0)
         {
-            Clear(userId, itemId);
+            Clear(userId, itemId, mediaKey);
             return;
         }
 
@@ -120,17 +156,51 @@ public sealed class WatchCarryStore
         {
             UserId = userId,
             ItemId = itemId,
+            MediaKey = mediaKey,
             Ticks = ticks,
             UpdatedAt = now
         };
 
+        // The caller passes the running total, which Peek already folded the
+        // older ids into, so keeping them would count that time twice on the
+        // next sitting. Consolidating here is what makes the addition in Peek
+        // safe.
+        ForEachSiblingOf(userId, itemId, mediaKey, key => _entries.TryRemove(key, out _));
+
         Persist();
     }
 
-    /// <summary>Drops the carry, called once the item has been credited.</summary>
-    public void Clear(string userId, string itemId)
+    /// <summary>
+    /// Runs an action for every entry that is the same media as this one under
+    /// a different item id. No-op when the item has no stable media key.
+    /// </summary>
+    private void ForEachSiblingOf(string userId, string itemId, string? mediaKey, Action<string> action)
     {
-        if (_entries.TryRemove(Key(userId, itemId), out _))
+        if (string.IsNullOrEmpty(mediaKey)) return;
+
+        foreach (var pair in _entries)
+        {
+            var other = pair.Value;
+            if (!string.Equals(other.MediaKey, mediaKey, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!string.Equals(other.UserId, userId, StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(other.ItemId, itemId, StringComparison.OrdinalIgnoreCase)) continue;
+
+            action(pair.Key);
+        }
+    }
+
+    /// <summary>
+    /// Drops the carry, called once the item has been credited. Also drops the
+    /// same media held under other item ids, so a credited film cannot leave an
+    /// orphan behind that resurfaces against a later re-watch.
+    /// </summary>
+    public void Clear(string userId, string itemId, string? mediaKey = null)
+    {
+        var removed = _entries.TryRemove(Key(userId, itemId), out _);
+
+        ForEachSiblingOf(userId, itemId, mediaKey, key => removed |= _entries.TryRemove(key, out _));
+
+        if (removed)
         {
             Persist();
         }
