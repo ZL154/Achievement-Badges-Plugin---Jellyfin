@@ -1106,5 +1106,13 @@
   "settings.popover_style": "Estilo do cartão de amigo",
   "settings.popover_style_desc": "O cartão que você vê ao passar o mouse ou clicar num amigo",
   "settings.popover_reimagined": "Detalhado",
-  "settings.popover_compact": "Compacto"
+  "settings.popover_compact": "Compacto",
+  "admin.btn_refresh_users": "Atualizar usuários",
+  "admin.msg.user_list_failed": "Não foi possível carregar os usuários do servidor.",
+  "admin.msg.user_selected_press_load": "Usuário selecionado. Pressione «Carregar este usuário» para testar esse perfil.",
+  "admin.user_picker": "Usuário do servidor",
+  "admin.user_picker_empty": "Nenhum usuário encontrado",
+  "admin.user_picker_failed": "Não foi possível carregar os usuários",
+  "admin.user_picker_loading": "Carregando usuários…",
+  "admin.user_picker_placeholder": "Escolha um usuário…"
 }

@@ -1106,5 +1106,13 @@
   "settings.popover_style": "好友卡片样式",
   "settings.popover_style_desc": "在好友栏中悬停或点击好友时看到的卡片",
   "settings.popover_reimagined": "详细",
-  "settings.popover_compact": "紧凑"
+  "settings.popover_compact": "紧凑",
+  "admin.btn_refresh_users": "刷新用户",
+  "admin.msg.user_list_failed": "无法加载服务器用户。",
+  "admin.msg.user_selected_press_load": "已选择用户。按“加载此用户”以测试该配置文件。",
+  "admin.user_picker": "服务器用户",
+  "admin.user_picker_empty": "未找到用户",
+  "admin.user_picker_failed": "无法加载用户",
+  "admin.user_picker_loading": "正在加载用户…",
+  "admin.user_picker_placeholder": "选择用户…"
 }

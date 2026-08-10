@@ -1106,5 +1106,13 @@
   "settings.popover_style": "Style de la carte d'ami",
   "settings.popover_style_desc": "La carte affichée quand vous survolez ou cliquez un ami dans le panneau",
   "settings.popover_reimagined": "Détaillée",
-  "settings.popover_compact": "Compacte"
+  "settings.popover_compact": "Compacte",
+  "admin.btn_refresh_users": "Actualiser les utilisateurs",
+  "admin.msg.user_list_failed": "Impossible de charger les utilisateurs du serveur.",
+  "admin.msg.user_selected_press_load": "Utilisateur sélectionné. Cliquez sur « Charger cet utilisateur » pour tester ce profil.",
+  "admin.user_picker": "Utilisateur du serveur",
+  "admin.user_picker_empty": "Aucun utilisateur trouvé",
+  "admin.user_picker_failed": "Impossible de charger les utilisateurs",
+  "admin.user_picker_loading": "Chargement des utilisateurs…",
+  "admin.user_picker_placeholder": "Choisir un utilisateur…"
 }

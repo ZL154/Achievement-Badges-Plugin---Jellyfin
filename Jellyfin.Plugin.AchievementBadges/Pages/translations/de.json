@@ -1106,5 +1106,13 @@
   "settings.popover_style": "Stil der Freundeskarte",
   "settings.popover_style_desc": "Die Karte, die du siehst, wenn du im Panel über einen Freund fährst oder klickst",
   "settings.popover_reimagined": "Detailliert",
-  "settings.popover_compact": "Kompakt"
+  "settings.popover_compact": "Kompakt",
+  "admin.btn_refresh_users": "Benutzer aktualisieren",
+  "admin.msg.user_list_failed": "Serverbenutzer konnten nicht geladen werden.",
+  "admin.msg.user_selected_press_load": "Benutzer ausgewählt. Klicken Sie auf „Diesen Benutzer laden“, um dieses Profil zu testen.",
+  "admin.user_picker": "Serverbenutzer",
+  "admin.user_picker_empty": "Keine Benutzer gefunden",
+  "admin.user_picker_failed": "Benutzer konnten nicht geladen werden",
+  "admin.user_picker_loading": "Benutzer werden geladen…",
+  "admin.user_picker_placeholder": "Benutzer auswählen…"
 }

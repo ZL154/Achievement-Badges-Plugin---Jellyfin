@@ -1106,5 +1106,13 @@
   "settings.popover_style": "フレンドカードのスタイル",
   "settings.popover_style_desc": "ドロワーでフレンドにカーソルを合わせたりクリックしたときに表示されるカード",
   "settings.popover_reimagined": "詳細",
-  "settings.popover_compact": "コンパクト"
+  "settings.popover_compact": "コンパクト",
+  "admin.btn_refresh_users": "ユーザーを更新",
+  "admin.msg.user_list_failed": "サーバーのユーザーを読み込めませんでした。",
+  "admin.msg.user_selected_press_load": "ユーザーを選択しました。「このユーザーを読み込む」を押してそのプロフィールをテストします。",
+  "admin.user_picker": "サーバーユーザー",
+  "admin.user_picker_empty": "ユーザーが見つかりません",
+  "admin.user_picker_failed": "ユーザーを読み込めませんでした",
+  "admin.user_picker_loading": "ユーザーを読み込み中…",
+  "admin.user_picker_placeholder": "ユーザーを選択…"
 }

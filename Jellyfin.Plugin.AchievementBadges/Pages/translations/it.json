@@ -1106,5 +1106,13 @@
   "settings.popover_style": "Stile della scheda amico",
   "settings.popover_style_desc": "La scheda che vedi quando passi il mouse o clicchi su un amico",
   "settings.popover_reimagined": "Dettagliata",
-  "settings.popover_compact": "Compatta"
+  "settings.popover_compact": "Compatta",
+  "admin.btn_refresh_users": "Aggiorna utenti",
+  "admin.msg.user_list_failed": "Impossibile caricare gli utenti del server.",
+  "admin.msg.user_selected_press_load": "Utente selezionato. Premi «Carica questo utente» per testare quel profilo.",
+  "admin.user_picker": "Utente del server",
+  "admin.user_picker_empty": "Nessun utente trovato",
+  "admin.user_picker_failed": "Impossibile caricare gli utenti",
+  "admin.user_picker_loading": "Caricamento utenti…",
+  "admin.user_picker_placeholder": "Scegli un utente…"
 }

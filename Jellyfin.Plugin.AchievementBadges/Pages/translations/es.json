@@ -1106,5 +1106,13 @@
   "settings.popover_style": "Estilo de la tarjeta de amigo",
   "settings.popover_style_desc": "La tarjeta que ves al pasar el ratón o hacer clic en un amigo",
   "settings.popover_reimagined": "Detallada",
-  "settings.popover_compact": "Compacta"
+  "settings.popover_compact": "Compacta",
+  "admin.btn_refresh_users": "Actualizar usuarios",
+  "admin.msg.user_list_failed": "No se pudieron cargar los usuarios del servidor.",
+  "admin.msg.user_selected_press_load": "Usuario seleccionado. Pulse «Cargar este usuario» para probar ese perfil.",
+  "admin.user_picker": "Usuario del servidor",
+  "admin.user_picker_empty": "No se encontraron usuarios",
+  "admin.user_picker_failed": "No se pudieron cargar los usuarios",
+  "admin.user_picker_loading": "Cargando usuarios…",
+  "admin.user_picker_placeholder": "Elige un usuario…"
 }
