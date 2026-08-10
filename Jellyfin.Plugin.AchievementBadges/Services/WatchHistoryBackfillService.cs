@@ -262,6 +262,35 @@ public class WatchHistoryBackfillService
     /// Item ids this user has played that the library can still prove, which
     /// is what the in-scan pass gets for free from its own replay.
     /// </summary>
+    /// <summary>
+    /// Drops the watch carry of every item the scan just credited.
+    /// <para>
+    /// The scan credits from Jellyfin's played flag without ever going through
+    /// a playback stop, which is the only path that used to clear a carry. So
+    /// the banked minutes survived, and a later partial rewatch could reach the
+    /// 80% gate on time already spent.
+    /// </para>
+    /// </summary>
+    private void ClearCarryFor(Guid userGuid, HashSet<string> creditedItemIds)
+    {
+        var userId = userGuid.ToString("D");
+
+        foreach (var id in creditedItemIds)
+        {
+            try
+            {
+                var item = Guid.TryParse(id, out var itemGuid) ? _libraryManager.GetItemById(itemGuid) : null;
+                _carried.Clear(userId, id, MediaIdentity.For(item));
+            }
+            catch (Exception ex)
+            {
+                // One unreadable item must not abort the sweep and leave the
+                // rest of the credited set carrying stale minutes.
+                _logger.LogDebug(ex, "[AchievementBadges] Could not clear watch carry for item {ItemId}.", id);
+            }
+        }
+    }
+
     private HashSet<string> PlayedItemIds(Jellyfin.Database.Implementations.Entities.User user)
     {
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -278,16 +307,7 @@ public class WatchHistoryBackfillService
 
             foreach (var item in _libraryManager.GetItemsResult(query).Items)
             {
-                var id = item.Id.ToString("D");
-                ids.Add(id);
-
-                // This item is about to be counted as watched, so whatever was
-                // banked toward finishing it has been spent. Leaving it would
-                // let a later partial rewatch reach the 80% gate on minutes
-                // from the first viewing: measured on a live server, an item
-                // sat at 72.3% carried after being credited, so 8% more of it
-                // would have earned a rewatch.
-                _carried.Clear(user.Id.ToString("D"), id, MediaIdentity.For(item));
+                ids.Add(item.Id.ToString("D"));
             }
         }
 
@@ -608,6 +628,19 @@ public class WatchHistoryBackfillService
             // happened. Crediting them after the floor would stack them on top
             // of themselves and inflate every total they feed.
             var tracearrCredited = RunTracearrPass(userId, username, creditedItemIds);
+
+            // Everything in that set has just been counted as watched, so the
+            // minutes banked toward finishing it have been spent. Leaving them
+            // lets a later partial rewatch reach the 80% gate on time from the
+            // first viewing.
+            //
+            // Placed here rather than in PlayedItemIds, which is where an
+            // earlier attempt put it: that helper serves the standalone
+            // Tracearr sync, and the scan builds creditedItemIds from its own
+            // queries and never calls it. The clear therefore never ran during
+            // a scan, which is the case it exists for. Measured after a real
+            // scan: three entries survived on already-credited items.
+            ClearCarryFor(userGuid, creditedItemIds);
 
             // Issue #48 companion: floor the rebuilt counters at their
             // pre scan values so deleted media never shrinks lifetime totals.
