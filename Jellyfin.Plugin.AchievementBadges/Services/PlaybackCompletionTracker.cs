@@ -117,9 +117,51 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             _userDataManager.UserDataSaved += OnUserDataSaved;
             _subscribed = true;
             _logger.LogInformation("[AchievementBadges] PlaybackCompletionTracker started, subscribed to session + userdata events.");
+
+            BackfillCarryMediaKeys();
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Gives the viewings already on disk the same protection as new ones, by
+    /// resolving their media identity while their items are still in the
+    /// library. Runs once at startup and is cheap: only entries missing a key
+    /// are looked up, and the store is bounded by its own pruning.
+    /// </summary>
+    private void BackfillCarryMediaKeys()
+    {
+        try
+        {
+            var (filled, unresolved) = _carried.BackfillMediaKeys(itemId =>
+                Guid.TryParse(itemId, out var guid)
+                    ? ResolveMediaKey(_libraryManager.GetItemById(guid))
+                    : null);
+
+            if (filled > 0)
+            {
+                _logger.LogInformation(
+                    "[AchievementBadges] Carried {Count} partial viewings now survive a media file replacement.",
+                    filled);
+            }
+
+            if (unresolved > 0)
+            {
+                // Said out loud rather than swallowed: this is watch time that
+                // is already unreachable, and a watch history scan is the only
+                // way to credit those viewings.
+                _logger.LogInformation(
+                    "[AchievementBadges] {Count} carried partial viewings reference items that are gone or have no "
+                    + "provider id, so they cannot be linked to their media. If a viewer is being refused credit for "
+                    + "something they finished, a watch history scan credits it from Jellyfin's own played flag.",
+                    unresolved);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[AchievementBadges] Could not backfill watch carry media keys; carrying continues by item id.");
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
@@ -350,7 +392,8 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             // ended without credit, so a stream that broke and reconnected is
             // measured as one viewing. See WatchCarryStore for why this is safe.
             var now = DateTimeOffset.UtcNow;
-            var carriedTicks = _carried.Peek(userId, itemId, now);
+            var mediaKey = ResolveMediaKey(item);
+            var carriedTicks = _carried.Peek(userId, itemId, now, mediaKey);
             if (carriedTicks > 0)
             {
                 _logger.LogInformation(
@@ -441,7 +484,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
             if (success)
             {
                 // Credited, so a later viewing of the same item starts clean.
-                _carried.Clear(userId, itemId);
+                _carried.Clear(userId, itemId, mediaKey);
                 ReportCarryPersistError();
 
                 _logger.LogInformation(
@@ -453,7 +496,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
                 // Not credited: remember what was genuinely watched so the next
                 // sitting picks up where this one left off instead of starting
                 // from zero.
-                _carried.Remember(userId, itemId, accumulatedPlayTicks, now);
+                _carried.Remember(userId, itemId, accumulatedPlayTicks, now, mediaKey);
                 ReportCarryPersistError();
 
                 _logger.LogDebug(
@@ -532,6 +575,42 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         }
         catch
         {
+        }
+
+        return null;
+    }
+
+    /// <summary>Providers ordered by how reliably they identify this exact
+    /// item. Verified against a live library: episodes carry their own Tvdb id,
+    /// distinct from one another and from the series, so this cannot collapse a
+    /// season into one entry.</summary>
+    private static readonly string[] MediaKeyProviders = { "Imdb", "Tmdb", "Tvdb" };
+
+    /// <summary>
+    /// Stable identity of the media, or null when it carries no provider id.
+    /// <para>
+    /// Item ids are not stable. Replacing a file, which any *arr does on a
+    /// quality upgrade, gives Jellyfin a fresh GUID for the same film, and the
+    /// carry keyed by the old one becomes unreachable mid-viewing. Provider ids
+    /// survive that. Null is fine and common: those entries keep working by
+    /// item id alone, exactly as before.
+    /// </para>
+    /// <para>
+    /// The type prefix keeps two different kinds of media apart should they
+    /// ever be given the same number in different provider namespaces.
+    /// </para>
+    /// </summary>
+    private static string? ResolveMediaKey(BaseItem? item)
+    {
+        var providers = item?.ProviderIds;
+        if (providers is null || providers.Count == 0) return null;
+
+        foreach (var provider in MediaKeyProviders)
+        {
+            if (providers.TryGetValue(provider, out var value) && !string.IsNullOrWhiteSpace(value))
+            {
+                return item!.GetType().Name + "|" + provider + ":" + value.Trim();
+            }
         }
 
         return null;
