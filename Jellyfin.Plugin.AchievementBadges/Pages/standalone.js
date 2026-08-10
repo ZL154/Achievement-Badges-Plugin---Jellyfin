@@ -3696,7 +3696,7 @@
                         '<select class="ab-select" data-settings-select="profileCardStyle">' +
                             '<option value=""' + (prefCardStyle === '' || prefCardStyle === 'console' ? ' selected' : '') + '>' + tr('settings.card_style_console', 'Classic') + '</option>' +
                             '<option value="metro"' + (prefCardStyle === 'metro' ? ' selected' : '') + '>' + tr('settings.card_style_metro', 'Xbox 360 — Metro') + '</option>' +
-                            '<option value="blades"' + (prefCardStyle === 'blades' ? ' selected' : '') + '>' + tr('settings.card_style_blades', 'Xbox 360 — Blades') + '</option>' +
+                            '<option value="blades"' + (prefCardStyle === 'blades' ? ' selected' : '') + '>' + tr('settings.card_style_blades', 'Aurora') + '</option>' +
                         '</select>' +
                     '</div>' +
                     '<div class="ab-setting-row">' +

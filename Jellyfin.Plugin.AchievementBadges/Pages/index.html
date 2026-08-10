@@ -3104,8 +3104,16 @@ font-size:0.88em;
     }
 
     tabBadgesBtn.addEventListener('click', function () { setActiveTab('badges'); });
-    tabLeaderboardBtn.addEventListener('click', function () { setActiveTab('leaderboard'); });
-    tabStatsBtn.addEventListener('click', function () { setActiveTab('stats'); });
+    tabLeaderboardBtn.addEventListener('click', function () {
+        setActiveTab('leaderboard');
+        // Refresh on open so a just-deleted account drops off immediately
+        // rather than lingering until the next full reload.
+        loadLeaderboard().catch(function (err) { console.warn('[AchievementBadges] leaderboard refresh failed', err); });
+    });
+    tabStatsBtn.addEventListener('click', function () {
+        setActiveTab('stats');
+        loadServerStats().catch(function (err) { console.warn('[AchievementBadges] server stats refresh failed', err); });
+    });
 
     if (userSelect) {
         userSelect.addEventListener('change', function () {

@@ -264,10 +264,10 @@ public class UserNotificationPreferences
     public bool ShowEquippedShowcase { get; set; } = true;
 
     // [#42/#45 follow-up] Which shareable profile-card skin this user's public
-    // card renders as: "" or "console" (default clean card), "metro" or
-    // "blades" (the retro Xbox 360 dashboards). Read by the anonymous
-    // profile-card endpoint when no explicit ?style= is given, so a user's
-    // shared card looks the way they chose.
+    // card renders as: "" or "console" (default clean card), "metro" (Xbox 360
+    // tile dashboard), or "blades" — the "Aurora" skin (slug kept for saved
+    // prefs). Read by the anonymous profile-card endpoint when no explicit
+    // ?style= is given, so a user's shared card looks the way they chose.
     [JsonPropertyName("ProfileCardStyle")]
     public string ProfileCardStyle { get; set; } = "";
 

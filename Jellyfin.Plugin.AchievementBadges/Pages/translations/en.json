@@ -1102,7 +1102,7 @@
   "settings.profile_card_style_desc": "How your shareable profile card looks when someone opens it",
   "settings.card_style_console": "Classic",
   "settings.card_style_metro": "Xbox 360 — Metro",
-  "settings.card_style_blades": "Xbox 360 — Blades",
+  "settings.card_style_blades": "Aurora",
   "settings.toast_position": "Toast position",
   "settings.toast_position_desc": "Where unlock notifications appear on your screen",
   "settings.toast_pos_top_right": "Top-right (default)",

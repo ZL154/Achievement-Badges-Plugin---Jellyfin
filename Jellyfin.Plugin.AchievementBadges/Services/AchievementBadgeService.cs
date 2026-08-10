@@ -312,7 +312,7 @@ public class AchievementBadgeService : IDisposable
         lock (_lock)
         {
             return _userProfiles.Values
-                .Where(p => (p.PrestigeLevel > 0 || p.LifetimeScore > 0) && !(p.Preferences?.HideFromPrestigeBoard ?? false))
+                .Where(p => (p.PrestigeLevel > 0 || p.LifetimeScore > 0) && !(p.Preferences?.HideFromPrestigeBoard ?? false) && UserExists(p.UserId))
                 .OrderByDescending(p => p.PrestigeLevel)
                 .ThenByDescending(p => p.LifetimeScore)
                 .Take(limit)
@@ -2404,7 +2404,7 @@ public class AchievementBadgeService : IDisposable
         lock (_lock)
         {
             var projected = _userProfiles.Values
-                .Where(profile => !(profile.Preferences?.HideFromLeaderboard ?? false))
+                .Where(profile => !(profile.Preferences?.HideFromLeaderboard ?? false) && UserExists(profile.UserId))
                 .Select(profile =>
             {
                 EvaluateBadges(profile, profile.UserId);
@@ -2460,7 +2460,7 @@ public class AchievementBadgeService : IDisposable
         lock (_lock)
         {
             var entries = _userProfiles.Values
-                .Where(profile => !(profile.Preferences?.HideFromLeaderboard ?? false))
+                .Where(profile => !(profile.Preferences?.HideFromLeaderboard ?? false) && UserExists(profile.UserId))
                 .Select(profile =>
                 {
                     EvaluateBadges(profile, profile.UserId);
@@ -2642,14 +2642,17 @@ public class AchievementBadgeService : IDisposable
     {
         lock (_lock)
         {
-            var totalUsers = _userProfiles.Count;
-            var totalBadgesUnlocked = _userProfiles.Values.Sum(p => p.Badges.Count(b => b.Unlocked && IsBadgeEnabled(b.Id)));
-            var totalItemsWatched = _userProfiles.Values.Sum(p => p.Counters.TotalItemsWatched);
-            var totalMoviesWatched = _userProfiles.Values.Sum(p => p.Counters.MoviesWatched);
-            var totalSeriesCompleted = _userProfiles.Values.Sum(p => p.Counters.SeriesCompleted);
-            var totalAchievementScore = _userProfiles.Values.Sum(p => AchievementScoreHelper.GetTotalUnlockedScore(p.Badges.Where(b => IsBadgeEnabled(b.Id)).ToList()));
+            // Count and aggregate over live accounts only — a deleted user's stale
+            // profile must not inflate the server totals (see UserExists).
+            var live = _userProfiles.Values.Where(p => UserExists(p.UserId)).ToList();
+            var totalUsers = live.Count;
+            var totalBadgesUnlocked = live.Sum(p => p.Badges.Count(b => b.Unlocked && IsBadgeEnabled(b.Id)));
+            var totalItemsWatched = live.Sum(p => p.Counters.TotalItemsWatched);
+            var totalMoviesWatched = live.Sum(p => p.Counters.MoviesWatched);
+            var totalSeriesCompleted = live.Sum(p => p.Counters.SeriesCompleted);
+            var totalAchievementScore = live.Sum(p => AchievementScoreHelper.GetTotalUnlockedScore(p.Badges.Where(b => IsBadgeEnabled(b.Id)).ToList()));
 
-            var mostCommonBadge = _userProfiles.Values
+            var mostCommonBadge = live
                 .SelectMany(p => p.Badges.Where(b => b.Unlocked && IsBadgeEnabled(b.Id)))
                 .GroupBy(b => b.Id)
                 .OrderByDescending(g => g.Count())
@@ -2682,6 +2685,17 @@ public class AchievementBadgeService : IDisposable
         }
 
         return userId.Trim();
+    }
+
+    // A profile can outlive the Jellyfin account it belongs to: deleting a user
+    // does not delete their achievement profile, so stale profiles accumulate in
+    // _userProfiles. They must not appear in any public projection — otherwise a
+    // deleted account shows on the leaderboard as its raw GUID (ResolveUserName
+    // has no username left to return) and inflates the server user count.
+    private bool UserExists(string userId)
+    {
+        try { return Guid.TryParse(userId, out var guid) && _userManager.GetUserById(guid) != null; }
+        catch { return false; }
     }
 
     private string ResolveUserName(string userId)

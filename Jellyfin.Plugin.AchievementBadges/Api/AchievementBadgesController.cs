@@ -1453,10 +1453,11 @@ public class AchievementBadgesController : ControllerBase
             return Unavailable();
         }
 
-        // Card skin. Default is the clean "console" card. The retro Xbox 360
-        // look ships in two flavours: "metro" (flat 2011 tile dashboard) and
-        // "blades" (glossy 2005 blades). "xbox360"/"360" alias to metro. Every
-        // template uses the same {{token}} set, so the substitution is shared.
+        // Card skin. Default is the clean "console" card. Two extra flavours:
+        // "metro" (flat 2011 Xbox 360 tile dashboard) and the "blades" slug,
+        // now the "Aurora" skin (a tier-coloured spine card; "aurora" aliases
+        // it). "xbox360"/"360" alias to metro. Every template uses the same
+        // {{token}} set, so the substitution is shared.
         var normalizedStyle = (style ?? string.Empty).Trim().ToLowerInvariant();
         // No explicit ?style= → use the card owner's saved preference, so the
         // card others open looks the way the owner picked in their settings.
@@ -1467,7 +1468,7 @@ public class AchievementBadgesController : ControllerBase
         }
         var templateResource = normalizedStyle switch
         {
-            "blades" or "360blades" or "xbox360blades" => "Jellyfin.Plugin.AchievementBadges.Pages.profile-card-blades.html",
+            "blades" or "aurora" or "aurora-spine" or "auroraspine" or "360blades" or "xbox360blades" => "Jellyfin.Plugin.AchievementBadges.Pages.profile-card-blades.html",
             "metro" or "360metro" or "xbox360" or "360" or "xbox" => "Jellyfin.Plugin.AchievementBadges.Pages.profile-card-metro.html",
             _ => "Jellyfin.Plugin.AchievementBadges.Pages.profile-card.html",
         };
