@@ -1304,7 +1304,7 @@
             'border-radius:18px;padding:18px 18px 16px;font-size:13px;line-height:1.5;pointer-events:auto;',
             'box-shadow:0 20px 54px -16px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;',
             'animation:abPc2In .34s cubic-bezier(.16,1,.3,1) both;}',
-            '#ab-profile-card.ab-pc2.pin{width:344px;max-width:92vw;padding:22px 22px 18px;left:50%;top:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);animation:abPc2OpenPinned .4s cubic-bezier(.16,1,.3,1) both;}',
+            '#ab-profile-card.ab-pc2.pin{z-index:10000060;width:344px;max-width:92vw;padding:22px 22px 18px;left:50%;top:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);animation:abPc2OpenPinned .4s cubic-bezier(.16,1,.3,1) both;}',
             '#ab-profile-card.ab-pc2::before{content:"";position:absolute;inset:0 0 auto 0;height:120px;pointer-events:none;',
             'background:radial-gradient(120% 90% at 26% -10%,color-mix(in srgb,var(--acc) 20%,transparent),transparent 60%);}',
             '.ab-pc2 .top{position:relative;display:flex;align-items:center;gap:15px;}',
