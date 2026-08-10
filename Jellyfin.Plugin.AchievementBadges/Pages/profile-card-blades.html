@@ -5,70 +5,94 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Achievement Profile Card</title>
 <style>
-  /* Retro Xbox 360 "Blades" skin (2005 dashboard), reimagined as an authentic
-     edge-on blade stack: the profile is the active green blade with a curved
-     corner and a "// PROFILE" tab, and the other blades (Media / Social /
-     System) fan out behind it. Deliberately flat and matte, not glossy, and
-     fixed 360 green rather than the per-tier colour. Pure HTML/CSS (the card
-     CSP forbids inline JS; the avatar falls back to initials). */
-  :root{ --ink:#eef3e8; --dim:rgba(238,243,232,.7); --faint:rgba(238,243,232,.42); }
+  /* "Blades" skin, reimagined as the Aurora Spine: one refined vertical blade
+     carries the rank in the tier colour, a soft tinted glow bleeds into the
+     dark body, and the rest is a clean editorial panel. The tier colour is the
+     single accent (spine, glow, ring, bar, score unit) over cool-tinted
+     neutrals. No gloss, no blade stack, no gradient text or neon. Pure HTML/CSS
+     because the card's CSP forbids inline JS (the avatar falls back to initials
+     with no onerror handler). */
+  :root{
+    --accent: {{tierColor}};
+    --bg:#0a0b0e; --card:#0d0f13; --spine-ink:rgba(6,7,10,.74);
+    --ink:#f3f5f8; --dim:rgba(243,245,248,.58); --faint:rgba(243,245,248,.36);
+    --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.05);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
   *{ box-sizing:border-box; }
   body{
-    margin:0; min-height:100vh; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:2.5rem 1rem;
-    font-family:"Segoe UI",-apple-system,system-ui,Roboto,sans-serif; color:var(--ink);
-    background:radial-gradient(90% 70% at 40% 15%, #10160c, #05070a 78%); -webkit-font-smoothing:antialiased;
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2.5rem 1rem;
+    font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(120% 90% at 50% 0%, #12141a, var(--bg) 72%); -webkit-font-smoothing:antialiased;
   }
-  .stage{ position:relative; width:600px; max-width:100%; animation:rise .5s cubic-bezier(0.16,1,0.3,1) both; }
+  .card{
+    display:flex; width:600px; max-width:100%; border-radius:16px; overflow:hidden;
+    background:var(--card); border:1px solid var(--line); box-shadow:0 30px 70px -32px rgba(0,0,0,.8);
+    animation:rise .45s cubic-bezier(0.16,1,0.3,1) both;
+  }
   @keyframes rise{ from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:none;} }
-  @media (prefers-reduced-motion: reduce){ .stage{ animation:none; } }
+  @media (prefers-reduced-motion: reduce){ .card{ animation:none; } }
 
-  .spine{ position:absolute; width:46px; border-radius:8px 22px 22px 8px; display:flex; align-items:center; justify-content:center;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 10px 26px rgba(0,0,0,.45); }
-  .spine span{ writing-mode:vertical-rl; transform:rotate(180deg); font:800 11px/1 "Segoe UI",system-ui; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.9); text-shadow:0 1px 1px rgba(0,0,0,.3); }
-  .spine.s1{ right:-26px; top:20px; bottom:20px; background:linear-gradient(180deg,#3a7ba8,#2b5c80); z-index:3; }
-  .spine.s2{ right:-48px; top:34px; bottom:34px; background:linear-gradient(180deg,#b27d24,#8a5d14); z-index:2; }
-  .spine.s3{ right:-68px; top:48px; bottom:48px; background:linear-gradient(180deg,#5a6470,#414a56); z-index:1; }
+  .spine{ flex:0 0 52px; position:relative; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg, color-mix(in oklch, var(--accent) 92%, #000), color-mix(in oklch, var(--accent) 62%, #000)); }
+  .spine::after{ content:""; position:absolute; top:0; bottom:0; right:0; width:1px; background:rgba(255,255,255,.14); }
+  .spine span{ writing-mode:vertical-rl; transform:rotate(180deg); font-size:12px; font-weight:800; letter-spacing:.26em;
+    text-transform:uppercase; color:var(--spine-ink); white-space:nowrap; }
 
-  .blade{ position:relative; z-index:4; border-radius:20px 46px 12px 12px; overflow:hidden;
-    background:linear-gradient(180deg,#77af2b 0%,#659723 60%,#587f1e 100%);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 22px 48px -14px rgba(0,0,0,.62); }
-  .head-strip{ display:flex; align-items:center; justify-content:space-between; padding:12px 18px 0; }
-  .head-strip .bl{ font:800 11px/1 "Segoe UI"; letter-spacing:.2em; text-transform:uppercase; color:rgba(18,48,5,.7); }
-  .head-strip .gs{ display:flex; align-items:center; gap:8px; }
-  .head-strip .gs .gi{ width:22px; height:22px; border-radius:5px; background:#12300a; color:#bfe86a; display:flex; align-items:center; justify-content:center; font:900 14px/1 system-ui; }
-  .head-strip .gs .n{ font:800 20px/1 system-ui; font-variant-numeric:tabular-nums; color:#0f2a04; }
-  .head-strip .gs .u{ font:800 8.5px/1 system-ui; letter-spacing:.14em; text-transform:uppercase; color:rgba(18,48,5,.55); align-self:flex-end; margin-bottom:2px; }
-  .head{ display:flex; align-items:center; gap:15px; padding:12px 18px 16px; }
-  .pic{ width:76px; height:76px; border-radius:10px; flex:0 0 auto; position:relative; overflow:hidden; background:#25350f; box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 2px 6px rgba(0,0,0,.35); }
-  .pic .ini{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font:800 30px/1 system-ui; color:#eef6db; }
-  .pic .img{ position:absolute; inset:0; background-image:url('/Users/{{userId}}/Images/Primary?width=160&quality=90'); background-size:cover; background-position:center; }
-  .who{ min-width:0; color:#12300a; }
-  .tag{ font-size:24px; font-weight:800; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .rank{ margin-top:4px; font-size:11px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; color:rgba(18,48,5,.72); }
+  .body{ flex:1; min-width:0; padding:22px 24px 24px; position:relative; overflow:hidden; }
+  .body::before{ content:""; position:absolute; left:-46px; top:-34px; width:230px; height:230px; border-radius:50%;
+    background:radial-gradient(circle, color-mix(in oklch, var(--accent) 26%, transparent), transparent 68%); pointer-events:none; }
 
-  .zone{ margin:0 12px 12px; border-radius:12px; padding:15px; background:#16250c; box-shadow:inset 0 0 0 1px rgba(255,255,255,.05); }
-  .prog .r{ display:flex; justify-content:space-between; font:800 10px/1 system-ui; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; }
-  .prog .r b{ color:var(--dim); font-variant-numeric:tabular-nums; }
-  .prog .bar{ height:8px; border-radius:99px; background:#0a1305; overflow:hidden; }
-  .prog .fill{ height:100%; width:{{progressToNext}}%; border-radius:99px; background:#7fbf30; }
-  .stats{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:14px; }
-  .st{ background:rgba(255,255,255,.04); border-radius:8px; padding:10px 4px; text-align:center; }
-  .st .v{ font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .st .l{ margin-top:5px; font-size:8px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); }
-  @media(max-width:520px){ .stats{ grid-template-columns:repeat(3,1fr); } }
-  .eqh{ margin:14px 0 8px; font:800 9.5px/1 system-ui; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
-  .eq{ display:flex; flex-wrap:wrap; gap:7px; }
-  .badge-chip{ padding:5px 10px; border-radius:6px; font-size:11.5px; font-weight:700; color:var(--ink); background:rgba(255,255,255,.05); box-shadow:inset 0 0 0 1px rgba(255,255,255,.07); }
-  .eq .tier{ color:var(--dim); background:none; box-shadow:none; padding:0; }
+  .top{ display:flex; align-items:center; gap:15px; position:relative; }
+  .av{ width:58px; height:58px; border-radius:14px; flex:0 0 auto; position:relative; overflow:hidden;
+    background:rgba(255,255,255,.06); border:1px solid var(--line); }
+  .av .ini{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:23px; font-weight:700; color:#e9edf3; }
+  .av .img{ position:absolute; inset:0; background-image:url('/Users/{{userId}}/Images/Primary?width=144&quality=90'); background-size:cover; background-position:center; }
+  .id{ flex:1; min-width:0; }
+  .id .nm{ font-size:21px; font-weight:800; letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .id .sub{ font-size:12.5px; color:var(--dim); margin-top:3px; }
+  .id .sub b{ color:var(--ink); font-weight:600; }
+
+  .ring{ position:relative; width:56px; height:56px; flex:0 0 auto; border-radius:50%;
+    background:conic-gradient(var(--accent) calc(1% * {{percentage}}), rgba(255,255,255,.09) 0); }
+  .ring::before{ content:""; position:absolute; inset:5px; border-radius:50%; background:var(--card); }
+  .ring .pct{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+
+  .score{ display:flex; align-items:flex-end; justify-content:space-between; margin-top:20px; position:relative; }
+  .score .big{ font-size:34px; font-weight:800; letter-spacing:-.03em; line-height:.9; font-variant-numeric:tabular-nums; }
+  .score .u{ font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--faint); margin-top:8px; }
+  .score .goal{ text-align:right; }
+  .score .goal .g2{ font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .score .goal .g1{ font-size:14px; font-weight:700; margin-top:4px; }
+  .score .goal .g1 em{ color:var(--accent); font-style:normal; }
+
+  .prog{ margin-top:14px; position:relative; }
+  .prog .bar{ height:6px; border-radius:99px; background:rgba(255,255,255,.09); overflow:hidden; }
+  .prog .fill{ height:100%; width:{{progressToNext}}%; border-radius:99px; background:var(--accent); }
+  .prog .lab{ display:flex; justify-content:space-between; margin-top:8px; font-size:10.5px; letter-spacing:.03em; text-transform:uppercase; color:var(--faint); font-weight:600; }
+  .prog .lab b{ color:var(--dim); font-variant-numeric:tabular-nums; }
+
+  .stats{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:18px; position:relative; }
+  .st{ background:rgba(255,255,255,.035); border:1px solid var(--line-2); border-radius:9px; padding:11px 4px; text-align:center; }
+  .st .v{ font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .st .l{ font-size:8px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); margin-top:6px; }
+  @media (max-width:540px){ .stats{ grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:360px){ .stats{ grid-template-columns:repeat(2,1fr); } }
+
+  .eqh{ font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); margin:18px 0 10px; position:relative; }
+  .eq{ display:flex; flex-wrap:wrap; gap:7px; position:relative; }
+  .badge-chip{ padding:6px 11px; border-radius:7px; font-size:12px; font-weight:600; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--line); }
+  .eq .tier{ color:var(--dim); font-size:12px; background:none; border:none; padding:6px 2px; }
 
   .ab-back-btn{
     position:fixed; top:max(1em, env(safe-area-inset-top,0px)); left:max(1em, env(safe-area-inset-left,0px));
-    width:44px; height:44px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px;
-    background:rgba(10,20,4,.7); color:var(--ink); border:1px solid rgba(255,255,255,.12);
+    width:44px; height:44px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; border-radius:12px;
+    background:rgba(20,22,28,.7); color:var(--ink); border:1px solid var(--line);
     backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); text-decoration:none; cursor:pointer; z-index:100;
     transition:background .15s cubic-bezier(0.16,1,0.3,1), transform .15s cubic-bezier(0.16,1,0.3,1); -webkit-tap-highlight-color:transparent;
   }
-  .ab-back-btn:hover, .ab-back-btn:active{ background:rgba(20,34,10,.85); transform:scale(.96); }
+  .ab-back-btn:hover, .ab-back-btn:active{ background:rgba(30,33,42,.85); transform:scale(.96); }
   .ab-back-btn svg{ width:22px; height:22px; fill:currentColor; }
 </style>
 </head>
@@ -78,34 +102,38 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
   </a>
 
-  <div class="stage">
-    <div class="spine s3"><span>System</span></div>
-    <div class="spine s2"><span>Social</span></div>
-    <div class="spine s1"><span>Media</span></div>
-    <div class="blade">
-      <div class="head-strip">
-        <span class="bl">// Profile</span>
-        <span class="gs"><span class="gi">G</span><span class="n">{{score}}</span><span class="u">Gamerscore</span></span>
-      </div>
-      <div class="head">
-        <div class="pic"><span class="ini">{{userInitial}}</span><span class="img"></span></div>
-        <div class="who">
-          <div class="tag">{{userName}}</div>
-          <div class="rank">Rank&nbsp;&nbsp;{{tierName}}<span style="opacity:.5">&nbsp;&middot;&nbsp;{{unlocked}}/{{total}}</span></div>
+  <div class="card">
+    <div class="spine"><span>{{tierName}}</span></div>
+    <div class="body">
+      <div class="top">
+        <div class="av"><span class="ini">{{userInitial}}</span><span class="img"></span></div>
+        <div class="id">
+          <div class="nm">{{userName}}</div>
+          <div class="sub"><b>{{unlocked}}</b> of <b>{{total}}</b> badges</div>
         </div>
+        <div class="ring"><div class="pct">{{percentage}}%</div></div>
       </div>
-      <div class="zone">
-        <div class="prog"><div class="r"><span>Rank progress</span><b>{{nextTierLabel}}</b></div><div class="bar"><div class="fill"></div></div></div>
-        <div class="stats">
-          <div class="st"><div class="v">{{currentStreak}}</div><div class="l">Day streak</div></div>
-          <div class="st"><div class="v">{{bestStreak}}</div><div class="l">Best streak</div></div>
-          <div class="st"><div class="v">{{recapMovies}}</div><div class="l">Films 30d</div></div>
-          <div class="st"><div class="v">{{recapEpisodes}}</div><div class="l">Eps 30d</div></div>
-          <div class="st"><div class="v">{{recapUnlocks}}</div><div class="l">Unlocks 30d</div></div>
-        </div>
-        <div class="eqh">Equipped</div>
-        <div class="eq">{{equippedHtml}}</div>
+
+      <div class="score">
+        <div><div class="big">{{score}}</div><div class="u">Score</div></div>
+        <div class="goal"><div class="g2">Next rank</div><div class="g1"><em>{{nextTierLabel}}</em></div></div>
       </div>
+
+      <div class="prog">
+        <div class="bar"><div class="fill"></div></div>
+        <div class="lab"><span>Rank progress</span><b>{{progressToNext}}%</b></div>
+      </div>
+
+      <div class="stats">
+        <div class="st"><div class="v">{{currentStreak}}</div><div class="l">Day streak</div></div>
+        <div class="st"><div class="v">{{bestStreak}}</div><div class="l">Best</div></div>
+        <div class="st"><div class="v">{{recapMovies}}</div><div class="l">Films 30d</div></div>
+        <div class="st"><div class="v">{{recapEpisodes}}</div><div class="l">Eps 30d</div></div>
+        <div class="st"><div class="v">{{recapUnlocks}}</div><div class="l">Unlocks 30d</div></div>
+      </div>
+
+      <div class="eqh">Equipped</div>
+      <div class="eq">{{equippedHtml}}</div>
     </div>
   </div>
 </body>
