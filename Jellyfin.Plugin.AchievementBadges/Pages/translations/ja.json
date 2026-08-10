@@ -522,7 +522,7 @@
   "admin.webhook.url": "Webhook URL：",
   "admin.webhook.template": "メッセージテンプレート：",
   "admin.webhook.intro": "ユーザーがバッジを解除するたびに Discord / Slack / 任意の Webhook URL にメッセージを投稿。",
-  "admin.test_toast.intro": "各レアリティの Xbox 風解除アニメーションをプレビュー。下のボタンをクリックしてページ下中央を確認。",
+  "admin.test_toast.intro": "各レアリティの Xbox 風アンロックアニメーションをプレビュー。下のボタンを押すと、設定した位置に通知が表示されます。",
   "admin.test_toast.batch_button": "10件の解除をテスト",
   "admin.test_toast.batch_help": "保存済みのグループ/個別通知スタイルを使用し、実際の実績データは作成しません。",
   "admin.ui.unlock_toasts": "解除通知を表示",
@@ -1094,5 +1094,13 @@
   "settings.profile_card_style_desc": "誰かが開いたときの共有プロフィールカードの見た目",
   "settings.card_style_console": "クラシック",
   "settings.card_style_metro": "Xbox 360 — Metro",
-  "settings.card_style_blades": "Xbox 360 — Blades"
+  "settings.card_style_blades": "Xbox 360 — Blades",
+  "settings.toast_position": "通知の位置",
+  "settings.toast_position_desc": "アンロック通知が画面のどこに表示されるか",
+  "settings.toast_pos_top_right": "右上（デフォルト）",
+  "settings.toast_pos_top_left": "左上",
+  "settings.toast_pos_bottom_right": "右下",
+  "settings.toast_pos_bottom_left": "左下",
+  "settings.toast_pos_bottom_center": "下中央（元の位置）",
+  "admin.msg.toast_at": "通知位置："
 }

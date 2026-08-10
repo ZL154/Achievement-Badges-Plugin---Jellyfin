@@ -3532,6 +3532,7 @@
 
         var minRarity = prefs.minimumToastRarity || prefs.MinimumToastRarity || 'all';
         var toastGrouping = (prefs.unlockToastGrouping || prefs.UnlockToastGrouping || 'grouped').toString().toLowerCase();
+        var toastPos = (prefs.toastPosition || prefs.ToastPosition || 'top-right').toString().toLowerCase();
         var toastDeviceScope = (prefs.unlockToastDeviceScope || prefs.UnlockToastDeviceScope || 'all-devices').toString().toLowerCase();
         var pageTheme = prefs.achievementPageTheme || prefs.AchievementPageTheme || 'default';
         var slots = prefs.equippedBadgeSlots || prefs.EquippedBadgeSlots || 5;
@@ -3630,6 +3631,16 @@
                         '<select class="ab-select" data-settings-select="unlockToastGrouping">' +
                             '<option value="grouped"' + (toastGrouping === 'grouped' ? ' selected' : '') + '>' + tr('settings.toast_grouped', 'Grouped summary') + '</option>' +
                             '<option value="individual"' + (toastGrouping === 'individual' ? ' selected' : '') + '>' + tr('settings.toast_individual', 'Individual animations') + '</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="ab-setting-row">' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.toast_position', 'Toast position') + '</div><div class="ab-toggle-desc">' + tr('settings.toast_position_desc', 'Where unlock notifications appear on your screen') + '</div></div>' +
+                        '<select class="ab-select" data-settings-select="toastPosition">' +
+                            '<option value="top-right"' + (toastPos === 'top-right' ? ' selected' : '') + '>' + tr('settings.toast_pos_top_right', 'Top-right (default)') + '</option>' +
+                            '<option value="top-left"' + (toastPos === 'top-left' ? ' selected' : '') + '>' + tr('settings.toast_pos_top_left', 'Top-left') + '</option>' +
+                            '<option value="bottom-right"' + (toastPos === 'bottom-right' ? ' selected' : '') + '>' + tr('settings.toast_pos_bottom_right', 'Bottom-right') + '</option>' +
+                            '<option value="bottom-left"' + (toastPos === 'bottom-left' ? ' selected' : '') + '>' + tr('settings.toast_pos_bottom_left', 'Bottom-left') + '</option>' +
+                            '<option value="bottom-center"' + (toastPos === 'bottom-center' ? ' selected' : '') + '>' + tr('settings.toast_pos_bottom_center', 'Bottom-center (original)') + '</option>' +
                         '</select>' +
                     '</div>' +
                     '<div class="ab-setting-row">' +
@@ -3738,6 +3749,12 @@
                     // immediately without waiting for the periodic poll.
                     try {
                         window.dispatchEvent(new CustomEvent('ab:friends-corner-changed', { detail: { corner: sel.value } }));
+                    } catch (e) {}
+                }
+                if (sel.getAttribute('data-settings-select') === 'toastPosition') {
+                    // Tell enhance.js to move the toast container immediately.
+                    try {
+                        window.dispatchEvent(new CustomEvent('ab:notification-preferences-changed', { detail: { toastPosition: sel.value } }));
                     } catch (e) {}
                 }
                 if (sel.getAttribute('data-settings-select') === 'language') {

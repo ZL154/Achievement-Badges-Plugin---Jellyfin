@@ -699,7 +699,11 @@
                 // avatars) doesn't get clobbered by the gradient background
                 // on `.online`. The online state now shows only via the
                 // inset box-shadow ring + the green status dot (::after).
-                '.ab-fd-avatar{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:0.9em;position:relative;background-color:#1e293b;background-image:linear-gradient(135deg,#334155,#1e293b);color:#cbd5e1;background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;}' +
+                '.ab-fd-avatar{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:0.9em;position:relative;background-color:#1e293b;background-image:linear-gradient(135deg,#334155,#1e293b);color:#cbd5e1;background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;transition:border-radius .24s cubic-bezier(0.16,1,0.3,1);}' +
+                // Hovering a friend rounds the circular avatar into a square,
+                // the little tell that it is now a "view profile" affordance,
+                // then a click opens the card.
+                '.ab-fd-row:hover .ab-fd-avatar{border-radius:12px;}' +
                 '.ab-fd-avatar.online{color:#bbf7d0;box-shadow:inset 0 0 0 2px #4ade80;}' +
                 '.ab-fd-avatar::after{content:"";position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:999px;background:rgba(255,255,255,0.22);border:2px solid #0d1017;}' +
                 '.ab-fd-avatar.online::after{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,0.8);}' +

@@ -522,7 +522,7 @@
   "admin.webhook.url": "URL do webhook:",
   "admin.webhook.template": "Modelo de mensagem:",
   "admin.webhook.intro": "Publique uma mensagem no Discord / Slack / qualquer URL de webhook sempre que um usuário desbloquear uma medalha.",
-  "admin.test_toast.intro": "Pré-visualize a animação de desbloqueio estilo Xbox para cada raridade. Clique em um botão abaixo e olhe o centro-inferior da página.",
+  "admin.test_toast.intro": "Pré-visualize a animação de desbloqueio estilo Xbox para cada raridade. Clique num botão; a notificação aparece na posição que você definiu.",
   "admin.test_toast.batch_button": "Testar 10 desbloqueios",
   "admin.test_toast.batch_help": "Usa o seu estilo de notificação agrupada/individual guardado e não cria dados reais de conquistas.",
   "admin.ui.unlock_toasts": "Mostrar notificações de desbloqueio",
@@ -1094,5 +1094,13 @@
   "settings.profile_card_style_desc": "Como o seu cartão de perfil aparece quando alguém o abre",
   "settings.card_style_console": "Clássico",
   "settings.card_style_metro": "Xbox 360 — Metro",
-  "settings.card_style_blades": "Xbox 360 — Blades"
+  "settings.card_style_blades": "Xbox 360 — Blades",
+  "settings.toast_position": "Posição das notificações",
+  "settings.toast_position_desc": "Onde as notificações de desbloqueio aparecem na sua tela",
+  "settings.toast_pos_top_right": "Superior direito (padrão)",
+  "settings.toast_pos_top_left": "Superior esquerdo",
+  "settings.toast_pos_bottom_right": "Inferior direito",
+  "settings.toast_pos_bottom_left": "Inferior esquerdo",
+  "settings.toast_pos_bottom_center": "Inferior central (original)",
+  "admin.msg.toast_at": "notificação em"
 }

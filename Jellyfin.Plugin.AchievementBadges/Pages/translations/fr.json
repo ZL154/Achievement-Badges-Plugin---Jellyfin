@@ -522,7 +522,7 @@
   "admin.webhook.url": "URL du webhook :",
   "admin.webhook.template": "Modèle de message :",
   "admin.webhook.intro": "Publier un message sur Discord / Slack / toute URL webhook chaque fois qu'un utilisateur débloque un badge.",
-  "admin.test_toast.intro": "Prévisualiser l'animation de déblocage style Xbox pour chaque rareté. Cliquez sur un bouton ci-dessous et regardez le bas de la page.",
+  "admin.test_toast.intro": "Prévisualisez l'animation de déblocage façon Xbox pour chaque rareté. Cliquez sur un bouton ci-dessous ; la notification apparaît à l'emplacement défini dans vos réglages.",
   "admin.test_toast.batch_button": "Tester 10 déblocages",
   "admin.test_toast.batch_help": "Utilise votre style de toast groupé/individuel enregistré et ne crée aucune donnée de succès réelle.",
   "admin.ui.unlock_toasts": "Afficher les notifications de déblocage",
@@ -1094,5 +1094,13 @@
   "settings.profile_card_style_desc": "L'apparence de votre carte de profil partageable quand on l'ouvre",
   "settings.card_style_console": "Classique",
   "settings.card_style_metro": "Xbox 360 — Metro",
-  "settings.card_style_blades": "Xbox 360 — Blades"
+  "settings.card_style_blades": "Xbox 360 — Blades",
+  "settings.toast_position": "Position des notifications",
+  "settings.toast_position_desc": "Où les notifications de déblocage apparaissent sur votre écran",
+  "settings.toast_pos_top_right": "En haut à droite (par défaut)",
+  "settings.toast_pos_top_left": "En haut à gauche",
+  "settings.toast_pos_bottom_right": "En bas à droite",
+  "settings.toast_pos_bottom_left": "En bas à gauche",
+  "settings.toast_pos_bottom_center": "En bas au centre (original)",
+  "admin.msg.toast_at": "notification en"
 }

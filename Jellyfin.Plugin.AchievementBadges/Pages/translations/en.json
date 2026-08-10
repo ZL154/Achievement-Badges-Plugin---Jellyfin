@@ -523,7 +523,7 @@
   "admin.webhook.url": "Webhook URL:",
   "admin.webhook.template": "Message template:",
   "admin.webhook.intro": "Post a message to Discord / Slack / any webhook URL whenever a user unlocks a badge.",
-  "admin.test_toast.intro": "Preview the Xbox-style unlock animation for each rarity. Click any button below and watch the bottom-center of the page.",
+  "admin.test_toast.intro": "Preview the Xbox-style unlock animation for each rarity. Click any button below; the toast appears wherever your toast position is set (change it in the achievements page settings).",
   "admin.test_toast.batch_button": "Test 10 unlocks",
   "admin.test_toast.batch_help": "Uses your saved grouped/individual toast style and creates no real achievement data.",
   "admin.ui.unlock_toasts": "Show unlock toast notifications",
@@ -1102,5 +1102,13 @@
   "settings.profile_card_style_desc": "How your shareable profile card looks when someone opens it",
   "settings.card_style_console": "Classic",
   "settings.card_style_metro": "Xbox 360 — Metro",
-  "settings.card_style_blades": "Xbox 360 — Blades"
+  "settings.card_style_blades": "Xbox 360 — Blades",
+  "settings.toast_position": "Toast position",
+  "settings.toast_position_desc": "Where unlock notifications appear on your screen",
+  "settings.toast_pos_top_right": "Top-right (default)",
+  "settings.toast_pos_top_left": "Top-left",
+  "settings.toast_pos_bottom_right": "Bottom-right",
+  "settings.toast_pos_bottom_left": "Bottom-left",
+  "settings.toast_pos_bottom_center": "Bottom-center (original)",
+  "admin.msg.toast_at": "toast at"
 }

@@ -522,7 +522,7 @@
   "admin.webhook.url": "URL del webhook:",
   "admin.webhook.template": "Plantilla de mensaje:",
   "admin.webhook.intro": "Publica un mensaje en Discord / Slack / cualquier URL webhook cada vez que un usuario desbloquee una insignia.",
-  "admin.test_toast.intro": "Previsualiza la animación de desbloqueo estilo Xbox para cada rareza. Haz clic en un botón y mira la parte inferior central de la página.",
+  "admin.test_toast.intro": "Previsualiza la animación de desbloqueo estilo Xbox para cada rareza. Haz clic en cualquier botón; la notificación aparece donde hayas configurado su posición.",
   "admin.test_toast.batch_button": "Probar 10 desbloqueos",
   "admin.test_toast.batch_help": "Usa tu estilo de notificación agrupado/individual guardado y no crea datos reales de logros.",
   "admin.ui.unlock_toasts": "Mostrar notificaciones de desbloqueo",
@@ -1094,5 +1094,13 @@
   "settings.profile_card_style_desc": "Cómo se ve tu tarjeta de perfil cuando alguien la abre",
   "settings.card_style_console": "Clásico",
   "settings.card_style_metro": "Xbox 360 — Metro",
-  "settings.card_style_blades": "Xbox 360 — Blades"
+  "settings.card_style_blades": "Xbox 360 — Blades",
+  "settings.toast_position": "Posición de las notificaciones",
+  "settings.toast_position_desc": "Dónde aparecen las notificaciones de desbloqueo en tu pantalla",
+  "settings.toast_pos_top_right": "Arriba a la derecha (predeterminado)",
+  "settings.toast_pos_top_left": "Arriba a la izquierda",
+  "settings.toast_pos_bottom_right": "Abajo a la derecha",
+  "settings.toast_pos_bottom_left": "Abajo a la izquierda",
+  "settings.toast_pos_bottom_center": "Abajo al centro (original)",
+  "admin.msg.toast_at": "notificación en"
 }

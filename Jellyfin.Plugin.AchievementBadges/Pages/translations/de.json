@@ -522,7 +522,7 @@
   "admin.webhook.url": "Webhook-URL:",
   "admin.webhook.template": "Nachrichtenvorlage:",
   "admin.webhook.intro": "Sende eine Nachricht an Discord / Slack / jede Webhook-URL, wenn ein Benutzer ein Abzeichen freischaltet.",
-  "admin.test_toast.intro": "Vorschau der Xbox-artigen Freischalt-Animation für jede Seltenheit. Klicke unten einen Knopf und beobachte die untere Bildschirmmitte.",
+  "admin.test_toast.intro": "Sieh dir die Freischalt-Animation im Xbox-Stil für jede Seltenheit an. Klicke unten; die Benachrichtigung erscheint an der von dir eingestellten Position.",
   "admin.test_toast.batch_button": "10 Freischaltungen testen",
   "admin.test_toast.batch_help": "Verwendet deinen gespeicherten gruppierten/einzelnen Toast-Stil und erstellt keine echten Erfolgsdaten.",
   "admin.ui.unlock_toasts": "Freischalt-Benachrichtigungen anzeigen",
@@ -1094,5 +1094,13 @@
   "settings.profile_card_style_desc": "Wie deine teilbare Profilkarte aussieht, wenn sie jemand öffnet",
   "settings.card_style_console": "Klassisch",
   "settings.card_style_metro": "Xbox 360 — Metro",
-  "settings.card_style_blades": "Xbox 360 — Blades"
+  "settings.card_style_blades": "Xbox 360 — Blades",
+  "settings.toast_position": "Position der Benachrichtigungen",
+  "settings.toast_position_desc": "Wo Freischalt-Benachrichtigungen auf deinem Bildschirm erscheinen",
+  "settings.toast_pos_top_right": "Oben rechts (Standard)",
+  "settings.toast_pos_top_left": "Oben links",
+  "settings.toast_pos_bottom_right": "Unten rechts",
+  "settings.toast_pos_bottom_left": "Unten links",
+  "settings.toast_pos_bottom_center": "Unten mittig (Original)",
+  "admin.msg.toast_at": "Benachrichtigung"
 }

@@ -522,7 +522,7 @@
   "admin.webhook.url": "URL webhook:",
   "admin.webhook.template": "Modello messaggio:",
   "admin.webhook.intro": "Pubblica un messaggio su Discord / Slack / qualsiasi URL webhook ogni volta che un utente sblocca una medaglia.",
-  "admin.test_toast.intro": "Anteprima dell'animazione di sblocco stile Xbox per ogni rarità. Clicca un pulsante sotto e guarda il centro-basso della pagina.",
+  "admin.test_toast.intro": "Anteprima dell’animazione di sblocco in stile Xbox per ogni rarità. Clicca un pulsante; la notifica appare nella posizione impostata.",
   "admin.test_toast.batch_button": "Prova 10 sblocchi",
   "admin.test_toast.batch_help": "Usa lo stile di notifica raggruppato/singolo salvato e non crea dati reali degli obiettivi.",
   "admin.ui.unlock_toasts": "Mostra notifiche di sblocco",
@@ -1094,5 +1094,13 @@
   "settings.profile_card_style_desc": "Come appare la tua scheda profilo quando qualcuno la apre",
   "settings.card_style_console": "Classico",
   "settings.card_style_metro": "Xbox 360 — Metro",
-  "settings.card_style_blades": "Xbox 360 — Blades"
+  "settings.card_style_blades": "Xbox 360 — Blades",
+  "settings.toast_position": "Posizione delle notifiche",
+  "settings.toast_position_desc": "Dove appaiono le notifiche di sblocco sullo schermo",
+  "settings.toast_pos_top_right": "In alto a destra (predefinito)",
+  "settings.toast_pos_top_left": "In alto a sinistra",
+  "settings.toast_pos_bottom_right": "In basso a destra",
+  "settings.toast_pos_bottom_left": "In basso a sinistra",
+  "settings.toast_pos_bottom_center": "In basso al centro (originale)",
+  "admin.msg.toast_at": "notifica in"
 }

@@ -1799,7 +1799,7 @@ font-size:0.88em;
                     </summary>
                     <div style="margin-top:0.5em;">
                         <p class="secondaryText" style="margin-top:0;" data-i18n="admin.test_toast.intro">
-                            Preview the Xbox-style unlock animation for each rarity. Click any button below and watch the bottom-center of the page.
+                            Preview the Xbox-style unlock animation for each rarity. Click any button below; the toast appears wherever your toast position is set (change it in the achievements page settings).
                         </p>
                         <div id="abTestToastButtons" style="display:flex; flex-wrap:wrap; gap:0.5em; margin-top:0.75em;">
                             <button is="emby-button" type="button" class="raised ab-test-btn" data-rarity="common" style="background:rgba(159,179,200,0.2); border:1px solid #9fb3c8; color:#9fb3c8;" data-i18n="rarity.common">Common</button>
@@ -3978,7 +3978,11 @@ font-size:0.88em;
             var rarity = btn.getAttribute('data-rarity');
             if (typeof window.abAchievementTestToast === 'function') {
                 window.abAchievementTestToast(rarity);
-                if (testToastStatus) testToastStatus.textContent = tr('admin.msg.firing_toast', 'Firing') + ' ' + rarity + ' ' + tr('admin.msg.toast_at_bottom', 'toast at bottom-center...');
+                if (testToastStatus) {
+                    var pos = (typeof window.abToastPosition === 'function' ? window.abToastPosition() : 'top-right');
+                    var posLabel = tr('settings.toast_pos_' + String(pos).replace(/-/g, '_'), pos);
+                    testToastStatus.textContent = tr('admin.msg.firing_toast', 'Firing') + ' ' + rarity + ' ' + tr('admin.msg.toast_at', 'toast at') + ' ' + posLabel + '...';
+                }
             } else {
                 if (testToastStatus) testToastStatus.textContent = tr('admin.msg.toast_system_missing', 'Toast system not loaded. Try refreshing the page (enhance.js needs to be active).');
             }

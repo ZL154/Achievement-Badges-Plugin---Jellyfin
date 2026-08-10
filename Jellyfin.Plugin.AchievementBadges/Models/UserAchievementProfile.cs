@@ -173,6 +173,15 @@ public class UserNotificationPreferences
     public string UnlockToastGrouping { get; set; } = "grouped";
 
     /// <summary>
+    /// Where unlock toasts appear on this user's own screen: "top-right"
+    /// (default, since #74 moved them off the subtitle line), "top-left",
+    /// "bottom-right", "bottom-left", or "bottom-center" (the original
+    /// placement). Purely presentational and per-user.
+    /// </summary>
+    [JsonPropertyName("ToastPosition")]
+    public string ToastPosition { get; set; } = "top-right";
+
+    /// <summary>
     /// "all-devices" preserves cross-client delivery. "originating-device"
     /// delivers only when the polling client matches the device that earned
     /// the unlock; originless unlocks intentionally do not toast in that mode.

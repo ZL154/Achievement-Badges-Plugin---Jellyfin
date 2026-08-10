@@ -143,6 +143,7 @@
         return Promise.all([prefP, pubP]).then(function (parts) {
             var prefs = parts[0] || {};
             var cfg = parts[1] || {};
+            _toastPos = normalizeToastPos(prefs.ToastPosition || prefs.toastPosition);
             var userLang = (prefs.Language || prefs.language || 'default').toString().toLowerCase();
             var adminLang = (cfg.DefaultLanguage || cfg.defaultLanguage || 'en').toString().toLowerCase();
             var lang = (userLang === 'default' || !userLang) ? adminLang : userLang;
@@ -154,20 +155,39 @@
         }).catch(function () {});
     }
 
+    // Per-user toast placement (#74 moved the default off the subtitle line to
+    // top-right). "bottom-center" restores the original spot. Kept as inline
+    // cssText so it fully overrides the #ab-toast-container rule in
+    // styles-revamp.css and cleanly clears the opposite edges when it changes.
+    var _toastPos = 'top-right';
+    function normalizeToastPos(v) {
+        v = (v || '').toString().toLowerCase();
+        return (v === 'top-left' || v === 'bottom-right' || v === 'bottom-left' || v === 'bottom-center') ? v : 'top-right';
+    }
+    function toastPosCss(pos) {
+        switch (pos) {
+            case 'top-left':      return 'top:4.5em;left:1.2em;align-items:flex-start;';
+            case 'bottom-right':  return 'bottom:1.2em;right:1.2em;align-items:flex-end;';
+            case 'bottom-left':   return 'bottom:1.2em;left:1.2em;align-items:flex-start;';
+            case 'bottom-center': return 'bottom:1.2em;left:50%;transform:translateX(-50%);align-items:center;';
+            default:              return 'top:4.5em;right:1.2em;align-items:flex-end;';
+        }
+    }
+    function positionToastContainer(c) {
+        c.style.cssText = 'position:fixed;z-index:99999;display:flex;flex-direction:column;gap:14px;pointer-events:none;' + toastPosCss(_toastPos);
+    }
     function ensureToastContainer() {
         var c = document.getElementById(TOAST_ID);
         if (c) return c;
         c = document.createElement('div');
         c.id = TOAST_ID;
-        // Top right, not bottom centre. Toasts deliberately stay visible during
-        // playback so an unlock lands while you are watching, and bottom centre
-        // is exactly where subtitles are rendered, so a 110px card parked there
-        // for several seconds covers the line being spoken. Kept in sync with
-        // the #ab-toast-container rule in styles-revamp.css.
-        c.style.cssText = 'position:fixed;top:4.5em;right:1.2em;z-index:99999;display:flex;flex-direction:column;align-items:flex-end;gap:14px;pointer-events:none;';
+        positionToastContainer(c);
         document.body.appendChild(c);
         return c;
     }
+    // Exposed so the admin "Test unlock toast" panel can name where the toast
+    // will actually appear, rather than assuming a fixed spot.
+    try { window.abToastPosition = function () { return _toastPos; }; } catch (e) {}
 
     var rarityScorePts = { common: 10, uncommon: 20, rare: 35, epic: 60, legendary: 100, mythic: 150 };
 
@@ -636,6 +656,19 @@
             window.addEventListener('ab:notification-preferences-changed', function () {
                 userPrefs = null;
                 userPrefsFetchedAt = 0;
+                // Re-read the toast position so a settings change moves toasts
+                // without a page reload.
+                var uid = getUserId();
+                if (uid) {
+                    fetch(buildUrl('Plugins/AchievementBadges/users/' + uid + '/preferences'), { headers: authHeaders(), credentials: 'include' })
+                        .then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (p) {
+                            if (!p) return;
+                            _toastPos = normalizeToastPos(p.ToastPosition || p.toastPosition);
+                            var c = document.getElementById(TOAST_ID);
+                            if (c) positionToastContainer(c);
+                        }).catch(function () {});
+                }
             });
         } catch (e) { }
         var style = document.createElement('style');
