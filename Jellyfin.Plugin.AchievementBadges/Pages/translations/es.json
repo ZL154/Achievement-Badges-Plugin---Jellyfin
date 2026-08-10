@@ -1105,6 +1105,6 @@
   "admin.msg.toast_at": "notificación en",
   "settings.popover_style": "Estilo de la tarjeta de amigo",
   "settings.popover_style_desc": "La tarjeta que ves al pasar el ratón o hacer clic en un amigo",
-  "settings.popover_reimagined": "Completa (anillo, rango, insignias)",
-  "settings.popover_compact": "Compacta (lista simple)"
+  "settings.popover_reimagined": "Detallada",
+  "settings.popover_compact": "Compacta"
 }

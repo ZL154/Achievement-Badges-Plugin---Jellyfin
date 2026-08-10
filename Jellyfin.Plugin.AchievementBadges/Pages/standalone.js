@@ -3702,8 +3702,8 @@
                     '<div class="ab-setting-row">' +
                         '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.popover_style', 'Friend card style') + '</div><div class="ab-toggle-desc">' + tr('settings.popover_style_desc', 'The card you see when you hover or click a friend in the drawer') + '</div></div>' +
                         '<select class="ab-select" data-settings-select="popoverCardStyle">' +
-                            '<option value=""' + (prefPopover === '' || prefPopover === 'reimagined' ? ' selected' : '') + '>' + tr('settings.popover_reimagined', 'Rich (ring, rank, badges)') + '</option>' +
-                            '<option value="compact"' + (prefPopover === 'compact' ? ' selected' : '') + '>' + tr('settings.popover_compact', 'Compact (simple list)') + '</option>' +
+                            '<option value=""' + (prefPopover === '' || prefPopover === 'reimagined' ? ' selected' : '') + '>' + tr('settings.popover_reimagined', 'Detailed') + '</option>' +
+                            '<option value="compact"' + (prefPopover === 'compact' ? ' selected' : '') + '>' + tr('settings.popover_compact', 'Compact') + '</option>' +
                         '</select>' +
                     '</div>' +
                     spoilerRowHtml +

@@ -1105,6 +1105,6 @@
   "admin.msg.toast_at": "Benachrichtigung",
   "settings.popover_style": "Stil der Freundeskarte",
   "settings.popover_style_desc": "Die Karte, die du siehst, wenn du im Panel über einen Freund fährst oder klickst",
-  "settings.popover_reimagined": "Reich (Ring, Rang, Abzeichen)",
-  "settings.popover_compact": "Kompakt (einfache Liste)"
+  "settings.popover_reimagined": "Detailliert",
+  "settings.popover_compact": "Kompakt"
 }

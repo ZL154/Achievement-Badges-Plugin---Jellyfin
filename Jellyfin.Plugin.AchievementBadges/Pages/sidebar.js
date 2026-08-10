@@ -1254,6 +1254,8 @@
         _profileCardPinned = false;
         var c = document.getElementById(PROFILE_CARD_ID);
         if (c && c.parentNode) c.parentNode.removeChild(c);
+        var bd = document.getElementById('abPcBackdrop');
+        if (bd && bd.parentNode) bd.parentNode.removeChild(bd);
     }
 
     // Hover-intent bridge: leaving the friend row does not hide the card
@@ -1292,6 +1294,9 @@
         s.textContent = [
             '@keyframes abPc2In{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}',
             '@keyframes abPc2Open{from{opacity:0;transform:scale(.82);}60%{opacity:1;}to{opacity:1;transform:scale(1);}}',
+            '@keyframes abPc2OpenPinned{from{opacity:0;transform:translate(-50%,-50%) scale(.94);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}',
+            '@keyframes abPc2Fade{from{opacity:0;}to{opacity:1;}}',
+            '.ab-pc-backdrop{position:fixed;inset:0;z-index:10000059;background:rgba(6,6,9,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:abPc2Fade .2s ease both;}',
             '@keyframes abPc2Ring{to{stroke-dashoffset:var(--off);}}',
             '@keyframes abPc2Bar{to{width:var(--pw);}}',
             '#ab-profile-card.ab-pc2{--acc:#8aa0b6;position:fixed;z-index:9999999;box-sizing:border-box;width:288px;',
@@ -1299,7 +1304,7 @@
             'border-radius:18px;padding:18px 18px 16px;font-size:13px;line-height:1.5;pointer-events:auto;',
             'box-shadow:0 20px 54px -16px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;',
             'animation:abPc2In .34s cubic-bezier(.16,1,.3,1) both;}',
-            '#ab-profile-card.ab-pc2.pin{width:340px;padding:22px 22px 18px;transform-origin:top left;animation:abPc2Open .3s cubic-bezier(.16,1,.3,1) both;}',
+            '#ab-profile-card.ab-pc2.pin{width:344px;max-width:92vw;padding:22px 22px 18px;left:50%;top:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);animation:abPc2OpenPinned .28s cubic-bezier(.16,1,.3,1) both;}',
             '#ab-profile-card.ab-pc2::before{content:"";position:absolute;inset:0 0 auto 0;height:120px;pointer-events:none;',
             'background:radial-gradient(120% 90% at 26% -10%,color-mix(in srgb,var(--acc) 20%,transparent),transparent 60%);}',
             '.ab-pc2 .top{position:relative;display:flex;align-items:center;gap:15px;}',
@@ -1439,17 +1444,25 @@
         card.addEventListener('mouseenter', _pcCancelHide);
         card.addEventListener('mouseleave', function () { if (!_profileCardPinned) _pcScheduleHide(); });
 
+        // Pinned (click) = a centred modal that scales open behind a dimmed,
+        // blurred backdrop — the original "it opens the thing" recipe. The
+        // hover card sits beside the anchor instead.
+        if (pin) {
+            var bd = document.createElement('div');
+            bd.className = 'ab-pc-backdrop'; bd.id = 'abPcBackdrop';
+            bd.addEventListener('click', function () { hideProfileCard(); });
+            document.body.appendChild(bd);
+        }
         document.body.appendChild(card);
-
-        // Place beside the anchor, then pull back inside the viewport. Fixed
-        // positioning, so no scroll offset maths.
-        var r = anchor.getBoundingClientRect();
-        var cr = card.getBoundingClientRect();
-        var top = Math.max(8, Math.min(r.top, window.innerHeight - cr.height - 8));
-        var left = r.right + 12;
-        if (left + cr.width > window.innerWidth - 8) left = Math.max(8, r.left - cr.width - 12);
-        card.style.top = top + 'px';
-        card.style.left = left + 'px';
+        if (!pin) {
+            var r = anchor.getBoundingClientRect();
+            var cr = card.getBoundingClientRect();
+            var top = Math.max(8, Math.min(r.top, window.innerHeight - cr.height - 8));
+            var left = r.right + 12;
+            if (left + cr.width > window.innerWidth - 8) left = Math.max(8, r.left - cr.width - 12);
+            card.style.top = top + 'px';
+            card.style.left = left + 'px';
+        }
     }
 
     function renderPrivateCard(anchor, pin) {

@@ -1105,6 +1105,6 @@
   "admin.msg.toast_at": "通知位置：",
   "settings.popover_style": "フレンドカードのスタイル",
   "settings.popover_style_desc": "ドロワーでフレンドにカーソルを合わせたりクリックしたときに表示されるカード",
-  "settings.popover_reimagined": "リッチ（リング・ランク・バッジ）",
-  "settings.popover_compact": "コンパクト（シンプルなリスト）"
+  "settings.popover_reimagined": "詳細",
+  "settings.popover_compact": "コンパクト"
 }

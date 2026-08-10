@@ -1105,6 +1105,6 @@
   "admin.msg.toast_at": "notificação em",
   "settings.popover_style": "Estilo do cartão de amigo",
   "settings.popover_style_desc": "O cartão que você vê ao passar o mouse ou clicar num amigo",
-  "settings.popover_reimagined": "Rica (anel, nível, emblemas)",
-  "settings.popover_compact": "Compacto (lista simples)"
+  "settings.popover_reimagined": "Detalhado",
+  "settings.popover_compact": "Compacto"
 }

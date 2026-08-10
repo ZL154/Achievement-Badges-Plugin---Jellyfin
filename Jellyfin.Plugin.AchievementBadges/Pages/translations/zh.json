@@ -1105,6 +1105,6 @@
   "admin.msg.toast_at": "通知位置：",
   "settings.popover_style": "好友卡片样式",
   "settings.popover_style_desc": "在好友栏中悬停或点击好友时看到的卡片",
-  "settings.popover_reimagined": "丰富（圆环、等级、徽章）",
-  "settings.popover_compact": "紧凑（简单列表）"
+  "settings.popover_reimagined": "详细",
+  "settings.popover_compact": "紧凑"
 }

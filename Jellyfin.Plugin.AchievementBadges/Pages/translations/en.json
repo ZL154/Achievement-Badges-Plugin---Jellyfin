@@ -1113,6 +1113,6 @@
   "admin.msg.toast_at": "toast at",
   "settings.popover_style": "Friend card style",
   "settings.popover_style_desc": "The card you see when you hover or click a friend in the drawer",
-  "settings.popover_reimagined": "Rich (ring, rank, badges)",
-  "settings.popover_compact": "Compact (simple list)"
+  "settings.popover_reimagined": "Detailed",
+  "settings.popover_compact": "Compact"
 }

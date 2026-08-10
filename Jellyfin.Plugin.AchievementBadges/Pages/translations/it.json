@@ -1105,6 +1105,6 @@
   "admin.msg.toast_at": "notifica in",
   "settings.popover_style": "Stile della scheda amico",
   "settings.popover_style_desc": "La scheda che vedi quando passi il mouse o clicchi su un amico",
-  "settings.popover_reimagined": "Ricca (anello, grado, badge)",
-  "settings.popover_compact": "Compatta (elenco semplice)"
+  "settings.popover_reimagined": "Dettagliata",
+  "settings.popover_compact": "Compatta"
 }
