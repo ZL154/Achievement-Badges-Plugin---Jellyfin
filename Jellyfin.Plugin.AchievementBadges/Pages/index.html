@@ -1948,6 +1948,10 @@ font-size:0.88em;
                         <label style="display:flex; align-items:center; gap:0.5em; margin-bottom:0.75em;">
                             <input type="checkbox" id="abFcRestrictBadgeVisibility"> <span data-i18n="admin.fc.restrict_visibility">Restrict badge visibility (users only see their own)</span>
                         </label>
+                        <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.watch_carry_days">Remember partial viewings for (days):</span><br>
+                            <input type="number" id="abFcWatchCarryRetentionDays" value="7" min="0" max="365" style="width:80px; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
+                            <div style="opacity:0.7; font-size:0.9em; margin-top:0.35em;" data-i18n="admin.fc.watch_carry_days_hint">How long an unfinished viewing is kept so a later sitting of the same item adds to it instead of starting from zero. A gap longer than this drops what was already watched. Raise it for viewers who finish a film across several weeks; 0 disables carrying entirely.</div>
+                        </label>
                         <label style="display:block; margin-bottom:0.75em;"><span data-i18n="admin.fc.disabled_categories">Disabled badge categories (comma-separated):</span><br>
                             <input type="text" id="abFcDisabledBadgeCategories" placeholder="e.g. Challenge, Custom" data-i18n-placeholder="admin.fc.disabled_categories_placeholder" style="width:100%; padding:0.5em; background:rgba(0,0,0,0.3); color:inherit; border:1px solid rgba(255,255,255,0.15); border-radius:4px;">
                         </label>
@@ -4196,6 +4200,9 @@ font-size:0.88em;
             document.getElementById('abFcForceSpoilerMode').checked = !!c.ForceSpoilerMode;
             document.getElementById('abFcForceExtremeSpoilerMode').checked = !!c.ForceExtremeSpoilerMode;
             document.getElementById('abFcMaxEquippedBadges').value = c.MaxEquippedBadges || 5;
+            // Not `|| 7`: zero is a valid setting that turns carrying off.
+            var carryEl = document.getElementById('abFcWatchCarryRetentionDays');
+            if (carryEl) carryEl.value = (typeof c.WatchCarryRetentionDays === 'number') ? c.WatchCarryRetentionDays : 7;
             document.getElementById('abFcRestrictBadgeVisibility').checked = !!c.RestrictBadgeVisibility;
             document.getElementById('abFcDisabledBadgeCategories').value = (c.DisabledBadgeCategories || []).join(', ');
             document.getElementById('abFcWelcomeMessage').value = c.WelcomeMessage || '';
@@ -4260,6 +4267,13 @@ font-size:0.88em;
         if (maxBadges < 1) maxBadges = 1;
         if (maxBadges > 10) maxBadges = 10;
 
+        // Sent as null when the field is absent or unparseable, which the
+        // server reads as "keep the current value" rather than as zero.
+        var carryEl = document.getElementById('abFcWatchCarryRetentionDays');
+        var carryDays = carryEl ? parseInt(carryEl.value, 10) : NaN;
+        if (isNaN(carryDays)) carryDays = null;
+        else carryDays = Math.min(365, Math.max(0, carryDays));
+
         fetchJson('Plugins/AchievementBadges/admin/feature-config', 'POST', {
             LeaderboardEnabled: document.getElementById('abFcLeaderboardEnabled').checked,
             CompareEnabled: document.getElementById('abFcCompareEnabled').checked,
@@ -4270,6 +4284,7 @@ font-size:0.88em;
             ForceSpoilerMode: document.getElementById('abFcForceSpoilerMode').checked,
             ForceExtremeSpoilerMode: document.getElementById('abFcForceExtremeSpoilerMode').checked,
             MaxEquippedBadges: maxBadges,
+            WatchCarryRetentionDays: carryDays,
             RestrictBadgeVisibility: document.getElementById('abFcRestrictBadgeVisibility').checked,
             DisabledBadgeCategories: categories,
             WelcomeMessage: document.getElementById('abFcWelcomeMessage').value || '',

@@ -245,6 +245,39 @@ public class WatchCarryTests
     }
 
     [Fact]
+    public void ALongerWindowKeepsWhatTheDefaultWouldHaveDropped()
+    {
+        // The case this is for: a film watched a few nights a month, where two
+        // sittings sit more than a week apart. Under the default the first
+        // sitting expires before the second arrives, the running total starts
+        // from zero again, and the finished film never reaches the credit
+        // threshold. Nothing in the log says the earlier time was discarded.
+        var sitting = Seconds(2400);
+        var elevenDaysLater = Now.AddDays(11);
+
+        var byDefault = new WatchCarryStore(TimeSpan.FromDays(7));
+        byDefault.Remember(User, Item, sitting, Now);
+
+        var configured = new WatchCarryStore(TimeSpan.FromDays(30));
+        configured.Remember(User, Item, sitting, Now);
+
+        Assert.Equal(0, byDefault.Peek(User, Item, elevenDaysLater));
+        Assert.Equal(sitting, configured.Peek(User, Item, elevenDaysLater));
+    }
+
+    [Fact]
+    public void ZeroDaysTurnsCarryingOff_RatherThanMeaningUnlimited()
+    {
+        // Zero has to be a real choice, because the admin page now offers it.
+        // It must read as "do not carry", never as an empty window that keeps
+        // everything forever.
+        var store = new WatchCarryStore(TimeSpan.Zero);
+        store.Remember(User, Item, Seconds(2400), Now);
+
+        Assert.Equal(0, store.Peek(User, Item, Now.AddSeconds(1)));
+    }
+
+    [Fact]
     public void UnreadableCarryFile_StartsEmptyInsteadOfThrowing()
     {
         var path = TempFile();
