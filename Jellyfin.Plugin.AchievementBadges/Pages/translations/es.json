@@ -1102,5 +1102,9 @@
   "settings.toast_pos_bottom_right": "Abajo a la derecha",
   "settings.toast_pos_bottom_left": "Abajo a la izquierda",
   "settings.toast_pos_bottom_center": "Abajo al centro (original)",
-  "admin.msg.toast_at": "notificación en"
+  "admin.msg.toast_at": "notificación en",
+  "settings.popover_style": "Estilo de la tarjeta de amigo",
+  "settings.popover_style_desc": "La tarjeta que ves al pasar el ratón o hacer clic en un amigo",
+  "settings.popover_reimagined": "Completa (anillo, rango, insignias)",
+  "settings.popover_compact": "Compacta (lista simple)"
 }

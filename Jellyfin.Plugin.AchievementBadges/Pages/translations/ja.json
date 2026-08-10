@@ -1102,5 +1102,9 @@
   "settings.toast_pos_bottom_right": "右下",
   "settings.toast_pos_bottom_left": "左下",
   "settings.toast_pos_bottom_center": "下中央（元の位置）",
-  "admin.msg.toast_at": "通知位置："
+  "admin.msg.toast_at": "通知位置：",
+  "settings.popover_style": "フレンドカードのスタイル",
+  "settings.popover_style_desc": "ドロワーでフレンドにカーソルを合わせたりクリックしたときに表示されるカード",
+  "settings.popover_reimagined": "リッチ（リング・ランク・バッジ）",
+  "settings.popover_compact": "コンパクト（シンプルなリスト）"
 }

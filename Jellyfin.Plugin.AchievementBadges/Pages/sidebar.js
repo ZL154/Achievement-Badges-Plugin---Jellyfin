@@ -169,6 +169,11 @@
         })();
         return Promise.all([pubPromise, prefPromise]).then(function(results){
             var pub = results[0], prefs = results[1];
+            // [#42 follow-up] Which friend-popover the VIEWER sees: our
+            // reimagined card (default) or camarigor's compact #76 one.
+            if (prefs) {
+                _popoverStyle = ((prefs.PopoverCardStyle || prefs.popoverCardStyle || '').toString().toLowerCase() === 'compact') ? 'compact' : 'reimagined';
+            }
             if (pub && pub.ForceHideEquippedShowcase) { _showcaseEnabled = false; installShowcaseWatchdog(); return false; }
             if (prefs && prefs.ShowEquippedShowcase === false) { _showcaseEnabled = false; installShowcaseWatchdog(); return false; }
             // If BOTH fetches failed, keep _showcaseEnabled null so the
@@ -1231,6 +1236,7 @@
     var _profileHoverTimer = null;
     var _profileHideTimer = null;
     var _profileCardPinned = false;
+    var _popoverStyle = 'reimagined'; // 'reimagined' (ours) | 'compact' (camarigor's #76); set from the viewer's prefs
 
     function fetchProfileSummary(userId) {
         var key = String(userId).toLowerCase();
@@ -1334,6 +1340,47 @@
     }
 
     function renderProfileCard(anchor, data, pin) {
+        if (_popoverStyle === 'compact') return renderCompactProfileCard(anchor, data, pin);
+        return renderReimaginedProfileCard(anchor, data, pin);
+    }
+
+    // camarigor's original compact card (#76), kept as a per-user choice. Same
+    // data + reachability wiring; a pinned card gains the shareable-card link
+    // and a close button for parity with the reimagined one.
+    function renderCompactProfileCard(anchor, data, pin) {
+        hideProfileCard();
+        var card = document.createElement('div');
+        card.id = PROFILE_CARD_ID;
+        card.setAttribute('role', 'dialog');
+        card.style.cssText = 'position:fixed;z-index:10000060;min-width:230px;max-width:290px;padding:0.85em 1em;border-radius:12px;background:rgba(20,20,24,0.97);color:#fff;box-shadow:0 10px 34px rgba(0,0,0,0.55);font-size:0.9em;line-height:1.45;border:1px solid rgba(255,255,255,0.12);pointer-events:auto;';
+        function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+        var row = function (label, value) { return '<div style="display:flex;justify-content:space-between;gap:1em;"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>'; };
+        var uid = data.UserId || anchor.getAttribute('data-ab-profile') || '';
+        var actions = pin
+            ? '<div style="display:flex;gap:8px;margin-top:0.7em;"><a href="' + buildUrl('Plugins/AchievementBadges/users/' + encodeURIComponent(uid) + '/profile-card') + '" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:7px;border-radius:8px;background:rgba(255,255,255,0.14);color:#fff;text-decoration:none;font-weight:600;font-size:0.85em;">' + escapeHtml(tr('friends.open_shareable', 'Open shareable card')) + '</a><button type="button" data-ab-pc-close style="flex:0 0 auto;padding:7px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;cursor:pointer;font-weight:600;font-size:0.85em;">' + escapeHtml(tr('common.close', 'Close')) + '</button></div>'
+            : '';
+        card.innerHTML =
+            '<div style="font-weight:600;font-size:1.05em;margin-bottom:0.5em;">' + escapeHtml(data.UserName || '') + '</div>' +
+            row(tr('lb.badges', 'Badges'), num(data.Unlocked) + ' / ' + num(data.Total)) +
+            row(tr('profile.completion', 'Completion'), num(data.Percentage) + '%') +
+            row(tr('lb.score', 'Score'), String(num(data.Score))) +
+            row(tr('lb.streak', 'Best streak'), String(num(data.BestWatchStreak))) +
+            (data.Equipped && data.Equipped.length ? '<div style="margin-top:0.6em;">' + renderEquippedDots(data.Equipped, 20) + '</div>' : '') +
+            actions;
+        card.addEventListener('click', function (ev) { if (ev.target && ev.target.closest && ev.target.closest('[data-ab-pc-close]')) hideProfileCard(); });
+        card.addEventListener('mouseenter', _pcCancelHide);
+        card.addEventListener('mouseleave', function () { if (!_profileCardPinned) _pcScheduleHide(); });
+        document.body.appendChild(card);
+        var r = anchor.getBoundingClientRect();
+        var cr = card.getBoundingClientRect();
+        var top = Math.max(8, Math.min(r.top, window.innerHeight - cr.height - 8));
+        var left = r.right + 12;
+        if (left + cr.width > window.innerWidth - 8) left = Math.max(8, r.left - cr.width - 12);
+        card.style.top = top + 'px';
+        card.style.left = left + 'px';
+    }
+
+    function renderReimaginedProfileCard(anchor, data, pin) {
         hideProfileCard();
         _abEnsurePcStyles();
         function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }

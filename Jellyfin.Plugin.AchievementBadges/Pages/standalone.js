@@ -3538,6 +3538,7 @@
         var slots = prefs.equippedBadgeSlots || prefs.EquippedBadgeSlots || 5;
         var prefLang = (prefs.language || prefs.Language || 'default').toString().toLowerCase();
         var prefCardStyle = (prefs.profileCardStyle || prefs.ProfileCardStyle || '').toString().toLowerCase();
+        var prefPopover = (prefs.popoverCardStyle || prefs.PopoverCardStyle || '').toString().toLowerCase();
         var prefCorner = (prefs.friendsButtonCorner || prefs.FriendsButtonCorner || 'bottom-left').toString().toLowerCase();
 
         // Admin-forced feature flags (from public-config). When an admin has forced a behavior
@@ -3696,6 +3697,13 @@
                             '<option value=""' + (prefCardStyle === '' || prefCardStyle === 'console' ? ' selected' : '') + '>' + tr('settings.card_style_console', 'Classic') + '</option>' +
                             '<option value="metro"' + (prefCardStyle === 'metro' ? ' selected' : '') + '>' + tr('settings.card_style_metro', 'Xbox 360 — Metro') + '</option>' +
                             '<option value="blades"' + (prefCardStyle === 'blades' ? ' selected' : '') + '>' + tr('settings.card_style_blades', 'Xbox 360 — Blades') + '</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="ab-setting-row">' +
+                        '<div class="ab-toggle-info"><div class="ab-toggle-label">' + tr('settings.popover_style', 'Friend card style') + '</div><div class="ab-toggle-desc">' + tr('settings.popover_style_desc', 'The card you see when you hover or click a friend in the drawer') + '</div></div>' +
+                        '<select class="ab-select" data-settings-select="popoverCardStyle">' +
+                            '<option value=""' + (prefPopover === '' || prefPopover === 'reimagined' ? ' selected' : '') + '>' + tr('settings.popover_reimagined', 'Rich (ring, rank, badges)') + '</option>' +
+                            '<option value="compact"' + (prefPopover === 'compact' ? ' selected' : '') + '>' + tr('settings.popover_compact', 'Compact (simple list)') + '</option>' +
                         '</select>' +
                     '</div>' +
                     spoilerRowHtml +

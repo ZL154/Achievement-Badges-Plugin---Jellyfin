@@ -1102,5 +1102,9 @@
   "settings.toast_pos_bottom_right": "Inferior direito",
   "settings.toast_pos_bottom_left": "Inferior esquerdo",
   "settings.toast_pos_bottom_center": "Inferior central (original)",
-  "admin.msg.toast_at": "notificação em"
+  "admin.msg.toast_at": "notificação em",
+  "settings.popover_style": "Estilo do cartão de amigo",
+  "settings.popover_style_desc": "O cartão que você vê ao passar o mouse ou clicar num amigo",
+  "settings.popover_reimagined": "Rica (anel, nível, emblemas)",
+  "settings.popover_compact": "Compacto (lista simples)"
 }

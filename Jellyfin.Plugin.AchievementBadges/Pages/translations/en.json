@@ -1110,5 +1110,9 @@
   "settings.toast_pos_bottom_right": "Bottom-right",
   "settings.toast_pos_bottom_left": "Bottom-left",
   "settings.toast_pos_bottom_center": "Bottom-center (original)",
-  "admin.msg.toast_at": "toast at"
+  "admin.msg.toast_at": "toast at",
+  "settings.popover_style": "Friend card style",
+  "settings.popover_style_desc": "The card you see when you hover or click a friend in the drawer",
+  "settings.popover_reimagined": "Rich (ring, rank, badges)",
+  "settings.popover_compact": "Compact (simple list)"
 }

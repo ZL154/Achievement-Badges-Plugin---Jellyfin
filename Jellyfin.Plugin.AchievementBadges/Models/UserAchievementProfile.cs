@@ -271,6 +271,13 @@ public class UserNotificationPreferences
     [JsonPropertyName("ProfileCardStyle")]
     public string ProfileCardStyle { get; set; } = "";
 
+    // [#42 follow-up] Which friend-drawer popover the VIEWER sees: "" or
+    // "reimagined" (our rich card with the ring/rank/badges) or "compact"
+    // (camarigor's original #76 stats list). Purely a client-side rendering
+    // choice for the viewing user; no effect on anyone else.
+    [JsonPropertyName("PopoverCardStyle")]
+    public string PopoverCardStyle { get; set; } = "";
+
     // Navigation integrations are intentionally independent. The admin-level
     // plugin configuration remains the ceiling, while each user can hide only
     // the optional surface they do not want without disabling achievements.

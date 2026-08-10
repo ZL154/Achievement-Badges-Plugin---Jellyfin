@@ -1102,5 +1102,9 @@
   "settings.toast_pos_bottom_right": "Unten rechts",
   "settings.toast_pos_bottom_left": "Unten links",
   "settings.toast_pos_bottom_center": "Unten mittig (Original)",
-  "admin.msg.toast_at": "Benachrichtigung"
+  "admin.msg.toast_at": "Benachrichtigung",
+  "settings.popover_style": "Stil der Freundeskarte",
+  "settings.popover_style_desc": "Die Karte, die du siehst, wenn du im Panel über einen Freund fährst oder klickst",
+  "settings.popover_reimagined": "Reich (Ring, Rang, Abzeichen)",
+  "settings.popover_compact": "Kompakt (einfache Liste)"
 }

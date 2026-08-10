@@ -1102,5 +1102,9 @@
   "settings.toast_pos_bottom_right": "In basso a destra",
   "settings.toast_pos_bottom_left": "In basso a sinistra",
   "settings.toast_pos_bottom_center": "In basso al centro (originale)",
-  "admin.msg.toast_at": "notifica in"
+  "admin.msg.toast_at": "notifica in",
+  "settings.popover_style": "Stile della scheda amico",
+  "settings.popover_style_desc": "La scheda che vedi quando passi il mouse o clicchi su un amico",
+  "settings.popover_reimagined": "Ricca (anello, grado, badge)",
+  "settings.popover_compact": "Compatta (elenco semplice)"
 }

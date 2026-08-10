@@ -1102,5 +1102,9 @@
   "settings.toast_pos_bottom_right": "En bas à droite",
   "settings.toast_pos_bottom_left": "En bas à gauche",
   "settings.toast_pos_bottom_center": "En bas au centre (original)",
-  "admin.msg.toast_at": "notification en"
+  "admin.msg.toast_at": "notification en",
+  "settings.popover_style": "Style de la carte d'ami",
+  "settings.popover_style_desc": "La carte affichée quand vous survolez ou cliquez un ami dans le panneau",
+  "settings.popover_reimagined": "Détaillée (anneau, rang, badges)",
+  "settings.popover_compact": "Compacte (liste simple)"
 }
