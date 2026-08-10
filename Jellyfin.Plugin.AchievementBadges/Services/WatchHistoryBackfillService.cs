@@ -197,7 +197,11 @@ public class WatchHistoryBackfillService
     private int AdoptWithoutCrediting(string userId, Jellyfin.Database.Implementations.Entities.User user)
     {
         var config = Plugin.Instance?.Configuration;
-        if (!TracearrClient.TryBuildBaseUri(config!.TracearrUrl, out var baseUri, out _)) return 0;
+        if (!TracearrClient.TryBuildBaseUri(config!.TracearrUrl, out var baseUri, out var urlError))
+        {
+            _logger.LogWarning("[AchievementBadges] Tracearr not used for {Username}: {Error}", user.Username, urlError);
+            return 0;
+        }
 
         try
         {
@@ -205,7 +209,12 @@ public class WatchHistoryBackfillService
             var accountId = client
                 .ResolveAccountIdAsync(baseUri!, config.TracearrApiToken, userId, CancellationToken.None)
                 .GetAwaiter().GetResult();
-            if (string.IsNullOrEmpty(accountId)) return 0;
+
+            if (string.IsNullOrEmpty(accountId))
+            {
+                _logger.LogInformation("[AchievementBadges] No Tracearr account matches {Username}.", user.Username);
+                return 0;
+            }
 
             var plays = client
                 .GetHistoryAsync(baseUri!, config.TracearrApiToken, accountId!, CancellationToken.None)
@@ -217,7 +226,20 @@ public class WatchHistoryBackfillService
                 .Select(id => id!)
                 .ToList();
 
-            return _tracearrLedger.Remember(userId, ids);
+            var adopted = _tracearrLedger.Remember(userId, ids);
+
+            // The counterpart of the "credited N plays" line, and the reason
+            // this path needed one at all: adopting writes nothing to the
+            // profile, so without a log the first sync after an upgrade leaves
+            // no trace anywhere an admin would look. The only evidence was the
+            // ledger file appearing on disk.
+            _logger.LogInformation(
+                "[AchievementBadges] Tracearr recorded {Count} plays for {Username} as already counted, "
+                + "crediting none: first sync for this user, so their counters may already include these. "
+                + "A watch history scan clears the ledger and counts them honestly if they never were.",
+                adopted, user.Username);
+
+            return adopted;
         }
         catch (Exception ex)
         {
