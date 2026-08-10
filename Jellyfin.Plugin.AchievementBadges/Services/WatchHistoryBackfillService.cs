@@ -32,6 +32,14 @@ public class WatchHistoryBackfillService
     private readonly AchievementBadgeService _achievementBadgeService;
     private readonly LibraryCompletionService _libraryCompletionService;
     private readonly TracearrCreditLedger _tracearrLedger;
+
+    /// <summary>
+    /// Shared with the playback tracker. The scan credits items without ever
+    /// going through a playback stop, which is the only path that used to drop
+    /// a carry, so anything it credits keeps its banked minutes unless this
+    /// clears them.
+    /// </summary>
+    private readonly WatchCarryStore _carried;
     private readonly ILogger<WatchHistoryBackfillService> _logger;
 
     public WatchHistoryBackfillService(
@@ -41,6 +49,7 @@ public class WatchHistoryBackfillService
         AchievementBadgeService achievementBadgeService,
         LibraryCompletionService libraryCompletionService,
         TracearrCreditLedger tracearrLedger,
+        WatchCarryStore carried,
         ILogger<WatchHistoryBackfillService> logger)
     {
         _libraryManager = libraryManager;
@@ -49,6 +58,7 @@ public class WatchHistoryBackfillService
         _achievementBadgeService = achievementBadgeService;
         _libraryCompletionService = libraryCompletionService;
         _tracearrLedger = tracearrLedger;
+        _carried = carried;
         _logger = logger;
     }
 
@@ -268,7 +278,16 @@ public class WatchHistoryBackfillService
 
             foreach (var item in _libraryManager.GetItemsResult(query).Items)
             {
-                ids.Add(item.Id.ToString("D"));
+                var id = item.Id.ToString("D");
+                ids.Add(id);
+
+                // This item is about to be counted as watched, so whatever was
+                // banked toward finishing it has been spent. Leaving it would
+                // let a later partial rewatch reach the 80% gate on minutes
+                // from the first viewing: measured on a live server, an item
+                // sat at 72.3% carried after being credited, so 8% more of it
+                // would have earned a rewatch.
+                _carried.Clear(user.Id.ToString("D"), id, MediaIdentity.For(item));
             }
         }
 
