@@ -458,14 +458,14 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
                 ProductionYear = item.ProductionYear,
                 ProductionLocations = item.ProductionLocations,
                 OriginalLanguage = GetOriginalLanguage(item),
-                Genres = GetEffectiveGenres(item),
+                Genres = GetEffectiveGenres(item, inheritFromParent: !(isMusic || isAudiobook)),
                 // [v2.1.0 "Open Library", issue #25] Pass Tags through so the
                 // anime detector + future tag-driven badges can match against
                 // them. Daemon-Network's setup uses Tags rather than Genres
                 // and v2.0.x only read Genres. Inherits from parent Series
                 // for Episodes since genres/tags typically live on the Series
                 // node, not on each Episode.
-                Tags = GetEffectiveTags(item),
+                Tags = GetEffectiveTags(item, inheritFromParent: !(isMusic || isAudiobook)),
                 RunTimeTicks = item.RunTimeTicks,
                 Directors = directors,
                 Actors = actors,
@@ -599,9 +599,18 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     // sits on the Series node — Episodes deliver an empty Genres array at
     // playback. Union of (item.Genres ∪ Series.Genres) gives the detector
     // a complete picture. Same reflection-based safety as GetSeriesIdString.
-    private static IReadOnlyList<string>? GetEffectiveGenres(BaseItem item)
+    /// <param name="inheritFromParent">False for audio. The parent of a track
+    /// is its album and the parent of an album is its artist, so inheriting
+    /// turns every track by a disco-tagged artist into a disco play. A
+    /// "50 disco tracks" badge then counts the dance and pop tracks too, which
+    /// is what Daemon-Network reported. Episodes still inherit: that is the
+    /// case this was written for, where the classification sits on the Series
+    /// and the episode carries none of its own.</param>
+    private static IReadOnlyList<string>? GetEffectiveGenres(BaseItem item, bool inheritFromParent = true)
     {
         var own = item.Genres;
+        if (!inheritFromParent) return own;
+
         var parent = TryGetSeriesProperty<string[]>(item, "Genres");
         return UnionStrings(own, parent);
     }
@@ -609,9 +618,11 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     /// <summary>[v2.1.0 "Open Library", issue #25] Same pattern as
     /// <see cref="GetEffectiveGenres"/> but for Tags. v2.0.x didn't read Tags
     /// at all; many users tag rather than genre-classify their anime.</summary>
-    private static IReadOnlyList<string>? GetEffectiveTags(BaseItem item)
+    private static IReadOnlyList<string>? GetEffectiveTags(BaseItem item, bool inheritFromParent = true)
     {
         var own = item.Tags;
+        if (!inheritFromParent) return own;
+
         var parent = TryGetSeriesProperty<string[]>(item, "Tags");
         return UnionStrings(own, parent);
     }
