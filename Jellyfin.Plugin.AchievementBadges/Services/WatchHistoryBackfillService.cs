@@ -399,6 +399,7 @@ public class WatchHistoryBackfillService
         var episodesWatched = 0;
         var seriesCompleted = 0;
         var booksCompleted = 0;
+        var tracksPlayed = 0;
         var librariesFound = new HashSet<string>();
         // [issue #45] Ids the library replay could prove. Anything Tracearr
         // knows that is NOT in here is a play of media that has since been
@@ -511,6 +512,53 @@ public class WatchHistoryBackfillService
                     PlayedAt = GetPlayedDate(user, book),
                     ProductionYear = book.ProductionYear,
                     Genres = book.Genres,
+                    Silent = true
+                });
+            }
+
+            // [issue #95] Played music. Without this the scan replays Movie,
+            // Episode and Book only, so every music counter can be built from
+            // live playback and never rebuilt. Two symptoms, one cause: the
+            // discography metric from #81 gets no data from a scan, and a
+            // music-heavy profile comes back with empty counters and looks
+            // like a broken backfill rather than an unreplayed library.
+            var audioQuery = new InternalItemsQuery(user)
+            {
+                IsPlayed = true,
+                IncludeItemTypes = new[] { BaseItemKind.Audio },
+                Recursive = true,
+                EnableTotalRecordCount = false
+            };
+
+            var tracks = _libraryManager.GetItemsResult(audioQuery).Items;
+            tracksPlayed = tracks.Count;
+
+            foreach (var track in tracks)
+            {
+                var trackLibrary = GetLibraryName(track);
+                if (!string.IsNullOrEmpty(trackLibrary))
+                {
+                    librariesFound.Add(trackLibrary);
+                }
+
+                creditedItemIds.Add(track.Id.ToString("D"));
+
+                _achievementBadgeService.RecordPlayback(new PlaybackContext
+                {
+                    UserId = userId,
+                    ItemId = track.Id.ToString("D"),
+                    IsMusic = true,
+                    LibraryName = trackLibrary,
+                    PlayedAt = GetPlayedDate(user, track),
+                    ProductionYear = track.ProductionYear,
+                    RunTimeTicks = track.RunTimeTicks,
+                    // The track's OWN genres, never the album's or artist's.
+                    // Inheriting is what made a disco-tagged artist turn every
+                    // one of their dance and pop tracks into a disco play (#93).
+                    Genres = track.Genres,
+                    Album = GetStringProperty(track, "Album"),
+                    Artists = GetStringListProperty(track, "Artists"),
+                    AlbumArtists = GetStringListProperty(track, "AlbumArtists"),
                     Silent = true
                 });
             }
@@ -689,6 +737,36 @@ public class WatchHistoryBackfillService
         {
             _logger.LogError(ex, "[AchievementBadges] Backfill failed for {Username}.", username);
             return new { UserId = userId, Username = username, Success = false, Error = ex.Message };
+        }
+    }
+
+    /// <summary>Reflection-safe string read, mirroring the live tracker.
+    /// Jellyfin SDKs expose music metadata on different concrete types, so
+    /// reading by name keeps one DLL working across ABIs.</summary>
+    private static string? GetStringProperty(BaseItem item, string name)
+    {
+        try
+        {
+            var v = item.GetType().GetProperty(name)?.GetValue(item) as string;
+            return string.IsNullOrWhiteSpace(v) ? null : v;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Reflection-safe string-list read. Missing metadata credits the
+    /// play without album or artist progress rather than dropping it.</summary>
+    private static IReadOnlyList<string>? GetStringListProperty(BaseItem item, string name)
+    {
+        try
+        {
+            return item.GetType().GetProperty(name)?.GetValue(item) as IReadOnlyList<string>;
+        }
+        catch (Exception)
+        {
+            return null;
         }
     }
 
