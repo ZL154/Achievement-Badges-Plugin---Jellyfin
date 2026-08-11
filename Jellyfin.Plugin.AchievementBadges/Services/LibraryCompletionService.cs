@@ -164,7 +164,7 @@ public class LibraryCompletionService
     /// Scoped variant for the live playback path: recomputes only the named
     /// artists and merges them into the stored map. Before this existed the
     /// dictionary had exactly one writer, the full recompute above, and its
-    /// only caller was the watch history scan — so listening to an album live
+    /// only caller was the watch history scan, so listening to an album live
     /// never moved the discography badges until an admin happened to run a
     /// scan (reported in issue #24 as "Sampler" not unlocking).
     /// <para>
@@ -230,7 +230,7 @@ public class LibraryCompletionService
 
     /// <summary>
     /// Played tracks over the artist's tracks, counted on album artist. False
-    /// for artists with fewer than two tracks — their percentage is only ever
+    /// for artists with fewer than two tracks, whose percentage is only ever
     /// 0 or 100, which would hand out "completed an artist" for one play.
     /// </summary>
     private bool TryComputeArtistPercent(Jellyfin.Database.Implementations.Entities.User user, Guid artistId, out int percent)

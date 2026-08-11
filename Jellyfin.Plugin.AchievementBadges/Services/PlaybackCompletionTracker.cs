@@ -252,7 +252,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     /// [issue #24 follow-up] Refresh the discography percentages of this
     /// track's album artists when its played flag changes. The metric is
     /// defined over Jellyfin's IsPlayed (that is what the scan counts), so the
-    /// trigger is Jellyfin's own played-flag save — not this plugin's credit
+    /// trigger is Jellyfin's own played-flag save, not this plugin's credit
     /// decision, which can lag it. Without this hook the percentages had one
     /// writer, the watch history scan, and a user could listen to an entire
     /// album live without "Sampler" ever unlocking.
@@ -262,7 +262,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         // TogglePlayed passes in both directions: unmarking a track changes
         // the truthful percentage too, and unlocked badges are never revoked.
         // PlaybackFinished fires on every stop, not only completion, so it is
-        // gated on Played — otherwise each skipped track in a shuffle would
+        // gated on Played, otherwise each skipped track in a shuffle would
         // pay the recompute for nothing.
         var toggled = reason.Equals("TogglePlayed", StringComparison.OrdinalIgnoreCase);
         var finishedPlayed = reason.Equals("PlaybackFinished", StringComparison.OrdinalIgnoreCase)
