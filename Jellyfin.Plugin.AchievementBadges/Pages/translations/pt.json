@@ -1114,5 +1114,11 @@
   "admin.user_picker_empty": "Nenhum usuário encontrado",
   "admin.user_picker_failed": "Não foi possível carregar os usuários",
   "admin.user_picker_loading": "Carregando usuários…",
-  "admin.user_picker_placeholder": "Escolha um usuário…"
+  "admin.user_picker_placeholder": "Escolha um usuário…",
+  "recap.tracks": "Faixas",
+  "admin.btn_prune_deleted": "Limpar contas excluídas",
+  "admin.confirm_prune_deleted": "Remover permanentemente os perfis de conquistas de contas do Jellyfin que não existem mais? Isso não pode ser desfeito.",
+  "admin.msg.pruning": "Limpando contas excluídas…",
+  "admin.msg.prune_done": "{n} perfil(is) de contas excluídas removido(s).",
+  "admin.msg.prune_failed": "Falha na limpeza."
 }

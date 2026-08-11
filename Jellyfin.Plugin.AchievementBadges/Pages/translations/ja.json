@@ -1114,5 +1114,11 @@
   "admin.user_picker_empty": "ユーザーが見つかりません",
   "admin.user_picker_failed": "ユーザーを読み込めませんでした",
   "admin.user_picker_loading": "ユーザーを読み込み中…",
-  "admin.user_picker_placeholder": "ユーザーを選択…"
+  "admin.user_picker_placeholder": "ユーザーを選択…",
+  "recap.tracks": "トラック",
+  "admin.btn_prune_deleted": "削除済みアカウントを整理",
+  "admin.confirm_prune_deleted": "存在しない Jellyfin アカウントの実績プロフィールを完全に削除しますか？この操作は取り消せません。",
+  "admin.msg.pruning": "削除済みアカウントを整理しています…",
+  "admin.msg.prune_done": "{n} 件の削除済みアカウントのプロフィールを整理しました。",
+  "admin.msg.prune_failed": "整理に失敗しました。"
 }

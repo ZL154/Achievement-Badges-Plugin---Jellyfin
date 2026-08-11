@@ -1114,5 +1114,11 @@
   "settings.popover_style": "Friend card style",
   "settings.popover_style_desc": "The card you see when you hover or click a friend in the drawer",
   "settings.popover_reimagined": "Detailed",
-  "settings.popover_compact": "Compact"
+  "settings.popover_compact": "Compact",
+  "recap.tracks": "Tracks",
+  "admin.btn_prune_deleted": "Prune deleted accounts",
+  "admin.confirm_prune_deleted": "Permanently remove achievement profiles for Jellyfin accounts that no longer exist? This cannot be undone.",
+  "admin.msg.pruning": "Pruning deleted accounts...",
+  "admin.msg.prune_done": "Pruned {n} deleted-account profile(s).",
+  "admin.msg.prune_failed": "Prune failed."
 }

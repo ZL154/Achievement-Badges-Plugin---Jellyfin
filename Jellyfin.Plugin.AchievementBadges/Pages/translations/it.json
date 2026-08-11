@@ -1114,5 +1114,11 @@
   "admin.user_picker_empty": "Nessun utente trovato",
   "admin.user_picker_failed": "Impossibile caricare gli utenti",
   "admin.user_picker_loading": "Caricamento utenti…",
-  "admin.user_picker_placeholder": "Scegli un utente…"
+  "admin.user_picker_placeholder": "Scegli un utente…",
+  "recap.tracks": "Tracce",
+  "admin.btn_prune_deleted": "Elimina account rimossi",
+  "admin.confirm_prune_deleted": "Rimuovere definitivamente i profili risultati degli account Jellyfin non più esistenti? L'operazione non può essere annullata.",
+  "admin.msg.pruning": "Eliminazione degli account rimossi…",
+  "admin.msg.prune_done": "Eliminati {n} profilo/i di account rimossi.",
+  "admin.msg.prune_failed": "Eliminazione non riuscita."
 }

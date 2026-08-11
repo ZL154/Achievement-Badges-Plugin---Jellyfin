@@ -946,6 +946,17 @@ public class AchievementBadgesController : ControllerBase
         return Ok(result);
     }
 
+    // Deleting a Jellyfin account leaves its achievement profile behind; the
+    // read-time filters already hide those, this drops them from disk.
+    [HttpPost("admin/prune-deleted-users")]
+    [Authorize(Policy = "RequiresElevation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult PruneDeletedUsers()
+    {
+        var pruned = _badgeService.PruneDeletedUsers();
+        return Ok(new { Success = true, Pruned = pruned });
+    }
+
     [HttpGet("admin/badge-catalog")]
     [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]

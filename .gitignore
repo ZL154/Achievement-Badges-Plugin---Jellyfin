@@ -22,3 +22,6 @@ Jellyfin.Plugin.AchievementBadges/publish_out/
 Jellyfin.Plugin.AchievementBadges/bin/
 Jellyfin.Plugin.AchievementBadges/obj/
 *.zip
+
+# local release staging (downloaded zips, sigs)
+.tmp/

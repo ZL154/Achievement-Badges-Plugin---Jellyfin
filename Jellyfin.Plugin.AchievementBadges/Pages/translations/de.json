@@ -1114,5 +1114,11 @@
   "admin.user_picker_empty": "Keine Benutzer gefunden",
   "admin.user_picker_failed": "Benutzer konnten nicht geladen werden",
   "admin.user_picker_loading": "Benutzer werden geladen…",
-  "admin.user_picker_placeholder": "Benutzer auswählen…"
+  "admin.user_picker_placeholder": "Benutzer auswählen…",
+  "recap.tracks": "Titel",
+  "admin.btn_prune_deleted": "Gelöschte Konten bereinigen",
+  "admin.confirm_prune_deleted": "Erfolgsprofile für nicht mehr existierende Jellyfin-Konten dauerhaft entfernen? Dies kann nicht rückgängig gemacht werden.",
+  "admin.msg.pruning": "Gelöschte Konten werden bereinigt …",
+  "admin.msg.prune_done": "{n} Profil(e) gelöschter Konten bereinigt.",
+  "admin.msg.prune_failed": "Bereinigung fehlgeschlagen."
 }

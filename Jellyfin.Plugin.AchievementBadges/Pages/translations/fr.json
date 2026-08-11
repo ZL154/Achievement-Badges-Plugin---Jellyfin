@@ -1114,5 +1114,11 @@
   "admin.user_picker_empty": "Aucun utilisateur trouvé",
   "admin.user_picker_failed": "Impossible de charger les utilisateurs",
   "admin.user_picker_loading": "Chargement des utilisateurs…",
-  "admin.user_picker_placeholder": "Choisir un utilisateur…"
+  "admin.user_picker_placeholder": "Choisir un utilisateur…",
+  "recap.tracks": "Pistes",
+  "admin.btn_prune_deleted": "Purger les comptes supprimés",
+  "admin.confirm_prune_deleted": "Supprimer définitivement les profils de succès des comptes Jellyfin qui n'existent plus ? Cette action est irréversible.",
+  "admin.msg.pruning": "Purge des comptes supprimés…",
+  "admin.msg.prune_done": "{n} profil(s) de comptes supprimés purgé(s).",
+  "admin.msg.prune_failed": "Échec de la purge."
 }

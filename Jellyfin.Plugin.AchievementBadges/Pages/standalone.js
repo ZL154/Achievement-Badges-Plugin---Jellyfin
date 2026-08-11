@@ -3266,7 +3266,10 @@
     }
 
     function loadCategoryLb(cat) {
-        fetchJson('Plugins/AchievementBadges/leaderboard/' + cat + '?limit=10').then(function (lb) {
+        // Pull the full board (clamped server-side to 200) so the viewer is
+        // always shown their own rank, even below the visible top ten.
+        var selfId = (getCurrentUserId() || '').toString().toLowerCase();
+        fetchJson('Plugins/AchievementBadges/leaderboard/' + cat + '?limit=200').then(function (lb) {
             var box = el('abSaLb'); if (!box) return;
             if (!lb || !lb.length) { box.innerHTML = '<div class="ab-muted">' + tr('lb.no_data', 'No data yet.') + '</div>'; return; }
 
@@ -3277,6 +3280,9 @@
                 score: tr('lb.pts_suffix', ' pts'), movies: tr('lb.movies_suffix', ' movies'), episodes: tr('lb.episodes_suffix', ' episodes'),
                 hours: tr('lb.hours_suffix', ' hrs'), streak: tr('lb.days_suffix', ' days'), series: tr('lb.series_suffix', ' series')
             }[cat] || '';
+
+            function isSelf(e) { return selfId && e && String(e.UserId).toLowerCase() === selfId; }
+            var youTag = ' <span style="opacity:.65;font-weight:600;">(' + escapeHtml(tr('lb.you', 'You')) + ')</span>';
 
             // Top 3 podium
             var top3 = lb.slice(0, 3);
@@ -3291,7 +3297,7 @@
                     if (!e) return '<div class="ab-lb-podium-col ab-lb-podium-empty" style="height:' + heights[i] + 'px;"></div>';
                     return '<div class="ab-lb-podium-col">' +
                         '<div class="ab-lb-podium-medal">' + medals[i] + '</div>' +
-                        '<div class="ab-lb-podium-name">' + escapeHtml(e.UserName || e.UserId) + '</div>' +
+                        '<div class="ab-lb-podium-name">' + escapeHtml(e.UserName || e.UserId) + (isSelf(e) ? youTag : '') + '</div>' +
                         '<div class="ab-lb-podium-val" style="color:' + colors[i] + ';">' + (e.Value || 0) + suffix + '</div>' +
                         renderEquippedDots(e.Equipped, 18) +
                         '<div class="ab-lb-podium-bar" style="height:' + heights[i] + 'px; background:linear-gradient(180deg,' + colors[i] + ',' + colors[i] + '66);">' +
@@ -3301,21 +3307,31 @@
                 }).join('') + '</div>';
             }
 
-            // Rows 4-10 as sleek list
-            var rest = lb.slice(3);
-            var rowsHtml = rest.map(function (e, i) {
+            function listRow(e, rank, self) {
                 var pct = Math.round(100 * (e.Value || 0) / maxVal);
-                return '<div class="ab-lb-row-new">' +
-                    '<div class="ab-lb-rank">#' + (i + 4) + '</div>' +
+                return '<div class="ab-lb-row-new"' + (self ? ' style="background:rgba(255,255,255,.06);border-radius:10px;"' : '') + '>' +
+                    '<div class="ab-lb-rank">#' + rank + '</div>' +
                     '<div class="ab-lb-info">' +
-                        '<div class="ab-lb-name">' + escapeHtml(e.UserName || e.UserId) + renderEquippedDots(e.Equipped, 16) + '</div>' +
+                        '<div class="ab-lb-name">' + escapeHtml(e.UserName || e.UserId) + (self ? youTag : '') + renderEquippedDots(e.Equipped, 16) + '</div>' +
                         '<div class="ab-lb-bar"><div class="ab-lb-fill" style="width:' + pct + '%;"></div></div>' +
                     '</div>' +
                     '<div class="ab-lb-value">' + (e.Value || 0) + suffix + '</div>' +
                 '</div>';
-            }).join('');
+            }
 
-            box.innerHTML = podiumSvg + (rest.length ? '<div style="margin-top:1em;">' + rowsHtml + '</div>' : '');
+            // Rows 4-10 as a sleek list
+            var rest = lb.slice(3, 10);
+            var rowsHtml = rest.map(function (e, i) { return listRow(e, i + 4, isSelf(e)); }).join('');
+
+            // Viewer ranked below the visible top → append their own row.
+            var selfIdx = -1;
+            for (var k = 0; k < lb.length; k++) { if (isSelf(lb[k])) { selfIdx = k; break; } }
+            var selfExtra = '';
+            if (selfIdx >= 10) {
+                selfExtra = '<div class="ab-lb-row-new" style="justify-content:center;opacity:.5;">&middot;&middot;&middot;</div>' + listRow(lb[selfIdx], selfIdx + 1, true);
+            }
+
+            box.innerHTML = podiumSvg + ((rest.length || selfExtra) ? '<div style="margin-top:1em;">' + rowsHtml + selfExtra + '</div>' : '');
         });
     }
 

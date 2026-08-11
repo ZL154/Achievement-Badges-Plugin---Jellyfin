@@ -3398,6 +3398,41 @@ public class AchievementBadgeService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Permanently removes achievement profiles whose Jellyfin account no longer
+    /// exists. The read-time <see cref="UserExists"/> filters already hide these
+    /// from leaderboards and server stats; this reclaims their on-disk storage.
+    /// Returns the count pruned.
+    /// </summary>
+    public int PruneDeletedUsers()
+    {
+        lock (_lock)
+        {
+            var stale = _userProfiles.Values
+                .Where(p => !UserExists(p.UserId))
+                .Select(p => p.UserId)
+                .ToList();
+
+            var pruned = 0;
+            foreach (var id in stale)
+            {
+                if (_userProfiles.Remove(id))
+                {
+                    pruned++;
+                }
+            }
+
+            if (pruned > 0)
+            {
+                Save();
+                _logger.LogInformation("[AchievementBadges] Pruned {Count} achievement profile(s) for deleted accounts.", pruned);
+                _auditLog?.Log(string.Empty, string.Empty, "admin-prune", $"Pruned {pruned} deleted-account profile(s)");
+            }
+
+            return pruned;
+        }
+    }
+
     private List<AchievementBadge> GetEnabledBadgeClones(UserAchievementProfile profile)
     {
         var defsById = GetActiveDefinitions()

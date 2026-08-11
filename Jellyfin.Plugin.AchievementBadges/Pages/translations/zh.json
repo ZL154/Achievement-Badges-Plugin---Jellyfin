@@ -1114,5 +1114,11 @@
   "admin.user_picker_empty": "未找到用户",
   "admin.user_picker_failed": "无法加载用户",
   "admin.user_picker_loading": "正在加载用户…",
-  "admin.user_picker_placeholder": "选择用户…"
+  "admin.user_picker_placeholder": "选择用户…",
+  "recap.tracks": "曲目",
+  "admin.btn_prune_deleted": "清理已删除的账户",
+  "admin.confirm_prune_deleted": "永久删除不再存在的 Jellyfin 账户的成就资料？此操作无法撤销。",
+  "admin.msg.pruning": "正在清理已删除的账户…",
+  "admin.msg.prune_done": "已清理 {n} 个已删除账户的资料。",
+  "admin.msg.prune_failed": "清理失败。"
 }

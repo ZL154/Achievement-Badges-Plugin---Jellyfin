@@ -1592,6 +1592,10 @@ font-size:0.88em;
                         <button is="emby-button" type="button" class="raised" id="abTracearrSyncBtn" data-i18n="admin.btn_tracearr_sync">
                             Sync Tracearr
                         </button>
+
+                        <button is="emby-button" type="button" class="raised" id="abPruneDeletedBtn" data-i18n="admin.btn_prune_deleted">
+                            Prune deleted accounts
+                        </button>
                     </div>
                 </details>
 
@@ -3157,7 +3161,7 @@ font-size:0.88em;
         setStatus(tr('admin.msg.scanning_history', 'Scanning watch history... this may take a while...'));
         fetchJson('Plugins/AchievementBadges/users/' + userId + '/backfill', 'POST').then(function (result) {
             return reloadAll().then(function () {
-                setStatus(tr('admin.msg.scan_done', 'Watch history scan complete!') + ' ' + (result.MoviesWatched || 0) + ' ' + tr('recap.movies', 'Movies').toLowerCase() + ', ' + (result.EpisodesWatched || 0) + ' ' + tr('recap.episodes', 'Episodes').toLowerCase() + ', ' + (result.SeriesCompleted || 0) + ' ' + tr('lb.series', 'Series').toLowerCase() + ' ' + tr('admin.msg.found', 'found.'));
+                setStatus(tr('admin.msg.scan_done', 'Watch history scan complete!') + ' ' + (result.MoviesWatched || 0) + ' ' + tr('recap.movies', 'Movies').toLowerCase() + ', ' + (result.EpisodesWatched || 0) + ' ' + tr('recap.episodes', 'Episodes').toLowerCase() + ', ' + (result.SeriesCompleted || 0) + ' ' + tr('lb.series', 'Series').toLowerCase() + (result.TracksPlayed ? ', ' + result.TracksPlayed + ' ' + tr('recap.tracks', 'Tracks').toLowerCase() : '') + ' ' + tr('admin.msg.found', 'found.'));
             });
         }).catch(function (err) {
             setStatus('');
@@ -3201,6 +3205,22 @@ font-size:0.88em;
         }).catch(function (err) {
             setStatus('');
             setError(tr('admin.msg.backfill_failed', 'Backfill failed.') + ' ' + (err && err.message ? err.message : String(err)));
+        });
+    });
+
+    var pruneDeletedBtn = document.getElementById('abPruneDeletedBtn');
+    if (pruneDeletedBtn) pruneDeletedBtn.addEventListener('click', function () {
+        if (!confirm(tr('admin.confirm_prune_deleted', 'Permanently remove achievement profiles for Jellyfin accounts that no longer exist? This cannot be undone.'))) return;
+        clearError();
+        setStatus(tr('admin.msg.pruning', 'Pruning deleted accounts...'));
+        fetchJson('Plugins/AchievementBadges/admin/prune-deleted-users', 'POST').then(function (result) {
+            return reloadAll().then(function () {
+                var n = (result && result.Pruned) || 0;
+                setStatus(tr('admin.msg.prune_done', 'Pruned {n} deleted-account profile(s).').replace('{n}', n));
+            });
+        }).catch(function (err) {
+            setStatus('');
+            setError(tr('admin.msg.prune_failed', 'Prune failed.') + ' ' + (err && err.message ? err.message : String(err)));
         });
     });
 

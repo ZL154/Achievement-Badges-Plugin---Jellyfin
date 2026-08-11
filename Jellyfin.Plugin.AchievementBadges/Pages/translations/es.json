@@ -1114,5 +1114,11 @@
   "admin.user_picker_empty": "No se encontraron usuarios",
   "admin.user_picker_failed": "No se pudieron cargar los usuarios",
   "admin.user_picker_loading": "Cargando usuarios…",
-  "admin.user_picker_placeholder": "Elige un usuario…"
+  "admin.user_picker_placeholder": "Elige un usuario…",
+  "recap.tracks": "Pistas",
+  "admin.btn_prune_deleted": "Depurar cuentas eliminadas",
+  "admin.confirm_prune_deleted": "¿Eliminar permanentemente los perfiles de logros de las cuentas de Jellyfin que ya no existen? Esto no se puede deshacer.",
+  "admin.msg.pruning": "Depurando cuentas eliminadas…",
+  "admin.msg.prune_done": "Se depuraron {n} perfil(es) de cuentas eliminadas.",
+  "admin.msg.prune_failed": "Error al depurar."
 }

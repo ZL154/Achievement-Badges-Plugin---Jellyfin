@@ -718,8 +718,8 @@ public class WatchHistoryBackfillService
             }
 
             _logger.LogInformation(
-                "[AchievementBadges] Backfill done for {Username}: {Movies} movies, {Episodes} episodes, {Series} series, {Books} books, {Libraries} libraries.",
-                username, moviesWatched, episodesWatched, seriesCompleted, booksCompleted, librariesFound.Count);
+                "[AchievementBadges] Backfill done for {Username}: {Movies} movies, {Episodes} episodes, {Series} series, {Books} books, {Tracks} tracks, {Libraries} libraries.",
+                username, moviesWatched, episodesWatched, seriesCompleted, booksCompleted, tracksPlayed, librariesFound.Count);
 
             return new
             {
@@ -729,6 +729,7 @@ public class WatchHistoryBackfillService
                 EpisodesWatched = episodesWatched,
                 SeriesCompleted = seriesCompleted,
                 BooksCompleted = booksCompleted,
+                TracksPlayed = tracksPlayed,
                 LibrariesVisited = librariesFound.Count,
                 Success = true
             };
