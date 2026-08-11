@@ -1247,6 +1247,33 @@ public class AchievementBadgeService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Merge variant for the live playback path, which recomputes only the
+    /// artists of the track that just finished. Replace semantics there would
+    /// wipe every other artist's percentage on each play; only the full scan,
+    /// which recomputes everyone, may replace.
+    /// </summary>
+    public void MergeArtistCompletionPercents(string userId, Dictionary<string, int> percents)
+    {
+        if (percents is null || percents.Count == 0)
+        {
+            return;
+        }
+
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            foreach (var kv in percents)
+            {
+                profile.Counters.ArtistCompletionPercents[kv.Key] = kv.Value;
+            }
+
+            EvaluateBadges(profile, userId);
+            Save();
+        }
+    }
+
     public void RegisterLogin(string userId)
     {
         userId = NormalizeUserId(userId);

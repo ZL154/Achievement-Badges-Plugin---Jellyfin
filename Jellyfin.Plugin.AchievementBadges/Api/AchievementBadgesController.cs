@@ -1114,7 +1114,12 @@ public class AchievementBadgesController : ControllerBase
             return BadRequest(new { Message = "Invalid user id." });
         }
         var result = _libraryCompletionService.RecomputeForUser(guid);
-        return Ok(new { LibraryCompletionPercents = result });
+        // [issue #24 follow-up] Recompute the discography percentages too.
+        // Before this, the full artist recompute was reachable only through
+        // the watch history scan, so a broken or undesired scan left no way
+        // to refresh them at all.
+        var artists = _libraryCompletionService.RecomputeArtistsForUser(guid);
+        return Ok(new { LibraryCompletionPercents = result, ArtistCompletionPercents = artists });
     }
 
     [HttpGet("users/{userId}/library-completion")]
