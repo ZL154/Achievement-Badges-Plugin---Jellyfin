@@ -31,7 +31,7 @@
 
 A full progression, gamification and achievement system for Jellyfin that rewards users based on real viewing activity. Think Xbox Gamerscore meets Letterboxd meets Steam profile customization, built natively into your media server.
 
-> **Status:** Active development — **v2.3.0 (Friends & Foundations)** is live. Hover a friend to see their rank, completion and equipped showcase; pin a full card; share your own in one of three skins (Console / Metro / Aurora Spine). Underneath sit library + artist completion wiring, Tracearr history crediting, tougher watch-time carry, and the profile data-loss + gzip injection fixes every published build needs. See [What's new in v2.3.0](#-whats-new-in-v230--friends--foundations). Built on v2.2 "Your Screen, Your Rules", the v2.1 "Open Library" expansion, and v2.0 "Choose Your Loadout".
+> **Status:** Active development — **v2.3.1** is live, a patch over **v2.3.0 "Friends & Foundations"**: the 2.3.0 music feature now counts correctly and rebuilds from a scan, both leaderboards show your own rank, and deleted accounts are cleaned up. See [What's new in v2.3.1](#-whats-new-in-v231). 2.3.0 brought friend profile cards, three shareable card skins (Console / Metro / Aurora), Tracearr history crediting, and the profile data-loss + gzip injection fixes every published build needs. Built on v2.2 "Your Screen, Your Rules", the v2.1 "Open Library" expansion, and v2.0 "Choose Your Loadout".
 
 ---
 
@@ -77,6 +77,17 @@ A full progression, gamification and achievement system for Jellyfin that reward
 Over **200 built-in achievements** across 35+ categories, a 10-tier rank ladder from Rookie to Immortal, a full score economy with combos, prestige, daily/weekly quests, a **Score Shop with 70+ cosmetics**, power-up consumables, a Friends drawer with messaging, plus admin power features like custom badges, seasonal challenges, webhook notifications, and a full audit log.
 
 Designed to integrate cleanly with modern Jellyfin setups and themes like NetFin, ElegantFin, or StarTrack.
+
+---
+
+## 🚀 What's new in v2.3.1
+
+A fast follow to 2.3.0, fixing the music feature it shipped and cleaning up the leaderboards. **Drop-in upgrade from v2.3.0 / v2.2.x — no schema breakage.**
+
+- **Music actually counts (#93/#94, #95/#96).** Tracks no longer inherit genres and tags from their album or artist, so a "50 disco tracks" badge stops counting dance and pop plays. And the watch-history scan now replays played music, so the artist discography badges from 2.3.0 can be rebuilt instead of only ever building from live playback. Thanks to [@Daemon-Network](https://github.com/Daemon-Network) for finding both within a day of release.
+- **See your own rank.** The admin and user-facing leaderboards now always show your position — highlighted if you land in the top ten, appended with your true rank if you rank lower (across all six category boards on the standalone page).
+- **Deleted accounts cleaned up.** They no longer appear on leaderboards as raw GUIDs or inflate the user count, the admin Stats and Leaderboard tabs refresh on open, and a new **Prune deleted accounts** admin button reclaims their storage.
+- The **Blades** shareable card skin is now **Aurora**, matching its redesign, localized across all eight languages.
 
 ---
 
@@ -850,6 +861,7 @@ Full per-version notes and signed binaries live on the GitHub Releases page:
 
 Highlights:
 
+- **v2.3.1** — music fixes + leaderboards: tracks stop inheriting album/artist genres so custom music badges count correctly (#94), the scan replays played music so discography badges rebuild (#96), both leaderboards show your own rank, deleted accounts are excluded + prunable, and the Blades skin becomes Aurora
 - **v2.3.0** — Friends & Foundations: hover/click friend profile cards (#76) behind a privacy-gated summary endpoint; three shareable card skins (Console / Metro / Aurora Spine) chosen per user; library completion now computes during the scan (#80) and new artist discography completion (#81, #24); Tracearr history crediting (#77/#84/#85); watch-time carry across restarts and file replacements (#87/#89/#91/#92); admin-set default UI style + lock (#43); plus the profile data-loss (#59/#60) and gzip injection (#46) fixes for published builds
 - **v2.2.0** — Your Screen, Your Rules: optional Custom Tabs + Plugin Pages hosts and independent per-user navigation controls (#37); grouped/individual and all-device/origin-device unlock notification modes (#38); clickable, keyboard-accessible real unlock toasts; 10-toast admin grouping preview; build-specific client cache keys; full 8-language coverage
 - **v2.1.3** — Open Library patch: per-genre music badges so genre filters actually filter (#24), custom badges fully delete + purge earned copies + ID-preserving migration (#24), header UI survives another header-injecting plugin (#36), badge-category label fix, and full localization of the badge/quest builders across all 8 languages
@@ -948,7 +960,8 @@ Not expected, just appreciated. Contributions — issues, PRs, translation fixes
 ## 🙏 Credits & thanks
 
 - **[@frenchyx24](https://github.com/frenchyx24)** — **full French translation of all 171 built-in badges** (hand-translated titles + descriptions, merged in v1.7.2 from [issue #5](https://github.com/ZL154/AchievementBadges_for_Jellyfin/issues/5)). Also filed the original multi-language feature request and the deactivate-equipped-badges / quest-customization / Xbox-logo bug reports that shaped v1.6.1 → v1.7.x. Merci beaucoup !
-- **[@camarigor](https://github.com/camarigor)** — the v2.3.0 friend profile cards and public-summary endpoint (#76), Tracearr history integration (#77/#84/#85), library + artist completion wiring (#80/#81), the watch-time carry reliability work (#87/#89/#91/#92), and the profile data-loss (#59/#60) and gzip-injection (#46) fixes that mattered to every published build.
+- **[@camarigor](https://github.com/camarigor)** — the v2.3.0 friend profile cards and public-summary endpoint (#76), Tracearr history integration (#77/#84/#85), library + artist completion wiring (#80/#81), the watch-time carry reliability work (#87/#89/#91/#92), the profile data-loss (#59/#60) and gzip-injection (#46) fixes that mattered to every published build, and the v2.3.1 music fixes (#94 genre inheritance, #96 the scan replaying music).
+- **[@Daemon-Network](https://github.com/Daemon-Network)** — the original Music & Books request (#24), and thorough real-music-library testing of 2.3.0 that surfaced the three music bugs fixed in v2.3.1.
 - **xdnewlun1 (Techno Cricket, CCDC)** — responsible disclosure of 12 security findings in v1.6.0 including the critical IDOR that led to the `UserOwnershipFilter`.
 - **Uenify** — the Xbox-style toast animation (circle grow, banner sweep, shimmer, text slide) is a port of his [CodePen](https://codepen.io/uenify) to vanilla JS + per-rarity colour palettes.
 - Translations for es / de / it / pt / zh-CN / ja started from an automated pass — native-speaker polish welcomed via PR.
