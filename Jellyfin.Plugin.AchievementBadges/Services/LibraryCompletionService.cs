@@ -82,7 +82,13 @@ public class LibraryCompletionService
         }
         catch (Exception ex)
         {
+            // Return without writing: this method replaces the stored map, so
+            // persisting the partial result of a failed enumeration would wipe
+            // percentages that are still true. An empty result from a
+            // successful enumeration (no libraries) is legitimate and still
+            // written below.
             _logger.LogWarning(ex, "[AchievementBadges] Library completion recompute failed for user {UserId}", userGuid);
+            return result;
         }
 
         _badgeService.UpdateLibraryCompletionPercents(userGuid.ToString("D"), result);
@@ -129,31 +135,11 @@ public class LibraryCompletionService
             {
                 try
                 {
-                    var totalQuery = new InternalItemsQuery(user)
-                    {
-                        IncludeItemTypes = new[] { BaseItemKind.Audio },
-                        AlbumArtistIds = new[] { artist.Id },
-                        Recursive = true,
-                        EnableTotalRecordCount = false
-                    };
-
-                    var total = _libraryManager.GetItemsResult(totalQuery).Items.Count;
-                    if (total < 2) continue;
-
-                    var playedQuery = new InternalItemsQuery(user)
-                    {
-                        IncludeItemTypes = new[] { BaseItemKind.Audio },
-                        AlbumArtistIds = new[] { artist.Id },
-                        IsPlayed = true,
-                        Recursive = true,
-                        EnableTotalRecordCount = false
-                    };
-
-                    var played = _libraryManager.GetItemsResult(playedQuery).Items.Count;
                     var name = artist.Name ?? string.Empty;
-                    if (!string.IsNullOrWhiteSpace(name))
+                    if (!string.IsNullOrWhiteSpace(name)
+                        && TryComputeArtistPercent(user, artist.Id, out var percent))
                     {
-                        result[name] = (int)Math.Round(100.0 * played / total);
+                        result[name] = percent;
                     }
                 }
                 catch (Exception ex)
@@ -164,11 +150,119 @@ public class LibraryCompletionService
         }
         catch (Exception ex)
         {
+            // Same guard as the library recompute above: replace semantics
+            // plus a failed enumeration must not wipe stored percentages.
             _logger.LogWarning(ex, "[AchievementBadges] Artist completion recompute failed for user {UserId}", userGuid);
+            return result;
         }
 
         _badgeService.UpdateArtistCompletionPercents(userGuid.ToString("D"), result);
         return result;
+    }
+
+    /// <summary>
+    /// Scoped variant for the live playback path: recomputes only the named
+    /// artists and merges them into the stored map. Before this existed the
+    /// dictionary had exactly one writer, the full recompute above, and its
+    /// only caller was the watch history scan, so listening to an album live
+    /// never moved the discography badges until an admin happened to run a
+    /// scan (reported in issue #24 as "Sampler" not unlocking).
+    /// <para>
+    /// Artists are resolved by name through a MusicArtist query rather than
+    /// ILibraryManager.GetArtist, because GetArtist is get-or-create and
+    /// would write artist entries into the library as a side effect.
+    /// </para>
+    /// <para>
+    /// The single-track skip rule can leave a stale entry behind when an
+    /// artist's library shrinks to one track: the merge never deletes, so the
+    /// old percentage stays until the next full recompute replaces the map.
+    /// Accepted: the full scan remains the reconciler, this path is additive.
+    /// </para>
+    /// </summary>
+    public Dictionary<string, int> RecomputeArtistsForUser(Guid userGuid, IReadOnlyCollection<string> artistNames)
+    {
+        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (artistNames is null || artistNames.Count == 0)
+        {
+            return result;
+        }
+
+        var user = _userManager.GetUserById(userGuid);
+        if (user is null)
+        {
+            return result;
+        }
+
+        foreach (var name in artistNames)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            try
+            {
+                var artistQuery = new InternalItemsQuery(user)
+                {
+                    IncludeItemTypes = new[] { BaseItemKind.MusicArtist },
+                    Name = name,
+                    Recursive = true,
+                    EnableTotalRecordCount = false
+                };
+
+                foreach (var artist in _libraryManager.GetItemsResult(artistQuery).Items)
+                {
+                    if (TryComputeArtistPercent(user, artist.Id, out var percent))
+                    {
+                        result[name] = percent;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "[AchievementBadges] Scoped artist completion calc failed for {Artist}", name);
+            }
+        }
+
+        _badgeService.MergeArtistCompletionPercents(userGuid.ToString("D"), result);
+        return result;
+    }
+
+    /// <summary>
+    /// Played tracks over the artist's tracks, counted on album artist. False
+    /// for artists with fewer than two tracks, whose percentage is only ever
+    /// 0 or 100, which would hand out "completed an artist" for one play.
+    /// </summary>
+    private bool TryComputeArtistPercent(Jellyfin.Database.Implementations.Entities.User user, Guid artistId, out int percent)
+    {
+        percent = 0;
+
+        var totalQuery = new InternalItemsQuery(user)
+        {
+            IncludeItemTypes = new[] { BaseItemKind.Audio },
+            AlbumArtistIds = new[] { artistId },
+            Recursive = true,
+            EnableTotalRecordCount = false
+        };
+
+        var total = _libraryManager.GetItemsResult(totalQuery).Items.Count;
+        if (total < 2)
+        {
+            return false;
+        }
+
+        var playedQuery = new InternalItemsQuery(user)
+        {
+            IncludeItemTypes = new[] { BaseItemKind.Audio },
+            AlbumArtistIds = new[] { artistId },
+            IsPlayed = true,
+            Recursive = true,
+            EnableTotalRecordCount = false
+        };
+
+        var played = _libraryManager.GetItemsResult(playedQuery).Items.Count;
+        percent = (int)Math.Round(100.0 * played / total);
+        return true;
     }
 
     public Dictionary<string, Dictionary<string, int>> RecomputeAll()

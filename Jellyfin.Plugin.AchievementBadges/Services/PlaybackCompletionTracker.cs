@@ -22,6 +22,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     private readonly ILibraryManager _libraryManager;
     private readonly IUserDataManager _userDataManager;
     private readonly PlaybackCompletionService _playbackCompletionService;
+    private readonly LibraryCompletionService _libraryCompletionService;
     private readonly ILogger<PlaybackCompletionTracker> _logger;
     private bool _subscribed;
     private bool _disposed;
@@ -63,6 +64,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         ILibraryManager libraryManager,
         IUserDataManager userDataManager,
         PlaybackCompletionService playbackCompletionService,
+        LibraryCompletionService libraryCompletionService,
         WatchCarryStore carried,
         ILogger<PlaybackCompletionTracker> logger)
     {
@@ -70,6 +72,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         _libraryManager = libraryManager;
         _userDataManager = userDataManager;
         _playbackCompletionService = playbackCompletionService;
+        _libraryCompletionService = libraryCompletionService;
         // Shared rather than owned: the watch history scan credits items too,
         // and it has to be able to drop their carry. While this lived in here
         // the scan could not reach it, so credited items kept their banked
@@ -195,38 +198,94 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         {
             var item = e?.Item;
             if (item is null) return;
-            if (!string.Equals(item.GetType().Name, "Book", StringComparison.OrdinalIgnoreCase)) return;
-            if (e!.UserData is null || !e.UserData.Played) return;
+            if (e!.UserId == Guid.Empty) return;
 
             var reason = e.SaveReason.ToString();
-            if (!reason.Equals("TogglePlayed", StringComparison.OrdinalIgnoreCase)
-                && !reason.Equals("PlaybackFinished", StringComparison.OrdinalIgnoreCase))
+            var typeName = item.GetType().Name;
+
+            if (string.Equals(typeName, "Book", StringComparison.OrdinalIgnoreCase))
             {
-                return;
+                HandleBookUserData(e, item, reason);
             }
-
-            if (e.UserId == Guid.Empty) return;
-
-            var context = new PlaybackContext
+            else if (string.Equals(typeName, "Audio", StringComparison.OrdinalIgnoreCase))
             {
-                UserId = e.UserId.ToString("D"),
-                ItemId = item.Id.ToString("D"),
-                IsBook = true,
-                LibraryName = ResolveLibraryName(item),
-                PlayedAt = DateTimeOffset.Now,
-                ProductionYear = item.ProductionYear,
-                Genres = GetEffectiveGenres(item),
-                Tags = GetEffectiveTags(item),
-            };
-
-            _playbackCompletionService.RecordBookCompletion(context);
-            _logger.LogInformation(
-                "[AchievementBadges] Book marked read: user={UserId} item={ItemId} reason={Reason}",
-                e.UserId, item.Id, reason);
+                // Exact type only: AudioBook and MusicVideo are excluded here
+                // the same way the scan's Audio query excludes them.
+                HandleAudioUserData(e, item, reason);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[AchievementBadges] Failed to process book completion from UserDataSaved.");
+            _logger.LogError(ex, "[AchievementBadges] Failed to process UserDataSaved event.");
+        }
+    }
+
+    private void HandleBookUserData(UserDataSaveEventArgs e, BaseItem item, string reason)
+    {
+        if (e.UserData is null || !e.UserData.Played) return;
+
+        if (!reason.Equals("TogglePlayed", StringComparison.OrdinalIgnoreCase)
+            && !reason.Equals("PlaybackFinished", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var context = new PlaybackContext
+        {
+            UserId = e.UserId.ToString("D"),
+            ItemId = item.Id.ToString("D"),
+            IsBook = true,
+            LibraryName = ResolveLibraryName(item),
+            PlayedAt = DateTimeOffset.Now,
+            ProductionYear = item.ProductionYear,
+            Genres = GetEffectiveGenres(item),
+            Tags = GetEffectiveTags(item),
+        };
+
+        _playbackCompletionService.RecordBookCompletion(context);
+        _logger.LogInformation(
+            "[AchievementBadges] Book marked read: user={UserId} item={ItemId} reason={Reason}",
+            e.UserId, item.Id, reason);
+    }
+
+    /// <summary>
+    /// [issue #24 follow-up] Refresh the discography percentages of this
+    /// track's album artists when its played flag changes. The metric is
+    /// defined over Jellyfin's IsPlayed (that is what the scan counts), so the
+    /// trigger is Jellyfin's own played-flag save, not this plugin's credit
+    /// decision, which can lag it. Without this hook the percentages had one
+    /// writer, the watch history scan, and a user could listen to an entire
+    /// album live without "Sampler" ever unlocking.
+    /// </summary>
+    private void HandleAudioUserData(UserDataSaveEventArgs e, BaseItem item, string reason)
+    {
+        // TogglePlayed passes in both directions: unmarking a track changes
+        // the truthful percentage too, and unlocked badges are never revoked.
+        // PlaybackFinished fires on every stop, not only completion, so it is
+        // gated on Played, otherwise each skipped track in a shuffle would
+        // pay the recompute for nothing.
+        var toggled = reason.Equals("TogglePlayed", StringComparison.OrdinalIgnoreCase);
+        var finishedPlayed = reason.Equals("PlaybackFinished", StringComparison.OrdinalIgnoreCase)
+            && e.UserData?.Played == true;
+        if (!toggled && !finishedPlayed)
+        {
+            return;
+        }
+
+        // AlbumArtists first: discography is counted on album artist, so a
+        // guest appearance must not refresh the guest's own percentage.
+        var artists = GetItemStringList(item, "AlbumArtists") ?? GetItemStringList(item, "Artists");
+        if (artists is null || artists.Count == 0)
+        {
+            return;
+        }
+
+        var result = _libraryCompletionService.RecomputeArtistsForUser(e.UserId, artists);
+        if (result.Count > 0)
+        {
+            _logger.LogDebug(
+                "[AchievementBadges] Discography refresh: user={UserId} item={ItemId} reason={Reason} artists={Artists}",
+                e.UserId, item.Id, reason, string.Join(", ", result.Keys));
         }
     }
 
@@ -654,10 +713,14 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     {
         try
         {
-            var prop = item.GetType().GetProperty(propertyName);
-            if (prop?.GetValue(item) is string[] arr && arr.Length > 0)
+            // Audio.Artists / AlbumArtists are typed IReadOnlyList<string> in
+            // 10.11; the previous `is string[]` pattern only matched when the
+            // runtime value happened to be an array, silently dropping the
+            // artists whenever Jellyfin handed back a List<string>.
+            if (item.GetType().GetProperty(propertyName)?.GetValue(item)
+                is IReadOnlyList<string> { Count: > 0 } list)
             {
-                return new List<string>(arr);
+                return new List<string>(list);
             }
         }
         catch
