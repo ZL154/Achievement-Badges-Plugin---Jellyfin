@@ -202,7 +202,7 @@ public class CustomBadgeService
         // it fails silently: the badge renders and sits at zero forever. Reject
         // it here, while the admin is still looking at the form. A bare name
         // with no GUID is allowed; it resolves on the first recompute.
-        if (isLeaf && IsTargeted(node.Metric!.Value))
+        if (isLeaf && ObservedTargets.IsTargeted(node.Metric!.Value))
         {
             if (!TargetRef.TryParse(node.MetricParameter, out _, out var targetName)
                 || string.IsNullOrWhiteSpace(targetName))
@@ -216,12 +216,6 @@ public class CustomBadgeService
         {
             foreach (var child in node.Children!) ValidateNode(child, depth + 1, ref totalNodeCount);
         }
-    }
-
-    private static bool IsTargeted(AchievementMetric metric)
-    {
-        return metric is AchievementMetric.ContainerCompletionPercent
-            or AchievementMetric.ItemPlayCount;
     }
 
     private void Load()
