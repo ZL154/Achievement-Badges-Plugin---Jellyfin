@@ -146,6 +146,7 @@ Big thanks to **[@camarigor](https://github.com/camarigor)** for the friend prof
 - **8 book badges (v2.1.0)** — books completed, audiobook listening hours, and series completed. Audiobook plays route per the **audiobook-counting policy** (Books-only default / Music-only / Both).
 - **Improved anime detection (v2.1.0, #25)** — matches **Genres *and* Tags** on the item *and its parent Series*, with admin-configurable libraries / genres / tags.
 - **Admin-authored custom badges (v2.1.0)** — compound AND/OR criteria across any metric; see [Custom badges](#-custom-badges).
+- **Targeted badges (v2.4.0, #107)** — point a badge at one specific series, season, collection, playlist, album or item; see [Targeted badges](#targeted-badges).
 - **6 rarity tiers** — Common, Uncommon, Rare, Epic, Legendary, Mythic
 - **Hidden/secret badges** displayed as `???` until unlocked
 - **Library completion milestones** that auto-scale to any library structure
@@ -405,6 +406,38 @@ A badge's `criteria` is a tree. A node is **either**:
 - a **compound**: `{ "operator": "And" | "Or", "children": [ <node>, ... ] }` — true when And(all)/Or(any) of children are true.
 
 Limits: max depth **5**, max **64** nodes per badge, max **500** badges per instance.
+
+### Targeted badges
+
+> Added in **v2.4.0**, from [#107](https://github.com/ZL154/AchievementBadges_for_Jellyfin/issues/107).
+
+Two metrics point at one specific thing in your library rather than at an aggregate:
+
+- `ContainerCompletionPercent` — played items over total items of one **series, season, collection, playlist or album**. Threshold 100 means "you finished it".
+- `ItemPlayCount` — how many times **one specific item** has been played. Threshold 1 is "you watched this movie"; larger thresholds are for the track you keep going back to.
+
+Both take their target in `metricParameter`, formatted `"{guid}|{name}"`. The config page has a library picker that writes it for you. Both halves are stored on purpose: the GUID survives a rename, and the name survives an item being deleted and re-added, so the badge re-resolves itself and rewrites the GUID.
+
+For an **arbitrary group of episodes**, such as one story arc of a long-running show, make a Jellyfin collection and point a `ContainerCompletionPercent` badge at it. That keeps the grouping in a native Jellyfin feature instead of a badge-editor episode list.
+
+Targeted badges are evaluated against your existing history, so a badge you author today unlocks immediately for anyone who already finished the target, with no scan needed. The number of distinct targets across all badges is capped by `MaxTargetedBadgeTargets` (default 50); anything past the cap is named in the log rather than dropped silently.
+
+#### Template — finish one series
+
+```jsonc
+// POST /Plugins/AchievementBadges/custom-badges
+{
+  "name": "Straw Hat",
+  "description": "Finish One Piece: Alabasta.",
+  "rarity": "Epic",
+  "media": "TV",
+  "criteria": {
+    "metric": "ContainerCompletionPercent",
+    "metricParameter": "8f4e2a1b9c3d4e5f6a7b8c9d0e1f2a3b|One Piece: Alabasta",
+    "threshold": 100
+  }
+}
+```
 
 ### Template — simple badge
 
