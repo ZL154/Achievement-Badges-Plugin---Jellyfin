@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Jellyfin.Plugin.AchievementBadges.Models;
 using MediaBrowser.Common.Configuration;
 using Microsoft.Extensions.Logging;
@@ -196,10 +197,31 @@ public class CustomBadgeService
             throw new ArgumentException("Criteria node must be either leaf (Metric+Threshold) or compound (Operator+Children).");
         if (isLeaf && node.Threshold!.Value < 1)
             throw new ArgumentException("Leaf threshold must be at least 1.");
+
+        // [issue #107] A targeted metric with no target can never unlock, and
+        // it fails silently: the badge renders and sits at zero forever. Reject
+        // it here, while the admin is still looking at the form. A bare name
+        // with no GUID is allowed; it resolves on the first recompute.
+        if (isLeaf && IsTargeted(node.Metric!.Value))
+        {
+            if (!TargetRef.TryParse(node.MetricParameter, out _, out var targetName)
+                || string.IsNullOrWhiteSpace(targetName))
+            {
+                throw new ArgumentException(
+                    "Metric " + node.Metric.Value + " requires a target in MetricParameter.");
+            }
+        }
+
         if (isCompound)
         {
             foreach (var child in node.Children!) ValidateNode(child, depth + 1, ref totalNodeCount);
         }
+    }
+
+    private static bool IsTargeted(AchievementMetric metric)
+    {
+        return metric is AchievementMetric.ContainerCompletionPercent
+            or AchievementMetric.ItemPlayCount;
     }
 
     private void Load()
