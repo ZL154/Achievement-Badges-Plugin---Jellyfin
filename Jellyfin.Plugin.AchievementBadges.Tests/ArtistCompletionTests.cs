@@ -17,14 +17,18 @@ namespace Jellyfin.Plugin.AchievementBadges.Tests;
 public class ArtistCompletionTests
 {
     [Fact]
-    public void TheMetricIsAppendedLast_SoStoredOrdinalsDoNotShift()
+    public void TheMetricKeepsItsOrdinal_SoStoredValuesDoNotShift()
     {
         // Badge progress is serialised by enum ordinal. Inserting a value in
         // the middle would silently repoint every stored badge above it at a
         // different metric, which is unrecoverable without a rebuild.
-        var values = System.Enum.GetValues<AchievementMetric>();
-
-        Assert.Equal(AchievementMetric.ArtistCompletionPercent, values[^1]);
+        //
+        // This used to assert the metric was LAST in the enum, which is a
+        // proxy for the real invariant and fails on every correct append after
+        // it (issue #107 added two). Pinning the ordinal tests the thing that
+        // actually matters: 70 is where this metric's stored values live, and
+        // it must stay 70 forever.
+        Assert.Equal(70, (int)AchievementMetric.ArtistCompletionPercent);
     }
 
     [Fact]

@@ -124,6 +124,12 @@ public class UserAchievementCounters
     // named artist or as "your best artist".
     public Dictionary<string, int> ArtistCompletionPercents { get; set; } = new();
 
+    // [issue #107] Per-target progress. Keyed by the target's GUID in "N"
+    // format rather than by the full "guid|name" parameter, so renaming the
+    // series does not orphan the progress already stored for it.
+    public Dictionary<string, int> ContainerCompletionPercents { get; set; } = new();
+    public Dictionary<string, int> ItemPlayCounts { get; set; } = new();
+
     // Per-decade item counts (key = decade as string, e.g. "1970", "1980")
     public Dictionary<string, int> DecadeItemCounts { get; set; } = new();
     // Per-day-of-week item counts (key = day name, e.g. "Monday")
