@@ -215,4 +215,13 @@ public class PluginConfiguration : BasePluginConfiguration
     // to one entry per user per hour so a single burst doesn't spam.
     public bool EnableSuspiciousActivityFlag { get; set; } = true;
     public int SuspiciousRatePerHour { get; set; } = 30;
+
+    /// <summary>
+    /// [issue #107] Ceiling on how many distinct targets the targeted badges
+    /// may reference. Each target costs one membership check per played item,
+    /// so an unbounded set would turn every play into a library sweep. Targets
+    /// past the cap are ignored and named in the log rather than dropped
+    /// silently.
+    /// </summary>
+    public int MaxTargetedBadgeTargets { get; set; } = 50;
 }
