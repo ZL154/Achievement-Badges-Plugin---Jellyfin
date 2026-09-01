@@ -20,7 +20,7 @@
          CLI runs as a post-build step inside ClusterFuzzLite's Docker image
          to instrument the plugin assembly; the NuGet package here only
          provides the `Fuzzer.Run` entry point Program.Main calls. -->
-    <PackageReference Include="SharpFuzz" Version="2.2.0" />
+    <PackageReference Include="SharpFuzz" Version="2.3.0" />
   </ItemGroup>
 
   <ItemGroup>

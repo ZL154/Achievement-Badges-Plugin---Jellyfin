@@ -1274,6 +1274,50 @@ public class AchievementBadgeService : IDisposable
         }
     }
 
+    /// <summary>
+    /// [issue #107] Merge variant for the live path, which recomputes only the
+    /// targets containing the item whose played flag just changed. Replace
+    /// semantics here would wipe every other target's progress on each play,
+    /// which is the defect fixed for artists in 3c23df4.
+    /// </summary>
+    public void MergeContainerCompletionPercents(string userId, Dictionary<string, int> percents)
+    {
+        MergeTargetMap(userId, percents, static c => c.ContainerCompletionPercents);
+    }
+
+    /// <summary>
+    /// [issue #107] Same merge contract as the container map above.
+    /// </summary>
+    public void MergeItemPlayCounts(string userId, Dictionary<string, int> counts)
+    {
+        MergeTargetMap(userId, counts, static c => c.ItemPlayCounts);
+    }
+
+    private void MergeTargetMap(
+        string userId,
+        Dictionary<string, int> values,
+        Func<UserAchievementCounters, Dictionary<string, int>> selector)
+    {
+        if (values is null || values.Count == 0)
+        {
+            return;
+        }
+
+        userId = NormalizeUserId(userId);
+        lock (_lock)
+        {
+            var profile = GetOrCreateProfile(userId);
+            var map = selector(profile.Counters);
+            foreach (var kv in values)
+            {
+                map[kv.Key] = kv.Value;
+            }
+
+            EvaluateBadges(profile, userId);
+            Save();
+        }
+    }
+
     public void RegisterLogin(string userId)
     {
         userId = NormalizeUserId(userId);
@@ -3175,6 +3219,27 @@ public class AchievementBadgeService : IDisposable
                 return counters.ArtistCompletionPercents.TryGetValue(parameter, out var a) ? a : 0;
             }
             return counters.BestArtistCompletionPercent;
+        }
+
+        // [issue #107] Targeted metrics. A parameter with no GUID yet reads as
+        // zero rather than throwing: the badge was authored by name and the
+        // next recompute resolves it and rewrites the parameter.
+        if (metric == AchievementMetric.ContainerCompletionPercent)
+        {
+            var containerKey = Helpers.TargetRef.KeyOf(parameter);
+            return containerKey is not null
+                && counters.ContainerCompletionPercents.TryGetValue(containerKey, out var pct)
+                ? pct
+                : 0;
+        }
+
+        if (metric == AchievementMetric.ItemPlayCount)
+        {
+            var itemKey = Helpers.TargetRef.KeyOf(parameter);
+            return itemKey is not null
+                && counters.ItemPlayCounts.TryGetValue(itemKey, out var plays)
+                ? plays
+                : 0;
         }
 
         return GetSingleMetricValue(counters, metric);

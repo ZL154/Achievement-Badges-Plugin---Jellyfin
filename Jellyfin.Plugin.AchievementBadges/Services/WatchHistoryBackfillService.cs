@@ -31,6 +31,7 @@ public class WatchHistoryBackfillService
     private readonly IUserDataManager _userDataManager;
     private readonly AchievementBadgeService _achievementBadgeService;
     private readonly LibraryCompletionService _libraryCompletionService;
+    private readonly TargetProgressService _targetProgress;
     private readonly TracearrCreditLedger _tracearrLedger;
 
     /// <summary>
@@ -48,6 +49,7 @@ public class WatchHistoryBackfillService
         IUserDataManager userDataManager,
         AchievementBadgeService achievementBadgeService,
         LibraryCompletionService libraryCompletionService,
+        TargetProgressService targetProgress,
         TracearrCreditLedger tracearrLedger,
         WatchCarryStore carried,
         ILogger<WatchHistoryBackfillService> logger)
@@ -57,6 +59,7 @@ public class WatchHistoryBackfillService
         _userDataManager = userDataManager;
         _achievementBadgeService = achievementBadgeService;
         _libraryCompletionService = libraryCompletionService;
+        _targetProgress = targetProgress;
         _tracearrLedger = tracearrLedger;
         _carried = carried;
         _logger = logger;
@@ -710,6 +713,11 @@ public class WatchHistoryBackfillService
                 // discography metric without a caller would leave it in the
                 // exact dead state this issue was opened about.
                 _libraryCompletionService.RecomputeArtistsForUser(userGuid);
+                // [issue #107] The scan is the reconciler for targeted badges
+                // too. The live path only ever sees targets containing an item
+                // the user just played; a target nobody has touched since the
+                // badge was authored is computed here.
+                _targetProgress.RecomputeForUser(userGuid);
             }
             catch (Exception ex)
             {

@@ -35,6 +35,7 @@ public class AchievementBadgesController : ControllerBase
     private readonly PlaybackCompletionService _playbackCompletionService;
     private readonly WatchHistoryBackfillService _backfillService;
     private readonly LibraryCompletionService _libraryCompletionService;
+    private readonly TargetProgressService _targetProgress;
     private readonly RecapService _recapService;
     private readonly RecommendationService _recommendationService;
     private readonly QuestService _questService;
@@ -61,8 +62,10 @@ public class AchievementBadgesController : ControllerBase
         FriendsService friendsService,
         MessagingService messagingService,
         PowerUpService powerUps,
-        ShopService shop)
+        ShopService shop,
+        TargetProgressService targetProgress)
     {
+        _targetProgress = targetProgress;
         _badgeService = badgeService;
         _playbackCompletionService = playbackCompletionService;
         _backfillService = backfillService;
@@ -1119,7 +1122,15 @@ public class AchievementBadgesController : ControllerBase
         // the watch history scan, so a broken or undesired scan left no way
         // to refresh them at all.
         var artists = _libraryCompletionService.RecomputeArtistsForUser(guid);
-        return Ok(new { LibraryCompletionPercents = result, ArtistCompletionPercents = artists });
+        // [issue #107] Same escape hatch for targeted badges.
+        var targets = _targetProgress.RecomputeForUser(guid);
+        return Ok(new
+        {
+            LibraryCompletionPercents = result,
+            ArtistCompletionPercents = artists,
+            ContainerCompletionPercents = targets.ContainerPercents,
+            ItemPlayCounts = targets.PlayCounts,
+        });
     }
 
     [HttpGet("users/{userId}/library-completion")]

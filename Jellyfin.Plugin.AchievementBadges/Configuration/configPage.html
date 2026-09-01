@@ -384,12 +384,23 @@
                                 <option value="GenreItemsWatched" data-param="genre">Items watched of a genre&hellip;</option>
                                 <option value="UniqueLanguagesWatched">Unique languages watched</option>
                                 <option value="UniqueCountriesWatched">Unique countries watched</option>
+                                <option value="ContainerCompletionPercent" data-param="target" data-target-kinds="Series,Season,BoxSet,Playlist,MusicAlbum">Completion of one series, season or collection&hellip;</option>
+                                <option value="ItemPlayCount" data-param="target" data-target-kinds="Movie,Episode,Audio,Book">Plays of one specific item&hellip;</option>
                             </select>
                         </div>
                         <div class="inputContainer" id="NewBadgeParamRow" style="display:none;">
                             <label class="inputLabel" for="NewBadgeParam">Genre filter</label>
                             <input type="text" id="NewBadgeParam" is="emby-input" placeholder="e.g. Disco" />
                             <div class="fieldDescription" style="color:rgba(255,255,255,.5);font-size:.85em;margin-top:.2em;">The genre to filter by (case-insensitive) &mdash; must match how it's tagged in your library.</div>
+                            <div id="NewBadgeTargetPicker" style="display:none;">
+                                <label class="inputLabel" for="NewBadgeTargetSearch">Search the library</label>
+                                <input type="text" id="NewBadgeTargetSearch" is="emby-input" placeholder="e.g. One Piece" />
+                                <label class="inputLabel" for="NewBadgeTargetResults" style="margin-top:.4em;">Target</label>
+                                <select id="NewBadgeTargetResults" is="emby-select">
+                                    <option value="">Type to search&hellip;</option>
+                                </select>
+                                <div class="fieldDescription" style="color:rgba(255,255,255,.5);font-size:.85em;margin-top:.2em;">Collections and playlists cover arbitrary groupings, for example one story arc.</div>
+                            </div>
                         </div>
                         <div class="inputContainer">
                             <label class="inputLabel" for="NewBadgeThreshold">Threshold</label>
@@ -526,6 +537,49 @@
 
                 userName: function (user) {
                     return user.Name || user.Username || user.UserName || user.ServerName || user.Id || 'Unknown';
+                },
+
+                // [issue #107] Library search behind the targeted-badge picker.
+                // The option value is the "{guid}|{name}" pair the server
+                // stores: the GUID survives a rename, the name survives an item
+                // being deleted and re-added, and each covers the other.
+                searchBadgeTargets: function (term, kinds) {
+                    var results = document.getElementById('NewBadgeTargetResults');
+                    if (!results) return Promise.resolve([]);
+                    if (!term || term.length < 2) {
+                        results.innerHTML = '<option value="">Type to search&hellip;</option>';
+                        return Promise.resolve([]);
+                    }
+
+                    var query = 'Items?Recursive=true&Limit=25&SearchTerm='
+                        + encodeURIComponent(term)
+                        + '&IncludeItemTypes=' + encodeURIComponent(kinds);
+
+                    return fetch(this.getApiUrl(query), {
+                        headers: this.getAuthHeaders(),
+                        credentials: 'include'
+                    }).then(function (response) {
+                        if (!response.ok) throw new Error('Request failed: ' + response.status);
+                        return response.json();
+                    }).then(function (payload) {
+                        var items = (payload && payload.Items) || [];
+                        if (!items.length) {
+                            results.innerHTML = '<option value="">No match</option>';
+                            return [];
+                        }
+                        results.innerHTML = items.map(function (item) {
+                            var id = String(item.Id || '').replace(/-/g, '');
+                            var label = item.Name
+                                + (item.ProductionYear ? ' (' + item.ProductionYear + ')' : '')
+                                + ' [' + item.Type + ']';
+                            return '<option value="' + escapeAttr(id + '|' + item.Name) + '">'
+                                + escapeHtml(label) + '</option>';
+                        }).join('');
+                        return items;
+                    }).catch(function () {
+                        results.innerHTML = '<option value="">Search failed</option>';
+                        return [];
+                    });
                 },
 
                 loadUsers: function () {
@@ -843,11 +897,22 @@
                     // metrics require one (e.g. "play 50 tracks of genre Disco").
                     var metricOpt = metricEl.options[metricEl.selectedIndex];
                     var needsParam = !!(metricOpt && metricOpt.getAttribute('data-param'));
-                    var metricParam = (document.getElementById('NewBadgeParam').value || '').trim();
+                    // [issue #107] Targeted metrics take their parameter from
+                    // the library picker instead of the free-text field, since
+                    // the value is a guid|name pair nobody should be typing.
+                    var isTarget = !!(metricOpt && metricOpt.getAttribute('data-param') === 'target');
+                    var metricParam = isTarget
+                        ? ((document.getElementById('NewBadgeTargetResults') || {}).value || '')
+                        : ((document.getElementById('NewBadgeParam').value || '').trim());
 
                     if (!name) { status.textContent = 'Name required.'; return; }
                     if (!threshold || threshold < 1) { status.textContent = 'Threshold must be a positive integer.'; return; }
-                    if (needsParam && !metricParam) { status.textContent = 'This metric needs a genre filter value (e.g. Disco).'; return; }
+                    if (needsParam && !metricParam) {
+                        status.textContent = isTarget
+                            ? 'Pick a target from the library first.'
+                            : 'This metric needs a genre filter value (e.g. Disco).';
+                        return;
+                    }
 
                     var criteria = { Metric: metric, Threshold: threshold };
                     if (needsParam) { criteria.MetricParameter = metricParam; }
@@ -880,6 +945,13 @@
                         document.getElementById('NewBadgeDescription').value = '';
                         document.getElementById('NewBadgeIconUrl').value = '';
                         document.getElementById('NewBadgeParam').value = '';
+                        // [issue #107] Clear the picker too, otherwise the next
+                        // badge silently inherits the last target and an admin
+                        // building a ladder creates two badges on one series.
+                        var targetSearch = document.getElementById('NewBadgeTargetSearch');
+                        var targetResults = document.getElementById('NewBadgeTargetResults');
+                        if (targetSearch) { targetSearch.value = ''; }
+                        if (targetResults) { targetResults.innerHTML = '<option value="">Type to search&hellip;</option>'; }
                         AchievementBadgesConfig.loadCustomBadges();
                     }).catch(function (e) {
                         status.textContent = 'Failed: ' + (e.message || e);
@@ -992,14 +1064,54 @@
 
             // [issue #24] Show the genre-filter field only for parametrized
             // metrics (those with a data-param option attribute).
+            // [issue #107] data-param="target" swaps the free-text field for
+            // the library picker, because the target parameter is a guid|name
+            // pair that nobody should be typing by hand.
             function toggleBadgeParamRow() {
                 var el = document.getElementById('NewBadgeMetric');
                 if (!el) return;
                 var opt = el.options[el.selectedIndex];
-                var needs = !!(opt && opt.getAttribute('data-param'));
+                var param = opt && opt.getAttribute('data-param');
+                var needs = !!param;
+                var isTarget = param === 'target';
+
                 var row = document.getElementById('NewBadgeParamRow');
                 if (row) { row.style.display = needs ? '' : 'none'; }
-                if (!needs) { var p = document.getElementById('NewBadgeParam'); if (p) { p.value = ''; } }
+
+                var picker = document.getElementById('NewBadgeTargetPicker');
+                if (picker) { picker.style.display = isTarget ? '' : 'none'; }
+
+                // The genre field and its description belong to the other
+                // parametrized metrics; hide both when the picker is showing,
+                // or the form asks for a genre and a target at once.
+                var label = row ? row.querySelector('label[for="NewBadgeParam"]') : null;
+                var desc = row ? row.querySelector('.fieldDescription') : null;
+                if (label) { label.style.display = isTarget ? 'none' : ''; }
+                if (desc) { desc.style.display = isTarget ? 'none' : ''; }
+
+                var text = document.getElementById('NewBadgeParam');
+                if (text) {
+                    text.style.display = isTarget ? 'none' : '';
+                    if (!needs || isTarget) { text.value = ''; }
+                }
+
+                var search = document.getElementById('NewBadgeTargetSearch');
+                var results = document.getElementById('NewBadgeTargetResults');
+                if (!isTarget) {
+                    if (search) { search.value = ''; }
+                    if (results) { results.innerHTML = '<option value="">Type to search&hellip;</option>'; }
+                    return;
+                }
+
+                if (search && !search._abTargetWired) {
+                    search._abTargetWired = true;
+                    search.addEventListener('input', function () {
+                        var current = document.getElementById('NewBadgeMetric');
+                        var currentOpt = current.options[current.selectedIndex];
+                        var kinds = (currentOpt && currentOpt.getAttribute('data-target-kinds')) || '';
+                        AchievementBadgesConfig.searchBadgeTargets(search.value.trim(), kinds);
+                    });
+                }
             }
 
             document.querySelector('#AchievementBadgesConfigPage')
