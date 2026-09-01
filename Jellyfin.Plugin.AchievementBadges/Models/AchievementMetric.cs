@@ -92,4 +92,14 @@ public enum AchievementMetric
     // when no MetricParameter is set. Appended at the end for the same reason
     // as the two above: existing serialized ordinals must not shift.
     ArtistCompletionPercent,
+
+    // [issue #107] Targeted metrics. MetricParameter carries "{guid:N}|{name}"
+    // (see Helpers/TargetRef). ContainerCompletionPercent is played leaves over
+    // total leaves of one series, season, collection, playlist or album;
+    // ItemPlayCount is Jellyfin's own play count for one item, which is what
+    // makes "play this track 3005 times" evaluate against history that already
+    // exists. Appended at the end for the same reason as the three above:
+    // existing serialized ordinals must not shift.
+    ContainerCompletionPercent,
+    ItemPlayCount,
 }

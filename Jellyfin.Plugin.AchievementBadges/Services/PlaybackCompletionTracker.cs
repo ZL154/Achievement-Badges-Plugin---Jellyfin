@@ -23,6 +23,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     private readonly IUserDataManager _userDataManager;
     private readonly PlaybackCompletionService _playbackCompletionService;
     private readonly LibraryCompletionService _libraryCompletionService;
+    private readonly TargetProgressService _targetProgress;
     private readonly ILogger<PlaybackCompletionTracker> _logger;
     private bool _subscribed;
     private bool _disposed;
@@ -65,6 +66,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         IUserDataManager userDataManager,
         PlaybackCompletionService playbackCompletionService,
         LibraryCompletionService libraryCompletionService,
+        TargetProgressService targetProgress,
         WatchCarryStore carried,
         ILogger<PlaybackCompletionTracker> logger)
     {
@@ -73,6 +75,7 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         _userDataManager = userDataManager;
         _playbackCompletionService = playbackCompletionService;
         _libraryCompletionService = libraryCompletionService;
+        _targetProgress = targetProgress;
         // Shared rather than owned: the watch history scan credits items too,
         // and it has to be able to drop their carry. While this lived in here
         // the scan could not reach it, so credited items kept their banked
@@ -213,10 +216,51 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
                 // the same way the scan's Audio query excludes them.
                 HandleAudioUserData(e, item, reason);
             }
+
+            // [issue #107] Targeted badges are defined over Jellyfin's own
+            // played flag and play count, so they refresh on the same signal
+            // the two handlers above use, but for every item kind: a targeted
+            // badge can point at a movie, an episode, a track or a book.
+            HandleTargetedUserData(e, item, reason);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[AchievementBadges] Failed to process UserDataSaved event.");
+        }
+    }
+
+    /// <summary>
+    /// [issue #107] Refresh the targets that contain this item when its played
+    /// flag changes.
+    /// <para>
+    /// TogglePlayed passes in both directions: unmarking an episode changes
+    /// the truthful percentage too, and unlocked badges are never revoked.
+    /// PlaybackFinished fires on every stop, not only on completion, so it is
+    /// gated on Played, otherwise every skipped track would pay for a
+    /// recompute that changes nothing.
+    /// </para>
+    /// <para>
+    /// Using Jellyfin's flag rather than this plugin's own credit decision is
+    /// deliberate: marking a season watched by hand is how an old arc actually
+    /// gets completed, and no playback event fires for that.
+    /// </para>
+    /// </summary>
+    private void HandleTargetedUserData(UserDataSaveEventArgs e, BaseItem item, string reason)
+    {
+        var toggled = reason.Equals("TogglePlayed", StringComparison.OrdinalIgnoreCase);
+        var finishedPlayed = reason.Equals("PlaybackFinished", StringComparison.OrdinalIgnoreCase)
+            && e.UserData?.Played == true;
+        if (!toggled && !finishedPlayed)
+        {
+            return;
+        }
+
+        var result = _targetProgress.RecomputeForItem(e.UserId, item);
+        if (!result.IsEmpty)
+        {
+            _logger.LogDebug(
+                "[AchievementBadges] Target refresh: user={UserId} item={ItemId} reason={Reason} containers={Containers} items={Items}",
+                e.UserId, item.Id, reason, result.ContainerPercents.Count, result.PlayCounts.Count);
         }
     }
 

@@ -28,12 +28,54 @@ public class CustomBadgesController : ControllerBase
     private readonly CustomBadgeService _customBadges;
     private readonly AuditLogService _auditLog;
     private readonly AchievementBadgeService _badges;
+    private readonly TargetProgressService _targetProgress;
 
-    public CustomBadgesController(CustomBadgeService customBadges, AuditLogService auditLog, AchievementBadgeService badges)
+    public CustomBadgesController(
+        CustomBadgeService customBadges,
+        AuditLogService auditLog,
+        AchievementBadgeService badges,
+        TargetProgressService targetProgress)
     {
         _customBadges = customBadges;
         _auditLog = auditLog;
         _badges = badges;
+        _targetProgress = targetProgress;
+    }
+
+    /// <summary>
+    /// [issue #107] Recompute every user's progress for the targets this badge
+    /// references, so a badge authored today is retroactive against history
+    /// that already exists. Without it a targeted badge reads zero until the
+    /// next watch history scan, even for a user who finished the series last
+    /// year, which is the complaint issue #24 raised about "Sampler".
+    /// <para>
+    /// Failure is logged by the service and swallowed here: a badge that saved
+    /// correctly must not report an error because one library was unreadable
+    /// during seeding.
+    /// </para>
+    /// </summary>
+    private void SeedTargets(CustomBadge saved)
+    {
+        if (saved?.Criteria is null)
+        {
+            return;
+        }
+
+        var referenced = Helpers.ObservedTargets.Collect(
+            new[] { saved },
+            Plugin.Instance?.Configuration?.MaxTargetedBadgeTargets ?? 50,
+            out _);
+
+        if (referenced.Count == 0)
+        {
+            return;
+        }
+
+        // Full pass rather than one scoped to this badge's targets. Badge
+        // creation is a rare admin action, the full pass is the reconciler
+        // anyway, and scoping it would need a second entry point whose only
+        // caller is this line.
+        _targetProgress.RecomputeAll();
     }
 
     [HttpGet]
@@ -59,6 +101,7 @@ public class CustomBadgesController : ControllerBase
             badge.CreatedAt = DateTimeOffset.UtcNow;
             badge.Id = Guid.NewGuid().ToString("N");
             var saved = _customBadges.Upsert(badge);
+            SeedTargets(saved);
             _auditLog.Log(badge.CreatedBy, badge.CreatedBy, "custom_badge_created",
                 System.Text.Json.JsonSerializer.Serialize(new
                 {
@@ -88,6 +131,7 @@ public class CustomBadgesController : ControllerBase
         {
             badge.Id = id;
             var saved = _customBadges.Upsert(badge);
+            SeedTargets(saved);
             var editor = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
             _auditLog.Log(editor, editor, "custom_badge_updated",
                 System.Text.Json.JsonSerializer.Serialize(new

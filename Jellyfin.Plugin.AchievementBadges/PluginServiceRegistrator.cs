@@ -60,6 +60,11 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
                     "watch-carry.json"));
         });
         serviceCollection.AddSingleton<LibraryCompletionService>();
+        // [issue #107] Targeted badge progress: completion of one series,
+        // season, collection, playlist or album, and play count of one item.
+        // Separate from LibraryCompletionService because it is bounded by the
+        // badges that reference a target rather than by the library.
+        serviceCollection.AddSingleton<TargetProgressService>();
         serviceCollection.AddSingleton<RecapService>();
         serviceCollection.AddSingleton<RecommendationService>();
         serviceCollection.AddSingleton<QuestService>();
