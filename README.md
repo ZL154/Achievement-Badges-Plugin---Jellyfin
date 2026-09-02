@@ -12,7 +12,7 @@
 ```
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Jellyfin-10.11%2B-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
+  <img src="https://img.shields.io/badge/Jellyfin-10.11_%7C_12.0-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <img src="https://img.shields.io/badge/Type-Plugin-E50914?style=for-the-badge&labelColor=000000&color=E50914" />
   <img src="https://img.shields.io/badge/System-Achievements-0b0b0b?style=for-the-badge&labelColor=000000&color=2b2b2b" />
   <a href="https://github.com/ZL154/AchievementBadges_for_Jellyfin/releases/latest"><img src="https://img.shields.io/github/v/release/ZL154/AchievementBadges_for_Jellyfin?style=for-the-badge&labelColor=000000&color=2b2b2b&label=Release" /></a>
@@ -603,7 +603,8 @@ https://raw.githubusercontent.com/ZL154/AchievementBadges_for_Jellyfin/main/mani
 
 ## 🔧 Requirements
 
-- **Jellyfin 10.11+**
+- **Jellyfin 10.11.x**, on .NET 9. This is what every release ships for today.
+- **Jellyfin 12.0**: the plugin builds and passes its full test suite against the 12.0 release candidates on .NET 10 in CI, but no 12.0 package is published until Jellyfin tags 12.0.0. Release candidates move, and shipping against one would mean rebuilding for each. The 12.0 zip will appear in the same release as the 10.11 one from that point on.
 - **File Transformation plugin** (strongly recommended) — ensures sidebar, dashboard UI, profile showcase and achievements page inject reliably across Jellyfin Web updates. Without it most UI injection still works via the plugin's own middleware, but File Transformation gives the most robust integration.
 
 ### Optional but helpful
