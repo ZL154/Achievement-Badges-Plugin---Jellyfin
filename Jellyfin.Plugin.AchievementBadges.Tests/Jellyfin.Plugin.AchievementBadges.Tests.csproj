@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <!-- [issue #109] Mirrors the main csproj: the suite runs once against
+         the Jellyfin 10.11 API on .NET 9 and once against 12.x on .NET 10,
+         so an API drift between the two lines fails CI instead of the
+         plugin's first user on the newer server. -->
+    <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
@@ -26,10 +30,18 @@
        it needs the real runtime assemblies on disk to instantiate the
        services under test. Reference them here WITH runtime assets — this is
        test-only and never affects the plugin artifact. Versions must match
-       the main csproj (10.11.6). -->
+       the main csproj, per target framework. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <JellyfinVersion>10.11.6</JellyfinVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <JellyfinVersion>12.0.0-rc7</JellyfinVersion>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Jellyfin.Controller" Version="10.11.6" />
-    <PackageReference Include="Jellyfin.Model" Version="10.11.6" />
+    <PackageReference Include="Jellyfin.Controller" Version="$(JellyfinVersion)" />
+    <PackageReference Include="Jellyfin.Model" Version="$(JellyfinVersion)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <!-- [issue #109] One source tree, two binaries. Jellyfin 10.11 runs on
+         .NET 9 and Jellyfin 12 on .NET 10, and the 12.x Jellyfin packages
+         only ship net10.0 assets, so a single DLL cannot serve both. The
+         JellyfinVersion property below maps each framework to the matching
+         Jellyfin package line. -->
+    <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -27,12 +32,23 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
+  <!-- [issue #109] Jellyfin package line per target framework. The 12.0
+       line is a release candidate until Jellyfin tags 12.0.0; bump it here
+       and in the Tests csproj together, they must stay identical. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <JellyfinVersion>10.11.6</JellyfinVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <JellyfinVersion>12.0.0-rc7</JellyfinVersion>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Jellyfin.Controller" Version="10.11.6">
+    <PackageReference Include="Jellyfin.Controller" Version="$(JellyfinVersion)">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
 
-    <PackageReference Include="Jellyfin.Model" Version="10.11.6">
+    <PackageReference Include="Jellyfin.Model" Version="$(JellyfinVersion)">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
 
