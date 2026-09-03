@@ -20,4 +20,9 @@ public enum MediaType
     Book = 3,
     Anime = 4,
     Multi = 5,
+    // [issue #115] Games played through JellyEmu. Jellyfin stores them as
+    // Book items; the plugin tells them apart by the tags and provider ids
+    // JellyEmu writes (see Helpers/GameSession). Appended so stored ordinals
+    // do not move.
+    Game = 6,
 }

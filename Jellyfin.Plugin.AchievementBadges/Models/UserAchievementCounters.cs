@@ -88,6 +88,25 @@ public class UserAchievementCounters
     public long AudiobookListeningSeconds { get; set; }
     public HashSet<string> BookSeriesCompleted { get; set; } = new();
 
+    // [issue #115] Games played through JellyEmu. A play is one session that
+    // survived the length clamp; seconds are the clamped session lengths.
+    // GamesPlayed is a set, so "10 different games" means distinct, not
+    // repeated. GameSecondsByItem is keyed by item GUID in "N" format, the
+    // same key the targeted metrics use, so "30 hours in this game" reads
+    // straight from it. GamesByPlatform and GamesByStudio map a platform tag
+    // or a developer/publisher to the distinct games played on or from it,
+    // which is what "10 Sega games" and "5 Capcom games" count.
+    public int GamePlays { get; set; }
+    public long GamePlaySeconds { get; set; }
+    public HashSet<string> GamesPlayed { get; set; } = new();
+    public Dictionary<string, long> GameSecondsByItem { get; set; } = new();
+    public Dictionary<string, HashSet<string>> GamesByPlatform { get; set; } = new();
+    public Dictionary<string, HashSet<string>> GamesByStudio { get; set; } = new();
+
+    public int UniqueGamesPlayed => GamesPlayed.Count;
+    public int UniqueGamePlatforms => GamesByPlatform.Count;
+    public int GamePlayHours => (int)(GamePlaySeconds / 3600);
+
     public int UniqueMusicAlbumsCount => MusicAlbumsListened.Count;
     public int UniqueMusicArtistsCount => MusicArtistsListened.Count;
     public int UniqueMusicGenresCount => MusicGenresListened.Count;
