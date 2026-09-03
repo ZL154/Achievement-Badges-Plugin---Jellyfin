@@ -1528,6 +1528,14 @@ public class AchievementBadgesController : ControllerBase
                 equippedHtml = "<span class=\"tier\">No badges equipped.</span>";
             }
 
+            // [issue #42] Shop bling the owner equipped: custom title and badge
+            // frame. Resolved against the catalog and privacy gated by the
+            // service, so both are either a known catalog value or empty, and
+            // the templates collapse the empty case with CSS.
+            var cosmetics = _badgeService.GetPublicCosmetics(userId);
+            var customTitle = System.Net.WebUtility.HtmlEncode(cosmetics.CustomTitle ?? string.Empty);
+            var frameClass = System.Net.WebUtility.HtmlEncode(cosmetics.BadgeFrameId ?? string.Empty);
+
             var recap = _recapService.GetRecap(userId, "month");
             var recapType = recap.GetType();
             int recapMovies = (int)(recapType.GetProperty("MoviesWatched")?.GetValue(recap) ?? 0);
@@ -1555,7 +1563,9 @@ public class AchievementBadgesController : ControllerBase
                 .Replace("{{recapMovies}}", recapMovies.ToString())
                 .Replace("{{recapEpisodes}}", recapEpisodes.ToString())
                 .Replace("{{recapUnlocks}}", recapUnlocks.ToString())
-                .Replace("{{equippedHtml}}", equippedHtml);
+                .Replace("{{equippedHtml}}", equippedHtml)
+                .Replace("{{customTitle}}", customTitle)
+                .Replace("{{frameClass}}", frameClass);
         }
         catch
         {
