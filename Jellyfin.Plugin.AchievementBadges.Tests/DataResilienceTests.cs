@@ -146,7 +146,7 @@ public class DataResilienceTests : IDisposable
         Assert.Equal(new[] { "mario", "metroid", "zelda" }, rebuilt.GamesByPlatform["SNES"].OrderBy(g => g).ToArray());
         Assert.Equal(new[] { "sonic" }, rebuilt.GamesByPlatform["SegaGenesis"].ToArray());
         // The copied set keeps its comparer, so the case-insensitive lookup still works.
-        Assert.True(rebuilt.GamesByPlatform["SegaGenesis"].Contains("SONIC"));
+        Assert.Contains("SONIC", rebuilt.GamesByPlatform["SegaGenesis"]);
         Assert.Equal(2, rebuilt.GamesByStudio["Nintendo"].Count);
     }
 

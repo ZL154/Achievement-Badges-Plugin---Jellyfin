@@ -90,7 +90,7 @@ public class GameAchievementTests : IDisposable
         Assert.Equal(5400, c.GameSecondsByItem[Mario.ToString("N")]);
         Assert.Equal(2, c.GamesByPlatform["SNES"].Count);
         Assert.Equal(2, c.GamesByStudio["Nintendo"].Count);
-        Assert.Equal(1, c.GamesByStudio["Sega Technical Institute"].Count);
+        Assert.Single(c.GamesByStudio["Sega Technical Institute"]);
 
         // The item is a Book in Jellyfin's eyes. It must not read as one here.
         Assert.Equal(0, c.BooksCompleted);

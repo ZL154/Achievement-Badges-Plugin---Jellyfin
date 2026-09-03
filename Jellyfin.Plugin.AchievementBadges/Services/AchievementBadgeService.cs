@@ -2624,12 +2624,6 @@ public class AchievementBadgeService : IDisposable
     }
 
     /// <summary>
-    /// Small read-only projection of a user's equipped badges safe to expose
-    /// in leaderboards / compare / public profile views. Only ships the three
-    /// display fields — never Id, internal state, or unlock date.
-    /// Returns an empty list when the target has opted out of showcases.
-    /// </summary>
-    /// <summary>
     /// The privacy gate shared by every public projection of what a user
     /// equipped. Any one of these toggles hides the equipped badges, and
     /// [issue #42] the custom title and badge frame with them: a user who hid
@@ -2701,6 +2695,12 @@ public class AchievementBadgeService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Small read-only projection of a user's equipped badges safe to expose
+    /// in leaderboards / compare / public profile views. Only ships the three
+    /// display fields — never Id, internal state, or unlock date.
+    /// Returns an empty list when the target has opted out of showcases.
+    /// </summary>
     private List<object> BuildEquippedPreview(UserAchievementProfile profile)
     {
         if (ShowcaseHidden(profile)) return new List<object>();

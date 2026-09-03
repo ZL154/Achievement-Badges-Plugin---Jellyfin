@@ -268,6 +268,17 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
     {
         if (e.UserData is null || !e.UserData.Played) return;
 
+        // [issue #115 follow-up] A JellyEmu game is stored as a Book, so it
+        // reaches this handler too. Marking a game played by hand — which is
+        // how someone tidies a finished game out of Continue Watching — would
+        // otherwise credit it as a book read and unlock the reading badges.
+        // The playback path already forks games off before the runtime gate;
+        // this is the same fork on the played-flag path.
+        if (GameSession.IsGame(GetEffectiveTags(item, inheritFromParent: false), item.ProviderIds))
+        {
+            return;
+        }
+
         if (!reason.Equals("TogglePlayed", StringComparison.OrdinalIgnoreCase)
             && !reason.Equals("PlaybackFinished", StringComparison.OrdinalIgnoreCase))
         {

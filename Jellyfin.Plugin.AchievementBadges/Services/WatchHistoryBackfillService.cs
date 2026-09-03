@@ -493,7 +493,15 @@ public class WatchHistoryBackfillService
                 EnableTotalRecordCount = false
             };
 
-            var books = _libraryManager.GetItemsResult(bookQuery).Items;
+            // [issue #115 follow-up] JellyEmu stores games as Books, so this
+            // query returns them alongside real ebooks. Without the filter a
+            // game the user marked played is re-credited as a book on every
+            // scan, inflating BooksCompleted permanently. Games have no played
+            // flag of their own to rebuild from, which is why the scan neither
+            // adds nor removes game progress.
+            var books = _libraryManager.GetItemsResult(bookQuery).Items
+                .Where(b => !Helpers.GameSession.IsGame(b.Tags, b.ProviderIds))
+                .ToList();
             booksCompleted = books.Count;
 
             foreach (var book in books)
