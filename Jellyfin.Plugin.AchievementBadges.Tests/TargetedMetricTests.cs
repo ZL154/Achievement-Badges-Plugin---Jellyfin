@@ -57,16 +57,17 @@ public class TargetedMetricTests : IDisposable
     }
 
     [Fact]
-    public void TheNewMetricsAreAppendedAtTheEndOfTheEnum()
+    public void TheTargetedMetricsKeepTheirOrdinals()
     {
-        // Ordinals are serialized. Inserting these anywhere but the end
-        // silently reinterprets every stored badge definition past the
-        // insertion point.
-        var values = (AchievementMetric[])Enum.GetValues(typeof(AchievementMetric));
-
-        Assert.Equal(AchievementMetric.ItemPlayCount, values[^1]);
-        Assert.Equal(AchievementMetric.ContainerCompletionPercent, values[^2]);
-        Assert.Equal(AchievementMetric.ArtistCompletionPercent, values[^3]);
+        // Ordinals are serialized. Inserting a value before these silently
+        // reinterprets every stored badge definition past the insertion
+        // point. This used to assert the two metrics were LAST in the enum,
+        // which is a proxy for that invariant and fails on every correct
+        // append after them (issue #115 added seven). Pinning the ordinals
+        // tests the thing that actually matters.
+        Assert.Equal(70, (int)AchievementMetric.ArtistCompletionPercent);
+        Assert.Equal(71, (int)AchievementMetric.ContainerCompletionPercent);
+        Assert.Equal(72, (int)AchievementMetric.ItemPlayCount);
     }
 
     [Fact]

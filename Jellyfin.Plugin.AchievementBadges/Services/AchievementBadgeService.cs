@@ -488,6 +488,14 @@ public class AchievementBadgeService : IDisposable
             AchievementMetric.TotalMinutesWatched => "Watch " + Math.Round(remaining / 60.0) + " more hour" + (remaining < 120 ? "" : "s"),
             AchievementMetric.DaysWatched => "Watch on " + remaining + " more day" + (remaining == 1 ? "" : "s"),
             AchievementMetric.RewatchCount => "Rewatch " + remaining + " more item" + (remaining == 1 ? "" : "s"),
+            // [issue #115] Games.
+            AchievementMetric.GamePlays => "Play " + remaining + " more game session" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.GamePlayHours => "Play " + remaining + " more hour" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.GameHours => "Play " + remaining + " more hour" + (remaining == 1 ? "" : "s") + " of this game",
+            AchievementMetric.UniqueGamesPlayed => "Play " + remaining + " new game" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.UniqueGamePlatforms => "Play on " + remaining + " new platform" + (remaining == 1 ? "" : "s"),
+            AchievementMetric.GamePlatformGames => "Play " + remaining + " more game" + (remaining == 1 ? "" : "s") + " on this platform",
+            AchievementMetric.GameStudioGames => "Play " + remaining + " more game" + (remaining == 1 ? "" : "s") + " from this studio",
             _ => remaining + " more needed"
         };
     }
@@ -2022,6 +2030,52 @@ public class AchievementBadgeService : IDisposable
                     counters.MusicDecadesListened.Add(musicYear / 10 * 10);
             }
 
+            // [issue #115] A game session reported by JellyEmu. IsBook is
+            // false on these contexts, so a game never counts as a finished
+            // ebook; the seconds are already clamped by the tracker.
+            if (context.IsGame)
+            {
+                counters.GamePlays += creditMultiplier;
+                var gameSeconds = Math.Max(context.GamePlaySeconds, 0) * creditMultiplier;
+                counters.GamePlaySeconds += gameSeconds;
+
+                var gameKey = Guid.TryParse(context.ItemId, out var gameGuid) ? gameGuid.ToString("N") : null;
+                if (gameKey is not null)
+                {
+                    counters.GamesPlayed.Add(gameKey);
+                    counters.GameSecondsByItem.TryGetValue(gameKey, out var soFar);
+                    counters.GameSecondsByItem[gameKey] = soFar + gameSeconds;
+
+                    var platform = context.GamePlatform;
+                    if (!string.IsNullOrWhiteSpace(platform)
+                        && !string.Equals(platform, Helpers.GameSession.UnknownPlatform, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!counters.GamesByPlatform.TryGetValue(platform, out var onPlatform))
+                        {
+                            onPlatform = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            counters.GamesByPlatform[platform] = onPlatform;
+                        }
+
+                        onPlatform.Add(gameKey);
+                    }
+
+                    // Developer and publisher both arrive as studios from the
+                    // IGDB / RAWG providers; either is a fair "games by X".
+                    foreach (var studio in context.Studios ?? Array.Empty<string>())
+                    {
+                        if (string.IsNullOrWhiteSpace(studio)) continue;
+                        var s = studio.Trim();
+                        if (!counters.GamesByStudio.TryGetValue(s, out var fromStudio))
+                        {
+                            fromStudio = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            counters.GamesByStudio[s] = fromStudio;
+                        }
+
+                        fromStudio.Add(gameKey);
+                    }
+                }
+            }
+
             if (creditAsBook)
             {
                 counters.BooksCompleted += creditMultiplier;
@@ -3242,6 +3296,28 @@ public class AchievementBadgeService : IDisposable
                 : 0;
         }
 
+        // [issue #115] Games. The platform and studio readings match the
+        // parameter case-insensitively, like the music genre ones: "snes"
+        // and "SNES" are the same shelf. GameHours reads one target's seconds.
+        if (metric == AchievementMetric.GamePlatformGames && !string.IsNullOrWhiteSpace(parameter))
+        {
+            return LookupGameSetCount(counters.GamesByPlatform, parameter!);
+        }
+
+        if (metric == AchievementMetric.GameStudioGames && !string.IsNullOrWhiteSpace(parameter))
+        {
+            return LookupGameSetCount(counters.GamesByStudio, parameter!);
+        }
+
+        if (metric == AchievementMetric.GameHours)
+        {
+            var gameKey = Helpers.TargetRef.KeyOf(parameter);
+            return gameKey is not null
+                && counters.GameSecondsByItem.TryGetValue(gameKey, out var seconds)
+                ? (int)(seconds / 3600)
+                : 0;
+        }
+
         return GetSingleMetricValue(counters, metric);
     }
 
@@ -3308,9 +3384,28 @@ public class AchievementBadgeService : IDisposable
             AchievementMetric.BooksCompleted => counters.BooksCompleted,
             AchievementMetric.AudiobookListeningHours => counters.AudiobookListeningHours,
             AchievementMetric.UniqueBookSeriesCompleted => counters.BookSeriesCompleted.Count,
+            // [issue #115] Games.
+            AchievementMetric.GamePlays => counters.GamePlays,
+            AchievementMetric.GamePlayHours => counters.GamePlayHours,
+            AchievementMetric.UniqueGamesPlayed => counters.UniqueGamesPlayed,
+            AchievementMetric.UniqueGamePlatforms => counters.UniqueGamePlatforms,
 
             _ => 0
         };
+    }
+
+    // [issue #115] Distinct games behind a platform or studio key, matched
+    // case-insensitively so a badge parameter does not have to reproduce the
+    // provider's capitalisation.
+    private static int LookupGameSetCount(Dictionary<string, HashSet<string>> dict, string key)
+    {
+        if (dict.TryGetValue(key, out var exact)) return exact.Count;
+        foreach (var kv in dict)
+        {
+            if (string.Equals(kv.Key, key, StringComparison.OrdinalIgnoreCase)) return kv.Value.Count;
+        }
+
+        return 0;
     }
 
     // Approximate Saudi-calendar Eid al-Fitr and Eid al-Adha start dates.
