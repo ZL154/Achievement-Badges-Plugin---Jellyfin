@@ -455,6 +455,18 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
                 return;
             }
 
+            // [issue #115] A game played through JellyEmu is a Book with no
+            // runtime whose playback position is wall-clock elapsed time.
+            // Two checks below are built for video and would drop it: the
+            // "runtime ticks unavailable" gate, and the accumulator's seek
+            // filter, which reads every 30-second progress ping as a jump.
+            // Games leave the video path here and are measured as sessions.
+            if (isBook && GameSession.IsGame(GetEffectiveTags(item, inheritFromParent: false), item.ProviderIds))
+            {
+                RecordGameSession(e, source, userId, item, itemId);
+                return;
+            }
+
             var runTimeTicks = item.RunTimeTicks ?? 0;
 
             // v1.9.8 — Reject items shorter than 60s. Projectionist prerolls,
@@ -609,6 +621,67 @@ public class PlaybackCompletionTracker : IHostedService, IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "[AchievementBadges] Failed to process playback completion from {Source}.", source);
+        }
+    }
+
+    /// <summary>
+    /// [issue #115] Credit one game session. The length is the smaller of what
+    /// JellyEmu reported (its playback position is elapsed time) and what this
+    /// tracker saw on its own clock since the first progress ping, bounded by
+    /// the configured floor and cap. The session state is removed either way
+    /// so it never leaks into the next item.
+    /// </summary>
+    private void RecordGameSession(PlaybackProgressEventArgs e, string source, string userId, BaseItem item, string itemId)
+    {
+        var reportedSeconds = (e.PlaybackPositionTicks ?? 0) / TimeSpan.TicksPerSecond;
+        long wallClockSeconds = 0;
+        var sessionId = e.Session?.Id;
+        if (!string.IsNullOrWhiteSpace(sessionId) && _sessions.TryRemove(sessionId, out var session))
+        {
+            wallClockSeconds = (long)(DateTimeOffset.UtcNow - session.StartedAt).TotalSeconds;
+        }
+
+        var cfg = Plugin.Instance?.Configuration;
+        var minSeconds = cfg?.MinGameSessionSeconds ?? 60;
+        var maxSeconds = (cfg?.MaxGameSessionMinutes ?? 360) * 60L;
+        var seconds = GameSession.ClampSeconds(reportedSeconds, wallClockSeconds, minSeconds, maxSeconds);
+        if (seconds <= 0)
+        {
+            _logger.LogDebug(
+                "[AchievementBadges] {Source} game session for user {UserId} item {ItemId}: reported {Reported}s, seen {Seen}s; below the {Floor}s floor, not counted.",
+                source, userId, itemId, reportedSeconds, wallClockSeconds, minSeconds);
+            return;
+        }
+
+        var tags = GetEffectiveTags(item, inheritFromParent: false);
+        var context = new PlaybackContext
+        {
+            UserId = userId,
+            ItemId = itemId,
+            OriginDeviceId = !string.IsNullOrWhiteSpace(e.DeviceId) ? e.DeviceId : e.Session?.DeviceId,
+            IsGame = true,
+            GamePlatform = GameSession.Platform(tags),
+            GamePlaySeconds = seconds,
+            LibraryName = ResolveLibraryName(item),
+            PlayedAt = DateTimeOffset.Now,
+            ProductionYear = item.ProductionYear,
+            Genres = GetEffectiveGenres(item, inheritFromParent: false),
+            Tags = tags,
+            Studios = item.Studios,
+        };
+
+        var success = _playbackCompletionService.RecordGameSession(context, out var message);
+        if (success)
+        {
+            _logger.LogInformation(
+                "[AchievementBadges] Recorded game session from {Source} user={UserId} item={ItemId} platform={Platform} seconds={Seconds}",
+                source, userId, itemId, context.GamePlatform, seconds);
+        }
+        else
+        {
+            _logger.LogDebug(
+                "[AchievementBadges] Skipped game session from {Source} user={UserId} item={ItemId} reason={Reason}",
+                source, userId, itemId, message);
         }
     }
 

@@ -103,6 +103,23 @@ public static class CounterFloor
                     }
                 }
             }
+            else if (property.GetValue(previous) is Dictionary<string, HashSet<string>> prevSets && property.GetValue(rebuilt) is Dictionary<string, HashSet<string>> currSets)
+            {
+                // [issue #115] Per key sets (games per platform, games per
+                // studio). A game session leaves no played flag behind, so a
+                // rebuild never sees it and the sets must union per key.
+                foreach (var (key, values) in prevSets)
+                {
+                    if (currSets.TryGetValue(key, out var existing))
+                    {
+                        existing.UnionWith(values);
+                    }
+                    else
+                    {
+                        currSets[key] = new HashSet<string>(values, values.Comparer);
+                    }
+                }
+            }
         }
     }
 }

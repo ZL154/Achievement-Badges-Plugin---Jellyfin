@@ -148,6 +148,7 @@ Big thanks to **[@camarigor](https://github.com/camarigor)** for the friend prof
 - **Admin-authored custom badges (v2.1.0)** — compound AND/OR criteria across any metric; see [Custom badges](#-custom-badges).
 - **Targeted badges (v2.4.0, #107)**: point a badge at one specific series, season, collection, playlist, album or item; see [Targeted badges](#targeted-badges).
 - **Shop cosmetics on the shareable card (v2.4.0, #42)**: the equipped custom title and badge frame show on the shareable profile card and on the friends-drawer profile card, under the same privacy toggles as the equipped badges.
+- **Game achievements (v2.4.0, #115)**: sessions, hours, distinct games and platforms for games played through JellyEmu, plus custom badges per platform, per developer and per game; see [Game achievements](#game-achievements-jellyemu).
 - **6 rarity tiers** — Common, Uncommon, Rare, Epic, Legendary, Mythic
 - **Hidden/secret badges** displayed as `???` until unlocked
 - **Library completion milestones** that auto-scale to any library structure
@@ -439,6 +440,20 @@ Targeted badges are evaluated against your existing history, so a badge you auth
   }
 }
 ```
+
+### Game achievements (JellyEmu)
+
+> Added in **v2.4.0**, from [#115](https://github.com/ZL154/AchievementBadges_for_Jellyfin/issues/115).
+
+Games played through [JellyEmu](https://github.com/Jellyfin-PG/JellyEmu) earn achievements with no setup on the JellyEmu side. JellyEmu reports every game session to Jellyfin as a playback session and tags each game with `JellyEmu`, `Game` and its platform; this plugin reads those and measures each session as the smaller of what the emulator reported and what the plugin saw on its own clock, with a floor (`MinGameSessionSeconds`, default 60) so a misclick is not a play and a cap (`MaxGameSessionMinutes`, default 360) so a tab left open is not a night of play.
+
+Built in, under the **Games** category: session ladders (1, 25, 100), distinct games (10, 50), hours (10, 100) and platforms (3, 8). For custom badges, the builder offers:
+
+- `GamePlatformGames` with the platform tag as parameter (`SNES`, `SegaGenesis`, `PlayStation`; the spelling is JellyEmu's, matched without regard to case): "play 10 Sega Genesis games".
+- `GameStudioGames` with the developer or publisher as parameter: "play 5 games by Capcom".
+- `GameHours` with a specific game as target, chosen in the picker like any other targeted badge: "30 hours in this game".
+
+Two limits worth knowing: play time counts from the moment this version is installed, because games carry no played flag to rebuild history from; and nothing here reads RetroAchievements, whose unlocks cannot happen in JellyEmu's browser emulator (see the discussion on #115).
 
 ### Template — simple badge
 

@@ -224,4 +224,17 @@ public class PluginConfiguration : BasePluginConfiguration
     /// silently.
     /// </summary>
     public int MaxTargetedBadgeTargets { get; set; } = 50;
+
+    /// <summary>
+    /// [issue #115] A game session shorter than this counts for nothing: a
+    /// launch closed at once is not a play.
+    /// </summary>
+    public int MinGameSessionSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// [issue #115] A game session counts for at most this long. JellyEmu
+    /// keeps reporting for as long as the tab is open, so without a cap a
+    /// browser left running overnight would be a night of play time.
+    /// </summary>
+    public int MaxGameSessionMinutes { get; set; } = 360;
 }

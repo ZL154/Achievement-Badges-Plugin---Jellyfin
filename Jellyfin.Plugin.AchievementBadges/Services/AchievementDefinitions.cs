@@ -391,5 +391,22 @@ public static class AchievementDefinitions
         new() { Id = "book-audio-veteran",     Key = "book_audio_veteran",     Title = "Audio Veteran",        Description = "Listen to 100 hours of audiobooks.",          Icon = "podcasts",       Category = "Books", Rarity = "Rare",      Media = MediaType.Book,  Metric = AchievementMetric.AudiobookListeningHours,   TargetValue = 100 },
 
         new() { Id = "book-series-finisher",   Key = "book_series_finisher",   Title = "Series Finisher",      Description = "Finish 3 book series.",                       Icon = "menu_book",      Category = "Books", Rarity = "Uncommon",  Media = MediaType.Book,  Metric = AchievementMetric.UniqueBookSeriesCompleted, TargetValue = 3 },
+
+        // [issue #115] Games played through JellyEmu. Sessions, hours, distinct
+        // games and platforms; per-platform and per-studio badges are left to
+        // the custom badge builder, where the admin names the platform or the
+        // developer.
+        new() { Id = "game-first-boot",        Key = "game_first_boot",        Title = "First Boot",           Description = "Play your first game session.",               Icon = "sports_esports", Category = "Games", Rarity = "Common",    Media = MediaType.Game,  Metric = AchievementMetric.GamePlays,           TargetValue = 1 },
+        new() { Id = "game-arcade-regular",    Key = "game_arcade_regular",    Title = "Arcade Regular",       Description = "Play 25 game sessions.",                      Icon = "videogame_asset", Category = "Games", Rarity = "Uncommon", Media = MediaType.Game,  Metric = AchievementMetric.GamePlays,           TargetValue = 25 },
+        new() { Id = "game-arcade-rat",        Key = "game_arcade_rat",        Title = "Arcade Rat",           Description = "Play 100 game sessions.",                     Icon = "stadia_controller", Category = "Games", Rarity = "Rare",   Media = MediaType.Game,  Metric = AchievementMetric.GamePlays,           TargetValue = 100 },
+
+        new() { Id = "game-cartridge-collector", Key = "game_cartridge_collector", Title = "Cartridge Collector", Description = "Play 10 different games.",              Icon = "grid_view",      Category = "Games", Rarity = "Common",    Media = MediaType.Game,  Metric = AchievementMetric.UniqueGamesPlayed,   TargetValue = 10 },
+        new() { Id = "game-backlog",           Key = "game_backlog",           Title = "Backlog",              Description = "Play 50 different games.",                    Icon = "inventory_2",    Category = "Games", Rarity = "Rare",      Media = MediaType.Game,  Metric = AchievementMetric.UniqueGamesPlayed,   TargetValue = 50 },
+
+        new() { Id = "game-marathon",          Key = "game_marathon",          Title = "Marathon",             Description = "Play for 10 hours.",                          Icon = "timer",          Category = "Games", Rarity = "Uncommon",  Media = MediaType.Game,  Metric = AchievementMetric.GamePlayHours,       TargetValue = 10 },
+        new() { Id = "game-long-haul",         Key = "game_long_haul",         Title = "Long Haul",            Description = "Play for 100 hours.",                         Icon = "hourglass_full", Category = "Games", Rarity = "Epic",      Media = MediaType.Game,  Metric = AchievementMetric.GamePlayHours,       TargetValue = 100 },
+
+        new() { Id = "game-console-wars",      Key = "game_console_wars",      Title = "Console Wars",         Description = "Play games on 3 different platforms.",        Icon = "devices",        Category = "Games", Rarity = "Uncommon",  Media = MediaType.Game,  Metric = AchievementMetric.UniqueGamePlatforms, TargetValue = 3 },
+        new() { Id = "game-retro-sommelier",   Key = "game_retro_sommelier",   Title = "Retro Sommelier",      Description = "Play games on 8 different platforms.",        Icon = "memory",         Category = "Games", Rarity = "Rare",      Media = MediaType.Game,  Metric = AchievementMetric.UniqueGamePlatforms, TargetValue = 8 },
     };
 }

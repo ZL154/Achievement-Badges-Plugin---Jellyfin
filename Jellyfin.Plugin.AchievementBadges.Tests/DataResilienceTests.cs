@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Jellyfin.Plugin.AchievementBadges.Configuration;
 using Jellyfin.Plugin.AchievementBadges.Helpers;
 using Jellyfin.Plugin.AchievementBadges.Models;
@@ -120,6 +121,33 @@ public class DataResilienceTests : IDisposable
         Assert.Equal(4, rebuilt.GenreItemCounts["Horror"]);
         Assert.Equal(8, rebuilt.GenreItemCounts["Comedy"]);
         Assert.Equal(7200, rebuilt.MusicGenreListeningSeconds["Jazz"]);
+    }
+
+    [Fact]
+    public void CounterFloor_PerKeySets_UnionPerKey()
+    {
+        // Issue #115. A game session leaves no played flag behind, so a
+        // watch history rebuild produces empty game sets. Before the floor
+        // learned this shape, one scan wiped every platform and studio a
+        // player had touched while the plain totals next to them survived.
+        var previous = new UserAchievementCounters { GamePlays = 12, GamePlaySeconds = 5400 };
+        previous.GamesByPlatform["SNES"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "mario", "zelda" };
+        previous.GamesByPlatform["SegaGenesis"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "sonic" };
+        previous.GamesByStudio["Nintendo"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "mario", "zelda" };
+
+        var rebuilt = new UserAchievementCounters();
+        rebuilt.GamesByPlatform["SNES"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "metroid" };
+
+        CounterFloor.Apply(previous, rebuilt);
+
+        Assert.Equal(12, rebuilt.GamePlays);
+        Assert.Equal(5400, rebuilt.GamePlaySeconds);
+        Assert.Equal(2, rebuilt.UniqueGamePlatforms);
+        Assert.Equal(new[] { "mario", "metroid", "zelda" }, rebuilt.GamesByPlatform["SNES"].OrderBy(g => g).ToArray());
+        Assert.Equal(new[] { "sonic" }, rebuilt.GamesByPlatform["SegaGenesis"].ToArray());
+        // The copied set keeps its comparer, so the case-insensitive lookup still works.
+        Assert.True(rebuilt.GamesByPlatform["SegaGenesis"].Contains("SONIC"));
+        Assert.Equal(2, rebuilt.GamesByStudio["Nintendo"].Count);
     }
 
     [Fact]

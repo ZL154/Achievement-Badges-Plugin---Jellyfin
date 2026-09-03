@@ -102,4 +102,19 @@ public enum AchievementMetric
     // existing serialized ordinals must not shift.
     ContainerCompletionPercent,
     ItemPlayCount,
+
+    // [issue #115] Games played through JellyEmu. Plays and hours are
+    // totals; the Unique ones count distinct games and platforms;
+    // GamePlatformGames and GameStudioGames take the platform tag or the
+    // developer/publisher as MetricParameter; GameHours takes a target
+    // ("{guid:N}|{name}", see Helpers/TargetRef) and reads the hours in that
+    // one game. Appended at the end: existing serialized ordinals must not
+    // shift.
+    GamePlays,
+    GamePlayHours,
+    UniqueGamesPlayed,
+    UniqueGamePlatforms,
+    GamePlatformGames,
+    GameStudioGames,
+    GameHours,
 }

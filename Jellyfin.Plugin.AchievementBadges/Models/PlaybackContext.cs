@@ -26,6 +26,15 @@ public class PlaybackContext
     public bool IsAudiobook { get; set; }
     public bool IsBook { get; set; }
 
+    // [issue #115] A game session reported by JellyEmu. The item is a Book
+    // in Jellyfin's eyes, so IsBook stays false on these: a game is not a
+    // finished ebook. GamePlaySeconds is the session length after the clamp
+    // in Helpers/GameSession; GamePlatform is JellyEmu's canonical platform
+    // tag or "Unknown".
+    public bool IsGame { get; set; }
+    public string? GamePlatform { get; set; }
+    public long GamePlaySeconds { get; set; }
+
     // Music-specific metadata (null on non-music plays).
     public string? Album { get; set; }
     public IReadOnlyList<string>? Artists { get; set; }
