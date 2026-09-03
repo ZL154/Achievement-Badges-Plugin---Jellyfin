@@ -462,13 +462,31 @@
     // sidebar.js so it's available on EVERY Jellyfin page, not just the
     // achievements tab. Anchored bottom-LEFT per user feedback.
     function rarityColour(r){ return rarityColors[(r||'').toLowerCase()] || rarityColors.common; }
-    function renderEquippedDots(eq, size){
+    // [issue #42] Ring colour of a badge frame from the shop, keyed by the
+    // catalog id the public summary hands back. Same colours the achievements
+    // page paints on equipped badge cards; unknown ids get no ring override.
+    function frameColour(id) {
+        switch (id) {
+            case 'frame-gilded':   return '#facc15';
+            case 'frame-holo':     return '#22d3ee';
+            case 'frame-frosted':  return '#bfdbfe';
+            case 'frame-obsidian': return '#292524';
+            case 'frame-emerald':  return '#10b981';
+            case 'frame-neon':     return '#ec4899';
+            default:               return '';
+        }
+    }
+
+    function renderEquippedDots(eq, size, frameId){
         if (!eq || !eq.length) return '';
         var px = size || 16;
+        var f = frameColour(frameId);
         return '<span style="display:inline-flex;gap:3px;vertical-align:middle;">' +
             eq.slice(0,5).map(function(b){
                 var c = rarityColour(b.Rarity);
-                return '<span title="'+escapeHtml(b.Title||'')+'" style="width:'+px+'px;height:'+px+'px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:'+c+'26;border:1.5px solid '+c+';box-shadow:0 0 6px '+c+'55;">' +
+                // Rarity keeps the fill; the equipped frame, when any, takes the ring.
+                var ring = f || c;
+                return '<span title="'+escapeHtml(b.Title||'')+'" style="width:'+px+'px;height:'+px+'px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:'+c+'26;border:1.5px solid '+ring+';box-shadow:0 0 6px '+ring+'55;">' +
                     '<span class="material-icons" style="font-family:Material Icons;font-size:'+Math.max(10,px-6)+'px;line-height:1;color:#fff;">'+icName(b.Icon)+'</span>' +
                 '</span>';
             }).join('') +
@@ -1317,6 +1335,7 @@
             '.ab-pc2 .ava .pct{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);background:var(--acc);color:#06222a;font:800 9.5px/1 system-ui;padding:2.5px 6px;border-radius:99px;font-variant-numeric:tabular-nums;box-shadow:0 2px 6px rgba(0,0,0,.4);white-space:nowrap;}',
             '.ab-pc2 .id{min-width:0;flex:1;}',
             '.ab-pc2 .nm{font-weight:650;font-size:17px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+            '.ab-pc2 .ctitle{margin-top:2px;font-size:12px;font-style:italic;font-weight:700;letter-spacing:.03em;color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
             '.ab-pc2 .tier{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 9px 3px 6px;border-radius:99px;background:color-mix(in srgb,var(--acc) 16%,transparent);border:1px solid color-mix(in srgb,var(--acc) 42%,transparent);color:var(--acc);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}',
             '.ab-pc2 .tier .tdot{width:6px;height:6px;border-radius:50%;background:var(--acc);flex:0 0 auto;}',
             '.ab-pc2 .priv{display:flex;align-items:center;gap:9px;margin-top:15px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07);color:rgba(255,255,255,.6);font-size:12.5px;}',
@@ -1366,11 +1385,13 @@
             : '';
         card.innerHTML =
             '<div style="font-weight:600;font-size:1.05em;margin-bottom:0.5em;">' + escapeHtml(data.UserName || '') + '</div>' +
+            // [issue #42] Equipped custom title from the shop, star prefixed.
+            (data.CustomTitle ? '<div style="margin:-0.35em 0 0.5em;font-size:0.9em;font-style:italic;font-weight:700;color:#fcd34d;">&#9733; ' + escapeHtml(data.CustomTitle) + '</div>' : '') +
             row(tr('lb.badges', 'Badges'), num(data.Unlocked) + ' / ' + num(data.Total)) +
             row(tr('profile.completion', 'Completion'), num(data.Percentage) + '%') +
             row(tr('lb.score', 'Score'), String(num(data.Score))) +
             row(tr('lb.streak', 'Best streak'), String(num(data.BestWatchStreak))) +
-            (data.Equipped && data.Equipped.length ? '<div style="margin-top:0.6em;">' + renderEquippedDots(data.Equipped, 20) + '</div>' : '') +
+            (data.Equipped && data.Equipped.length ? '<div style="margin-top:0.6em;">' + renderEquippedDots(data.Equipped, 20, data.BadgeFrameId) + '</div>' : '') +
             actions;
         card.addEventListener('click', function (ev) { if (ev.target && ev.target.closest && ev.target.closest('[data-ab-pc-close]')) hideProfileCard(); });
         card.addEventListener('mouseenter', _pcCancelHide);
@@ -1413,7 +1434,9 @@
             ? '<div class="eq"><div class="h">' + escapeHtml(tr('profile.equipped', 'Equipped')) + '</div><div class="row">' +
               data.Equipped.slice(0, 5).map(function (b) {
                   var c = rarityColour(b.Rarity);
-                  return '<span class="bdg" title="' + escapeHtml(b.Title || '') + '" style="background:' + c + '26;box-shadow:inset 0 0 0 1.5px ' + c + ';"><span class="material-icons" style="font-family:Material Icons;">' + escapeHtml(icName(b.Icon)) + '</span></span>';
+                  // [issue #42] Rarity keeps the fill; the equipped frame takes the ring.
+                  var ring = frameColour(data.BadgeFrameId) || c;
+                  return '<span class="bdg" title="' + escapeHtml(b.Title || '') + '" style="background:' + c + '26;box-shadow:inset 0 0 0 1.5px ' + ring + (ring !== c ? ', 0 0 8px ' + ring + '66' : '') + ';"><span class="material-icons" style="font-family:Material Icons;">' + escapeHtml(icName(b.Icon)) + '</span></span>';
               }).join('') + '</div></div>'
             : '';
 
@@ -1429,6 +1452,8 @@
         card.innerHTML =
             '<div class="top">' + avatar +
             '<div class="id"><div class="nm">' + escapeHtml(nm) + '</div>' +
+            // [issue #42] Equipped custom title from the shop, star prefixed.
+            (data.CustomTitle ? '<div class="ctitle">&#9733; ' + escapeHtml(data.CustomTitle) + '</div>' : '') +
             '<span class="tier"><span class="tdot"></span>' + escapeHtml(t.name) + '</span></div></div>' +
             prog +
             '<div class="stats"><div class="st"><b>' + num(data.Unlocked) + '<i>/' + num(data.Total) + '</i></b><span>' + escapeHtml(tr('lb.badges', 'Badges')) + '</span></div>' +

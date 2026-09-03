@@ -146,7 +146,8 @@ Big thanks to **[@camarigor](https://github.com/camarigor)** for the friend prof
 - **8 book badges (v2.1.0)** — books completed, audiobook listening hours, and series completed. Audiobook plays route per the **audiobook-counting policy** (Books-only default / Music-only / Both).
 - **Improved anime detection (v2.1.0, #25)** — matches **Genres *and* Tags** on the item *and its parent Series*, with admin-configurable libraries / genres / tags.
 - **Admin-authored custom badges (v2.1.0)** — compound AND/OR criteria across any metric; see [Custom badges](#-custom-badges).
-- **Targeted badges (v2.4.0, #107)** — point a badge at one specific series, season, collection, playlist, album or item; see [Targeted badges](#targeted-badges).
+- **Targeted badges (v2.4.0, #107)**: point a badge at one specific series, season, collection, playlist, album or item; see [Targeted badges](#targeted-badges).
+- **Shop cosmetics on the shareable card (v2.4.0, #42)**: the equipped custom title and badge frame show on the shareable profile card and on the friends-drawer profile card, under the same privacy toggles as the equipped badges.
 - **6 rarity tiers** — Common, Uncommon, Rare, Epic, Legendary, Mythic
 - **Hidden/secret badges** displayed as `???` until unlocked
 - **Library completion milestones** that auto-scale to any library structure
