@@ -84,6 +84,19 @@
   .eq{ display:flex; flex-wrap:wrap; gap:7px; position:relative; }
   .badge-chip{ padding:6px 11px; border-radius:7px; font-size:12px; font-weight:600; color:var(--ink); background:rgba(255,255,255,.05); border:1px solid var(--line); }
   .eq .tier{ color:var(--dim); font-size:12px; background:none; border:none; padding:6px 2px; }
+  /* [issue #42] Equipped badge frame from the shop, as a class on .eq.
+     Same colours the achievements page paints on equipped badge cards. */
+  .eq.frame-gilded .badge-chip{ border-color:#facc15; box-shadow:0 0 0 1px #facc15, 0 0 12px rgba(250,204,21,.45); }
+  .eq.frame-holo .badge-chip{ border-color:#22d3ee; box-shadow:0 0 0 1px #22d3ee, 0 0 12px rgba(34,211,238,.4); background:linear-gradient(135deg,rgba(14,165,233,.28),rgba(168,85,247,.28),rgba(236,72,153,.28)); }
+  .eq.frame-frosted .badge-chip{ border-color:#bfdbfe; box-shadow:0 0 0 1px #bfdbfe, inset 0 0 0 1px rgba(255,255,255,.35); }
+  .eq.frame-obsidian .badge-chip{ border-color:#292524; box-shadow:0 0 0 1px #292524, 0 0 12px rgba(220,38,38,.35); }
+  .eq.frame-emerald .badge-chip{ border-color:#10b981; box-shadow:0 0 0 1px #10b981, 0 0 12px rgba(16,185,129,.4); }
+  .eq.frame-neon .badge-chip{ border-color:#ec4899; box-shadow:0 0 0 1px #ec4899, 0 0 14px rgba(236,72,153,.5); }
+  /* [issue #42] Equipped custom title from the shop. Empty when none is
+     equipped or the showcase is hidden; :empty then removes the line. */
+  .ctitle{ margin-top:2px; font-size:12px; font-style:italic; font-weight:700; letter-spacing:.03em; color:var(--accent); }
+  .ctitle:empty{ display:none; }
+  .ctitle::before{ content:"\2605\00a0"; font-style:normal; font-size:.85em; }
 
   .ab-back-btn{
     position:fixed; top:max(1em, env(safe-area-inset-top,0px)); left:max(1em, env(safe-area-inset-left,0px));
@@ -109,6 +122,7 @@
         <div class="av"><span class="ini">{{userInitial}}</span><span class="img"></span></div>
         <div class="id">
           <div class="nm">{{userName}}</div>
+          <div class="ctitle">{{customTitle}}</div>
           <div class="sub"><b>{{unlocked}}</b> of <b>{{total}}</b> badges</div>
         </div>
         <div class="ring"><div class="pct">{{percentage}}%</div></div>
@@ -133,7 +147,7 @@
       </div>
 
       <div class="eqh">Equipped</div>
-      <div class="eq">{{equippedHtml}}</div>
+      <div class="eq {{frameClass}}">{{equippedHtml}}</div>
     </div>
   </div>
 </body>

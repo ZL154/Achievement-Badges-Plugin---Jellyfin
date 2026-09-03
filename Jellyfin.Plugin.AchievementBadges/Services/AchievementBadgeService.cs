@@ -2540,6 +2540,9 @@ public class AchievementBadgeService : IDisposable
                     var total = enabled.Count;
                     var percentage = total == 0 ? 0 : Math.Round((double)unlocked / total * 100.0, 1);
                     var score = AchievementScoreHelper.GetTotalUnlockedScore(enabled);
+                    // [issue #42] Published here first, so the public summary
+                    // only ever repeats what the leaderboard already shows.
+                    var cosmetics = BuildPublicCosmetics(profile);
 
                     return new
                     {
@@ -2550,7 +2553,9 @@ public class AchievementBadgeService : IDisposable
                         Percentage = percentage,
                         Score = score,
                         BestWatchStreak = profile.Counters.BestWatchStreak,
-                        Equipped = BuildEquippedPreview(profile)
+                        Equipped = BuildEquippedPreview(profile),
+                        CustomTitle = cosmetics.CustomTitle,
+                        BadgeFrameId = cosmetics.BadgeFrameId
                     };
                 })
                 .OrderByDescending(x => x.Score)
@@ -2570,19 +2575,82 @@ public class AchievementBadgeService : IDisposable
     /// display fields — never Id, internal state, or unlock date.
     /// Returns an empty list when the target has opted out of showcases.
     /// </summary>
+    /// <summary>
+    /// The privacy gate shared by every public projection of what a user
+    /// equipped. Any one of these toggles hides the equipped badges, and
+    /// [issue #42] the custom title and badge frame with them: a user who hid
+    /// their showcase shows no bling either. Previously the equipped preview
+    /// only checked the showcase toggle, which let the pills leak for users
+    /// who had only set HideFromCompare / HideFromLeaderboard.
+    /// </summary>
+    private static bool ShowcaseHidden(UserAchievementProfile profile)
+    {
+        var prefs = profile.Preferences;
+        if (prefs?.ShowEquippedShowcase == false) return true;
+        if (prefs?.HideFromLeaderboard == true) return true;
+        if (prefs?.HideFromCompare == true) return true;
+        var cfg = Plugin.Instance?.Configuration;
+        return cfg?.ForceHideEquippedShowcase == true;
+    }
+
+    /// <summary>
+    /// [issue #42] The equipped custom title and badge frame, resolved against
+    /// the shop catalog so an unknown or stale id never reaches markup, and
+    /// hidden under the same toggles as the equipped badge preview. Without a
+    /// ShopService there is no catalog to resolve against, so nothing shows.
+    /// The default frame reads as no frame: it is what everyone has.
+    /// </summary>
+    private PublicCosmetics BuildPublicCosmetics(UserAchievementProfile profile)
+    {
+        if (_shop is null || ShowcaseHidden(profile)) return PublicCosmetics.None;
+
+        var catalog = _shop.GetCatalog().Cosmetics;
+
+        string? title = null;
+        if (!string.IsNullOrWhiteSpace(profile.EquippedCustomTitleId))
+        {
+            title = catalog.FirstOrDefault(c => c.Kind == CosmeticKind.RankTitle
+                && string.Equals(c.Id, profile.EquippedCustomTitleId, StringComparison.Ordinal))?.DisplayName;
+        }
+
+        string? frame = null;
+        if (!string.IsNullOrWhiteSpace(profile.EquippedBadgeFrameId)
+            && !string.Equals(profile.EquippedBadgeFrameId, "frame-default", StringComparison.Ordinal))
+        {
+            frame = catalog.FirstOrDefault(c => c.Kind == CosmeticKind.BadgeFrame
+                && string.Equals(c.Id, profile.EquippedBadgeFrameId, StringComparison.Ordinal))?.Id;
+        }
+
+        return new PublicCosmetics
+        {
+            CustomTitle = string.IsNullOrWhiteSpace(title) ? null : title,
+            BadgeFrameId = frame,
+        };
+    }
+
+    /// <summary>
+    /// [issue #42] What the shareable card may show of a user's shop
+    /// cosmetics. Same privacy answer as the public summary: privacy mode or
+    /// an unknown user reads as nothing, never as an error.
+    /// </summary>
+    public PublicCosmetics GetPublicCosmetics(string userId)
+    {
+        userId = NormalizeUserId(userId);
+        var config = Plugin.Instance?.Configuration;
+        if (config?.ForcePrivacyMode == true) return PublicCosmetics.None;
+
+        lock (_lock)
+        {
+            return _userProfiles.TryGetValue(userId, out var profile)
+                ? BuildPublicCosmetics(profile)
+                : PublicCosmetics.None;
+        }
+    }
+
     private List<object> BuildEquippedPreview(UserAchievementProfile profile)
     {
-        // Respect every privacy toggle — if the user opted out of either the
-        // leaderboard OR compare OR showcase, hide their equipped list from
-        // any public projection. Previously this only checked the showcase
-        // toggle which let the equipped pills leak for users who had only
-        // set HideFromCompare / HideFromLeaderboard.
+        if (ShowcaseHidden(profile)) return new List<object>();
         var prefs = profile.Preferences;
-        if (prefs?.ShowEquippedShowcase == false) return new List<object>();
-        if (prefs?.HideFromLeaderboard == true) return new List<object>();
-        if (prefs?.HideFromCompare == true) return new List<object>();
-        var cfg = Plugin.Instance?.Configuration;
-        if (cfg?.ForceHideEquippedShowcase == true) return new List<object>();
 
         var result = new List<object>();
         var lang = prefs?.Language;
@@ -2659,6 +2727,8 @@ public class AchievementBadgeService : IDisposable
             var enabled = profile.Badges.Where(b => IsBadgeEnabled(b.Id)).ToList();
             var unlocked = enabled.Count(b => b.Unlocked);
             var total = enabled.Count;
+            // [issue #42] Same two fields the leaderboard publishes.
+            var cosmetics = BuildPublicCosmetics(profile);
 
             return new
             {
@@ -2669,7 +2739,9 @@ public class AchievementBadgeService : IDisposable
                 Percentage = total == 0 ? 0 : Math.Round((double)unlocked / total * 100.0, 1),
                 Score = AchievementScoreHelper.GetTotalUnlockedScore(enabled),
                 BestWatchStreak = profile.Counters.BestWatchStreak,
-                Equipped = BuildEquippedPreview(profile)
+                Equipped = BuildEquippedPreview(profile),
+                CustomTitle = cosmetics.CustomTitle,
+                BadgeFrameId = cosmetics.BadgeFrameId
             };
         }
     }

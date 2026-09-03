@@ -88,7 +88,10 @@ public class PublicProfileSummaryTests : IDisposable
         var expected = new[]
         {
             "UserId", "UserName", "Unlocked", "Total", "Percentage",
-            "Score", "BestWatchStreak", "Equipped"
+            "Score", "BestWatchStreak", "Equipped",
+            // Issue #42: the equipped custom title and badge frame, published
+            // on the leaderboard first and repeated here.
+            "CustomTitle", "BadgeFrameId"
         };
         var actual = summary!.GetType().GetProperties().Select(p => p.Name).OrderBy(n => n).ToArray();
 
