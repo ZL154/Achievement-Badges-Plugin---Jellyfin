@@ -355,6 +355,7 @@
                                 <option value="TV">TV</option>
                                 <option value="Music">Music</option>
                                 <option value="Book">Book</option>
+                                <option value="Game">Game (JellyEmu)</option>
                                 <option value="Anime">Anime</option>
                                 <option value="Multi" selected>Multi</option>
                             </select>
@@ -386,6 +387,13 @@
                                 <option value="UniqueCountriesWatched">Unique countries watched</option>
                                 <option value="ContainerCompletionPercent" data-param="target" data-target-kinds="Series,Season,BoxSet,Playlist,MusicAlbum">Completion of one series, season or collection&hellip;</option>
                                 <option value="ItemPlayCount" data-param="target" data-target-kinds="Movie,Episode,Audio,Book">Plays of one specific item&hellip;</option>
+                                <option value="GamePlays">Game sessions played (JellyEmu)</option>
+                                <option value="GamePlayHours">Game hours played (JellyEmu)</option>
+                                <option value="UniqueGamesPlayed">Different games played (JellyEmu)</option>
+                                <option value="UniqueGamePlatforms">Different game platforms played (JellyEmu)</option>
+                                <option value="GamePlatformGames" data-param="platform">Different games on a platform&hellip;</option>
+                                <option value="GameStudioGames" data-param="studio">Different games from a developer or publisher&hellip;</option>
+                                <option value="GameHours" data-param="target" data-target-kinds="Book" data-target-tags="JellyEmu">Hours in one specific game&hellip;</option>
                             </select>
                         </div>
                         <div class="inputContainer" id="NewBadgeParamRow" style="display:none;">
@@ -543,7 +551,7 @@
                 // The option value is the "{guid}|{name}" pair the server
                 // stores: the GUID survives a rename, the name survives an item
                 // being deleted and re-added, and each covers the other.
-                searchBadgeTargets: function (term, kinds) {
+                searchBadgeTargets: function (term, kinds, tags) {
                     var results = document.getElementById('NewBadgeTargetResults');
                     if (!results) return Promise.resolve([]);
                     if (!term || term.length < 2) {
@@ -553,7 +561,8 @@
 
                     var query = 'Items?Recursive=true&Limit=25&SearchTerm='
                         + encodeURIComponent(term)
-                        + '&IncludeItemTypes=' + encodeURIComponent(kinds);
+                        + '&IncludeItemTypes=' + encodeURIComponent(kinds)
+                        + (tags ? '&Tags=' + encodeURIComponent(tags) : '');
 
                     return fetch(this.getApiUrl(query), {
                         headers: this.getAuthHeaders(),
@@ -1089,7 +1098,20 @@
                 if (label) { label.style.display = isTarget ? 'none' : ''; }
                 if (desc) { desc.style.display = isTarget ? 'none' : ''; }
 
+                // [issue #115] The same text field carries a genre, a platform
+                // tag or a studio name depending on the metric; say which.
+                var wording = {
+                    platform: ['Platform tag', 'The platform tag JellyEmu puts on the game (case-insensitive), e.g. SNES or SegaGenesis.', 'e.g. SNES'],
+                    studio: ['Developer or publisher', 'A studio name as it appears on the game (case-insensitive), e.g. Nintendo.', 'e.g. Capcom']
+                }[param];
                 var text = document.getElementById('NewBadgeParam');
+                [[label, 'textContent', 0], [desc, 'textContent', 1], [text, 'placeholder', 2]].forEach(function (slot) {
+                    var el = slot[0];
+                    if (!el) return;
+                    if (el._abDefault === undefined) { el._abDefault = el[slot[1]]; }
+                    el[slot[1]] = wording ? wording[slot[2]] : el._abDefault;
+                });
+
                 if (text) {
                     text.style.display = isTarget ? 'none' : '';
                     if (!needs || isTarget) { text.value = ''; }
@@ -1109,7 +1131,8 @@
                         var current = document.getElementById('NewBadgeMetric');
                         var currentOpt = current.options[current.selectedIndex];
                         var kinds = (currentOpt && currentOpt.getAttribute('data-target-kinds')) || '';
-                        AchievementBadgesConfig.searchBadgeTargets(search.value.trim(), kinds);
+                        var tags = (currentOpt && currentOpt.getAttribute('data-target-tags')) || '';
+                        AchievementBadgesConfig.searchBadgeTargets(search.value.trim(), kinds, tags);
                     });
                 }
             }
