@@ -103,59 +103,10 @@ public class PlaybackCompletionService
                 state.RecentlyCompletedItemIds[itemId] = playedAt;
             }
 
-            // v1.9.8 — Daily watch-rate cap. Tracks credited items per UTC
-            // day. Real users watching real content never hit this; it's
-            // pure defense in depth against the spam-click exploit class.
-            var cfg = Plugin.Instance?.Configuration;
-            var today = playedAt.UtcDateTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-            state.CreditedItemsByDate.TryGetValue(today, out var todayCount);
-            if (cfg?.EnableDailyCreditCap == true && cfg.DailyCreditCap > 0 && todayCount >= cfg.DailyCreditCap)
+            if (!ApplyRateGuards(state, context.UserId, playedAt, out message))
             {
-                message = $"Daily credit cap reached ({cfg.DailyCreditCap}/day). Try again tomorrow.";
-                // Log only the FIRST time per day we hit the cap; subsequent
-                // attempts in the same day stay silent to avoid spam.
-                if (todayCount == cfg.DailyCreditCap)
-                {
-                    _auditLog?.Log(context.UserId, string.Empty, "rate_cap_blocked",
-                        $"User hit daily credit cap of {cfg.DailyCreditCap} items on {today}.");
-                }
                 return false;
             }
-
-            // v1.9.8 — Suspicious-rate flag. Track timestamps of credits in a
-            // rolling 1h window; if the user crosses SuspiciousRatePerHour
-            // emit an audit-log entry (throttled to once per hour per user).
-            // Visibility only — does not block the credit.
-            state.RecentCreditTimestamps.RemoveAll(t => playedAt - t > TimeSpan.FromHours(1));
-            state.RecentCreditTimestamps.Add(playedAt);
-            if (state.RecentCreditTimestamps.Count > 256)
-            {
-                state.RecentCreditTimestamps.RemoveRange(0, state.RecentCreditTimestamps.Count - 256);
-            }
-            if (cfg?.EnableSuspiciousActivityFlag == true && cfg.SuspiciousRatePerHour > 0
-                && state.RecentCreditTimestamps.Count >= cfg.SuspiciousRatePerHour
-                && (state.LastSuspiciousFlagAt is null
-                    || playedAt - state.LastSuspiciousFlagAt.Value > TimeSpan.FromHours(1)))
-            {
-                _auditLog?.Log(context.UserId, string.Empty, "suspicious_rate",
-                    $"User credited {state.RecentCreditTimestamps.Count} items in the last hour (threshold {cfg.SuspiciousRatePerHour}).");
-                state.LastSuspiciousFlagAt = playedAt;
-            }
-
-            // Prune the date dictionary to last 30 days so it doesn't grow
-            // unbounded over months.
-            if (state.CreditedItemsByDate.Count > 60)
-            {
-                var cutoff = playedAt.UtcDateTime.AddDays(-30);
-                var stale = state.CreditedItemsByDate
-                    .Where(kvp => !System.DateTime.TryParseExact(kvp.Key, "yyyy-MM-dd",
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        System.Globalization.DateTimeStyles.AssumeUniversal, out var d) || d < cutoff)
-                    .Select(kvp => kvp.Key)
-                    .ToList();
-                foreach (var key in stale) state.CreditedItemsByDate.Remove(key);
-            }
-            state.CreditedItemsByDate[today] = todayCount + 1;
 
             state.TotalCompletedItems++;
 
@@ -289,6 +240,130 @@ public class PlaybackCompletionService
         {
             return CloneState(GetOrCreateState(userId));
         }
+    }
+
+    /// <summary>
+    /// The per-user rate guards every credit passes through, whatever the
+    /// media: the daily cap (blocking), the suspicious-rate audit flag
+    /// (visibility only) and the 30-day prune of the per-day counts. Extracted
+    /// so a game session (issue #115) gets the same defence without the
+    /// completion gate and the per-item dedupe, which do not fit a session.
+    /// Must be called under <c>_lock</c>.
+    /// </summary>
+    private bool ApplyRateGuards(UserPlaybackState state, string userId, DateTimeOffset playedAt, out string message)
+    {
+        // v1.9.8: daily watch-rate cap. Tracks credited items per UTC
+        // day. Real users watching real content never hit this; it is
+        // pure defense in depth against the spam-click exploit class.
+        var cfg = Plugin.Instance?.Configuration;
+        var today = playedAt.UtcDateTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        state.CreditedItemsByDate.TryGetValue(today, out var todayCount);
+        if (cfg?.EnableDailyCreditCap == true && cfg.DailyCreditCap > 0 && todayCount >= cfg.DailyCreditCap)
+        {
+            message = $"Daily credit cap reached ({cfg.DailyCreditCap}/day). Try again tomorrow.";
+            // Log only the FIRST time per day the cap is hit; subsequent
+            // attempts in the same day stay silent to avoid spam.
+            if (todayCount == cfg.DailyCreditCap)
+            {
+                _auditLog?.Log(userId, string.Empty, "rate_cap_blocked",
+                    $"User hit daily credit cap of {cfg.DailyCreditCap} items on {today}.");
+            }
+            return false;
+        }
+
+        // v1.9.8: suspicious-rate flag. Track timestamps of credits in a
+        // rolling 1h window; if the user crosses SuspiciousRatePerHour
+        // emit an audit-log entry (throttled to once per hour per user).
+        // Visibility only; it does not block the credit.
+        state.RecentCreditTimestamps.RemoveAll(t => playedAt - t > TimeSpan.FromHours(1));
+        state.RecentCreditTimestamps.Add(playedAt);
+        if (state.RecentCreditTimestamps.Count > 256)
+        {
+            state.RecentCreditTimestamps.RemoveRange(0, state.RecentCreditTimestamps.Count - 256);
+        }
+        if (cfg?.EnableSuspiciousActivityFlag == true && cfg.SuspiciousRatePerHour > 0
+            && state.RecentCreditTimestamps.Count >= cfg.SuspiciousRatePerHour
+            && (state.LastSuspiciousFlagAt is null
+                || playedAt - state.LastSuspiciousFlagAt.Value > TimeSpan.FromHours(1)))
+        {
+            _auditLog?.Log(userId, string.Empty, "suspicious_rate",
+                $"User credited {state.RecentCreditTimestamps.Count} items in the last hour (threshold {cfg.SuspiciousRatePerHour}).");
+            state.LastSuspiciousFlagAt = playedAt;
+        }
+
+        // Prune the date dictionary to last 30 days so it doesn't grow
+        // unbounded over months.
+        if (state.CreditedItemsByDate.Count > 60)
+        {
+            var cutoff = playedAt.UtcDateTime.AddDays(-30);
+            var stale = state.CreditedItemsByDate
+                .Where(kvp => !System.DateTime.TryParseExact(kvp.Key, "yyyy-MM-dd",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AssumeUniversal, out var d) || d < cutoff)
+                .Select(kvp => kvp.Key)
+                .ToList();
+            foreach (var key in stale) state.CreditedItemsByDate.Remove(key);
+        }
+        state.CreditedItemsByDate[today] = todayCount + 1;
+
+        message = string.Empty;
+        return true;
+    }
+
+    /// <summary>
+    /// [issue #115] Credit one game session reported by JellyEmu. A session
+    /// is not a completion: there is no 80% of a game, and the same game
+    /// played twice in an evening is two sessions, so the completion gate and
+    /// the six-hour per-item dedupe of <see cref="RecordCompletion(PlaybackContext, double, out string)"/>
+    /// do not apply. The rate guards do. The seconds are already clamped by
+    /// the tracker; zero means the session was too short to count.
+    /// </summary>
+    public bool RecordGameSession(PlaybackContext context, out string message)
+    {
+        if (string.IsNullOrWhiteSpace(context.UserId))
+        {
+            message = "User ID is required.";
+            return false;
+        }
+
+        if (!context.IsGame)
+        {
+            message = "Not a game session.";
+            return false;
+        }
+
+        if (context.GamePlaySeconds <= 0)
+        {
+            message = "Session too short to count.";
+            return false;
+        }
+
+        var playedAt = context.PlayedAt ?? DateTimeOffset.Now;
+        context.PlayedAt = playedAt;
+
+        lock (_lock)
+        {
+            var state = GetOrCreateState(context.UserId);
+            CleanupOldEntries(state, playedAt);
+
+            if (!ApplyRateGuards(state, context.UserId, playedAt, out message))
+            {
+                return false;
+            }
+
+            state.LastCompletionAt = playedAt;
+            Save();
+        }
+
+        _achievementBadgeService.RecordPlayback(context);
+
+        if (Guid.TryParse(context.UserId, out var playerGuid))
+        {
+            FriendsService.InvalidateLastWatched(playerGuid);
+        }
+
+        message = "Game session recorded.";
+        return true;
     }
 
     private UserPlaybackState GetOrCreateState(string userId)
