@@ -69,13 +69,30 @@ public class PlayerOverlayTests
     public void ToastContainer_InlineFallback_MatchesTheStylesheet()
     {
         // enhance.js builds the container before any sheet is guaranteed to be
-        // loaded, so the inline style has to agree or the first toast of a
+        // loaded, so the inline default has to agree or the first toast of a
         // session lands on the subtitles anyway.
         var js = ReadEmbedded("enhance.js");
 
-        Assert.Contains("top:4.5em;right:1.2em", js);
-        Assert.Contains("align-items:flex-end", js);
+        Assert.Contains("top: '4.5em', right: '1.2em'", js);
+        Assert.Contains("'align-items': 'flex-end'", js);
         Assert.DoesNotContain("bottom:24px;left:0;right:0", js);
+    }
+
+    [Fact]
+    public void ToastContainer_InlinePlacementOutranksTheStylesheet()
+    {
+        // Issue #116. The stylesheet pins the container top-right with
+        // !important, and a plain inline declaration loses to that, so the
+        // per-user placement never moved the container: every option rendered
+        // top-right with the Revamp style. The placement has to be written with
+        // the "important" priority, the one thing that outranks a stylesheet
+        // !important. The z-index stays a plain declaration on purpose, so the
+        // stylesheet keeps the container above page chrome.
+        var js = ReadEmbedded("enhance.js");
+
+        Assert.Contains("c.style.setProperty(name, props[name], 'important')", js);
+        Assert.Contains("z-index:99999;", js);
+        Assert.DoesNotContain("'z-index': ", js);
     }
 
     [Fact]

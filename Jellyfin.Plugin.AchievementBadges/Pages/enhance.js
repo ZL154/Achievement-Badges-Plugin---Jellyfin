@@ -156,25 +156,42 @@
     }
 
     // Per-user toast placement (#74 moved the default off the subtitle line to
-    // top-right). "bottom-center" restores the original spot. Kept as inline
-    // cssText so it fully overrides the #ab-toast-container rule in
-    // styles-revamp.css and cleanly clears the opposite edges when it changes.
+    // top-right). "bottom-center" restores the original spot.
+    //
+    // [issue #116] The six placement properties are written with the
+    // "important" priority. styles-revamp.css pins #ab-toast-container to
+    // top-right with !important on top, right, bottom, left, align-items and
+    // transform (#74 wanted it off the subtitle line no matter what), and an
+    // ordinary inline declaration loses to a stylesheet !important. So the
+    // preference never moved the container: every placement rendered top-right
+    // whenever the Revamp style was active, from the day the setting shipped.
+    // Inline !important is the one thing that outranks a stylesheet !important.
+    // Every edge is set, the unused ones as "auto", so switching placement
+    // clears the previous edges instead of stretching the box between them.
+    // z-index deliberately stays a plain declaration: the stylesheet raises it
+    // far above 99999 on purpose, and that must keep winning.
     var _toastPos = 'top-right';
     function normalizeToastPos(v) {
         v = (v || '').toString().toLowerCase();
         return (v === 'top-left' || v === 'bottom-right' || v === 'bottom-left' || v === 'bottom-center') ? v : 'top-right';
     }
-    function toastPosCss(pos) {
+    function toastPosProps(pos) {
         switch (pos) {
-            case 'top-left':      return 'top:4.5em;left:1.2em;align-items:flex-start;';
-            case 'bottom-right':  return 'bottom:1.2em;right:1.2em;align-items:flex-end;';
-            case 'bottom-left':   return 'bottom:1.2em;left:1.2em;align-items:flex-start;';
-            case 'bottom-center': return 'bottom:1.2em;left:50%;transform:translateX(-50%);align-items:center;';
-            default:              return 'top:4.5em;right:1.2em;align-items:flex-end;';
+            case 'top-left':      return { top: '4.5em', right: 'auto',  bottom: 'auto',  left: '1.2em', transform: 'none',             'align-items': 'flex-start' };
+            case 'bottom-right':  return { top: 'auto',  right: '1.2em', bottom: '1.2em', left: 'auto',  transform: 'none',             'align-items': 'flex-end' };
+            case 'bottom-left':   return { top: 'auto',  right: 'auto',  bottom: '1.2em', left: '1.2em', transform: 'none',             'align-items': 'flex-start' };
+            case 'bottom-center': return { top: 'auto',  right: 'auto',  bottom: '1.2em', left: '50%',   transform: 'translateX(-50%)', 'align-items': 'center' };
+            default:              return { top: '4.5em', right: '1.2em', bottom: 'auto',  left: 'auto',  transform: 'none',             'align-items': 'flex-end' };
         }
     }
     function positionToastContainer(c) {
-        c.style.cssText = 'position:fixed;z-index:99999;display:flex;flex-direction:column;gap:14px;pointer-events:none;' + toastPosCss(_toastPos);
+        c.style.cssText = 'position:fixed;z-index:99999;display:flex;flex-direction:column;gap:14px;pointer-events:none;';
+        var props = toastPosProps(_toastPos);
+        for (var name in props) {
+            if (Object.prototype.hasOwnProperty.call(props, name)) {
+                try { c.style.setProperty(name, props[name], 'important'); } catch (e) { }
+            }
+        }
     }
     function ensureToastContainer() {
         var c = document.getElementById(TOAST_ID);
